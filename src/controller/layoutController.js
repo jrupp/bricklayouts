@@ -1,4 +1,4 @@
-import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Point } from '../pixi.mjs';
+import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component } from '../model/component.js';
 import { Connection } from '../model/connection.js';
@@ -109,6 +109,13 @@ export class LayoutController {
     this.panOffset = new Point();
 
     /**
+     * The grid
+     * @type {Graphics}
+     */
+    this.grid = new Graphics();
+    app.stage.addChild(this.grid);
+
+    /**
      * @type {Container}
      */
     this.workspace = new Container();
@@ -127,6 +134,8 @@ export class LayoutController {
     this.currentLayer = null;
 
     this.newLayer();
+
+    this.drawGrid();
 
     var option = document.createElement('option');
     option.value = "all";
@@ -234,6 +243,7 @@ export class LayoutController {
         (prePos.y - this.workspace.y) * scaleChange + this.workspace.y
       );
       this.workspace.position.set(this.workspace.x + prePos.x - postPos.x, this.workspace.y + prePos.y - postPos.y);
+      this.drawGrid();
     });
   }
 
@@ -308,6 +318,7 @@ export class LayoutController {
     this.currentLayer = null;
     this.workspace.position.set(0, 0);
     this.workspace.scale.set(0.5);
+    this.drawGrid();
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
     LayoutController.isPanning = false;
@@ -350,6 +361,7 @@ export class LayoutController {
     if (event.key === '0' && event.ctrlKey) {
       this.workspace.scale.set(0.5);
       this.workspace.position.set(0, 0);
+      this.drawGrid();
     }
     if (event.key === 'ArrowUp') {
       this.workspace.position.set(this.workspace.x, this.workspace.y + 10);
@@ -502,6 +514,7 @@ export class LayoutController {
       LayoutController.isPanning = true;
     }
     this.workspace.position.set(event.global.x - this.panOffset.x, event.global.y - this.panOffset.y);
+    this.drawGrid();
   }
 
   /**
@@ -573,6 +586,7 @@ export class LayoutController {
         (midPoint.y - this.workspace.y) * scaleChange + this.workspace.y
       );
       this.workspace.position.set(this.workspace.x + midPoint.x - postPos.x, this.workspace.y + midPoint.y - postPos.y);
+      this.drawGrid();
     }
     LayoutController.previousPinchDistance = curDiff;
   }
@@ -628,5 +642,24 @@ export class LayoutController {
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.rotate();
     }
+  }
+
+  drawGrid() {
+    let grid = this.grid;
+    let gridSize = 512 * this.workspace.scale.x;
+    let gridWidth = this.app.screen.width;
+    let gridHeight = this.app.screen.height;
+    let xOffset = this.workspace.x % gridSize;
+    let yOffset = this.workspace.y % gridSize;
+    grid.clear();
+    for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
+      grid.moveTo(i + xOffset, 0);
+      grid.lineTo(i + xOffset, gridHeight);
+    }
+    for (let i = 0; i < gridHeight + gridSize; i += gridSize) {
+      grid.moveTo(0, i + yOffset);
+      grid.lineTo(gridWidth, i + yOffset);
+    }
+    this.grid.stroke({ color: 0xffffff, pixelLine: true, width: 1 });
   }
 }
