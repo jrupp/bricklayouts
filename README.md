@@ -2,7 +2,7 @@
 
 A webapp to design L-Gauge scale train layouts for LEGO® trains or other compatible brick brands.
 
-Try it out: [jrupp.github.io/bricklayouts/](https://jrupp.github.io/bricklayouts/)
+Try it out: <https://app.bricklayouts.com/>
 
 ## For Developers
 
