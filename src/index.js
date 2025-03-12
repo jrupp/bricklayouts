@@ -1,0 +1,14 @@
+import { LayoutController } from './controller/layoutController.js';
+import { Application, Assets } from './pixi.mjs';
+
+const canvasContainer = document.getElementById('canvasContainer');
+document.body.style.setProperty('--canvas-bg', '#93bee2');
+const app = new Application();
+await app.init({ background: '#93bee2', resizeTo: canvasContainer });
+canvasContainer.appendChild(app.canvas);
+await Assets.init({ basePath: '../img/', manifest: "../data/manifest.json" });
+await Assets.loadBundle('track');
+window.app = app;
+window.assets = Assets;
+const layoutController = new LayoutController(app);
+await layoutController.init();

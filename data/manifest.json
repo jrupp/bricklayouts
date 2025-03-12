@@ -1,0 +1,108 @@
+{
+    "bundles": [
+        {
+            "name": "track",
+            "assets": [
+                {
+                    "alias": "railStraight9V",
+                    "src": "2865.png",
+                    "category": "9V",
+                    "name": "9V Straight Rail",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [128, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [128, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "railCurved9V",
+                    "src": "2867.png",
+                    "category": "9V",
+                    "name": "9V Curved Rail",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [117.47725171566815, 1.4271527723204058, 1.375],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [132.3240939805045, 0.44668598291054046, 0.5],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "railCrossing9V",
+                    "src": "32087.png",
+                    "category": "9V",
+                    "name": "9V Crossing Rail",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [128, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [128, 1.0, 1.0],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [128, 0.5, 0.5],
+                            "next": 3
+                        },
+                        {
+                            "type": 1,
+                            "vector": [128, 1.5, 1.5],
+                            "next": 2
+                        }
+                    ]
+                },
+                {
+                    "alias": "railSwitchRight9V",
+                    "name": "9V Switch Right",
+                    "category": "9V",
+                    "src": "2859.png",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [262.23081436017395, 1.8741473368636148, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [288.2724405835563, 1.1139417779627239, 1],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [274.6126858954078, 0.12637270420028202, 0.125],
+                            "next": 2
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "categories": {
+        "9V": "9V Series",
+        "12V": "12V Series",
+        "45V": "4.5V Series",
+        "12Vblue": "12V Series Blue",
+        "45Vblue": "4.5V Series Blue",
+        "grass": "Grass",
+        "water": "Water"
+    },
+    "other": {
+        "ignore": "this"
+    }
+}

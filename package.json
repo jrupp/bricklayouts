@@ -1,0 +1,17 @@
+{
+  "dependencies": {
+    "file-saver": "^2.0.5",
+    "pixi.js": "^8.8.0"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "http-server": "^14.1.1",
+    "jasmine-browser-runner": "^3.0.0",
+    "jasmine-core": "^5.6.0"
+  },
+  "scripts": {
+    "start": "http-server .",
+    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/file-saver/dist/FileSaver.min.js src/ && copyfiles -f node_modules/file-saver/dist/FileSaver.min.js.map src/",
+    "test": "jasmine-browser-runner serve"
+  }
+}
