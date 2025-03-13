@@ -291,6 +291,7 @@ export class LayoutController {
       let openConnections = newComp.getOpenConnections();
       if (openConnections.length < newComp.connections.length) {
         openConnections.forEach((openCon) => {
+          // TODO: Move this for loop to its own method in LayoutLayer
           for (const [key, connection] of this.currentLayer.openConnections) {
             if (connection.component.uid === openCon.component.uid) {
               continue;

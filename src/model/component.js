@@ -177,7 +177,7 @@ export class Component extends Container {
     } else if (currentConnections.length === 1) {
       const connection = currentConnections[0];
       const otherConnection = connection.otherConnection;
-      const nextOpen = this.getOpenConnection();
+      const nextOpen = this.getOpenConnection(); // BUG: This will break if there are more than one open connections, we need a getNextOpenConnection method
       connection.disconnect();
       nextOpen.connectTo(otherConnection);
 
@@ -188,6 +188,7 @@ export class Component extends Container {
       this.sprite.rotation = newPos.angle;
     }
     this.connections.forEach((connection) => {
+      // BUG: If the connection is "open", check to see if it can be connected after rotation
       connection.updateCircle();
     });
   }
