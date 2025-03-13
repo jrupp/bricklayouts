@@ -276,7 +276,13 @@ export class LayoutController {
         return;
       }
     } else {
-      newComp = new Component(track, { x: 150, y: 275, angle: 0 }, this.currentLayer);
+      let newPos = { x: 150, y: 275, angle: 0 };
+      if (track.connections?.length ?? 0 > 0) {
+        newPos = track.connections[0].vector.getStartPosition({ x: 512, y: 384, angle: 0 });
+        newPos.x = Math.fround(newPos.x);
+        newPos.y = Math.fround(newPos.y);
+      }
+      newComp = new Component(track, newPos, this.currentLayer);
     }
     this.currentLayer.addChild(newComp);
     LayoutController.selectComponent(newComp);
