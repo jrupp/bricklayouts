@@ -304,6 +304,11 @@ button{
 	appearance: none;
 }
 
+.button:focus-visible,
+button:focus-visible {
+	outline: none;
+}
+
 .button:active,
 button:active {
 	opacity: 0.6;
