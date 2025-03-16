@@ -60,11 +60,16 @@ canvas {
 	left: 10px;
 	padding: 1px 1px;
 	height: 5rem;
+	overflow: hidden;
 	background-color: var(--bg);
-	transition: background var(--speed) var(--easing);
+	transition: background var(--speed) var(--easing), height .3s ease .15s;
 	border: 1px solid black;
 	border-radius: 8px;
 	z-index: 1000;
+}
+
+#toolbar.open {
+	height: 15rem;
 }
 
 #darkMode-container {
@@ -277,7 +282,7 @@ canvas {
 	padding: 1rem;
 }
 
-.toolbarItem:nth-child(n+2) {
+.mainbar > .toolbarItem:nth-child(n+2) {
 	border-left: 1px solid var(--toolbar-item-border);
 	transition: border-left-color var(--speed) var(--easing);
 }
@@ -334,6 +339,23 @@ button span.label {
 
 .componentEditorActions button:first-child {
 	border-right: 1px solid var(--toolbar-item-border);
+}
+
+.menuDivider {
+	display: none;
+	border-top: 1px solid var(--toolbar-item-border);
+	transition: border-top-color var(--speed) var(--easing);
+	margin-left: calc(5rem + 3px);
+}
+
+.open > .menuDivider {
+	display: block;
+}
+
+#toolbar label {
+	line-height: 5rem;
+	font-size: 1.25rem;
+	vertical-align: top;
 }
 
 .componentBrowser {
