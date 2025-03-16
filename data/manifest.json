@@ -99,8 +99,9 @@
         "45V": "4.5V Series",
         "12Vblue": "12V Series Blue",
         "45Vblue": "4.5V Series Blue",
-        "grass": "Grass",
-        "water": "Water"
+        "baseplates": "Baseplates",
+        "table": "Tables",
+        "custom": "Custom"
     },
     "other": {
         "ignore": "this"
