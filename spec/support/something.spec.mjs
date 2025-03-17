@@ -24,6 +24,13 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonRemove').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('outsideMenu').and.returnValue(document.createElement('div'));
+        geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
         const layoutController = new LayoutController(app);
         window.layoutController = layoutController;
         return layoutController.init();
