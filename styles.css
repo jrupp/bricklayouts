@@ -65,11 +65,26 @@ canvas {
 	transition: background var(--speed) var(--easing), height .3s ease .15s;
 	border: 1px solid black;
 	border-radius: 8px;
-	z-index: 1000;
+	z-index: 1010;
 }
 
 #toolbar.open {
-	height: 15rem;
+	height: calc(15rem + 1px);
+}
+
+.outsideMenu {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	background: rgba(0, 0, 0, 0.25);
+	width: 100%;
+	height: 100%;
+	z-index: 1005;
+}
+
+.open + .outsideMenu {
+	display: block;
 }
 
 #darkMode-container {
@@ -294,7 +309,23 @@ canvas {
 	height: auto;
 }
 
-[data-dark-mode=true] .toolbarItem img.icon {
+.menuItem {
+	height: 5rem;
+	padding: 1rem;
+	width: 100%;
+	border-radius: 0.5rem;
+	text-align: left;
+}
+
+.menuItem img.icon {
+	max-height: 3rem;
+	width: auto;
+	height: auto;
+	vertical-align: middle;
+}
+
+[data-dark-mode=true] .toolbarItem img.icon,
+[data-dark-mode=true] .menuItem img.icon {
 	filter: invert(1);
 }
 
@@ -352,10 +383,10 @@ button span.label {
 	display: block;
 }
 
-#toolbar label {
-	line-height: 5rem;
-	font-size: 1.25rem;
-	vertical-align: top;
+.menuItem > span {
+	font-size: 1.5rem;
+	vertical-align: middle;
+	padding-left: 0.5rem;
 }
 
 .componentBrowser {
@@ -382,11 +413,16 @@ button span.label {
 @media (hover:hover) {
 	button:hover, .button:hover {
 		opacity: 0.6;
-}
+	}
 
-.componentBrowser>button:hover {
-	background: var(--component-hover);
-	opacity: 1;
+	button.menuItem:hover {
+		background: var(--component-hover);
+		opacity: 1;
+	}
+
+	.componentBrowser>button:hover {
+		background: var(--component-hover);
+		opacity: 1;
 	}
 
 	#darkMode-container button:hover {

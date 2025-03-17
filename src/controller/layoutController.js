@@ -176,6 +176,12 @@ export class LayoutController {
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
+    document.getElementById('buttonMenu').addEventListener('click', () => {
+      document.getElementById('toolbar').classList.toggle('open');
+    });
+    document.getElementById('outsideMenu').addEventListener('click', () => {
+      this.hideFileMenu();
+    });
   }
 
   async init() {
@@ -320,6 +326,7 @@ export class LayoutController {
    */
   reset() {
     Connection.connectionDB.clear();
+    this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
     this.layers = [];
     this.currentLayer = null;
@@ -347,6 +354,7 @@ export class LayoutController {
     };
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
     saveAs(blob, 'layout.json');
+    this.hideFileMenu();
   }
 
   /**
@@ -668,5 +676,12 @@ export class LayoutController {
       grid.lineTo(gridWidth, i + yOffset);
     }
     this.grid.stroke({ color: 0xffffff, pixelLine: true, width: 1 });
+  }
+
+  /**
+   * Hide the file menu.
+   */
+  hideFileMenu() {
+    document.getElementById('toolbar')?.classList.remove('open');
   }
 }
