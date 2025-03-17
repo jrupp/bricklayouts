@@ -291,6 +291,45 @@ canvas {
 	border-top: 1px solid var(--toolbar-item-border);
 }
 
+#configurationEditor {
+	position: fixed;
+	top: calc(5rem + 20px);
+	left: calc(5rem + 16px);
+	background-color: var(--bg);
+	transition: background var(--speed) var(--easing);
+	border: 1px solid black;
+	border-radius: 0.5rem;
+	z-index: 1000;
+	min-height: 32rem;
+	max-height: 50%;
+	min-width: 20rem;
+}
+
+#configurationEditor.hidden {
+	display: none;
+}
+
+#configurationEditorHeader {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.5rem 0.7rem;
+	background-color: var(--subheader-bg);
+	border-bottom: 1px solid var(--toolbar-item-border);
+	border-radius: 8px 8px 0 0;
+}
+
+.configurationEditorActions {
+	display: flex;
+	flex-direction: row;
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	justify-content: space-evenly;
+	border-top: 1px solid var(--toolbar-item-border);
+}
+
 .toolbarItem {
 	width: 5rem;
 	height: 5rem;

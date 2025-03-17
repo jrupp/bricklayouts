@@ -329,6 +329,21 @@
             </div>
         </div>
     </div>
+    <div id="configurationEditor" class="hidden">
+        <div id="configurationEditorHeader">
+            <span class="componentEditorTitle">Configuration</span>
+            <span id="configurationEditorClose" class="componentEditorTitle componentEditorTitleButton">X</span>
+        </div>
+        <div id="configurationEditorContent">
+            <div id="configurationEditorProperties">
+                Coming Soon
+            </div>
+            <div class="configurationEditorActions">
+                <button id="configurationEditorSave">Save</button>
+                <button id="configurationEditorCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script>
         let pref = localStorage.getItem('theme') || 'system';
         if (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) {

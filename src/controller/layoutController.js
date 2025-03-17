@@ -182,6 +182,18 @@ export class LayoutController {
     document.getElementById('outsideMenu').addEventListener('click', () => {
       this.hideFileMenu();
     });
+    document.getElementById('buttonConfig').addEventListener('click', () => {
+      document.getElementById('configurationEditor').classList.toggle('hidden');
+    });
+    document.getElementById('configurationEditorClose').addEventListener('click', () => {
+      document.getElementById('configurationEditor').classList.add('hidden');
+    });
+    document.getElementById('configurationEditorSave').addEventListener('click', () => {
+      document.getElementById('configurationEditor').classList.add('hidden');
+    });
+    document.getElementById('configurationEditorCancel').addEventListener('click', () => {
+      document.getElementById('configurationEditor').classList.add('hidden');
+    });
   }
 
   async init() {
