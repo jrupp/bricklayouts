@@ -134,7 +134,7 @@ describe("LayoutController", function() {
             LayoutController.selectComponent(midComp);
             layoutController.addComponent(trackData, true);
             LayoutController.selectComponent(midComp);
-            LayoutController.deleteSelectedComponent();
+            layoutController.deleteSelectedComponent();
             midComp = undefined;
             LayoutController.selectComponent(firstComp);
             layoutController.addComponent(trackData, true);

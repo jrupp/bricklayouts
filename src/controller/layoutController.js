@@ -171,18 +171,32 @@ export class LayoutController {
       this.searchElement.classList.remove('hasInput');
       this.createComponentBrowser();
     });
-    document.getElementById('buttonRotate').addEventListener('click', LayoutController.rotateSelectedComponent);
-    document.getElementById('buttonRemove').addEventListener('click', LayoutController.deleteSelectedComponent);
+    document.getElementById('buttonRotate').addEventListener('click', this.rotateSelectedComponent.bind(this));
+    document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => {
       document.getElementById('toolbar').classList.toggle('open');
     });
-    document.getElementById('outsideMenu').addEventListener('click', () => {
+    document.getElementById('outsideMenu').addEventListener('click', /** @param {MouseEvent} event */ (event) => {
       this.hideFileMenu();
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      if (target) {
+        let newPointerEvent = new PointerEvent('pointerdown', event);
+        target.dispatchEvent(newPointerEvent);
+        let newEvent = new MouseEvent('mousedown', event);
+        target.dispatchEvent(newEvent);
+        newPointerEvent = new PointerEvent('pointerup', event);
+        target.dispatchEvent(newPointerEvent);
+        newEvent = new MouseEvent('mouseup', event);
+        target.dispatchEvent(newEvent);
+        newEvent = new MouseEvent('click', event);
+        target.dispatchEvent(newEvent);
+      }
     });
     document.getElementById('buttonConfig').addEventListener('click', () => {
+      this.hideFileMenu();
       document.getElementById('configurationEditor').classList.toggle('hidden');
     });
     document.getElementById('configurationEditorClose').addEventListener('click', () => {
@@ -374,15 +388,16 @@ export class LayoutController {
    * @param {KeyboardEvent} event - The keydown event
    */
   onKeyDown(event) {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       if (event.key === 'Delete') {
-        LayoutController.deleteSelectedComponent();
+        this.deleteSelectedComponent();
       }
       if (event.key === 'Escape') {
         LayoutController.selectComponent(null);
       }
       if (event.key === 'r') {
-        LayoutController.rotateSelectedComponent();
+        this.rotateSelectedComponent();
       }
     }
     if (event.key === '0' && event.ctrlKey) {
@@ -655,7 +670,8 @@ export class LayoutController {
     component = null;
   }
   
-  static deleteSelectedComponent() {
+  deleteSelectedComponent() {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       let nextComp = LayoutController.selectedComponent.getAdjacentComponent();
       LayoutController.deleteComponent(LayoutController.selectedComponent);
@@ -665,7 +681,8 @@ export class LayoutController {
     }
   }
 
-  static rotateSelectedComponent() {
+  rotateSelectedComponent() {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.rotate();
     }
