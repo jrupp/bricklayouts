@@ -113,6 +113,14 @@ export class LayoutController {
      * @type {Graphics}
      */
     this.grid = new Graphics();
+
+    /**
+     * The subgrid
+     * @type {Graphics}
+     */
+    this.subGrid = new Graphics();
+
+    app.stage.addChild(this.subGrid);
     app.stage.addChild(this.grid);
 
     /**
@@ -690,21 +698,37 @@ export class LayoutController {
 
   drawGrid() {
     let grid = this.grid;
-    let gridSize = 512 * this.workspace.scale.x;
+    let subGrid = this.subGrid;
+    const originalGridSize = 1536;
+    const originalGridDivisions = 3;
+    let gridSize = originalGridSize * this.workspace.scale.x;
     let gridWidth = this.app.screen.width;
     let gridHeight = this.app.screen.height;
     let xOffset = this.workspace.x % gridSize;
     let yOffset = this.workspace.y % gridSize;
+    let divisionSize = gridSize / originalGridDivisions;
+    subGrid.clear();
     grid.clear();
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
       grid.moveTo(i + xOffset, 0);
       grid.lineTo(i + xOffset, gridHeight);
+      for (let j = 1; j < originalGridDivisions; j++) {
+        subGrid.moveTo(i + xOffset + j * divisionSize, 0);
+        subGrid.lineTo(i + xOffset + j * divisionSize, gridHeight);
+      }
     }
     for (let i = 0; i < gridHeight + gridSize; i += gridSize) {
       grid.moveTo(0, i + yOffset);
       grid.lineTo(gridWidth, i + yOffset);
+      for (let j = 1; j < originalGridDivisions; j++) {
+        subGrid.moveTo(0, i + yOffset + j * divisionSize);
+        subGrid.lineTo(gridWidth, i + yOffset + j * divisionSize);
+      }
     }
     this.grid.stroke({ color: 0xffffff, pixelLine: true, width: 1 });
+    if (originalGridDivisions > 1) {
+      this.subGrid.stroke({ color: 0x9c9c9c, pixelLine: true, width: 1 });
+    }
   }
 
   /**
