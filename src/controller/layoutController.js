@@ -1,6 +1,7 @@
 import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component } from '../model/component.js';
+import { Configuration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
@@ -124,10 +125,16 @@ export class LayoutController {
     app.stage.addChild(this.grid);
 
     /**
+     * App configuration
+     * @type {Configuration}
+     */
+    this.config = Configuration.getInstance();
+
+    /**
      * @type {Container}
      */
     this.workspace = new Container();
-    this.workspace.scale.set(0.5);
+    this.workspace.scale.set(this.config.defaultZoom);
     app.stage.addChild(this.workspace);
 
     /**
@@ -365,7 +372,8 @@ export class LayoutController {
     this.layers = [];
     this.currentLayer = null;
     this.workspace.position.set(0, 0);
-    this.workspace.scale.set(0.5);
+    this.config.clearWorkspaceSettings();
+    this.workspace.scale.set(this.config.defaultZoom);
     this.drawGrid();
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
@@ -409,7 +417,7 @@ export class LayoutController {
       }
     }
     if (event.key === '0' && event.ctrlKey) {
-      this.workspace.scale.set(0.5);
+      this.workspace.scale.set(this.config.defaultZoom);
       this.workspace.position.set(0, 0);
       this.drawGrid();
     }
@@ -700,7 +708,7 @@ export class LayoutController {
     let grid = this.grid;
     let subGrid = this.subGrid;
     const originalGridSize = 1536;
-    const originalGridDivisions = 3;
+    const originalGridDivisions = this.config.gridSettings.divisions;
     let gridSize = originalGridSize * this.workspace.scale.x;
     let gridWidth = this.app.screen.width;
     let gridHeight = this.app.screen.height;
@@ -725,9 +733,9 @@ export class LayoutController {
         subGrid.lineTo(gridWidth, i + yOffset + j * divisionSize);
       }
     }
-    this.grid.stroke({ color: 0xffffff, pixelLine: true, width: 1 });
+    this.grid.stroke({ color: this.config.gridSettings.mainColor, pixelLine: true, width: 1 });
     if (originalGridDivisions > 1) {
-      this.subGrid.stroke({ color: 0x9c9c9c, pixelLine: true, width: 1 });
+      this.subGrid.stroke({ color: this.config.gridSettings.subColor, pixelLine: true, width: 1 });
     }
   }
 
