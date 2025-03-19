@@ -1,18 +1,10 @@
 /**
- * Configuration class that manages application-wide settings.
- * Implements the Singleton pattern to ensure only one instance exists.
+ * Configuration class that manages application-wide settings with support for
+ * default values, user preferences, and workspace-specific settings.
  */
 export class Configuration {
-    /**
-     * @type {Configuration}
-     * @private
-     */
     static _instance = null;
 
-    /**
-     * Gets the singleton instance of Configuration
-     * @returns {Configuration} The singleton instance
-     */
     static getInstance() {
         if (Configuration._instance === null) {
             Configuration._instance = new Configuration();
@@ -29,89 +21,176 @@ export class Configuration {
         }
 
         /**
-         * Grid settings
-         * @type {{
-         *   size: number,
-         *   divisions: number,
-         *   mainColor: number,
-         *   subColor: number
-         * }}
+         * Default values that serve as fallbacks
          * @private
          */
-        this._gridSettings = {
-            size: 1536,
-            divisions: 3,
-            mainColor: 0xffffff,
-            subColor: 0x9c9c9c
+        this._defaults = {
+            gridSettings: {
+                size: 1536,
+                divisions: 3,
+                mainColor: 0xffffff,
+                subColor: 0x9c9c9c
+            },
+            defaultZoom: 0.5
         };
 
         /**
-         * Default zoom level
-         * @type {number}
+         * User settings stored in localStorage
          * @private
          */
-        this._defaultZoom = 0.5;
+        this._userSettings = {
+            gridSettings: {},
+            defaultZoom: null
+        };
 
-        // Load saved configuration from localStorage if available
-        this._loadFromStorage();
+        /**
+         * Workspace-specific settings
+         * @private
+         */
+        this._workspaceSettings = {
+            gridSettings: {},
+            defaultZoom: null
+        };
+
+        this._loadUserSettings();
     }
 
     /**
-     * Loads configuration from localStorage
+     * Loads user settings from localStorage
      * @private
      */
-    _loadFromStorage() {
+    _loadUserSettings() {
         const savedConfig = localStorage.getItem('bricklayouts-config');
         if (savedConfig) {
             const parsed = JSON.parse(savedConfig);
-            this._gridSettings = {...this._gridSettings, ...parsed.gridSettings};
-            this._defaultZoom = parsed.defaultZoom ?? this._defaultZoom;
+            this._userSettings = {
+                gridSettings: parsed.gridSettings || {},
+                defaultZoom: parsed.defaultZoom ?? null
+            };
         }
     }
 
     /**
-     * Saves current configuration to localStorage
+     * Saves user settings to localStorage
      * @private
      */
-    _saveToStorage() {
-        const config = {
-            gridSettings: this._gridSettings,
-            defaultZoom: this._defaultZoom
-        };
-        localStorage.setItem('bricklayouts-config', JSON.stringify(config));
+    _saveUserSettings() {
+        localStorage.setItem('bricklayouts-config', JSON.stringify(this._userSettings));
     }
 
     /**
-     * Gets the grid settings
+     * Gets the effective value by checking workspace, user, and default settings in order
+     * @private
+     * @template T
+     * @param {string} category - The settings category (e.g. 'gridSettings')
+     * @param {string} [key] - The specific setting key (if accessing a nested property)
+     * @returns {T} The effective value
+     */
+    _getEffectiveValue(category, key = null) {
+        if (key) {
+            return this._workspaceSettings[category][key] ?? 
+                   this._userSettings[category][key] ?? 
+                   this._defaults[category][key];
+        }
+        return this._workspaceSettings[category] ?? 
+               this._userSettings[category] ?? 
+               this._defaults[category];
+    }
+
+    /**
+     * Gets the effective grid settings
      * @returns {{size: number, divisions: number, mainColor: number, subColor: number}}
      */
     get gridSettings() {
-        return {...this._gridSettings};
+        return {
+            size: this._getEffectiveValue('gridSettings', 'size'),
+            divisions: this._getEffectiveValue('gridSettings', 'divisions'),
+            mainColor: this._getEffectiveValue('gridSettings', 'mainColor'),
+            subColor: this._getEffectiveValue('gridSettings', 'subColor')
+        };
     }
 
     /**
-     * Updates grid settings
+     * Gets the user's grid settings
+     * @returns {{size?: number, divisions?: number, mainColor?: number, subColor?: number}}
+     */
+    get userGridSettings() {
+        return {...this._userSettings.gridSettings};
+    }
+
+    /**
+     * Gets the workspace grid settings
+     * @returns {{size?: number, divisions?: number, mainColor?: number, subColor?: number}}
+     */
+    get workspaceGridSettings() {
+        return {...this._workspaceSettings.gridSettings};
+    }
+
+    /**
+     * Updates user grid settings
      * @param {{size?: number, divisions?: number, mainColor?: number, subColor?: number}} settings
      */
-    updateGridSettings(settings) {
-        this._gridSettings = {...this._gridSettings, ...settings};
-        this._saveToStorage();
+    updateUserGridSettings(settings) {
+        this._userSettings.gridSettings = {...this._userSettings.gridSettings, ...settings};
+        this._saveUserSettings();
     }
 
     /**
-     * Gets the default zoom level
+     * Updates workspace grid settings
+     * @param {{size?: number, divisions?: number, mainColor?: number, subColor?: number}} settings
+     */
+    updateWorkspaceGridSettings(settings) {
+        this._workspaceSettings.gridSettings = {...this._workspaceSettings.gridSettings, ...settings};
+    }
+
+    /**
+     * Gets the effective default zoom level
      * @returns {number}
      */
     get defaultZoom() {
-        return this._defaultZoom;
+        return this._getEffectiveValue('defaultZoom');
     }
 
     /**
-     * Sets the default zoom level
-     * @param {number} value
+     * Gets the user's default zoom level
+     * @returns {number|null}
      */
-    set defaultZoom(value) {
-        this._defaultZoom = value;
-        this._saveToStorage();
+    get userDefaultZoom() {
+        return this._userSettings.defaultZoom;
+    }
+
+    /**
+     * Sets the user's default zoom level
+     * @param {number|null} value - Use null to clear the setting
+     */
+    set userDefaultZoom(value) {
+        this._userSettings.defaultZoom = value;
+        this._saveUserSettings();
+    }
+
+    /**
+     * Gets the workspace default zoom level
+     * @returns {number|null}
+     */
+    get workspaceDefaultZoom() {
+        return this._workspaceSettings.defaultZoom;
+    }
+
+    /**
+     * Sets the workspace default zoom level
+     * @param {number|null} value - Use null to clear the setting
+     */
+    set workspaceDefaultZoom(value) {
+        this._workspaceSettings.defaultZoom = value;
+    }
+
+    /**
+     * Clears all workspace-specific settings
+     */
+    clearWorkspaceSettings() {
+        this._workspaceSettings = {
+            gridSettings: {},
+            defaultZoom: null
+        };
     }
 }
