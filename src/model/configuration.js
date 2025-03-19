@@ -1,4 +1,12 @@
 /**
+ * @typedef {Object} GridSettings
+ * @property {number} size The base size of the grid in pixels, 16 pixels per stud (1536 = 96 studs)
+ * @property {number} divisions Number of subdivisions within each grid cell. If set to 1, no subdivisions are shown.
+ * @property {number} mainColor The color of the main grid lines in hexadecimal (e.g. 0xffffff for white)
+ * @property {number} subColor The color of the subdivision grid lines in hexadecimal (e.g. 0x9c9c9c for gray)
+ */
+
+/**
  * Configuration class that manages application-wide settings with support for
  * default values, user preferences, and workspace-specific settings.
  */
@@ -22,6 +30,7 @@ export class Configuration {
 
         /**
          * Default values that serve as fallbacks
+         * @type {{gridSettings: GridSettings, defaultZoom: number}}
          * @private
          */
         this._defaults = {
@@ -99,7 +108,7 @@ export class Configuration {
 
     /**
      * Gets the effective grid settings
-     * @returns {{size: number, divisions: number, mainColor: number, subColor: number}}
+     * @returns {GridSettings}
      */
     get gridSettings() {
         return {
@@ -112,7 +121,7 @@ export class Configuration {
 
     /**
      * Gets the user's grid settings
-     * @returns {{size?: number, divisions?: number, mainColor?: number, subColor?: number}}
+     * @returns {Partial<GridSettings>}
      */
     get userGridSettings() {
         return {...this._userSettings.gridSettings};
@@ -120,7 +129,7 @@ export class Configuration {
 
     /**
      * Gets the workspace grid settings
-     * @returns {{size?: number, divisions?: number, mainColor?: number, subColor?: number}}
+     * @returns {Partial<GridSettings>}
      */
     get workspaceGridSettings() {
         return {...this._workspaceSettings.gridSettings};
@@ -128,7 +137,7 @@ export class Configuration {
 
     /**
      * Updates user grid settings
-     * @param {{size?: number, divisions?: number, mainColor?: number, subColor?: number}} settings
+     * @param {Partial<GridSettings>} settings
      */
     updateUserGridSettings(settings) {
         this._userSettings.gridSettings = {...this._userSettings.gridSettings, ...settings};
@@ -137,7 +146,7 @@ export class Configuration {
 
     /**
      * Updates workspace grid settings
-     * @param {{size?: number, divisions?: number, mainColor?: number, subColor?: number}} settings
+     * @param {Partial<GridSettings>} settings
      */
     updateWorkspaceGridSettings(settings) {
         this._workspaceSettings.gridSettings = {...this._workspaceSettings.gridSettings, ...settings};
