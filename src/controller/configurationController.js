@@ -1,4 +1,4 @@
-import { Pane, TabPageApi } from '../tweakpane.js';
+import { Pane, TabPageApi, ButtonApi } from '../tweakpane.js';
 import { Configuration } from '../model/configuration.js';
 
 export class ConfigurationController {
@@ -57,24 +57,27 @@ export class ConfigurationController {
      * @param {'user'|'workspace'} type
      */
     #setupGridSettings(tab, type) {
-        const folder = tab.addFolder({
-            title: 'Grid Settings'
-        });
-
         const isUser = type === 'user';
         const settings = isUser ? this.#config.userGridSettings : this.#config.workspaceGridSettings;
 
+        const folder = tab.addFolder({
+            title: 'Grid Settings',
+            hidden: !isUser
+        });
+
         // Create a params object for the inputs
+        let mainColorValue = settings.mainColor ?? this.#config._defaults.gridSettings.mainColor;
+        let subColorValue = settings.subColor ?? this.#config._defaults.gridSettings.subColor;
         const params = {
-            size: settings.size ?? 0.5,
-            divisions: settings.divisions ?? null,
-            mainColor: settings.mainColor ? `#${settings.mainColor.toString(16).padStart(6, '0')}` : null,
-            subColor: settings.subColor ? `#${settings.subColor.toString(16).padStart(6, '0')}` : null
+            size: settings.size ?? this.#config._defaults.gridSettings.size,
+            divisions: settings.divisions ?? this.#config._defaults.gridSettings.divisions,
+            mainColor: `#${mainColorValue.toString(16).padStart(6, '0')}`,
+            subColor: `#${subColorValue.toString(16).padStart(6, '0')}`
         };
 
         // Add inputs
         folder.addBinding(params, 'size', {
-            label: 'Size',
+            label: '<ul>Size</ul>',
             min: 256,
             max: 3072,
             step: 256,
@@ -85,8 +88,8 @@ export class ConfigurationController {
                 this.#config.updateWorkspaceGridSettings({ size: ev.value });
             }
         });
-/*
-        folder.addInput(params, 'divisions', {
+
+        folder.addBinding(params, 'divisions', {
             label: 'Divisions',
             min: 1,
             max: 8,
@@ -99,10 +102,9 @@ export class ConfigurationController {
             }
         });
 
-        folder.addInput(params, 'mainColor', {
-            label: 'Main Color',
-            view: 'color',
-            color: { type: 'float' }
+        folder.addBinding(params, 'mainColor', {
+            label: '',
+            view: 'color'
         }).on('change', (ev) => {
             const color = parseInt(ev.value.replace('#', ''), 16);
             if (isUser) {
@@ -112,10 +114,9 @@ export class ConfigurationController {
             }
         });
 
-        folder.addInput(params, 'subColor', {
+        folder.addBinding(params, 'subColor', {
             label: 'Sub Color',
-            view: 'color',
-            color: { type: 'float' }
+            view: 'color'
         }).on('change', (ev) => {
             const color = parseInt(ev.value.replace('#', ''), 16);
             if (isUser) {
@@ -123,7 +124,24 @@ export class ConfigurationController {
             } else {
                 this.#config.updateWorkspaceGridSettings({ subColor: color });
             }
-        });*/
+        });
+
+        if (!isUser) {
+            /** @type {ButtonApi} */
+            const btn = tab.addButton({
+                index: 0,
+                label: 'Grid Settings',
+                title: 'Override'
+            });
+            btn.on('click', (ev) => {
+                folder.hidden = !folder.hidden;
+                if (folder.hidden) {
+                    ev.target.title = "Override";
+                } else {
+                    ev.target.title = "Inherit";
+                }
+            });
+        }
     }
 
     /**
