@@ -335,8 +335,24 @@
             <span id="configurationEditorClose" class="componentEditorTitle componentEditorTitleButton">X</span>
         </div>
         <div id="configurationEditorContent">
-            <div id="configurationEditorProperties">
-                Coming Soon
+            <div class="tab-container">
+                <div class="tab-list">
+                    <button class="tab-button active" data-tab="general">General</button>
+                    <button class="tab-button" data-tab="appearance">Appearance</button>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-panel active" data-tab="general">
+                        <h3>General Settings</h3>
+                        <p>General configuration options will go here.</p>
+                        <label for="slider">Default Zoom Level</label>
+                        <input type="range" id="slider" min="0.1" max="1" value="0.5" step="0.1">
+                    </div>
+                    <div class="tab-panel" data-tab="appearance">
+                        <h3>Appearance Settings</h3>
+                        <p>Appearance configuration options will go here.</p>
+                        <input type="color" id="gridColor" value="#ffffff">
+                    </div>
+                </div>
             </div>
             <div class="configurationEditorActions">
                 <button id="configurationEditorSave">Save</button>

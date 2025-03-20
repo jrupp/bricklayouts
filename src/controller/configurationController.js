@@ -4,21 +4,25 @@ import { Configuration } from '../model/configuration.js';
 export class ConfigurationController {
     /** @type {Configuration} */
     #config;
-    /** @type {Pane} */
-    #pane;
-    /** @type {HTMLElement} */
-    #container;
+    /** @type {Array<HTMLElement>} */
+    #tabButtons;
+    /** @type {Array<HTMLElement>} */
+    #tabPanels;
 
     constructor() {
         this.#config = Configuration.getInstance();
-        this.#container = document.getElementById('configurationEditorContent');
+        this.#tabButtons = document.querySelectorAll('.tab-button');
+        this.#tabPanels = document.querySelectorAll('.tab-panel');
 
-        // Create the main pane
-        this.#pane = new Pane({
-            container: this.#container
+        this.#tabButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                this.#switchTab(tabId);
+            });
         });
 
         // Create tabs for user and workspace settings
+        /*
         const tabs = this.#pane.addTab({
             pages: [{
                 title: 'User'
@@ -26,28 +30,29 @@ export class ConfigurationController {
             {
                 title: 'Workspace'
             }]
-        });
-
-        const userTab = tabs.pages[0];
-
-        const workspaceTab = tabs.pages[1];
-
-        // Add grid settings to both tabs
-        this.#setupGridSettings(userTab, 'user');
-        this.#setupGridSettings(workspaceTab, 'workspace');
-
-        // Add zoom settings to both tabs
-        this.#setupZoomSettings(userTab, 'user');
-        this.#setupZoomSettings(workspaceTab, 'workspace');
+        });*/
 
         // Add clear button to workspace tab
+        /*
         workspaceTab.addButton({
             title: 'Clear All Workspace Settings',
             label: 'clear'
         }).on('click', () => {
             this.#config.clearWorkspaceSettings();
             this.#refreshWorkspaceInputs();
+        });*/
+    }
+
+    #switchTab(tabId) {
+        this.#tabButtons.forEach((button) => {
+            button.classList.remove('active');
         });
+        this.#tabPanels.forEach((panel) => {
+            panel.classList.remove('active');
+        });
+
+        document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
+        document.querySelector(`.tab-panel[data-tab="${tabId}"]`).classList.add('active');
     }
 
     /**
@@ -178,8 +183,8 @@ export class ConfigurationController {
      */
     #refreshWorkspaceInputs() {
         // Re-create the pane to refresh all values
-        this.#pane.dispose();
-        this.#container.innerHTML = '';
-        this.constructor();
+        //this.#pane.dispose();
+        //this.#container.innerHTML = '';
+        //this.constructor();
     }
 }

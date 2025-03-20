@@ -389,6 +389,20 @@ button:active {
 	opacity: 0.6;
 }
 
+.tab-button {
+    text-align: left;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 1.4rem;
+    color: var(--color);
+    border-radius: 0.4rem;
+    cursor: pointer;
+}
+
+.tab-button.active {
+    background-color: var(--component-active);
+}
+
 #darkMode-container button:active {
 	opacity: 1;
 }
@@ -408,6 +422,15 @@ button span.label {
 }
 
 .componentEditorActions button:first-child {
+	border-right: 1px solid var(--toolbar-item-border);
+}
+
+.configurationEditorActions button {
+	flex-grow: 1;
+	cursor: pointer;
+}
+
+.configurationEditorActions button:first-child {
 	border-right: 1px solid var(--toolbar-item-border);
 }
 
@@ -449,6 +472,44 @@ button span.label {
 	padding: 0.1rem;
 }
 
+.tab-container {
+    display: flex;
+    height: calc(100% - 5rem);
+    margin: 1rem;
+}
+
+.tab-list {
+    display: flex;
+    flex-direction: column;
+    width: 12rem;
+    border-right: 1px solid var(--toolbar-item-border);
+    padding-right: 1rem;
+}
+
+.tab-content {
+    flex-grow: 1;
+    padding-left: 2rem;
+    overflow-y: auto;
+}
+
+.tab-panel {
+    display: none;
+    color: var(--color);
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.tab-panel h3 {
+    font-size: 1.6rem;
+    margin-top: 0;
+}
+
+.tab-panel p {
+    font-size: 1.4rem;
+}
+
 @media (hover:hover) {
 	button:hover, .button:hover {
 		opacity: 0.6;
@@ -456,6 +517,11 @@ button span.label {
 
 	button.menuItem:hover {
 		background: var(--component-hover);
+		opacity: 1;
+	}
+
+	.tab-button:hover {
+		background-color: var(--component-hover);
 		opacity: 1;
 	}
 
