@@ -34,17 +34,61 @@ export class ConfigurationController {
                 this.#switchType(type);
             });
         });
-        document.getElementById('defaultUserZoom').value = this.#config.userDefaultZoom ?? 0.5;
-        // document.getElementById('defaultWorkspaceZoom').value = this.#config.workspaceDefaultZoom ?? 0.5;
 
-        document.getElementById('defaultUserZoom').addEventListener('input', (ev) => {
-            this.#config.userDefaultZoom = parseFloat(ev.target.value);
-            this.#layoutController.workspace.scale.set(this.#config.userDefaultZoom);
+        this.#switchTab('general');
+        this.#switchType('user');
+
+        document.getElementById('defaultZoom').addEventListener('input', (ev) => {
+            // TODO: Check if the value is valid
+            const newZoom = parseFloat(ev.target.value);
+            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.userDefaultZoom = newZoom;
+            } else {
+                this.#config.workspaceDefaultZoom = newZoom;
+            }
+            this.#layoutController.workspace.scale.set(newZoom);
+            this.#layoutController.drawGrid();
+        });
+
+        document.getElementById('gridSize').addEventListener('input', (ev) => {
+            // TODO: Check if the value is valid
+            const newSetting = { size: parseInt(ev.target.value) * 16 };
+            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings(newSetting);
+            } else {
+                this.#config.updateWorkspaceGridSettings(newSetting);
+            }
+            this.#layoutController.drawGrid();
+        });
+
+        document.getElementById('gridSubdivisions').addEventListener('input', (ev) => {
+            // TODO: Check if the value is valid
+            const newSetting = { divisions: parseInt(ev.target.value) };
+            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings(newSetting);
+            } else {
+                this.#config.updateWorkspaceGridSettings(newSetting);
+            }
             this.#layoutController.drawGrid();
         });
 
         document.getElementById('gridMainColor').addEventListener('change', (ev) => {
-            // TODO: Grab color from color picker
+            const color = parseInt(ev.target.value.replace('#', ''), 16);
+            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings({ mainColor: color });
+            } else {
+                this.#config.updateWorkspaceGridSettings({ mainColor: color });
+            }
+            this.#layoutController.drawGrid();
+        });
+
+        document.getElementById('gridSubColor').addEventListener('change', (ev) => {
+            const color = parseInt(ev.target.value.replace('#', ''), 16);
+            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings({ subColor: color });
+            } else {
+                this.#config.updateWorkspaceGridSettings({ subColor: color });
+            }
             this.#layoutController.drawGrid();
         });
 
@@ -70,6 +114,11 @@ export class ConfigurationController {
         });*/
     }
 
+    /**
+     * 
+     * @private
+     * @param {'general'|'appearance'} tabId 
+     */
     #switchTab(tabId) {
         this.#tabButtons.forEach((button) => {
             button.classList.remove('active');
@@ -96,6 +145,16 @@ export class ConfigurationController {
         this.#tabPanels.forEach((panel) => {
             panel.setAttribute('data-type', configType);
         });
+
+        const gridSettings = configType === 'user' ? this.#config.userGridSettings : this.#config.workspaceGridSettings;
+        const zoom = configType === 'user' ? this.#config.userDefaultZoom : this.#config.workspaceDefaultZoom;
+        let mainColorValue = gridSettings.mainColor ?? this.#config._defaults.gridSettings.mainColor;
+        let subColorValue = gridSettings.subColor ?? this.#config._defaults.gridSettings.subColor;
+        document.getElementById('defaultZoom').value = zoom ?? this.#config._defaults.defaultZoom;
+        document.getElementById('gridSize').value = (gridSettings.size ?? this.#config._defaults.gridSettings.size) / 16;
+        document.getElementById('gridSubdivisions').value = gridSettings.divisions ?? this.#config._defaults.gridSettings.divisions;
+        document.getElementById('gridMainColor').value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
+        document.getElementById('gridSubColor').value = `#${subColorValue.toString(16).padStart(6, '0')}`;
     }
 
     /**
