@@ -1,5 +1,6 @@
 import { Pane, TabPageApi, ButtonApi } from '../tweakpane.js';
 import { Configuration } from '../model/configuration.js';
+import { LayoutController } from './layoutController.js';
 
 export class ConfigurationController {
     /** @type {Configuration} */
@@ -7,18 +8,44 @@ export class ConfigurationController {
     /** @type {Array<HTMLElement>} */
     #tabButtons;
     /** @type {Array<HTMLElement>} */
+    #typeButtons;
+    /** @type {Array<HTMLElement>} */
     #tabPanels;
+    /** @type {LayoutController} */
+    #layoutController;
 
     constructor() {
         this.#config = Configuration.getInstance();
         this.#tabButtons = document.querySelectorAll('.tab-button');
+        this.#typeButtons = document.querySelectorAll('.typeButton');
         this.#tabPanels = document.querySelectorAll('.tab-panel');
+        this.#layoutController = LayoutController.getInstance();
 
         this.#tabButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 const tabId = button.getAttribute('data-tab');
                 this.#switchTab(tabId);
             });
+        });
+
+        this.#typeButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const type = button.getAttribute('data-type');
+                this.#switchType(type);
+            });
+        });
+        document.getElementById('defaultUserZoom').value = this.#config.userDefaultZoom ?? 0.5;
+        // document.getElementById('defaultWorkspaceZoom').value = this.#config.workspaceDefaultZoom ?? 0.5;
+
+        document.getElementById('defaultUserZoom').addEventListener('input', (ev) => {
+            this.#config.userDefaultZoom = parseFloat(ev.target.value);
+            this.#layoutController.workspace.scale.set(this.#config.userDefaultZoom);
+            this.#layoutController.drawGrid();
+        });
+
+        document.getElementById('gridMainColor').addEventListener('change', (ev) => {
+            // TODO: Grab color from color picker
+            this.#layoutController.drawGrid();
         });
 
         // Create tabs for user and workspace settings
@@ -53,6 +80,22 @@ export class ConfigurationController {
 
         document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
         document.querySelector(`.tab-panel[data-tab="${tabId}"]`).classList.add('active');
+    }
+
+    /**
+     * Switches the configuration type between user and workspace
+     * @private
+     * @param {'user'|'workspace'} configType 
+     */
+    #switchType(configType) {
+        this.#typeButtons.forEach((button) => {
+            button.classList.remove('active');
+        });
+
+        document.querySelector(`.typeButton[data-type="${configType}"]`).classList.add('active');
+        this.#tabPanels.forEach((panel) => {
+            panel.setAttribute('data-type', configType);
+        });
     }
 
     /**

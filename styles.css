@@ -489,12 +489,13 @@ button span.label {
 .tab-content {
     flex-grow: 1;
     padding-left: 2rem;
-    overflow-y: auto;
 }
 
 .tab-panel {
     display: none;
     color: var(--color);
+	overflow-y: auto;
+	height: 100%;
 }
 
 .tab-panel.active {
@@ -508,6 +509,36 @@ button span.label {
 
 .tab-panel p {
     font-size: 1.4rem;
+}
+
+.typeSelector {
+	font-size: 0;
+	margin-bottom: 0.5rem;
+}
+
+.typeSelector .typeButton {
+	width: 50%;
+	border: 1px solid black;
+	background: var(--component-active);
+	color: black;
+	border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.typeSelector .typeButton:first-child {
+	border-right: none;
+	border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.typeButton.active {
+	background: #03a9f4;
+}
+
+.tab-panel[data-type=workspace] .userOnly {
+	display: none;
+}
+
+.tab-panel[data-type=user] .workspaceOnly {
+	display: none;
 }
 
 @media (hover:hover) {

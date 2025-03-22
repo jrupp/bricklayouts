@@ -40,6 +40,7 @@ let SerializedLayout;
 export { SerializedLayout };
 
 export class LayoutController {
+  static _instance = null;
 
   /**
    * @type {?Component}
@@ -75,9 +76,28 @@ export class LayoutController {
   static editorController = null;
 
   /**
+   * 
+   * @param {Application} [app] 
+   * @returns {LayoutController}
+   */
+  static getInstance(app = null) {
+    if (LayoutController._instance === null) {
+      if (app === null) {
+        throw new Error('LayoutController requires an Application instance to be passed to getInstance()');
+      }
+      LayoutController._instance = new LayoutController(app);
+    }
+    return LayoutController._instance;
+  }
+
+  /**
    * @param {Application} app
    */
   constructor(app) {
+    if (LayoutController._instance !== null) {
+      throw new Error('LayoutController is a singleton. Use getInstance() instead.');
+    }
+
     /**
      * @type {Application}
      */

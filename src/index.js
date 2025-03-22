@@ -21,6 +21,6 @@ function listenOnDevicePixelRatio() {
   ).addEventListener("change", onChange, { once: true });
 }
 listenOnDevicePixelRatio();
-const layoutController = new LayoutController(app);
+const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
 new ConfigurationController();
