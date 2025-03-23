@@ -1,5 +1,6 @@
 /**
  * @typedef {Object} GridSettings
+ * @property {boolean} enabled Whether the grid is enabled or not
  * @property {number} size The base size of the grid in pixels, 16 pixels per stud (1536 = 96 studs)
  * @property {number} divisions Number of subdivisions within each grid cell. If set to 1, no subdivisions are shown.
  * @property {number} mainColor The color of the main grid lines in hexadecimal (e.g. 0xffffff for white)
@@ -35,6 +36,7 @@ export class Configuration {
          */
         this._defaults = {
             gridSettings: {
+                enabled: true,
                 size: 1536,
                 divisions: 3,
                 mainColor: 0xffffff,
@@ -88,6 +90,27 @@ export class Configuration {
     }
 
     /**
+     * Serializes workspace settings for storage in layout files
+     * @returns {string} The serialized workspace settings
+     */
+    serializeWorkspaceSettings() {
+        let settings = {};
+        if (this._workspaceSettings.defaultZoom !== null) {
+            settings.defaultZoom = this._workspaceSettings.defaultZoom;
+        }
+        if (Object.keys(this._workspaceSettings.gridSettings).length > 0) {
+            settings.gridSettings = this._workspaceSettings.gridSettings;
+            if (settings.gridSettings.hasOwnProperty('mainColor')) {
+                settings.gridSettings.mainColor = `#${settings.gridSettings.mainColor.toString(16)}`;
+            }
+            if (settings.gridSettings.hasOwnProperty('subColor')) {
+                settings.gridSettings.subColor = `#${settings.gridSettings.subColor.toString(16)}`;
+            }
+        }
+        return JSON.stringify(settings);
+    }
+
+    /**
      * Gets the effective value by checking workspace, user, and default settings in order
      * @private
      * @template T
@@ -112,6 +135,7 @@ export class Configuration {
      */
     get gridSettings() {
         return {
+            enabled: this._getEffectiveValue('gridSettings', 'enabled'),
             size: this._getEffectiveValue('gridSettings', 'size'),
             divisions: this._getEffectiveValue('gridSettings', 'divisions'),
             mainColor: this._getEffectiveValue('gridSettings', 'mainColor'),

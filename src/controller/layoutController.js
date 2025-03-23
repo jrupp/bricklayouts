@@ -238,6 +238,7 @@ export class LayoutController {
       document.getElementById('configurationEditor').classList.add('hidden');
     });
     document.getElementById('configurationEditorSave').addEventListener('click', () => {
+      console.log(this.config.serializeWorkspaceSettings());
       document.getElementById('configurationEditor').classList.add('hidden');
     });
     document.getElementById('configurationEditorCancel').addEventListener('click', () => {
@@ -727,7 +728,14 @@ export class LayoutController {
   drawGrid() {
     let grid = this.grid;
     let subGrid = this.subGrid;
-    const originalGridSize = 1536;
+    subGrid.clear();
+    grid.clear();
+
+    if (!this.config.gridSettings.enabled) {
+      return;
+    }
+
+    const originalGridSize = this.config.gridSettings.size; // 1536
     const originalGridDivisions = this.config.gridSettings.divisions;
     let gridSize = originalGridSize * this.workspace.scale.x;
     let gridWidth = this.app.screen.width;
@@ -735,8 +743,7 @@ export class LayoutController {
     let xOffset = this.workspace.x % gridSize;
     let yOffset = this.workspace.y % gridSize;
     let divisionSize = gridSize / originalGridDivisions;
-    subGrid.clear();
-    grid.clear();
+
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
       grid.moveTo(i + xOffset, 0);
       grid.lineTo(i + xOffset, gridHeight);

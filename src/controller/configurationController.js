@@ -50,10 +50,20 @@ export class ConfigurationController {
             this.#layoutController.drawGrid();
         });
 
+        document.getElementById('gridEnabled').addEventListener('change', (ev) => {
+            const newSetting = { enabled: ev.target.checked };
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings(newSetting);
+            } else {
+                this.#config.updateWorkspaceGridSettings(newSetting);
+            }
+            this.#layoutController.drawGrid();
+        });
+
         document.getElementById('gridSize').addEventListener('input', (ev) => {
             // TODO: Check if the value is valid
             const newSetting = { size: parseInt(ev.target.value) * 16 };
-            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings(newSetting);
             } else {
                 this.#config.updateWorkspaceGridSettings(newSetting);
@@ -151,6 +161,7 @@ export class ConfigurationController {
         let mainColorValue = gridSettings.mainColor ?? this.#config._defaults.gridSettings.mainColor;
         let subColorValue = gridSettings.subColor ?? this.#config._defaults.gridSettings.subColor;
         document.getElementById('defaultZoom').value = zoom ?? this.#config._defaults.defaultZoom;
+        document.getElementById('gridEnabled').checked = gridSettings.enabled ?? this.#config._defaults.gridSettings.enabled;
         document.getElementById('gridSize').value = (gridSettings.size ?? this.#config._defaults.gridSettings.size) / 16;
         document.getElementById('gridSubdivisions').value = gridSettings.divisions ?? this.#config._defaults.gridSettings.divisions;
         document.getElementById('gridMainColor').value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
