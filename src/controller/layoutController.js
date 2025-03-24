@@ -231,19 +231,6 @@ export class LayoutController {
         target.dispatchEvent(newEvent);
       }
     });
-    document.getElementById('buttonConfig').addEventListener('click', () => {
-      this.hideFileMenu();
-      document.getElementById('configurationEditor').classList.toggle('hidden');
-    });
-    document.getElementById('configurationEditorClose').addEventListener('click', () => {
-      document.getElementById('configurationEditor').classList.add('hidden');
-    });
-    document.getElementById('configurationEditorSave').addEventListener('click', () => {
-      document.getElementById('configurationEditor').classList.add('hidden');
-    });
-    document.getElementById('configurationEditorCancel').addEventListener('click', () => {
-      document.getElementById('configurationEditor').classList.add('hidden');
-    });
   }
 
   async init() {
@@ -548,7 +535,6 @@ export class LayoutController {
     this.reset();
     this.config.deserializeWorkspaceSettings(data.config);
     this.drawGrid();
-    // TODO: Tell ConfigurationController to update the UI
     data.layers.forEach((layer, index) => {
       if (index > 0) {
         this.newLayer();

@@ -21,6 +21,23 @@ export class ConfigurationController {
         this.#tabPanels = document.querySelectorAll('.tab-panel');
         this.#layoutController = LayoutController.getInstance();
 
+        document.getElementById('buttonConfig').addEventListener('click', () => {
+            this.#layoutController.hideFileMenu();
+            document.getElementById('configurationEditor').classList.toggle('hidden');
+            // Reload the data into the UI, in case something has changed
+            const configType = this.#tabPanels[0].getAttribute('data-type');
+            this.#switchType(configType);
+        });
+        document.getElementById('configurationEditorClose').addEventListener('click', () => {
+            document.getElementById('configurationEditor').classList.add('hidden');
+        });
+        document.getElementById('configurationEditorSave').addEventListener('click', () => {
+            document.getElementById('configurationEditor').classList.add('hidden');
+        });
+        document.getElementById('configurationEditorCancel').addEventListener('click', () => {
+            document.getElementById('configurationEditor').classList.add('hidden');
+        });
+
         this.#tabButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 const tabId = button.getAttribute('data-tab');
