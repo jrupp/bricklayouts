@@ -1,7 +1,7 @@
 import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component } from '../model/component.js';
-import { Configuration } from '../model/configuration.js';
+import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
@@ -35,6 +35,7 @@ export { TrackData };
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
+ * @property {SerializedConfiguration} config The configuration settings for the layout.
  */
 let SerializedLayout;
 export { SerializedLayout };
@@ -238,7 +239,6 @@ export class LayoutController {
       document.getElementById('configurationEditor').classList.add('hidden');
     });
     document.getElementById('configurationEditorSave').addEventListener('click', () => {
-      console.log(this.config.serializeWorkspaceSettings());
       document.getElementById('configurationEditor').classList.add('hidden');
     });
     document.getElementById('configurationEditorCancel').addEventListener('click', () => {
@@ -413,7 +413,8 @@ export class LayoutController {
     const layout = {
       version: 1,
       date: Date.now(),
-      layers: this.layers.map((layer) => layer.serialize())
+      layers: this.layers.map((layer) => layer.serialize()),
+      config: this.config.serializeWorkspaceSettings()
     };
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
     saveAs(blob, 'layout.json');
@@ -545,6 +546,9 @@ export class LayoutController {
    */
   _importLayout(data) {
     this.reset();
+    this.config.deserializeWorkspaceSettings(data.config);
+    this.drawGrid();
+    // TODO: Tell ConfigurationController to update the UI
     data.layers.forEach((layer, index) => {
       if (index > 0) {
         this.newLayer();
@@ -576,6 +580,9 @@ export class LayoutController {
       return false;
     }
     // TODO: Add validation that checks every component in every layer to see if the `type` can't be found in the manifest
+    if (data.hasOwnProperty('config') && Configuration.validateImportData(data.config) === false) {
+      return false;
+    }
     return data.layers.every(layer => LayoutLayer._validateImportData(layer));
   }
 
