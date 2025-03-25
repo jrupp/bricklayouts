@@ -31,7 +31,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
-        const layoutController = new LayoutController(app);
+        const layoutController = LayoutController.getInstance(app);
         window.layoutController = layoutController;
         return layoutController.init();
     });

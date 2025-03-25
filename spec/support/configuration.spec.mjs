@@ -8,6 +8,11 @@ describe("Configuration", () => {
         localStorage.clear();
     });
 
+    afterAll(() => {
+        // Clear localStorage after all tests
+        localStorage.clear();
+    });
+
     describe("Singleton Pattern", () => {
         it("creates only one instance", () => {
             const config1 = Configuration.getInstance();
@@ -27,6 +32,7 @@ describe("Configuration", () => {
         it("provides default grid settings", () => {
             const config = Configuration.getInstance();
             expect(config.gridSettings).toEqual({
+                enabled: true,
                 size: 1536,
                 divisions: 3,
                 mainColor: 0xffffff,
