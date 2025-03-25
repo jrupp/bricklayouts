@@ -448,6 +448,7 @@ button span.label {
 .menuItem > span {
 	font-size: 1.5rem;
 	vertical-align: middle;
+	color: var(--color);
 	padding-left: 0.5rem;
 }
 
