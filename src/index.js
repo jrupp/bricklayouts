@@ -1,3 +1,4 @@
+import { ConfigurationController } from './controller/configurationController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { Application, Assets } from './pixi.mjs';
 
@@ -20,5 +21,6 @@ function listenOnDevicePixelRatio() {
   ).addEventListener("change", onChange, { once: true });
 }
 listenOnDevicePixelRatio();
-const layoutController = new LayoutController(app);
+const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
+new ConfigurationController();

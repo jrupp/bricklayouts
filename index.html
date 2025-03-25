@@ -13,19 +13,43 @@
     <div id="canvasContainer">
     </div>
     <div id="toolbar">
-        <button id="buttonDownload" class="toolbarItem" title="Download layout">
-            <img class="icon" src="img/icon-save-black.png" alt="Download layout">
-        </button>
-        <button id="buttonImport" class="toolbarItem" title="Open layout file">
-            <img class="icon" src="img/icon-open-black.png" alt="Open layout file">
-        </button>
-        <button id="buttonRemove" class="toolbarItem" title="Delete component">
-            <img class="icon" src="img/icon-delete-black.png" alt="Delete component">
-        </button>
-        <button id="buttonRotate" class="toolbarItem" title="Rotate component (R)">
-            <img class="icon" src="img/icon-rotate-black.png" alt="Rotate component (R)">
-        </button>
+        <div class="mainbar">
+            <button id="buttonMenu" class="toolbarItem" title="Open File Menu">
+                <img class="icon" src="img/icon-menu-black.png" alt="Open File Menu">
+            </button>
+            <button id="buttonConfig" class="toolbarItem" title="Configuration">
+                <img class="icon" src="img/icon-gear-black.png" alt="Configuration">
+            </button>
+            <button id="buttonRemove" class="toolbarItem" title="Delete component">
+                <img class="icon" src="img/icon-delete-black.png" alt="Delete component">
+            </button>
+            <button id="buttonRotate" class="toolbarItem" title="Rotate component (R)">
+                <img class="icon" src="img/icon-rotate-black.png" alt="Rotate component (R)">
+            </button>
+        </div>
+        <div class="menuDivider"></div>
+        <div>
+            <div>
+                <button id="buttonDownload" class="menuItem" title="Download layout">
+                    <img class="icon" src="img/icon-save-black.png" alt="Download layout">
+                    <span>Download Layout</span>
+                </button>
+            </div>
+            <div>
+                <button id="buttonImport" class="menuItem" title="Open layout file">
+                    <img class="icon" src="img/icon-open-black.png" alt="Open layout file">
+                    <span>Open Layout</span>
+                </button>
+            </div>
+            <div>
+                <button id="buttonExport" class="menuItem" title="Export layout as image">
+                    <img class="icon" src="img/icon-save-black.png" alt="Export layout as image">
+                    <span>Export Image</span>
+                </button>
+            </div>
+        </div>
     </div>
+    <div id="outsideMenu" class="outsideMenu">&nbsp;</div>
     <div id="darkMode-container">
         <button class="toggle" id="darktoggle" aria-pressed="false" title="Toggle Dark Mode">
             <span class="toggle__content">
@@ -302,6 +326,48 @@
                     <input type="number" id="connectionMagnitude" value="0.0000" readonly>
                     <input type="checkbox" id="connectionMagnitudeLock" checked>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div id="configurationEditor" class="hidden">
+        <div id="configurationEditorHeader">
+            <span class="componentEditorTitle">Configuration</span>
+            <span id="configurationEditorClose" class="componentEditorTitle componentEditorTitleButton">X</span>
+        </div>
+        <div id="configurationEditorContent">
+            <div class="tab-container">
+                <div class="tab-list">
+                    <button class="tab-button active" data-tab="general">General</button>
+                    <button class="tab-button" data-tab="appearance">Appearance</button>
+                </div>
+                <div class="tab-content">
+                    <div class="typeSelector">
+                        <button class="typeButton active" data-type="user">User</button>
+                        <button class="typeButton" data-type="workspace">Workspace</button>
+                    </div>
+                    <div class="tab-panel active" data-tab="general">
+                        <h3>General Settings</h3>
+                        <p>General configuration options will go here.</p>
+                        <label for="defaultZoom">Default Zoom Level</label>
+                        <input type="range" id="defaultZoom" min="0.1" max="1" value="0.5" step="0.1">
+                    </div>
+                    <div class="tab-panel" data-tab="appearance">
+                        <h3>Appearance Settings</h3>
+                        <p><label for="gridEnabled">Enable Grid?</label><input type="checkbox" id="gridEnabled"></p>
+                        <p><label for="gridSize">Grid Size (in studs)</label>
+                        <input type="range" id="gridSize" min="8" max="192" value="96" step="8"></p>
+                        <label for="gridSubdivisions">Grid Subdivisions</label>
+                        <input type="range" id="gridSubdivisions" min="1" max="8" value="3" step="1"><br>
+                        <label for="gridMainColor">Grid Color</label>
+                        <input type="color" id="gridMainColor" value="#ffffff"><br>
+                        <label for="gridSubColor">Grid Sub Color</label>
+                        <input type="color" id="gridSubColor" value="#9c9c9c"><br>
+                    </div>
+                </div>
+            </div>
+            <div class="configurationEditorActions">
+                <button id="configurationEditorSave">Save</button>
+                <button id="configurationEditorCancel">Cancel</button>
             </div>
         </div>
     </div>

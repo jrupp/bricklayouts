@@ -1,6 +1,7 @@
 import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component } from '../model/component.js';
+import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
@@ -34,11 +35,13 @@ export { TrackData };
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
+ * @property {SerializedConfiguration} config The configuration settings for the layout.
  */
 let SerializedLayout;
 export { SerializedLayout };
 
 export class LayoutController {
+  static _instance = null;
 
   /**
    * @type {?Component}
@@ -74,9 +77,28 @@ export class LayoutController {
   static editorController = null;
 
   /**
+   * 
+   * @param {Application} [app] 
+   * @returns {LayoutController}
+   */
+  static getInstance(app = null) {
+    if (LayoutController._instance === null) {
+      if (app === null) {
+        throw new Error('LayoutController requires an Application instance to be passed to getInstance()');
+      }
+      LayoutController._instance = new LayoutController(app);
+    }
+    return LayoutController._instance;
+  }
+
+  /**
    * @param {Application} app
    */
   constructor(app) {
+    if (LayoutController._instance !== null) {
+      throw new Error('LayoutController is a singleton. Use getInstance() instead.');
+    }
+
     /**
      * @type {Application}
      */
@@ -113,13 +135,27 @@ export class LayoutController {
      * @type {Graphics}
      */
     this.grid = new Graphics();
+
+    /**
+     * The subgrid
+     * @type {Graphics}
+     */
+    this.subGrid = new Graphics();
+
+    app.stage.addChild(this.subGrid);
     app.stage.addChild(this.grid);
+
+    /**
+     * App configuration
+     * @type {Configuration}
+     */
+    this.config = Configuration.getInstance();
 
     /**
      * @type {Container}
      */
     this.workspace = new Container();
-    this.workspace.scale.set(0.5);
+    this.workspace.scale.set(this.config.defaultZoom);
     app.stage.addChild(this.workspace);
 
     /**
@@ -171,11 +207,30 @@ export class LayoutController {
       this.searchElement.classList.remove('hasInput');
       this.createComponentBrowser();
     });
-    document.getElementById('buttonRotate').addEventListener('click', LayoutController.rotateSelectedComponent);
-    document.getElementById('buttonRemove').addEventListener('click', LayoutController.deleteSelectedComponent);
+    document.getElementById('buttonRotate').addEventListener('click', this.rotateSelectedComponent.bind(this));
+    document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
+    document.getElementById('buttonMenu').addEventListener('click', () => {
+      document.getElementById('toolbar').classList.toggle('open');
+    });
+    document.getElementById('outsideMenu').addEventListener('click', /** @param {MouseEvent} event */ (event) => {
+      this.hideFileMenu();
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      if (target) {
+        let newPointerEvent = new PointerEvent('pointerdown', event);
+        target.dispatchEvent(newPointerEvent);
+        let newEvent = new MouseEvent('mousedown', event);
+        target.dispatchEvent(newEvent);
+        newPointerEvent = new PointerEvent('pointerup', event);
+        target.dispatchEvent(newPointerEvent);
+        newEvent = new MouseEvent('mouseup', event);
+        target.dispatchEvent(newEvent);
+        newEvent = new MouseEvent('click', event);
+        target.dispatchEvent(newEvent);
+      }
+    });
   }
 
   async init() {
@@ -320,11 +375,13 @@ export class LayoutController {
    */
   reset() {
     Connection.connectionDB.clear();
+    this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
     this.layers = [];
     this.currentLayer = null;
     this.workspace.position.set(0, 0);
-    this.workspace.scale.set(0.5);
+    this.config.clearWorkspaceSettings();
+    this.workspace.scale.set(this.config.defaultZoom);
     this.drawGrid();
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
@@ -343,10 +400,12 @@ export class LayoutController {
     const layout = {
       version: 1,
       date: Date.now(),
-      layers: this.layers.map((layer) => layer.serialize())
+      layers: this.layers.map((layer) => layer.serialize()),
+      config: this.config.serializeWorkspaceSettings()
     };
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
     saveAs(blob, 'layout.json');
+    this.hideFileMenu();
   }
 
   /**
@@ -354,19 +413,20 @@ export class LayoutController {
    * @param {KeyboardEvent} event - The keydown event
    */
   onKeyDown(event) {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       if (event.key === 'Delete') {
-        LayoutController.deleteSelectedComponent();
+        this.deleteSelectedComponent();
       }
       if (event.key === 'Escape') {
         LayoutController.selectComponent(null);
       }
       if (event.key === 'r') {
-        LayoutController.rotateSelectedComponent();
+        this.rotateSelectedComponent();
       }
     }
     if (event.key === '0' && event.ctrlKey) {
-      this.workspace.scale.set(0.5);
+      this.workspace.scale.set(this.config.defaultZoom);
       this.workspace.position.set(0, 0);
       this.drawGrid();
     }
@@ -473,6 +533,10 @@ export class LayoutController {
    */
   _importLayout(data) {
     this.reset();
+    if (data.config) {
+      this.config.deserializeWorkspaceSettings(data.config);
+      this.drawGrid();
+    }
     data.layers.forEach((layer, index) => {
       if (index > 0) {
         this.newLayer();
@@ -504,6 +568,9 @@ export class LayoutController {
       return false;
     }
     // TODO: Add validation that checks every component in every layer to see if the `type` can't be found in the manifest
+    if (data.hasOwnProperty('config') && Configuration.validateImportData(data.config) === false) {
+      return false;
+    }
     return data.layers.every(layer => LayoutLayer._validateImportData(layer));
   }
 
@@ -635,7 +702,8 @@ export class LayoutController {
     component = null;
   }
   
-  static deleteSelectedComponent() {
+  deleteSelectedComponent() {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       let nextComp = LayoutController.selectedComponent.getAdjacentComponent();
       LayoutController.deleteComponent(LayoutController.selectedComponent);
@@ -645,7 +713,8 @@ export class LayoutController {
     }
   }
 
-  static rotateSelectedComponent() {
+  rotateSelectedComponent() {
+    this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.rotate();
     }
@@ -653,20 +722,49 @@ export class LayoutController {
 
   drawGrid() {
     let grid = this.grid;
-    let gridSize = 512 * this.workspace.scale.x;
+    let subGrid = this.subGrid;
+    subGrid.clear();
+    grid.clear();
+
+    if (!this.config.gridSettings.enabled) {
+      return;
+    }
+
+    const originalGridSize = this.config.gridSettings.size; // 1536
+    const originalGridDivisions = this.config.gridSettings.divisions;
+    let gridSize = originalGridSize * this.workspace.scale.x;
     let gridWidth = this.app.screen.width;
     let gridHeight = this.app.screen.height;
     let xOffset = this.workspace.x % gridSize;
     let yOffset = this.workspace.y % gridSize;
-    grid.clear();
+    let divisionSize = gridSize / originalGridDivisions;
+
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
       grid.moveTo(i + xOffset, 0);
       grid.lineTo(i + xOffset, gridHeight);
+      for (let j = 1; j < originalGridDivisions; j++) {
+        subGrid.moveTo(i + xOffset + j * divisionSize, 0);
+        subGrid.lineTo(i + xOffset + j * divisionSize, gridHeight);
+      }
     }
     for (let i = 0; i < gridHeight + gridSize; i += gridSize) {
       grid.moveTo(0, i + yOffset);
       grid.lineTo(gridWidth, i + yOffset);
+      for (let j = 1; j < originalGridDivisions; j++) {
+        subGrid.moveTo(0, i + yOffset + j * divisionSize);
+        subGrid.lineTo(gridWidth, i + yOffset + j * divisionSize);
+      }
     }
-    this.grid.stroke({ color: 0xffffff, pixelLine: true, width: 1 });
+    this.grid.stroke({ color: this.config.gridSettings.mainColor, pixelLine: true, width: 1 });
+    if (originalGridDivisions > 1) {
+      this.subGrid.stroke({ color: this.config.gridSettings.subColor, pixelLine: true, width: 1 });
+    }
+  }
+
+  /**
+   * Hide the file menu.
+   */
+  hideFileMenu() {
+    document.getElementById('toolbar')?.classList.remove('open');
   }
 }

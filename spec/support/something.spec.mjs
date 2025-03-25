@@ -24,7 +24,14 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonRemove').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('button'));
-        const layoutController = new LayoutController(app);
+        geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('outsideMenu').and.returnValue(document.createElement('div'));
+        geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
+        const layoutController = LayoutController.getInstance(app);
         window.layoutController = layoutController;
         return layoutController.init();
     });
@@ -127,7 +134,7 @@ describe("LayoutController", function() {
             LayoutController.selectComponent(midComp);
             layoutController.addComponent(trackData, true);
             LayoutController.selectComponent(midComp);
-            LayoutController.deleteSelectedComponent();
+            layoutController.deleteSelectedComponent();
             midComp = undefined;
             LayoutController.selectComponent(firstComp);
             layoutController.addComponent(trackData, true);
