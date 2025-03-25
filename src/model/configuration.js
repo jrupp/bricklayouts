@@ -31,6 +31,10 @@ export { SerializedConfiguration };
 export class Configuration {
     static _instance = null;
 
+    /**
+     * Gets the singleton instance of Configuration
+     * @returns {Configuration} The singleton instance
+     */
     static getInstance() {
         if (Configuration._instance === null) {
             Configuration._instance = new Configuration();
