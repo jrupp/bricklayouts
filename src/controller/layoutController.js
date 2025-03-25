@@ -533,8 +533,10 @@ export class LayoutController {
    */
   _importLayout(data) {
     this.reset();
-    this.config.deserializeWorkspaceSettings(data.config);
-    this.drawGrid();
+    if (data.config) {
+      this.config.deserializeWorkspaceSettings(data.config);
+      this.drawGrid();
+    }
     data.layers.forEach((layer, index) => {
       if (index > 0) {
         this.newLayer();
