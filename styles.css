@@ -512,6 +512,10 @@ button span.label {
     font-size: 1.4rem;
 }
 
+.tab-panel label {
+	font-size: 1.4rem;
+}
+
 .typeSelector {
 	font-size: 0;
 	margin-bottom: 0.5rem;
@@ -540,6 +544,10 @@ button span.label {
 
 .tab-panel[data-type=user] .workspaceOnly {
 	display: none;
+}
+
+.beer input {
+	margin-left: 1rem;
 }
 
 @media (hover:hover) {

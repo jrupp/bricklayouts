@@ -6,8 +6,11 @@
     <title>BrickLayouts</title>
     <link rel="stylesheet" href="browserReset.css">
     <script src="src/slip.js"></script>
+    <link href="beer.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="darkmode.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.9.7/dist/cdn/beer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"></script>
 </head>
 <body>
     <div id="canvasContainer">
@@ -353,7 +356,7 @@
                     </div>
                     <div class="tab-panel" data-tab="appearance">
                         <h3>Appearance Settings</h3>
-                        <p><label for="gridEnabled">Enable Grid?</label><input type="checkbox" id="gridEnabled"></p>
+                        <p class="beer"><label for="gridEnabled" class="switch">Enable Grid?<input type="checkbox" id="gridEnabled"><span></span></label></p>
                         <p><label for="gridSize">Grid Size (in studs)</label>
                         <input type="range" id="gridSize" min="8" max="192" value="96" step="8"></p>
                         <label for="gridSubdivisions">Grid Subdivisions</label>
