@@ -548,6 +548,8 @@ button span.label {
 
 .beer input {
 	margin-left: 1rem;
+	-webkit-appearance: none;
+	appearance: none;
 }
 
 @media (hover:hover) {
