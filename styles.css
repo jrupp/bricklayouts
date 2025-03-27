@@ -552,6 +552,10 @@ button span.label {
 	appearance: none;
 }
 
+.beer .switch > span:before {
+	z-index: 1001;
+}
+
 @media (hover:hover) {
 	button:hover, .button:hover {
 		opacity: 0.6;
