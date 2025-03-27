@@ -548,12 +548,12 @@ button span.label {
 
 .beer input {
 	margin-left: 1rem;
-	-webkit-appearance: none;
-	appearance: none;
+	-webkit-appearance: auto;
+	appearance: auto;
 }
 
 .beer .switch > span:before {
-	z-index: 1001;
+	z-index: 1002;
 }
 
 @media (hover:hover) {
