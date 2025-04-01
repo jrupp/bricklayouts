@@ -256,9 +256,14 @@
         <div style="display: flex; flex-direction: row;">
             <select id="categories">
             </select>
-            <input type="text" class="search" id="searchText" placeholder="Search...">
+            <div class="field border small fill search">
+                <input type="text" id="searchText" placeholder="Search...">
+                <i class="searchIcon">search</i>
+                <i id="searchClearButton" class="searchClear">close</i>
+            </div>
+            <!--<input type="text" class="search" id="searchText" placeholder="Search...">
             <span class="searchIcon"></span>
-            <span class="searchClear" id="searchClearButton"></span>
+            <span class="searchClear" id="searchClearButton"></span>-->
         </div>
         <div class="componentBrowser" id="componentBrowser"></div>
     </div>

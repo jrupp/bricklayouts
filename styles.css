@@ -56,6 +56,7 @@ canvas {
 
 #toolbar {
 	position: fixed;
+	box-sizing: content-box;
 	top: 10px;
 	left: 10px;
 	padding: 1px 1px;
@@ -116,6 +117,81 @@ canvas {
 	min-height: 6.3rem;
 	max-height: 50%;
 	min-width: 32rem;
+	--primary:#006494;
+	--on-primary:#ffffff;
+	--primary-container:#cbe6ff;
+	--on-primary-container:#001e30;
+	--secondary:#50606f;
+	--on-secondary:#ffffff;
+	--secondary-container:#d3e5f6;
+	--on-secondary-container:#0c1d29;
+	--tertiary:#65587b;
+	--on-tertiary:#ffffff;
+	--tertiary-container:#ebdcff;
+	--on-tertiary-container:#211634;
+	--error:#ba1a1a;
+	--on-error:#ffffff;
+	--error-container:#ffdad6;
+	--on-error-container:#410002;
+	--background:#fcfcff;
+	--on-background:#1a1c1e;
+	--surface:#f9f9fc;
+	--on-surface:#1a1c1e;
+	--surface-variant:#dde3ea;
+	--on-surface-variant:#41474d;
+	--outline:#72787e;
+	--outline-variant:#c1c7ce;
+	--shadow:#000000;
+	--scrim:#000000;
+	--inverse-surface:#2e3133;
+	--inverse-on-surface:#f0f0f3;
+	--inverse-primary:#8ecdff;
+	--surface-dim:#d9dadd;
+	--surface-bright:#f9f9fc;
+	--surface-container-lowest:#ffffff;
+	--surface-container-low:#f3f3f6;
+	--surface-container:#edeef1;
+	--surface-container-high:#e8e8eb;
+	--surface-container-highest:#e2e2e5;
+}
+
+[data-dark-mode=true] #componentMenu {
+	--primary:#8ecdff;
+	--on-primary:#00344f;
+	--primary-container:#004b70;
+	--on-primary-container:#cbe6ff;
+	--secondary:#b8c8d9;
+	--on-secondary:#22323f;
+	--secondary-container:#394956;
+	--on-secondary-container:#d3e5f6;
+	--tertiary:#d0c0e8;
+	--on-tertiary:#362b4a;
+	--tertiary-container:#4d4162;
+	--on-tertiary-container:#ebdcff;
+	--error:#ffb4ab;
+	--on-error:#690005;
+	--error-container:#93000a;
+	--on-error-container:#ffb4ab;
+	--background:#1a1c1e;
+	--on-background:#e2e2e5;
+	--surface:#111416;
+	--on-surface:#e2e2e5;
+	--surface-variant:#41474d;
+	--on-surface-variant:#c1c7ce;
+	--outline:#8b9198;
+	--outline-variant:#41474d;
+	--shadow:#000000;
+	--scrim:#000000;
+	--inverse-surface:#e2e2e5;
+	--inverse-on-surface:#2e3133;
+	--inverse-primary:#006494;
+	--surface-dim:#111416;
+	--surface-bright:#37393c;
+	--surface-container-lowest:#0c0e11;
+	--surface-container-low:#1a1c1e;
+	--surface-container:#1e2022;
+	--surface-container-high:#282a2d;
+	--surface-container-highest:#333537;
 }
 
 #componentEditor {
@@ -334,6 +410,8 @@ canvas {
 	width: 5rem;
 	height: 5rem;
 	padding: 1rem;
+	margin: 0;
+	box-sizing: border-box;
 }
 
 .mainbar > .toolbarItem:nth-child(n+2) {
@@ -344,6 +422,9 @@ canvas {
 .toolbarItem img.icon {
 	max-height: 100%;
 	max-height: 100%;
+	max-inline-size: none;
+	margin: 0;
+	max-block-size: 100%;
 	width: auto;
 	height: auto;
 }
@@ -352,12 +433,18 @@ canvas {
 	height: 5rem;
 	padding: 1rem;
 	width: 100%;
+	box-sizing: border-box;
+	margin: 0;
+	font-size: revert;
 	border-radius: 0.5rem;
 	text-align: left;
 }
 
 .menuItem img.icon {
 	max-height: 3rem;
+	max-inline-size: none;
+	max-block-size: 100%;
+	margin: 0;
 	width: auto;
 	height: auto;
 	vertical-align: middle;
@@ -401,6 +488,20 @@ button:active {
 
 .tab-button.active {
     background-color: var(--component-active);
+}
+
+#darkMode-container button {
+	block-size: 100%;
+	margin: 0;
+}
+
+#darktoggle:after {
+	opacity: 1;
+}
+
+#darktoggle:is(:focus-visible, :hover):after {
+	opacity: 1;
+	background-size: 100%;
 }
 
 #darkMode-container button:active {
@@ -468,9 +569,11 @@ button span.label {
 }
 
 .componentBrowser>button {
+	box-sizing: border-box;
 	width: 4rem;
 	height: 4rem;
 	padding: 0.1rem;
+	margin: 0;
 }
 
 .tab-container {
@@ -590,44 +693,38 @@ button span.label {
 	width: 50%;
 }
 
-.search {
-	width: 50%;
-	padding-right: 1.5rem;
+#searchText {
+	font-size: revert;
+	padding-left: 0.5rem;
 }
 
-.searchIcon:before {
-	content: "🔍︎"
+#searchText:focus {
+	padding-left: 0.5rem;
+}
+
+.search {
+	width: 50%;
+	margin: 0;
+}
+
+#searchText ~ i {
+	inset: 50% 0.5rem auto auto;
 }
 
 .searchIcon {
-	text-rendering: auto;
-	font-size: 110%;
-	line-height: 2rem;
-	width: 0;
-	display: block;
-	position: relative;
-	left: -1.375rem;
-	pointer-events: none;
-	z-index: 2;
+	display: flex;
 }
 
-.searchClear:before {
-	content: "X"
+#searchClearButton {
+	z-index: 2;
 }
 
 .searchClear {
-	text-rendering: auto;
-	font-size: 110%;
-	line-height: 2rem;
-	width: 0;
 	display: none;
-	position: relative;
-	left: -1.375rem;
-	z-index: 2;
 }
 
 .hasInput ~ .searchClear {
-	display: block;
+	display: flex;
 }
 
 .hasInput ~ .searchIcon {
