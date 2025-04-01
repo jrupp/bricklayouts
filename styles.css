@@ -117,6 +117,10 @@ canvas {
 	min-height: 6.3rem;
 	max-height: 50%;
 	min-width: 32rem;
+}
+
+#componentMenu,
+#configurationEditor {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -155,7 +159,8 @@ canvas {
 	--surface-container-highest:#e2e2e5;
 }
 
-[data-dark-mode=true] #componentMenu {
+[data-dark-mode=true] #componentMenu,
+[data-dark-mode=true] #configurationEditor {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;
@@ -176,8 +181,8 @@ canvas {
 	--on-background:#e2e2e5;
 	--surface:#111416;
 	--on-surface:#e2e2e5;
-	--surface-variant:#41474d;
-	--on-surface-variant:#c1c7ce;
+	--surface-variant:#3b3b3b; /* 41474d */
+	--on-surface-variant:#ffffff; /* c1c7ce */
 	--outline:#8b9198;
 	--outline-variant:#41474d;
 	--shadow:#000000;
@@ -468,7 +473,7 @@ button{
 
 .button:focus-visible,
 button:focus-visible {
-	outline: none;
+	outline: none !important;
 }
 
 .button:active,
@@ -689,8 +694,18 @@ button span.label {
 	opacity: 1;
 }
 
-#categories {
+#categoryDiv {
 	width: 50%;
+	margin: 0;
+}
+
+#categories {
+	font-size: revert;
+	padding-left: 0.5rem;
+}
+
+#categories ~ i {
+	inset: 45% 0.5rem auto auto;
 }
 
 #searchText {
