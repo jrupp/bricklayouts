@@ -372,22 +372,44 @@ canvas {
 	border-top: 1px solid var(--toolbar-item-border);
 }
 
-#configurationEditor {
-	position: fixed;
-	top: calc(5rem + 20px);
-	left: calc(5rem + 16px);
-	background-color: var(--bg);
-	transition: background var(--speed) var(--easing);
-	border: 1px solid black;
-	border-radius: 0.5rem;
-	z-index: 1000;
-	min-height: 32rem;
-	max-height: 50%;
-	min-width: 20rem;
+.slider.auto-width {
+	inline-size: auto;
 }
 
-#configurationEditor.hidden {
-	display: none;
+#configurationEditor {
+	max-width: calc(100% - 5rem - 16px);
+	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
+}
+
+#colorfield *,
+#subcolorfield * {
+  cursor: pointer;
+}
+
+#colorfield>i,
+#subcolorfield>i {
+  inline-size: var(---size);
+  block-size: var(---size);
+  padding-bottom: 1px;
+}
+
+#colorfield>i:after,
+#subcolorfield>i:after {
+  border: 1px solid transparent;
+  content: "";
+  display: block;
+  height: 1px;
+  inset: 88% 0 0 3%;
+  position: absolute;
+  width: 80%;
+}
+
+#colorfield>i:after {
+  background: var(--gridcolor);
+}
+
+#subcolorfield>i:after {
+  background: var(--gridsubcolor);
 }
 
 #configurationEditorHeader {
