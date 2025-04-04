@@ -738,6 +738,12 @@ export class LayoutController {
     let xOffset = this.workspace.x % gridSize;
     let yOffset = this.workspace.y % gridSize;
     let divisionSize = gridSize / originalGridDivisions;
+    if (xOffset > 0) {
+      xOffset -= gridSize;
+    }
+    if (yOffset > 0) {
+      yOffset -= gridSize;
+    }
 
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
       grid.moveTo(i + xOffset, 0);
