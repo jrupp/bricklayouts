@@ -389,6 +389,11 @@ canvas {
 	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
 	width: 48rem;
 	z-index: 1050;
+	transition: background var(--speed) var(--easing);
+}
+
+#configurationEditor * {
+	transition: background var(--speed) var(--easing);
 }
 
 #colorfield *,
@@ -431,27 +436,6 @@ canvas {
 
 #subcolorfield>i:after {
   background: var(--gridsubcolor);
-}
-
-#configurationEditorHeader {
-	display: flex;
-	flex-direction: row;
-	justify-content: space-between;
-	align-items: center;
-	padding: 0.5rem 0.7rem;
-	background-color: var(--subheader-bg);
-	border-bottom: 1px solid var(--toolbar-item-border);
-	border-radius: 8px 8px 0 0;
-}
-
-.configurationEditorActions {
-	display: flex;
-	flex-direction: row;
-	position: absolute;
-	bottom: 0;
-	width: 100%;
-	justify-content: space-evenly;
-	border-top: 1px solid var(--toolbar-item-border);
 }
 
 .toolbarItem {
@@ -524,20 +508,6 @@ button:active {
 	opacity: 0.6;
 }
 
-.tab-button {
-    text-align: left;
-    padding: 1rem;
-    margin-bottom: 0.5rem;
-    font-size: 1.4rem;
-    color: var(--color);
-    border-radius: 0.4rem;
-    cursor: pointer;
-}
-
-.tab-button.active {
-    background-color: var(--component-active);
-}
-
 #darkMode-container button {
 	block-size: 100%;
 	margin: 0;
@@ -571,15 +541,6 @@ button span.label {
 }
 
 .componentEditorActions button:first-child {
-	border-right: 1px solid var(--toolbar-item-border);
-}
-
-.configurationEditorActions button {
-	flex-grow: 1;
-	cursor: pointer;
-}
-
-.configurationEditorActions button:first-child {
 	border-right: 1px solid var(--toolbar-item-border);
 }
 
@@ -624,89 +585,6 @@ button span.label {
 	margin: 0;
 }
 
-.tab-container {
-    display: flex;
-    height: calc(100% - 5rem);
-    margin: 1rem;
-}
-
-.tab-list {
-    display: flex;
-    flex-direction: column;
-    width: 12rem;
-    border-right: 1px solid var(--toolbar-item-border);
-    padding-right: 1rem;
-}
-
-.tab-content {
-    flex-grow: 1;
-    padding-left: 2rem;
-}
-
-.tab-panel {
-    display: none;
-    color: var(--color);
-	overflow-y: auto;
-	height: 100%;
-}
-
-.tab-panel.active {
-    display: block;
-}
-
-.tab-panel h3 {
-    font-size: 1.6rem;
-    margin-top: 0;
-}
-
-.tab-panel p {
-    font-size: 1.4rem;
-}
-
-.tab-panel label {
-	font-size: 1.4rem;
-}
-
-.typeSelector {
-	font-size: 0;
-	margin-bottom: 0.5rem;
-}
-
-.typeSelector .typeButton {
-	width: 50%;
-	border: 1px solid black;
-	background: var(--component-active);
-	color: black;
-	border-radius: 0 0.5rem 0.5rem 0;
-}
-
-.typeSelector .typeButton:first-child {
-	border-right: none;
-	border-radius: 0.5rem 0 0 0.5rem;
-}
-
-.typeButton.active {
-	background: #03a9f4;
-}
-
-.tab-panel[data-type=workspace] .userOnly {
-	display: none;
-}
-
-.tab-panel[data-type=user] .workspaceOnly {
-	display: none;
-}
-
-.beer input {
-	margin-left: 1rem;
-	-webkit-appearance: auto;
-	appearance: auto;
-}
-
-.beer .switch > span:before {
-	z-index: 1002;
-}
-
 @media (hover:hover) {
 	button:hover, .button:hover {
 		opacity: 0.6;
@@ -714,11 +592,6 @@ button span.label {
 
 	button.menuItem:hover {
 		background: var(--component-hover);
-		opacity: 1;
-	}
-
-	.tab-button:hover {
-		background-color: var(--component-hover);
 		opacity: 1;
 	}
 
