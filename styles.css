@@ -376,14 +376,34 @@ canvas {
 	inline-size: auto;
 }
 
+.tooltip {
+	font-size: 1rem !important;
+}
+
+.extra-text {
+	font-size: 1.4rem !important;
+}
+
 #configurationEditor {
 	max-width: calc(100% - 5rem - 16px);
 	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
+	width: 48rem;
 }
 
 #colorfield *,
 #subcolorfield * {
   cursor: pointer;
+}
+
+#colorfield label,
+#subcolorfield label {
+  font-size: 1.1rem;
+}
+
+#colorfield input[type=text],
+#subcolorfield input[type=text] {
+  padding-inline-start: 3.4rem;
+  font-size: 1.5rem !important;
 }
 
 #colorfield>i,

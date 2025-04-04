@@ -27,6 +27,7 @@ export class ConfigurationController {
             // Reload the data into the UI, in case something has changed
             const configType = this.#tabPanels[0].getAttribute('data-type');
             this.#switchType(configType);
+            window.ui();
         });
         document.getElementById('configurationEditorClose').addEventListener('click', () => {
             document.getElementById('configurationEditor').classList.remove('active');
@@ -158,6 +159,7 @@ export class ConfigurationController {
 
         document.querySelector(`.config-tab:not([data-tab="${tabId}"])`).classList.add('fill');
         document.querySelector(`.config-page[data-tab="${tabId}"]`).classList.add('active');
+        window.ui();
     }
 
     /**
@@ -183,11 +185,13 @@ export class ConfigurationController {
         document.getElementById('gridEnabled').checked = gridSettings.enabled ?? this.#config._defaults.gridSettings.enabled;
         document.getElementById('gridSize').value = (gridSettings.size ?? this.#config._defaults.gridSettings.size) / 16;
         document.getElementById('gridSubdivisions').value = gridSettings.divisions ?? this.#config._defaults.gridSettings.divisions;
-        document.getElementById('gridMainColor').value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
-        // TODO: Update the textbox that is after the color input
+        let gridMainColor = document.getElementById('gridMainColor');
+        gridMainColor.value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
+        gridMainColor.nextElementSibling.value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
         document.querySelector('#colorfield>i').style.setProperty('--gridcolor', `#${mainColorValue.toString(16).padStart(6, '0')}`);
-        document.getElementById('gridSubColor').value = `#${subColorValue.toString(16).padStart(6, '0')}`;
-        // TODO: Update the textbox that is after the color input
+        let gridSubColor = document.getElementById('gridSubColor');
+        gridSubColor.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
+        gridSubColor.nextElementSibling.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', `#${subColorValue.toString(16).padStart(6, '0')}`);
     }
 
