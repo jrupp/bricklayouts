@@ -254,11 +254,19 @@
     </div>
     <div id="componentMenu">
         <div style="display: flex; flex-direction: row;">
-            <select id="categories">
-            </select>
-            <input type="text" class="search" id="searchText" placeholder="Search...">
+            <div class="field border fill small" id="categoryDiv">
+                <select id="categories">
+                </select>
+                <i class="extra">arrow_drop_down</i>
+            </div>
+            <div class="field border small fill search">
+                <input type="text" id="searchText" placeholder="Search...">
+                <i class="searchIcon">search</i>
+                <i id="searchClearButton" class="searchClear">close</i>
+            </div>
+            <!--<input type="text" class="search" id="searchText" placeholder="Search...">
             <span class="searchIcon"></span>
-            <span class="searchClear" id="searchClearButton"></span>
+            <span class="searchClear" id="searchClearButton"></span>-->
         </div>
         <div class="componentBrowser" id="componentBrowser"></div>
     </div>
@@ -332,48 +340,97 @@
             </div>
         </div>
     </div>
-    <div id="configurationEditor" class="hidden">
-        <div id="configurationEditorHeader">
-            <span class="componentEditorTitle">Configuration</span>
-            <span id="configurationEditorClose" class="componentEditorTitle componentEditorTitleButton">X</span>
+    <article class="left page medium-elevate no-padding margin" id="configurationEditor">
+        <div>
+            <header class="fill top-round small-round" style="min-block-size:auto">
+                <nav>
+                    <h6 class="max center-align">Configuration</h6>
+                    <button id="configurationEditorClose" class="circle medium transparent">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
         </div>
-        <div id="configurationEditorContent">
-            <div class="tab-container">
-                <div class="tab-list">
-                    <button class="tab-button active" data-tab="general">General</button>
-                    <button class="tab-button" data-tab="appearance">Appearance</button>
+        <div class="small-padding horizontal-padding grid no-margin">
+            <div class="s3 no-round small-padding vertical-padding" style="border-right: 1px solid var(--outline); min-height: 22.5rem">
+                <button class="border primary responsive small-margin bottom-margin extra extra-text small-round tiny-padding horizontal-padding config-tab"
+                    data-tab="general">General</button>
+                <button class="responsive primary border fill extra bottom-margin extra-text small-round small-padding horizontal-padding config-tab"
+                    data-tab="appearance">Appearance</button>
+            </div>
+            <div class="s9 small-padding vertical-padding">
+                <nav class="no-space">
+                    <button class="border primary left-round max small extra-text config-type" data-type="user">
+                        <span>User</span>
+                    </button>
+                    <button class="border primary right-round max fill small extra-text config-type" data-type="workspace">
+                        <span>Workspace</span>
+                    </button>
+                </nav>
+                <div class="page config-page" data-tab="general">
+                    <h6>General Settings</h6>
+                    <div class="field middle-align extra-text">
+                        <span>Default Zoom Level</span>
+                        <label class="slider auto-width">
+                            <input type="range" id="defaultZoom" min="0.1" max="1.0" value="0.5" step="0.1">
+                            <span></span>
+                            <div class="tooltip"></div>
+                        </label>
+                    </div>
                 </div>
-                <div class="tab-content">
-                    <div class="typeSelector">
-                        <button class="typeButton active" data-type="user">User</button>
-                        <button class="typeButton" data-type="workspace">Workspace</button>
+                <div class="page config-page active" data-tab="appearance">
+                    <h6>Appearance Settings</h6>
+                    <div class="field middle-align small tiny-margin extra-text">
+                        <span class="right-padding">Enable Grid?</span>
+                        <label class="switch">
+                            <input type="checkbox" id="gridEnabled" checked>
+                            <span></span>
+                        </label>
                     </div>
-                    <div class="tab-panel active" data-tab="general">
-                        <h3>General Settings</h3>
-                        <p>General configuration options will go here.</p>
-                        <label for="defaultZoom">Default Zoom Level</label>
-                        <input type="range" id="defaultZoom" min="0.1" max="1" value="0.5" step="0.1">
+                    <div class="field middle-align small tiny-margin extra-text">
+                        <span>Grid Size (in studs)</span>
+                        <label class="slider auto-width">
+                            <input type="range" id="gridSize" min="8" max="192" value="96" step="8">
+                            <span></span>
+                            <div class="tooltip"></div>
+                        </label>
                     </div>
-                    <div class="tab-panel" data-tab="appearance">
-                        <h3>Appearance Settings</h3>
-                        <p class="beer"><label for="gridEnabled" class="switch">Enable Grid?<input type="checkbox" id="gridEnabled"><span></span></label></p>
-                        <p><label for="gridSize">Grid Size (in studs)</label>
-                        <input type="range" id="gridSize" min="8" max="192" value="96" step="8"></p>
-                        <label for="gridSubdivisions">Grid Subdivisions</label>
-                        <input type="range" id="gridSubdivisions" min="1" max="8" value="3" step="1"><br>
-                        <label for="gridMainColor">Grid Color</label>
-                        <input type="color" id="gridMainColor" value="#ffffff"><br>
-                        <label for="gridSubColor">Grid Sub Color</label>
-                        <input type="color" id="gridSubColor" value="#9c9c9c"><br>
+                    <div class="field middle-align small tiny-margin extra-text">
+                        <span>Grid Subdivisions</span>
+                        <label class="slider auto-width">
+                            <input type="range" id="gridSubdivisions" min="1" max="8" value="3" step="1">
+                            <span></span>
+                            <div class="tooltip"></div>
+                        </label>
+                    </div>
+                    <div id="colorfield"
+                        class="field label prefix middle-align large-space border round medium vertical-margin">
+                        <i class="bottom-align large no-round">colors</i>
+                        <input id="gridMainColor" type="color" value="#ff0000">
+                        <input type="text">
+                        <label>Grid Color</label>
+                    </div>
+                    <div id="subcolorfield"
+                        class="field label prefix middle-align large-space border round medium vertical-margin">
+                        <i class="bottom-align large no-round">colors</i>
+                        <input id="gridSubColor" type="color">
+                        <input type="text">
+                        <label>Grid Sub Color</label>
                     </div>
                 </div>
             </div>
-            <div class="configurationEditorActions">
-                <button id="configurationEditorSave">Save</button>
-                <button id="configurationEditorCancel">Cancel</button>
-            </div>
         </div>
-    </div>
+        <nav class="no-padding no-space no-margin">
+            <button id="configurationEditorSave" class="border no-round max medium extra-text"
+                style="border-end-start-radius: 0.5rem !important;">
+                <span>Save</span>
+            </button>
+            <button id="configurationEditorCancel" class="error no-round max medium extra-text"
+                style="border-end-end-radius: 0.5rem !important;">
+                <span>Cancel</span>
+            </button>
+        </nav>
+    </article>
     <script>
         let pref = localStorage.getItem('theme') || 'system';
         if (pref === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) {

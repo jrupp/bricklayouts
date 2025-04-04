@@ -16,26 +16,27 @@ export class ConfigurationController {
 
     constructor() {
         this.#config = Configuration.getInstance();
-        this.#tabButtons = document.querySelectorAll('.tab-button');
-        this.#typeButtons = document.querySelectorAll('.typeButton');
-        this.#tabPanels = document.querySelectorAll('.tab-panel');
+        this.#tabButtons = document.querySelectorAll('.config-tab');
+        this.#typeButtons = document.querySelectorAll('.config-type');
+        this.#tabPanels = document.querySelectorAll('.config-page'); // .tab-panel
         this.#layoutController = LayoutController.getInstance();
 
         document.getElementById('buttonConfig').addEventListener('click', () => {
             this.#layoutController.hideFileMenu();
-            document.getElementById('configurationEditor').classList.toggle('hidden');
+            document.getElementById('configurationEditor').classList.toggle('active');
             // Reload the data into the UI, in case something has changed
             const configType = this.#tabPanels[0].getAttribute('data-type');
             this.#switchType(configType);
+            window.ui();
         });
         document.getElementById('configurationEditorClose').addEventListener('click', () => {
-            document.getElementById('configurationEditor').classList.add('hidden');
+            document.getElementById('configurationEditor').classList.remove('active');
         });
         document.getElementById('configurationEditorSave').addEventListener('click', () => {
-            document.getElementById('configurationEditor').classList.add('hidden');
+            document.getElementById('configurationEditor').classList.remove('active');
         });
         document.getElementById('configurationEditorCancel').addEventListener('click', () => {
-            document.getElementById('configurationEditor').classList.add('hidden');
+            document.getElementById('configurationEditor').classList.remove('active');
         });
 
         this.#tabButtons.forEach((button) => {
@@ -58,7 +59,7 @@ export class ConfigurationController {
         document.getElementById('defaultZoom').addEventListener('input', (ev) => {
             // TODO: Check if the value is valid
             const newZoom = parseFloat(ev.target.value);
-            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.userDefaultZoom = newZoom;
             } else {
                 this.#config.workspaceDefaultZoom = newZoom;
@@ -69,7 +70,7 @@ export class ConfigurationController {
 
         document.getElementById('gridEnabled').addEventListener('change', (ev) => {
             const newSetting = { enabled: ev.target.checked };
-            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings(newSetting);
             } else {
                 this.#config.updateWorkspaceGridSettings(newSetting);
@@ -80,7 +81,7 @@ export class ConfigurationController {
         document.getElementById('gridSize').addEventListener('input', (ev) => {
             // TODO: Check if the value is valid
             const newSetting = { size: parseInt(ev.target.value) * 16 };
-            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings(newSetting);
             } else {
                 this.#config.updateWorkspaceGridSettings(newSetting);
@@ -91,7 +92,7 @@ export class ConfigurationController {
         document.getElementById('gridSubdivisions').addEventListener('input', (ev) => {
             // TODO: Check if the value is valid
             const newSetting = { divisions: parseInt(ev.target.value) };
-            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings(newSetting);
             } else {
                 this.#config.updateWorkspaceGridSettings(newSetting);
@@ -101,7 +102,8 @@ export class ConfigurationController {
 
         document.getElementById('gridMainColor').addEventListener('change', (ev) => {
             const color = parseInt(ev.target.value.replace('#', ''), 16);
-            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+            document.querySelector('#colorfield>i').style.setProperty('--gridcolor', ev.currentTarget.value);
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings({ mainColor: color });
             } else {
                 this.#config.updateWorkspaceGridSettings({ mainColor: color });
@@ -111,7 +113,8 @@ export class ConfigurationController {
 
         document.getElementById('gridSubColor').addEventListener('change', (ev) => {
             const color = parseInt(ev.target.value.replace('#', ''), 16);
-            if (ev.target.parentElement.getAttribute('data-type') === 'user') {
+            document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', ev.currentTarget.value);
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
                 this.#config.updateUserGridSettings({ subColor: color });
             } else {
                 this.#config.updateWorkspaceGridSettings({ subColor: color });
@@ -148,14 +151,15 @@ export class ConfigurationController {
      */
     #switchTab(tabId) {
         this.#tabButtons.forEach((button) => {
-            button.classList.remove('active');
+            button.classList.remove('fill');
         });
         this.#tabPanels.forEach((panel) => {
             panel.classList.remove('active');
         });
 
-        document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');
-        document.querySelector(`.tab-panel[data-tab="${tabId}"]`).classList.add('active');
+        document.querySelector(`.config-tab:not([data-tab="${tabId}"])`).classList.add('fill');
+        document.querySelector(`.config-page[data-tab="${tabId}"]`).classList.add('active');
+        window.ui();
     }
 
     /**
@@ -165,10 +169,10 @@ export class ConfigurationController {
      */
     #switchType(configType) {
         this.#typeButtons.forEach((button) => {
-            button.classList.remove('active');
+            button.classList.remove('fill');
         });
 
-        document.querySelector(`.typeButton[data-type="${configType}"]`).classList.add('active');
+        document.querySelector(`.config-type:not([data-type="${configType}"])`).classList.add('fill');
         this.#tabPanels.forEach((panel) => {
             panel.setAttribute('data-type', configType);
         });
@@ -181,8 +185,14 @@ export class ConfigurationController {
         document.getElementById('gridEnabled').checked = gridSettings.enabled ?? this.#config._defaults.gridSettings.enabled;
         document.getElementById('gridSize').value = (gridSettings.size ?? this.#config._defaults.gridSettings.size) / 16;
         document.getElementById('gridSubdivisions').value = gridSettings.divisions ?? this.#config._defaults.gridSettings.divisions;
-        document.getElementById('gridMainColor').value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
-        document.getElementById('gridSubColor').value = `#${subColorValue.toString(16).padStart(6, '0')}`;
+        let gridMainColor = document.getElementById('gridMainColor');
+        gridMainColor.value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
+        gridMainColor.nextElementSibling.value = `#${mainColorValue.toString(16).padStart(6, '0')}`;
+        document.querySelector('#colorfield>i').style.setProperty('--gridcolor', `#${mainColorValue.toString(16).padStart(6, '0')}`);
+        let gridSubColor = document.getElementById('gridSubColor');
+        gridSubColor.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
+        gridSubColor.nextElementSibling.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
+        document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', `#${subColorValue.toString(16).padStart(6, '0')}`);
     }
 
     /**
