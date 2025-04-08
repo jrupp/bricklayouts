@@ -10,8 +10,18 @@ let SerializedLayoutLayer;
 export { SerializedLayoutLayer };
 
 export class LayoutLayer extends Container {
+    /**
+     * Unique identifier for this LayoutLayer
+     * @type {String}
+     */
+    #uuid;
+
     constructor() {
         super();
+
+        this.name = "New Layer";
+
+        this.#uuid = crypto.randomUUID();
 
         /**
          * @type {RenderLayer}
@@ -51,6 +61,33 @@ export class LayoutLayer extends Container {
             }
         });
         this.openConnections.clear();
+    }
+
+    /**
+     * Unique identifier for this LayoutLayer
+     */
+    get uuid() {
+        return this.#uuid;
+    }
+
+    set uuid(value) {
+        this.#uuid = value;
+    }
+
+    /**
+     * Check if this LayoutLayer is equal to another LayoutLayer
+     * @param {LayoutLayer} other 
+     * @returns {Boolean} True if this LayoutLayer is equal to the other, false otherwise
+     */
+    equals(other) {
+        if (!(other instanceof LayoutLayer)) {
+            return false;
+        }
+
+        if (this.uuid === other.uuid) {
+            return true;
+        }
+        return false;
     }
 
     /**

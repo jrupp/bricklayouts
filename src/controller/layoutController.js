@@ -362,15 +362,6 @@ export class LayoutController {
   }
 
   /**
-   * Create a new layer and set it as the active layer.
-   */
-  newLayer() {
-    this.currentLayer = new LayoutLayer();
-    this.layers.push(this.currentLayer);
-    this.workspace.addChild(this.currentLayer);
-  }
-
-  /**
    * Reset the layout to a blank state.
    */
   reset() {
@@ -718,6 +709,103 @@ export class LayoutController {
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.rotate();
     }
+  }
+
+  /**
+   * Create a new layer and set it as the active layer.
+   */
+  newLayer() {
+    this.currentLayer = new LayoutLayer();
+    this.layers.push(this.currentLayer);
+    this.workspace.addChild(this.currentLayer);
+    this.currentLayer.name = `Layer ${this.layers.length}`;
+    // TODO: Call updateLayerList() here
+  }
+
+  /**
+   * Initialize the UI for the layer management.
+   */
+  initLayerUI() {
+    document.getElementById('layerAdd').addEventListener('click', this.newLayer.bind(this));
+
+    /** @type {HTMLUListElement} */
+    const layerList = document.getElementById('layerList');
+    layerList.addEventListener('slip:beforeswipe', (e) => {e.preventDefault();}, false);
+    layerList.addEventListener('slip:beforewait', (e) => {
+      if (e.target.className.indexOf('instant') > -1) e.preventDefault();
+    }, false);
+    layerList.addEventListener('slip:reorder', (e) => {
+      const layer = this.layers[e.detail.originalIndex];
+      this.layers.splice(e.detail.originalIndex, 1);
+      this.layers.splice(e.detail.spliceIndex, 0, layer);
+      e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
+      this.updateLayerList();
+    }, false);
+    new Slip(layerList);
+    this.updateLayerList();
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onDeleteLayer(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Delete Layer ${index}`);
+    if (this.layers.length > 1) {
+      let tempLayer = this.layers[index];
+      this.layers.splice(layerIndex, 1);
+      if (this.currentLayer === tempLayer) {
+        this.currentLayer = this.layers[0];
+      }
+      this.workspace.removeChild(tempLayer);
+      tempLayer.destroy();
+      tempLayer = null;
+      this.updateLayerList();
+    }
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onEditLayer(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Edit Layer ${index}`);
+    // TODO: Implement edit layer functionality
+  }
+
+  /**
+   * Update the layer list in the UI.
+   */
+  updateLayerList() {
+    /** @type {HTMLUListElement} */
+    const layerList = document.getElementById('layerList');
+    layerList.innerHTML = '';
+    this.layers.forEach((layer, index) => {
+      const layerItem = document.createElement('li');
+      layerItem.innerText = `<span class="instant"></span>Layer ${index + 1}<span class="delete" data-layer="${index}"></span><span class="edit" data-layer="${index}"></span>`;
+      layerList.appendChild(layerItem);
+    });
+    layerList.querySelectorAll('.instant').forEach((item) => {
+      item.addEventListener('mousedown', () => {
+        this.style.cursor = "grabbing";
+      });
+      item.addEventListener('mouseup', () => {
+        this.style.cursor = "grab";
+      });
+      item.addEventListener('mouseover', () => {
+        this.style.cursor = "grab";
+      });
+    });
+    let deleteCallback = this.onDeleteLayer.bind(this);
+    layerList.querySelectorAll('.delete').forEach((item) => {
+      item.addEventListener('click', deleteCallback);
+    });
+    let editCallback = this.onEditLayer.bind(this);
+    layerList.querySelectorAll('.edit').forEach((item) => {
+      item.addEventListener('click', editCallback);
+    });
   }
 
   drawGrid() {
