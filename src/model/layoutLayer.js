@@ -4,6 +4,8 @@ import { Connection } from "./connection.js";
 
 /**
  * @typedef {Object} SerializedLayoutLayer
+ * @property {String} name The display name of the layer
+ * @property {Boolean} visible The visibility of the layer
  * @property {Array<SerializedComponent>} components
  */
 let SerializedLayoutLayer;
@@ -95,16 +97,31 @@ export class LayoutLayer extends Container {
     }
 
     /**
-     * 
+     * Serialize this LayoutLayer to a SerializedLayoutLayer
      * @returns {SerializedLayoutLayer}
      */
     serialize() {
         return {
             components: this.children.filter(/** @param {Container} child */(child) => child instanceof Component)
                                     .reverse()
-                                    .map(/** @param {Component} child */(child) => child.serialize())
+                                    .map(/** @param {Component} child */(child) => child.serialize()),
+            name: this.label,
+            visible: this.visible
         };
-        // TODO: Add label and visibility
+    }
+
+    /**
+     * Deserialize a LayoutLayer from a SerializedLayoutLayer. Does not deserialize the components.
+     * @param {SerializedLayoutLayer} data
+     * @throws {Error} If the data is invalid
+     */
+    deserialize(data) {
+        if (data === undefined) {
+            throw new Error("Invalid data");
+        }
+
+        this.label = data?.name ?? "New Layer";
+        this.visible = data?.visible ?? true;
     }
 
     /**
@@ -113,9 +130,26 @@ export class LayoutLayer extends Container {
      * @returns {Boolean} True if data is valid, false otherwise
      */
     static _validateImportData(data) {
+        let validations = [
+            data,
+            data?.name === undefined || typeof data?.name === 'string',
+            data?.name === undefined || data?.name?.length > 0,
+            data?.visible == undefined || typeof data?.visible === 'boolean',
+            data?.components,
+            Array.isArray(data?.components),
+            data?.components?.length > 0,
+        ]
+        if (validations.some(v => !v)) {
+            return false;
+        }
+        /**
         if (data?.components === undefined || data?.components?.length == 0) {
             return false;
         }
+        if (data?.name !== undefined && data?.name?.length == 0) {
+            return false;
+        }
+        */
 
         return data.components.every(component => Component._validateImportData(component));
     }

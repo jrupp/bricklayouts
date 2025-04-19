@@ -196,8 +196,9 @@ export class Component extends Container {
   /**
    * 
    * @param {TrackData} baseData 
-   * @param {SerializedComponent} data 
-   * @param {LayoutLayer} layer
+   * @param {SerializedComponent} data The serialized data to deserialize
+   * @param {LayoutLayer} layer The layer this Component will be on
+   * @throws {Error} If baseData is undefined
    * @returns {Component}
    */
   static deserialize(baseData, data, layer) {

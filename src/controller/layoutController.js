@@ -552,6 +552,7 @@ export class LayoutController {
       if (index > 0) {
         this.newLayer();
       }
+      this.#currentLayer.deserialize(layer);
       layer.components.forEach((component) => {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
