@@ -169,6 +169,8 @@ export class LayoutController {
      */
     this.currentLayer = null;
 
+    this.initLayerUI();
+
     this.newLayer();
 
     this.drawGrid();
@@ -718,8 +720,9 @@ export class LayoutController {
     this.currentLayer = new LayoutLayer();
     this.layers.push(this.currentLayer);
     this.workspace.addChild(this.currentLayer);
-    this.currentLayer.name = `Layer ${this.layers.length}`;
-    // TODO: Call updateLayerList() here
+    this.currentLayer.label = `Layer ${this.layers.length}`;
+    LayoutController.selectComponent(null);
+    this.updateLayerList();
   }
 
   /**
@@ -739,9 +742,22 @@ export class LayoutController {
       this.layers.splice(e.detail.originalIndex, 1);
       this.layers.splice(e.detail.spliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
+      this.workspace.setChildIndex(layer, e.detail.spliceIndex);
       this.updateLayerList();
     }, false);
     new Slip(layerList);
+    this.updateLayerList();
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onToggleLayerVisibility(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Toggle Layer ${index}`);
+    let layer = this.layers[index];
+    layer.visible = !layer.visible;
     this.updateLayerList();
   }
 
@@ -754,9 +770,12 @@ export class LayoutController {
     console.log(`Delete Layer ${index}`);
     if (this.layers.length > 1) {
       let tempLayer = this.layers[index];
-      this.layers.splice(layerIndex, 1);
+      this.layers.splice(index, 1);
       if (this.currentLayer === tempLayer) {
         this.currentLayer = this.layers[0];
+      }
+      if (LayoutController.selectedComponent && LayoutController.selectedComponent.layer === tempLayer) {
+        LayoutController.selectComponent(null);
       }
       this.workspace.removeChild(tempLayer);
       tempLayer.destroy();
@@ -782,20 +801,24 @@ export class LayoutController {
     /** @type {HTMLUListElement} */
     const layerList = document.getElementById('layerList');
     layerList.innerHTML = '';
-    this.layers.forEach((layer, index) => {
+    this.layers.forEach((layer, index) => { 
       const layerItem = document.createElement('li');
-      layerItem.innerText = `<span class="instant"></span>Layer ${index + 1}<span class="delete" data-layer="${index}"></span><span class="edit" data-layer="${index}"></span>`;
+      const layerVisible = layer.visible ? '' : '_off';
+      layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      if (layer === this.currentLayer) {
+        layerItem.classList.add('primary');
+      }
       layerList.appendChild(layerItem);
     });
     layerList.querySelectorAll('.instant').forEach((item) => {
       item.addEventListener('mousedown', () => {
-        this.style.cursor = "grabbing";
+        item.style.cursor = "grabbing";
       });
       item.addEventListener('mouseup', () => {
-        this.style.cursor = "grab";
+        item.style.cursor = "grab";
       });
       item.addEventListener('mouseover', () => {
-        this.style.cursor = "grab";
+        item.style.cursor = "grab";
       });
     });
     let deleteCallback = this.onDeleteLayer.bind(this);
@@ -805,6 +828,17 @@ export class LayoutController {
     let editCallback = this.onEditLayer.bind(this);
     layerList.querySelectorAll('.edit').forEach((item) => {
       item.addEventListener('click', editCallback);
+    });
+    let visibilityCallback = this.onToggleLayerVisibility.bind(this);
+    layerList.querySelectorAll('.visible').forEach((item) => {
+      item.addEventListener('click', visibilityCallback);
+    });
+    layerList.querySelectorAll('div').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        this.currentLayer = this.layers[index];
+        LayoutController.selectComponent(null);
+        this.updateLayerList();
+      });
     });
   }
 

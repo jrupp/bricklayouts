@@ -19,7 +19,11 @@ export class LayoutLayer extends Container {
     constructor() {
         super();
 
-        this.name = "New Layer";
+        /**
+         * Name of this Layer
+         * @type {String}
+         */
+        this.label = "New Layer";
 
         this.#uuid = crypto.randomUUID();
 
@@ -100,6 +104,7 @@ export class LayoutLayer extends Container {
                                     .reverse()
                                     .map(/** @param {Component} child */(child) => child.serialize())
         };
+        // TODO: Add label and visibility
     }
 
     /**

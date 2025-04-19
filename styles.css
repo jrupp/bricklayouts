@@ -120,7 +120,8 @@ canvas {
 }
 
 #componentMenu,
-#configurationEditor {
+#configurationEditor,
+#layerEditor {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -160,7 +161,8 @@ canvas {
 }
 
 [data-dark-mode=true] #componentMenu,
-[data-dark-mode=true] #configurationEditor {
+[data-dark-mode=true] #configurationEditor,
+[data-dark-mode=true] #layerEditor {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;
@@ -370,6 +372,14 @@ canvas {
 	width: 100%;
 	justify-content: space-evenly;
 	border-top: 1px solid var(--toolbar-item-border);
+}
+
+#layerEditor {
+	min-width: 19rem;
+}
+
+#layerList {
+	user-select: none;
 }
 
 .slider.auto-width {
