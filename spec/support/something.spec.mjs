@@ -1,6 +1,7 @@
 import { LayoutController, SerializedLayout } from "../../src/controller/layoutController.js";
 import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
+import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { Application, Assets, RenderLayer } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
@@ -495,5 +496,92 @@ describe("Pose", function() {
     it("normalizes negative angles", function() {
         let pose = new Pose(0, 0, -Math.PI);
         expect(pose.angle).toBeCloseTo(Math.PI);
+    });
+});
+
+describe("LayoutLayer", function() {
+    it("creates a new LayoutLayer", function() {
+        let layoutLayer = new LayoutLayer();
+        expect(layoutLayer).toBeInstanceOf(LayoutLayer);
+        expect(layoutLayer.children).toHaveSize(1);
+        expect(layoutLayer.openConnections).toHaveSize(0);
+        expect(layoutLayer.overlay).toBeInstanceOf(RenderLayer);
+    });
+
+    it("destroys a LayoutLayer", function() {
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.destroy();
+        expect(layoutLayer.overlay).toBeNull();
+    });
+
+    it("validates a valid serialized layout layer", function() {
+        let compSpy = spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: "Test Layer",
+            visible: true
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+        expect(compSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("validates a valid minimal serialized layout layer", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1]
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("does not validate a bad serialized layout layer", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: []
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a serialized with bad name", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: 1
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a serialized with blank name", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: ""
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a serialized with bad visible", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            visible: "hello"
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("deserializes a serialized layout layer", function() {
+        let serialized = {
+            components: [1],
+            name: "Test Layer",
+            visible: false
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("Test Layer");
+        expect(layoutLayer.visible).toBeFalse();
+    });
+
+    it("throws an error when deserializing a serialized layout layer with no data", function() {
+        let layoutLayer = new LayoutLayer();
+        expect(() => layoutLayer.deserialize()).toThrowError("Invalid data");
     });
 });
