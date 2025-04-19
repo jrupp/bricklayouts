@@ -757,11 +757,13 @@ export class LayoutController {
       if (e.target.className.indexOf('instant') > -1) e.preventDefault();
     }, false);
     layerList.addEventListener('slip:reorder', (e) => {
-      const layer = this.layers[e.detail.originalIndex];
-      this.layers.splice(e.detail.originalIndex, 1);
-      this.layers.splice(e.detail.spliceIndex, 0, layer);
+      const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
+      const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
+      const layer = this.layers[oppIndex];
+      this.layers.splice(oppIndex, 1);
+      this.layers.splice(oppSpliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
-      this.workspace.setChildIndex(layer, e.detail.spliceIndex);
+      this.workspace.setChildIndex(layer, oppSpliceIndex);
       this.updateLayerList();
     }, false);
     new Slip(layerList);
@@ -820,14 +822,14 @@ export class LayoutController {
     /** @type {HTMLUListElement} */
     const layerList = document.getElementById('layerList');
     layerList.innerHTML = '';
-    this.layers.forEach((layer, index) => { 
+    this.layers.forEach((layer, index) => {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
       layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
       if (layer === this.#currentLayer) {
         layerItem.classList.add('primary');
       }
-      layerList.appendChild(layerItem);
+      layerList.prepend(layerItem);
     });
     layerList.querySelectorAll('.instant').forEach((item) => {
       item.addEventListener('mousedown', () => {
@@ -854,7 +856,7 @@ export class LayoutController {
     });
     layerList.querySelectorAll('div').forEach((item, index) => {
       item.addEventListener('click', () => {
-        this.currentLayer = this.layers[index];
+        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
         LayoutController.selectComponent(null);
         this.updateLayerList();
       });
