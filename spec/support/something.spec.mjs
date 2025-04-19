@@ -584,4 +584,16 @@ describe("LayoutLayer", function() {
         let layoutLayer = new LayoutLayer();
         expect(() => layoutLayer.deserialize()).toThrowError("Invalid data");
     });
+
+    it("serializes a valid layout layer", function() {
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.label = "Test Layer";
+        layoutLayer.visible = true;
+        let serialized = layoutLayer.serialize();
+        expect(serialized).toEqual({
+            components: [],
+            name: "Test Layer",
+            visible: true
+        });
+    });
 });
