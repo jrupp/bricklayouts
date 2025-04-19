@@ -568,6 +568,16 @@ describe("LayoutLayer", function() {
         expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
     });
 
+    it("deserializes a minimal serialized layout layer", function() {
+        let serialized = {
+            components: [1],
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("New Layer");
+        expect(layoutLayer.visible).toBeTrue();
+    });
+
     it("deserializes a serialized layout layer", function() {
         let serialized = {
             components: [1],
