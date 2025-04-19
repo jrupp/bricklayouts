@@ -77,6 +77,12 @@ export class LayoutController {
   static editorController = null;
 
   /**
+   * The currently active layer
+   * @type {LayoutLayer}
+   */
+  #currentLayer = null;
+
+  /**
    * 
    * @param {Application} [app] 
    * @returns {LayoutController}
@@ -163,11 +169,7 @@ export class LayoutController {
      */
     this.layers = [];
 
-    /**
-     * The current active layer
-     * @type {LayoutLayer}
-     */
-    this.currentLayer = null;
+    this.#currentLayer = null;
 
     this.initLayerUI();
 
@@ -371,7 +373,7 @@ export class LayoutController {
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
     this.layers = [];
-    this.currentLayer = null;
+    this.#currentLayer = null;
     this.workspace.position.set(0, 0);
     this.config.clearWorkspaceSettings();
     this.workspace.scale.set(this.config.defaultZoom);
@@ -383,6 +385,22 @@ export class LayoutController {
     LayoutController.previousPinchDistance = -1;
     LayoutController.eventCache.clear();
     this.newLayer();
+  }
+
+  get currentLayer() {
+    return this.#currentLayer;
+  }
+
+  set currentLayer(layer) {
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'none';
+      this.#currentLayer.interactiveChildren = false;
+    }
+    this.#currentLayer = layer;
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'passive';
+      this.#currentLayer.interactiveChildren = true;
+    }
   }
 
   /**
@@ -718,9 +736,9 @@ export class LayoutController {
    */
   newLayer() {
     this.currentLayer = new LayoutLayer();
-    this.layers.push(this.currentLayer);
-    this.workspace.addChild(this.currentLayer);
-    this.currentLayer.label = `Layer ${this.layers.length}`;
+    this.layers.push(this.#currentLayer);
+    this.workspace.addChild(this.#currentLayer);
+    this.#currentLayer.label = `Layer ${this.layers.length}`;
     LayoutController.selectComponent(null);
     this.updateLayerList();
   }
@@ -771,7 +789,7 @@ export class LayoutController {
     if (this.layers.length > 1) {
       let tempLayer = this.layers[index];
       this.layers.splice(index, 1);
-      if (this.currentLayer === tempLayer) {
+      if (this.#currentLayer === tempLayer) {
         this.currentLayer = this.layers[0];
       }
       if (LayoutController.selectedComponent && LayoutController.selectedComponent.layer === tempLayer) {
@@ -805,7 +823,7 @@ export class LayoutController {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
       layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
-      if (layer === this.currentLayer) {
+      if (layer === this.#currentLayer) {
         layerItem.classList.add('primary');
       }
       layerList.appendChild(layerItem);
