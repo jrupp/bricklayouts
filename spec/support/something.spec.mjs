@@ -7,6 +7,8 @@ import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
 
+
+
 describe("LayoutController", function() {
     beforeAll(async () => {
         const app = new Application();
@@ -31,6 +33,13 @@ describe("LayoutController", function() {
         geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
+        geiSpy.withArgs('layerAdd').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('layerEditor').and.returnValue(document.createElement('article'));
+        geiSpy.withArgs('layerList').and.returnValue(document.createElement('ul'));
+        window.Slip = class Slip {
+            constructor() {
+            }
+        };
         const layoutController = LayoutController.getInstance(app);
         window.layoutController = layoutController;
         return layoutController.init();
