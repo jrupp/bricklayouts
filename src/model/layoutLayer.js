@@ -139,17 +139,10 @@ export class LayoutLayer extends Container {
             Array.isArray(data?.components),
             data?.components?.length > 0,
         ]
+        // TODO: Allow 0 components
         if (validations.some(v => !v)) {
             return false;
         }
-        /**
-        if (data?.components === undefined || data?.components?.length == 0) {
-            return false;
-        }
-        if (data?.name !== undefined && data?.name?.length == 0) {
-            return false;
-        }
-        */
 
         return data.components.every(component => Component._validateImportData(component));
     }
