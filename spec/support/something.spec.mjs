@@ -7,8 +7,6 @@ import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
 
-
-
 describe("LayoutController", function() {
     beforeAll(async () => {
         const app = new Application();
