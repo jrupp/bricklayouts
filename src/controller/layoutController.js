@@ -812,7 +812,9 @@ export class LayoutController {
   onEditLayer(event) {
     let index = parseInt(event.currentTarget.dataset.layer);
     console.log(`Edit Layer ${index}`);
-    // TODO: Implement edit layer functionality
+    document.getElementById('layerName').value = this.layers[index].label;
+    this.hideFileMenu();
+    ui("#editLayerDialog");
   }
 
   /**

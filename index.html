@@ -350,6 +350,36 @@
             </button>
         </nav>
     </article>
+    <dialog id="editLayerDialog" class="no-padding border surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">Layer Editor</h6>
+                    <button id="editLayerDialogClose" class="circle medium transparent">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div class="small-padding horizontal-padding">
+                <div class="field label prefix middle-align large-space border medium vertical-margin">
+                    <i class="bottom-align large no-round">layers</i>
+                    <input id="layerName" type="text" placeholder="Layer Name">
+                    <label>Layer Name</label>
+                </div>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button id="sasdf" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important">
+                    <span>Save</span>
+                </button>
+                <button id="asdf" class="border no-border no-round max extra-text"
+                    style="border-end-end-radius: 0.5rem !important;">
+                    <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
     <article class="left page medium-elevate no-padding margin" id="configurationEditor">
         <div>
             <header class="fill top-round small-round" style="min-block-size:auto">

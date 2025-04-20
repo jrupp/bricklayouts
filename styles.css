@@ -121,7 +121,8 @@ canvas {
 
 #componentMenu,
 #configurationEditor,
-#layerEditor {
+#layerEditor,
+#editLayerDialog {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -162,7 +163,8 @@ canvas {
 
 [data-dark-mode=true] #componentMenu,
 [data-dark-mode=true] #configurationEditor,
-[data-dark-mode=true] #layerEditor {
+[data-dark-mode=true] #layerEditor,
+[data-dark-mode=true] #editLayerDialog {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;
@@ -374,8 +376,17 @@ canvas {
 	border-top: 1px solid var(--toolbar-item-border);
 }
 
+.overlay {
+	z-index: 1099;
+}
+
+#editLayerDialog {
+	z-index: 1100;
+}
+
 #layerEditor {
 	min-width: 19rem;
+	z-index: 1000;
 }
 
 #layerList {
