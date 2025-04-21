@@ -393,6 +393,10 @@ canvas {
 	user-select: none;
 }
 
+#layerList i:is(.visible,.edit,.delete) {
+	cursor: pointer;
+}
+
 .slider.auto-width {
 	inline-size: auto;
 }
@@ -417,6 +421,10 @@ canvas {
 	margin-block-end: 2rem !important
 }
 
+.list>li {
+	cursor: default !important;
+}
+
 #configurationEditor {
 	max-width: calc(100% - 5rem - 16px);
 	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
@@ -435,12 +443,14 @@ canvas {
 }
 
 #colorfield label,
-#subcolorfield label {
+#subcolorfield label,
+#layerNameField label {
   font-size: 1.1rem;
 }
 
 #colorfield input[type=text],
-#subcolorfield input[type=text] {
+#subcolorfield input[type=text],
+#layerNameField input[type=text] {
   padding-inline-start: 3.4rem;
   font-size: 1.5rem !important;
 }
