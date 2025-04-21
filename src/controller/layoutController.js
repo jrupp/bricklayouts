@@ -831,19 +831,21 @@ export class LayoutController {
     const layerNameNode = document.getElementById('layerName');
     layerNameNode.parentElement.classList.remove('invalid');
     layerNameNode.value = this.layers[index].label;
+    layerNameNode.setAttribute('data-layer', index);
     this.hideFileMenu();
     ui("#editLayerDialog");
   }
 
   onSaveLayerName() {
     const layerNameNode = document.getElementById('layerName');
-    let layerName = document.getElementById('layerName').value;
+    let layerName = layerNameNode.value;
+    let index = parseInt(layerNameNode.getAttribute('data-layer'));
     if (layerName.length === 0) {
       layerNameNode.parentElement.classList.add('invalid');
       layerNameNode.focus();
       return;
     }
-    this.#currentLayer.label = layerName;
+    this.layers[index].label = layerName;
     this.updateLayerList();
     ui("#editLayerDialog");
   }
