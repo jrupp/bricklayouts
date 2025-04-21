@@ -385,7 +385,7 @@ canvas {
 }
 
 #layerEditor {
-	min-width: 19rem;
+	width: 19rem;
 	z-index: 1000;
 }
 

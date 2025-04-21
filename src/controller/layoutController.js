@@ -858,7 +858,7 @@ export class LayoutController {
     this.layers.forEach((layer, index) => {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
-      layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
       if (layer === this.#currentLayer) {
         layerItem.classList.add('primary');
       }
