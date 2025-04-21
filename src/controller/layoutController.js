@@ -768,6 +768,22 @@ export class LayoutController {
     }, false);
     new Slip(layerList);
     this.updateLayerList();
+    document.getElementById('saveLayerDialog').addEventListener('click', this.onSaveLayerName.bind(this));
+    const layerNameNode = document.getElementById('layerName');
+    layerNameNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onSaveLayerName();
+      }
+      if (event.key === 'Escape') {
+        ui("#editLayerDialog");
+      }
+      event.stopPropagation();
+    });
+    layerNameNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
   }
 
   /**
@@ -812,8 +828,23 @@ export class LayoutController {
   onEditLayer(event) {
     let index = parseInt(event.currentTarget.dataset.layer);
     console.log(`Edit Layer ${index}`);
-    document.getElementById('layerName').value = this.layers[index].label;
+    const layerNameNode = document.getElementById('layerName');
+    layerNameNode.parentElement.classList.remove('invalid');
+    layerNameNode.value = this.layers[index].label;
     this.hideFileMenu();
+    ui("#editLayerDialog");
+  }
+
+  onSaveLayerName() {
+    const layerNameNode = document.getElementById('layerName');
+    let layerName = document.getElementById('layerName').value;
+    if (layerName.length === 0) {
+      layerNameNode.parentElement.classList.add('invalid');
+      layerNameNode.focus();
+      return;
+    }
+    this.#currentLayer.label = layerName;
+    this.updateLayerList();
     ui("#editLayerDialog");
   }
 

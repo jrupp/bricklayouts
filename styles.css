@@ -405,6 +405,18 @@ canvas {
 	font-size: 1.4rem !important;
 }
 
+.field .error {
+	display: none;
+}
+
+.field.invalid span.error {
+	display: inline;
+}
+
+#editLayerDialog .field.invalid {
+	margin-block-end: 2rem !important
+}
+
 #configurationEditor {
 	max-width: calc(100% - 5rem - 16px);
 	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
