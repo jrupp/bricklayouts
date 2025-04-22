@@ -33,8 +33,13 @@ describe("LayoutController", function() {
         geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
         geiSpy.withArgs('layerAdd').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('mobileLayerAdd').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerEditor').and.returnValue(document.createElement('article'));
+        geiSpy.withArgs('mobileLayerEditor').and.returnValue(document.createElement('dialog'));
         geiSpy.withArgs('layerList').and.returnValue(document.createElement('ul'));
+        geiSpy.withArgs('mobileLayerList').and.returnValue(document.createElement('ul'));
+        geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
         window.Slip = class Slip {
             constructor() {
             }
