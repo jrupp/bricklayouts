@@ -33,6 +33,7 @@ body {
 	font-family: Ubuntu, Arial, Helvetica, sans-serif;
 	background: var(--bg);
 	transition: background var(--speed) var(--easing);
+	touch-action: pan-x pan-y;
 }
 
 :root:not([data-dark-loaded]) * {
@@ -52,6 +53,7 @@ body {
 canvas {
 	width: 100%;
 	height: 100%;
+	touch-action: manipulation;
 }
 
 #toolbar {
@@ -122,7 +124,9 @@ canvas {
 #componentMenu,
 #configurationEditor,
 #layerEditor,
-#editLayerDialog {
+#editLayerDialog,
+#mobileLayersButton,
+#mobileLayerEditor {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -164,7 +168,9 @@ canvas {
 [data-dark-mode=true] #componentMenu,
 [data-dark-mode=true] #configurationEditor,
 [data-dark-mode=true] #layerEditor,
-[data-dark-mode=true] #editLayerDialog {
+[data-dark-mode=true] #editLayerDialog,
+[data-dark-mode=true] #mobileLayersButton,
+[data-dark-mode=true] #mobileLayerEditor {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;
@@ -380,6 +386,20 @@ canvas {
 	z-index: 1099;
 }
 
+#mobileLayersButton {
+	top: 3rem;
+}
+
+#mobileLayerEditor {
+	z-index: 1100;
+	max-height: 50vh;
+}
+
+#mobileLayerEditor>header {
+	padding-block-start: 0.5rem !important;
+	padding-block-end: 0.5rem !important;
+}
+
 #editLayerDialog {
 	z-index: 1100;
 }
@@ -389,11 +409,13 @@ canvas {
 	z-index: 1000;
 }
 
-#layerList {
+#layerList,
+#mobileLayerList {
 	user-select: none;
 }
 
-#layerList i:is(.visible,.edit,.delete) {
+#layerList i:is(.visible,.edit,.delete),
+#mobileLayerList i:is(.visible,.edit,.delete) {
 	cursor: pointer;
 }
 
@@ -716,6 +738,10 @@ button span.label {
 		width: 8rem;
 		height: 8rem;
 		padding: 1rem;
+	}
+
+	#mobileLayerEditor {
+		max-width: 50vw;
 	}
 }
 

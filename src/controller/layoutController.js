@@ -749,11 +749,17 @@ export class LayoutController {
    */
   initLayerUI() {
     document.getElementById('layerAdd').addEventListener('click', this.newLayer.bind(this));
+    document.getElementById('mobileLayerAdd').addEventListener('click', this.newLayer.bind(this));
 
     /** @type {HTMLUListElement} */
     const layerList = document.getElementById('layerList');
+    const mobileLayerList = document.getElementById('mobileLayerList');
     layerList.addEventListener('slip:beforeswipe', (e) => {e.preventDefault();}, false);
+    mobileLayerList.addEventListener('slip:beforeswipe', (e) => {e.preventDefault();}, false);
     layerList.addEventListener('slip:beforewait', (e) => {
+      if (e.target.className.indexOf('instant') > -1) e.preventDefault();
+    }, false);
+    mobileLayerList.addEventListener('slip:beforewait', (e) => {
       if (e.target.className.indexOf('instant') > -1) e.preventDefault();
     }, false);
     layerList.addEventListener('slip:reorder', (e) => {
@@ -766,7 +772,18 @@ export class LayoutController {
       this.workspace.setChildIndex(layer, oppSpliceIndex);
       this.updateLayerList();
     }, false);
+    mobileLayerList.addEventListener('slip:reorder', (e) => {
+      const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
+      const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
+      const layer = this.layers[oppIndex];
+      this.layers.splice(oppIndex, 1);
+      this.layers.splice(oppSpliceIndex, 0, layer);
+      e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
+      this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.updateLayerList();
+    }, false);
     new Slip(layerList);
+    new Slip(mobileLayerList);
     this.updateLayerList();
     document.getElementById('saveLayerDialog').addEventListener('click', this.onSaveLayerName.bind(this));
     const layerNameNode = document.getElementById('layerName');
@@ -856,17 +873,23 @@ export class LayoutController {
   updateLayerList() {
     /** @type {HTMLUListElement} */
     const layerList = document.getElementById('layerList');
+    /** @type {HTMLUListElement} */
+    const mobileLayerList = document.getElementById('mobileLayerList');
     layerList.innerHTML = '';
+    mobileLayerList.innerHTML = '';
     this.layers.forEach((layer, index) => {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
-      layerItem.innerHTML = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      let itemHtml = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      layerItem.innerHTML = itemHtml;
       if (layer === this.#currentLayer) {
         layerItem.classList.add('primary');
       }
+      let mobileLayerItem = layerItem.cloneNode(true);
       layerList.prepend(layerItem);
+      mobileLayerList.prepend(mobileLayerItem);
     });
-    layerList.querySelectorAll('.instant').forEach((item) => {
+    document.querySelectorAll('#layerList .instant, #mobileLayerList .instant').forEach((item) => {
       item.addEventListener('mousedown', () => {
         item.style.cursor = "grabbing";
       });
@@ -878,18 +901,25 @@ export class LayoutController {
       });
     });
     let deleteCallback = this.onDeleteLayer.bind(this);
-    layerList.querySelectorAll('.delete').forEach((item) => {
+    document.querySelectorAll('#layerList .delete, #mobileLayerList .delete').forEach((item) => {
       item.addEventListener('click', deleteCallback);
     });
     let editCallback = this.onEditLayer.bind(this);
-    layerList.querySelectorAll('.edit').forEach((item) => {
+    document.querySelectorAll('#layerList .edit, #mobileLayerList .edit').forEach((item) => {
       item.addEventListener('click', editCallback);
     });
     let visibilityCallback = this.onToggleLayerVisibility.bind(this);
-    layerList.querySelectorAll('.visible').forEach((item) => {
+    document.querySelectorAll('#layerList .visible, #mobileLayerList .visible').forEach((item) => {
       item.addEventListener('click', visibilityCallback);
     });
     layerList.querySelectorAll('div').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+        LayoutController.selectComponent(null);
+        this.updateLayerList();
+      });
+    });
+    mobileLayerList.querySelectorAll('div').forEach((item, index) => {
       item.addEventListener('click', () => {
         this.currentLayer = this.layers[(this.layers.length - 1 - index)];
         LayoutController.selectComponent(null);

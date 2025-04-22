@@ -340,7 +340,10 @@
             </div>
         </div>
     </div>
-    <article class="fixed right bottom margin no-padding border background" id="layerEditor">
+    <button class="fixed top right border background circle large small-elevate margin responsive s m" id="mobileLayersButton" data-ui="#mobileLayerEditor">
+        <i class="extra">layers</i>
+    </button>
+    <article class="fixed right bottom margin no-padding border background responsive l" id="layerEditor">
         <header class="fill top-round small-round horizontal-padding" style="min-block-size: 2.5rem;">
             <nav>
                 <span class="bold extra-text max">Layers</span>
@@ -355,6 +358,24 @@
             </button>
         </nav>
     </article>
+    <dialog id="mobileLayerEditor" class="bottom no-padding no-scroll">
+        <header style="min-block-size: 2.5rem;" class="fixed horizontal-padding">
+            <nav>
+                <span class="bold extra-text">Layers</span>
+                <button id="mobileLayerAdd" class="chip round filled medium small-elevate">
+                    <i class="bold large">add</i>
+                    <span class="extra-text">Add</span>
+                </button>
+                <div class="max"></div>
+                <button class="circle medium transparent" data-ui="#mobileLayerEditor">
+                    <i class="medium bold">close</i>
+                </button>
+            </nav>
+        </header>
+        <div class="no-padding no-margin extra-text no-round scroll" style="max-block-size: 24rem; max-height: calc(50vh - 3.5rem);">
+            <ul id="mobileLayerList" class="list border medium-space"></ul>
+        </div>
+    </dialog>
     <dialog id="editLayerDialog" class="no-padding border surface-container-high small-round">
         <div>
             <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
