@@ -561,6 +561,7 @@ export class LayoutController {
       // Clear between layers
       Connection.connectionDB.clear();
     });
+    this.updateLayerList();
   }
 
   /**
