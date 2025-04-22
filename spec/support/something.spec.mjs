@@ -7,6 +7,7 @@ import { Application, Assets, RenderLayer } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
+import layoutFileFour from './layout4.json' with { "type": "json" };
 
 describe("LayoutController", function() {
     beforeAll(async () => {
@@ -162,7 +163,7 @@ describe("LayoutController", function() {
             /**
              * @type {SerializedLayout}
              */
-            this.perfectImportData = {
+            this.perfectMinimalImportData = {
                 "version": 1,
                 "date": "2021-09-01T00:00:00.000Z",
                 "layers": [
@@ -206,12 +207,93 @@ describe("LayoutController", function() {
                             }
                         ]
                     }
-                ]
+                ],
+                "config": {}
+            }
+            /**
+             * @type {SerializedLayout}
+             */
+            this.perfectImportData = {
+                "version": 1,
+                "date": "2021-09-01T00:00:00.000Z",
+                "layers": [
+                    {
+                        "components": [
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 542,
+                                    "y": 420,
+                                    "angle": 0
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "7944efd3-78de-400e-8534-d9529d421f0e",
+                                        "otherConnection": ""
+                                    },
+                                    {
+                                        "uuid": "b2584add-d96b-4720-bd02-a3b1b8218c86",
+                                        "otherConnection": ""
+                                    }
+                                ]
+                            }
+                        ],
+                        "name": "Layer 2",
+                        "visible": true
+                    },
+                    {
+                        "name": "Test Layer",
+                        "visible": true,
+                        "components": [
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 0,
+                                    "y": 0,
+                                    "angle": 0
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "2235bb96-e4bb-4ef8-985f-9a1e38bd9dd0",
+                                        "otherConnection": "402cbcf9-21d8-4fdf-91e4-976af48bd204"
+                                    },
+                                    {
+                                        "uuid": "ebed056f-4987-44a8-9318-72a43f5b834e",
+                                        "otherConnection": ""
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 1174,
+                                    "y": 275,
+                                    "angle": 3.141592653589793
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "dad179d1-b328-4ffd-aa25-c289d97230d1",
+                                        "otherConnection": "a407fe20-dd56-44c1-9d77-64bd5ffd40bd"
+                                    },
+                                    {
+                                        "uuid": "402cbcf9-21d8-4fdf-91e4-976af48bd204",
+                                        "otherConnection": "2235bb96-e4bb-4ef8-985f-9a1e38bd9dd0"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "config": {}
             }
         });
 
         it("properly validates import data", function() {
             expect(LayoutController._validateImportData(this.perfectImportData)).toBe(true);
+        });
+
+        it("properly validates minimal import data", function() {
+            expect(LayoutController._validateImportData(this.perfectMinimalImportData)).toBe(true);
         });
 
         it("validates layout 1", function() {
@@ -220,6 +302,10 @@ describe("LayoutController", function() {
 
         it("validates layout 2", function() {
             expect(LayoutController._validateImportData(layoutFileTwo)).toBeTrue();
+        });
+
+        it("validates layout 4", function() {
+            expect(LayoutController._validateImportData(layoutFileFour)).toBeTrue();
         });
 
         it("throws errors with invalid version", function() {
@@ -264,6 +350,7 @@ describe("LayoutController", function() {
             expect(LayoutController._validateImportData(testData)).toBeFalse();
         });
 
+        // TODO: Remove this test once we can handle empty layers
         it("throws errors with 0 components", function() {
             /** @type {SerializedLayout} */
             let testData = this.perfectImportData;
@@ -402,6 +489,31 @@ describe("LayoutController", function() {
                     expect(connection.otherConnection).withContext(`Connection ${connection.uuid}`).not.toBeNull();
                 });
             });
+        });
+
+        it("imports layout 4", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            layoutController._importLayout(layoutFileFour);
+            expect(layoutController.layers).toHaveSize(3);
+
+            // Verify the layers are in the correct order
+            expect(layoutController.layers[0].label).toBe("Layer 3");
+            expect(layoutController.layers[1].label).toBe("Layer 2");
+            expect(layoutController.layers[2].label).toBe("Layer 1");
+
+            // Verify the layers are visible (or not)
+            expect(layoutController.layers[0].visible).toBeTrue();
+            expect(layoutController.layers[1].visible).toBeFalse();
+            expect(layoutController.layers[2].visible).toBeTrue();
+
+            // Verify only the top layer is active
+            expect(layoutController.layers[0].eventMode).toBe("none");
+            expect(layoutController.layers[0].interactiveChildren).toBeFalse();
+            expect(layoutController.layers[1].eventMode).toBe("none");
+            expect(layoutController.layers[1].interactiveChildren).toBeFalse();
+            expect(layoutController.layers[2].eventMode).toBe("passive");
+            expect(layoutController.layers[2].interactiveChildren).toBeTrue();
         });
     });
 
