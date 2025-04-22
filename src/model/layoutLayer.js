@@ -137,9 +137,8 @@ export class LayoutLayer extends Container {
             data?.visible == undefined || typeof data?.visible === 'boolean',
             data?.components,
             Array.isArray(data?.components),
-            data?.components?.length > 0,
         ]
-        // TODO: Allow 0 components
+
         if (validations.some(v => !v)) {
             return false;
         }
