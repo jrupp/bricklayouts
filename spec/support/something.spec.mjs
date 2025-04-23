@@ -1,11 +1,13 @@
 import { LayoutController, SerializedLayout } from "../../src/controller/layoutController.js";
 import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
+import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { Application, Assets, RenderLayer } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
+import layoutFileFour from './layout4.json' with { "type": "json" };
 
 describe("LayoutController", function() {
     beforeAll(async () => {
@@ -31,6 +33,18 @@ describe("LayoutController", function() {
         geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorCancel').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('toolbar').and.returnValue(document.createElement('div'));
+        geiSpy.withArgs('layerAdd').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('mobileLayerAdd').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('layerEditor').and.returnValue(document.createElement('article'));
+        geiSpy.withArgs('mobileLayerEditor').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('layerList').and.returnValue(document.createElement('ul'));
+        geiSpy.withArgs('mobileLayerList').and.returnValue(document.createElement('ul'));
+        geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
+        window.Slip = class Slip {
+            constructor() {
+            }
+        };
         const layoutController = LayoutController.getInstance(app);
         window.layoutController = layoutController;
         return layoutController.init();
@@ -149,11 +163,50 @@ describe("LayoutController", function() {
             /**
              * @type {SerializedLayout}
              */
+            this.perfectMinimalImportData = {
+                "version": 1,
+                "date": "2021-09-01T00:00:00.000Z",
+                "layers": [
+                    {
+                        "components": []
+                    }
+                ],
+                "config": {}
+            }
+            /**
+             * @type {SerializedLayout}
+             */
             this.perfectImportData = {
                 "version": 1,
                 "date": "2021-09-01T00:00:00.000Z",
                 "layers": [
                     {
+                        "components": [
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 542,
+                                    "y": 420,
+                                    "angle": 0
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "7944efd3-78de-400e-8534-d9529d421f0e",
+                                        "otherConnection": ""
+                                    },
+                                    {
+                                        "uuid": "b2584add-d96b-4720-bd02-a3b1b8218c86",
+                                        "otherConnection": ""
+                                    }
+                                ]
+                            }
+                        ],
+                        "name": "Layer 2",
+                        "visible": true
+                    },
+                    {
+                        "name": "Test Layer",
+                        "visible": true,
                         "components": [
                             {
                                 "type": "railStraight9V",
@@ -193,12 +246,17 @@ describe("LayoutController", function() {
                             }
                         ]
                     }
-                ]
+                ],
+                "config": {}
             }
         });
 
         it("properly validates import data", function() {
             expect(LayoutController._validateImportData(this.perfectImportData)).toBe(true);
+        });
+
+        it("properly validates minimal import data", function() {
+            expect(LayoutController._validateImportData(this.perfectMinimalImportData)).toBe(true);
         });
 
         it("validates layout 1", function() {
@@ -207,6 +265,10 @@ describe("LayoutController", function() {
 
         it("validates layout 2", function() {
             expect(LayoutController._validateImportData(layoutFileTwo)).toBeTrue();
+        });
+
+        it("validates layout 4", function() {
+            expect(LayoutController._validateImportData(layoutFileFour)).toBeTrue();
         });
 
         it("throws errors with invalid version", function() {
@@ -221,6 +283,13 @@ describe("LayoutController", function() {
             let testData = this.perfectImportData;
             testData.layers = [];
             expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("allows with only 1 layer", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.layers = [this.perfectImportData.layers[0]];
+            expect(LayoutController._validateImportData(testData)).toBeTrue();
         });
 
         it("throws errors with no version", function() {
@@ -251,11 +320,32 @@ describe("LayoutController", function() {
             expect(LayoutController._validateImportData(testData)).toBeFalse();
         });
 
-        it("throws errors with 0 components", function() {
+        it("allows a layer with 0 components", function() {
             /** @type {SerializedLayout} */
             let testData = this.perfectImportData;
             testData.layers[0].components = [];
-            expect(LayoutController._validateImportData(testData)).toBeFalse();
+            expect(LayoutController._validateImportData(testData)).toBeTrue();
+        });
+
+        it("allows a layer with no name", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            delete testData.layers[0].name;
+            expect(LayoutController._validateImportData(testData)).toBeTrue();
+        });
+
+        it("allows a layer with no visible", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            delete testData.layers[0].visible;
+            expect(LayoutController._validateImportData(testData)).toBeTrue();
+        });
+
+        it("allows an invisible layer", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.layers[0].visible = false;
+            expect(LayoutController._validateImportData(testData)).toBeTrue();
         });
 
         it("throws errors with no component type", function() {
@@ -390,6 +480,31 @@ describe("LayoutController", function() {
                 });
             });
         });
+
+        it("imports layout 4", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            layoutController._importLayout(layoutFileFour);
+            expect(layoutController.layers).toHaveSize(3);
+
+            // Verify the layers are in the correct order
+            expect(layoutController.layers[0].label).toBe("Layer 3");
+            expect(layoutController.layers[1].label).toBe("Layer 2");
+            expect(layoutController.layers[2].label).toBe("Layer 1");
+
+            // Verify the layers are visible (or not)
+            expect(layoutController.layers[0].visible).toBeTrue();
+            expect(layoutController.layers[1].visible).toBeFalse();
+            expect(layoutController.layers[2].visible).toBeTrue();
+
+            // Verify only the top layer is active
+            expect(layoutController.layers[0].eventMode).toBe("none");
+            expect(layoutController.layers[0].interactiveChildren).toBeFalse();
+            expect(layoutController.layers[1].eventMode).toBe("none");
+            expect(layoutController.layers[1].interactiveChildren).toBeFalse();
+            expect(layoutController.layers[2].eventMode).toBe("passive");
+            expect(layoutController.layers[2].interactiveChildren).toBeTrue();
+        });
     });
 
 
@@ -488,5 +603,114 @@ describe("Pose", function() {
     it("normalizes negative angles", function() {
         let pose = new Pose(0, 0, -Math.PI);
         expect(pose.angle).toBeCloseTo(Math.PI);
+    });
+});
+
+describe("LayoutLayer", function() {
+    it("creates a new LayoutLayer", function() {
+        let layoutLayer = new LayoutLayer();
+        expect(layoutLayer).toBeInstanceOf(LayoutLayer);
+        expect(layoutLayer.children).toHaveSize(1);
+        expect(layoutLayer.openConnections).toHaveSize(0);
+        expect(layoutLayer.overlay).toBeInstanceOf(RenderLayer);
+    });
+
+    it("destroys a LayoutLayer", function() {
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.destroy();
+        expect(layoutLayer.overlay).toBeNull();
+    });
+
+    it("validates a valid serialized layout layer", function() {
+        let compSpy = spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: "Test Layer",
+            visible: true
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+        expect(compSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("validates a valid minimal serialized layout layer", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1]
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("validates a layer with no components", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: []
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("does not validate a serialized with bad name", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: 1
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a serialized with blank name", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            name: ""
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a serialized with bad visible", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [1],
+            visible: "hello"
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("deserializes a minimal serialized layout layer", function() {
+        let serialized = {
+            components: [1],
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("New Layer");
+        expect(layoutLayer.visible).toBeTrue();
+    });
+
+    it("deserializes a serialized layout layer", function() {
+        let serialized = {
+            components: [1],
+            name: "Test Layer",
+            visible: false
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("Test Layer");
+        expect(layoutLayer.visible).toBeFalse();
+    });
+
+    it("throws an error when deserializing a serialized layout layer with no data", function() {
+        let layoutLayer = new LayoutLayer();
+        expect(() => layoutLayer.deserialize()).toThrowError("Invalid data");
+    });
+
+    it("serializes a valid layout layer", function() {
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.label = "Test Layer";
+        layoutLayer.visible = true;
+        let serialized = layoutLayer.serialize();
+        expect(serialized).toEqual({
+            components: [],
+            name: "Test Layer",
+            visible: true
+        });
     });
 });

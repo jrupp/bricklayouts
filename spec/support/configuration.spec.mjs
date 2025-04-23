@@ -11,6 +11,8 @@ describe("Configuration", () => {
     afterAll(() => {
         // Clear localStorage after all tests
         localStorage.clear();
+        // Reset singleton instance
+        Configuration._instance = null;
     });
 
     describe("Singleton Pattern", () => {

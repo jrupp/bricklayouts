@@ -340,6 +340,73 @@
             </div>
         </div>
     </div>
+    <button class="fixed top right border background circle large small-elevate margin responsive s m" id="mobileLayersButton" data-ui="#mobileLayerEditor">
+        <i class="extra">layers</i>
+    </button>
+    <article class="fixed right bottom margin no-padding border background responsive l" id="layerEditor">
+        <header class="fill top-round small-round horizontal-padding" style="min-block-size: 2.5rem;">
+            <nav>
+                <span class="bold extra-text max">Layers</span>
+            </nav>
+        </header>
+        <div class="no-padding no-margin extra-text scroll no-round" style="max-block-size: 24rem;">
+            <ul id="layerList" class="list no-space"></ul>
+        </div>
+        <nav class="no-margin bottom-round small-round" style="background-color: var(--outline-variant);">
+            <button id="layerAdd" class="small-round small transparent">
+                <i class="bold">add</i>
+            </button>
+        </nav>
+    </article>
+    <dialog id="mobileLayerEditor" class="bottom no-padding no-scroll">
+        <header style="min-block-size: 2.5rem;" class="fixed horizontal-padding">
+            <nav>
+                <span class="bold extra-text">Layers</span>
+                <button id="mobileLayerAdd" class="chip round filled medium small-elevate">
+                    <i class="bold large">add</i>
+                    <span class="extra-text">Add</span>
+                </button>
+                <div class="max"></div>
+                <button class="circle medium transparent" data-ui="#mobileLayerEditor">
+                    <i class="medium bold">close</i>
+                </button>
+            </nav>
+        </header>
+        <div class="no-padding no-margin extra-text no-round scroll" style="max-block-size: 24rem; max-height: calc(50vh - 3.5rem);">
+            <ul id="mobileLayerList" class="list border medium-space"></ul>
+        </div>
+    </dialog>
+    <dialog id="editLayerDialog" class="no-padding border surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">Layer Editor</h6>
+                    <button class="circle medium transparent" data-ui="#editLayerDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div class="small-padding horizontal-padding">
+                <div class="field label prefix middle-align large-space border medium vertical-margin" id="layerNameField">
+                    <i class="large no-round">layers</i>
+                    <input id="layerName" type="text" placeholder=" ">
+                    <label>Layer Name</label>
+                    <span class="error" id="layerNameError">Error goes here</span>
+                </div>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button id="saveLayerDialog" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important">
+                    <span>Save</span>
+                </button>
+                <button class="border no-border no-round max extra-text"
+                    style="border-end-end-radius: 0.5rem !important;" data-ui="#editLayerDialog">
+                    <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
     <article class="left page medium-elevate no-padding margin" id="configurationEditor">
         <div>
             <header class="fill top-round small-round" style="min-block-size:auto">

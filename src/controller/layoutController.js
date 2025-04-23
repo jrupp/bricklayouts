@@ -77,6 +77,12 @@ export class LayoutController {
   static editorController = null;
 
   /**
+   * The currently active layer
+   * @type {LayoutLayer}
+   */
+  #currentLayer = null;
+
+  /**
    * 
    * @param {Application} [app] 
    * @returns {LayoutController}
@@ -163,11 +169,9 @@ export class LayoutController {
      */
     this.layers = [];
 
-    /**
-     * The current active layer
-     * @type {LayoutLayer}
-     */
-    this.currentLayer = null;
+    this.#currentLayer = null;
+
+    this.initLayerUI();
 
     this.newLayer();
 
@@ -362,15 +366,6 @@ export class LayoutController {
   }
 
   /**
-   * Create a new layer and set it as the active layer.
-   */
-  newLayer() {
-    this.currentLayer = new LayoutLayer();
-    this.layers.push(this.currentLayer);
-    this.workspace.addChild(this.currentLayer);
-  }
-
-  /**
    * Reset the layout to a blank state.
    */
   reset() {
@@ -378,7 +373,7 @@ export class LayoutController {
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
     this.layers = [];
-    this.currentLayer = null;
+    this.#currentLayer = null;
     this.workspace.position.set(0, 0);
     this.config.clearWorkspaceSettings();
     this.workspace.scale.set(this.config.defaultZoom);
@@ -390,6 +385,22 @@ export class LayoutController {
     LayoutController.previousPinchDistance = -1;
     LayoutController.eventCache.clear();
     this.newLayer();
+  }
+
+  get currentLayer() {
+    return this.#currentLayer;
+  }
+
+  set currentLayer(layer) {
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'none';
+      this.#currentLayer.interactiveChildren = false;
+    }
+    this.#currentLayer = layer;
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'passive';
+      this.#currentLayer.interactiveChildren = true;
+    }
   }
 
   /**
@@ -541,6 +552,7 @@ export class LayoutController {
       if (index > 0) {
         this.newLayer();
       }
+      this.#currentLayer.deserialize(layer);
       layer.components.forEach((component) => {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
@@ -549,6 +561,7 @@ export class LayoutController {
       // Clear between layers
       Connection.connectionDB.clear();
     });
+    this.updateLayerList();
   }
 
   /**
@@ -718,6 +731,202 @@ export class LayoutController {
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.rotate();
     }
+  }
+
+  /**
+   * Create a new layer and set it as the active layer.
+   */
+  newLayer() {
+    this.currentLayer = new LayoutLayer();
+    this.layers.push(this.#currentLayer);
+    this.workspace.addChild(this.#currentLayer);
+    this.#currentLayer.label = `Layer ${this.layers.length}`;
+    LayoutController.selectComponent(null);
+    this.updateLayerList();
+  }
+
+  /**
+   * Initialize the UI for the layer management.
+   */
+  initLayerUI() {
+    document.getElementById('layerAdd').addEventListener('click', this.newLayer.bind(this));
+    document.getElementById('mobileLayerAdd').addEventListener('click', this.newLayer.bind(this));
+
+    /** @type {HTMLUListElement} */
+    const layerList = document.getElementById('layerList');
+    const mobileLayerList = document.getElementById('mobileLayerList');
+    layerList.addEventListener('slip:beforeswipe', (e) => {e.preventDefault();}, false);
+    mobileLayerList.addEventListener('slip:beforeswipe', (e) => {e.preventDefault();}, false);
+    layerList.addEventListener('slip:beforewait', (e) => {
+      if (e.target.className.indexOf('instant') > -1) e.preventDefault();
+    }, false);
+    mobileLayerList.addEventListener('slip:beforewait', (e) => {
+      if (e.target.className.indexOf('instant') > -1) e.preventDefault();
+    }, false);
+    layerList.addEventListener('slip:reorder', (e) => {
+      const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
+      const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
+      const layer = this.layers[oppIndex];
+      this.layers.splice(oppIndex, 1);
+      this.layers.splice(oppSpliceIndex, 0, layer);
+      e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
+      this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.updateLayerList();
+    }, false);
+    mobileLayerList.addEventListener('slip:reorder', (e) => {
+      const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
+      const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
+      const layer = this.layers[oppIndex];
+      this.layers.splice(oppIndex, 1);
+      this.layers.splice(oppSpliceIndex, 0, layer);
+      e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
+      this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.updateLayerList();
+    }, false);
+    new Slip(layerList);
+    new Slip(mobileLayerList);
+    this.updateLayerList();
+    document.getElementById('saveLayerDialog').addEventListener('click', this.onSaveLayerName.bind(this));
+    const layerNameNode = document.getElementById('layerName');
+    layerNameNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onSaveLayerName();
+      }
+      if (event.key === 'Escape') {
+        ui("#editLayerDialog");
+      }
+      event.stopPropagation();
+    });
+    layerNameNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onToggleLayerVisibility(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Toggle Layer ${index}`);
+    let layer = this.layers[index];
+    layer.visible = !layer.visible;
+    this.updateLayerList();
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onDeleteLayer(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Delete Layer ${index}`);
+    if (this.layers.length > 1) {
+      let tempLayer = this.layers[index];
+      this.layers.splice(index, 1);
+      if (this.#currentLayer === tempLayer) {
+        this.currentLayer = this.layers[0];
+      }
+      if (LayoutController.selectedComponent && LayoutController.selectedComponent.layer === tempLayer) {
+        LayoutController.selectComponent(null);
+      }
+      this.workspace.removeChild(tempLayer);
+      tempLayer.destroy();
+      tempLayer = null;
+      this.updateLayerList();
+    }
+  }
+
+  /**
+   * 
+   * @param {Event} event 
+   */
+  onEditLayer(event) {
+    let index = parseInt(event.currentTarget.dataset.layer);
+    console.log(`Edit Layer ${index}`);
+    const layerNameNode = document.getElementById('layerName');
+    layerNameNode.parentElement.classList.remove('invalid');
+    layerNameNode.value = this.layers[index].label;
+    layerNameNode.setAttribute('data-layer', index);
+    this.hideFileMenu();
+    ui("#editLayerDialog");
+  }
+
+  onSaveLayerName() {
+    const layerNameNode = document.getElementById('layerName');
+    let layerName = layerNameNode.value;
+    let index = parseInt(layerNameNode.getAttribute('data-layer'));
+    if (layerName.length === 0) {
+      layerNameNode.parentElement.classList.add('invalid');
+      layerNameNode.focus();
+      return;
+    }
+    this.layers[index].label = layerName;
+    this.updateLayerList();
+    ui("#editLayerDialog");
+  }
+
+  /**
+   * Update the layer list in the UI.
+   */
+  updateLayerList() {
+    /** @type {HTMLUListElement} */
+    const layerList = document.getElementById('layerList');
+    /** @type {HTMLUListElement} */
+    const mobileLayerList = document.getElementById('mobileLayerList');
+    layerList.innerHTML = '';
+    mobileLayerList.innerHTML = '';
+    this.layers.forEach((layer, index) => {
+      const layerItem = document.createElement('li');
+      const layerVisible = layer.visible ? '' : '_off';
+      let itemHtml = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      layerItem.innerHTML = itemHtml;
+      if (layer === this.#currentLayer) {
+        layerItem.classList.add('primary');
+      }
+      let mobileLayerItem = layerItem.cloneNode(true);
+      layerList.prepend(layerItem);
+      mobileLayerList.prepend(mobileLayerItem);
+    });
+    document.querySelectorAll('#layerList .instant, #mobileLayerList .instant').forEach((item) => {
+      item.addEventListener('mousedown', () => {
+        item.style.cursor = "grabbing";
+      });
+      item.addEventListener('mouseup', () => {
+        item.style.cursor = "grab";
+      });
+      item.addEventListener('mouseover', () => {
+        item.style.cursor = "grab";
+      });
+    });
+    let deleteCallback = this.onDeleteLayer.bind(this);
+    document.querySelectorAll('#layerList .delete, #mobileLayerList .delete').forEach((item) => {
+      item.addEventListener('click', deleteCallback);
+    });
+    let editCallback = this.onEditLayer.bind(this);
+    document.querySelectorAll('#layerList .edit, #mobileLayerList .edit').forEach((item) => {
+      item.addEventListener('click', editCallback);
+    });
+    let visibilityCallback = this.onToggleLayerVisibility.bind(this);
+    document.querySelectorAll('#layerList .visible, #mobileLayerList .visible').forEach((item) => {
+      item.addEventListener('click', visibilityCallback);
+    });
+    layerList.querySelectorAll('div').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+        LayoutController.selectComponent(null);
+        this.updateLayerList();
+      });
+    });
+    mobileLayerList.querySelectorAll('div').forEach((item, index) => {
+      item.addEventListener('click', () => {
+        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+        LayoutController.selectComponent(null);
+        this.updateLayerList();
+      });
+    });
   }
 
   drawGrid() {
