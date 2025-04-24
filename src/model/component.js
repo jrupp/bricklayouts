@@ -3,6 +3,7 @@ import { LayoutController, TrackData } from '../controller/layoutController.js';
 import { Connection, SerializedConnection } from "./connection.js";
 import { Pose, SerializedPose } from "./pose.js";
 import { LayoutLayer } from "./layoutLayer.js";
+import { PolarVector } from "./polarVector.js";
 
 /**
  * @typedef {Object} SerializedComponent
@@ -105,9 +106,14 @@ export class Component extends Container {
     var connection = component.getOpenConnection();
     if (connection) {
       return Component.fromConnection(baseData, connection, layer);
-    } else {
-      return null;
     }
+    if (component.connections.length === 0) {
+      // Calculate a position that is next to the component instead.
+      const vec = new PolarVector(component.sprite.width, 0, 0);
+      let newPos = vec.getEndPosition(component.getPose());
+      return new Component(baseData, newPos, layer);
+    }
+    return null;
   }
 
   destroy() {

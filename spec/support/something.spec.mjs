@@ -156,6 +156,66 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).withContext("All Open Connections").toHaveSize(12);
             expect(layoutController.currentLayer.children[0].getOpenConnections()).withContext("Middle component open connections").toHaveSize(0);
         });
+
+        it("doesn't add a component when connections full", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            let firstComp = layoutController.currentLayer.children[0];
+            layoutController.addComponent(trackData);
+            LayoutController.selectComponent(firstComp);
+            layoutController.addComponent(trackData);
+            LayoutController.selectComponent(firstComp);
+            expect(layoutController.layers[0].children).withContext("Children before trying to add another").toHaveSize(4); // 3 components and 1 render layer
+            layoutController.addComponent(trackData);
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).withContext("Children after trying to add another").toHaveSize(4); // 3 components and 1 render layer
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].children[1]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].children[2]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].children[3]).toBeInstanceOf(RenderLayer);
+            expect(layoutController.layers[0].openConnections).withContext("All Open Connections").toHaveSize(2);
+            expect(firstComp.getOpenConnections()).withContext("Middle component open connections").toHaveSize(0);
+        });
+
+        it("adds component next to selected component if no connections", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "lancaster30x60");
+            layoutController.addComponent(trackData);
+            let firstPose = layoutController.currentLayer.children[0].getPose();
+            layoutController.addComponent(trackData);
+            let secondPose = layoutController.currentLayer.children[0].getPose();
+            expect(layoutController.currentLayer.children).toHaveSize(3);
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
+            expect(secondPose.x).withContext("X position of new component").toBe(firstPose.x + layoutController.currentLayer.children[0].sprite.width);
+            expect(secondPose.y).withContext("Y position of new component").toBe(firstPose.y);
+            expect(secondPose.angle).toBe(firstPose.angle);
+        });
+
+        it("adds component next to rotated selected component if no connections", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "lancaster30x60");
+            layoutController.addComponent(trackData);
+            LayoutController.selectedComponent.rotate();
+            let firstPose = layoutController.currentLayer.children[0].getPose();
+            layoutController.addComponent(trackData);
+            let secondPose = layoutController.currentLayer.children[0].getPose();
+            expect(layoutController.currentLayer.children).toHaveSize(3);
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
+            const offsetDistance = layoutController.currentLayer.children[0].sprite.width;
+            const dx = Math.cos(firstPose.angle) * offsetDistance;
+            const dy = Math.sin(firstPose.angle) * offsetDistance;
+            expect(secondPose.x).withContext("X position of new component").toBeCloseTo(Math.fround(firstPose.x + dx), 4);
+            expect(secondPose.y).withContext("Y position of new component").toBeCloseTo(Math.fround(firstPose.y + dy), 3);
+            expect(secondPose.angle).toBe(firstPose.angle);
+        });
     });
 
     describe("_validateImportData", function() {
