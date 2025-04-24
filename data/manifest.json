@@ -112,6 +112,12 @@
                             "next": 2
                         }
                     ]
+                },
+                {
+                    "alias": "lancaster30x60",
+                    "name": "Lancaster Table 30\"x60",
+                    "category": "table",
+                    "src": "lancaster-30x60.png"
                 }
             ]
         }
