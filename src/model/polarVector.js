@@ -72,7 +72,7 @@ export class PolarVector {
     }
 
     /**
-     * 
+     * Gets the end position of this vector given a start position.
      * @param {Pose} startPosition 
      * @returns {Pose}
      */

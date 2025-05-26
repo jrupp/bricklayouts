@@ -17,6 +17,7 @@ export { SerializedComponent };
 export class Component extends Container {
   /**
    * @type {Pose}
+   * The offset position from the mouse to this Component's position when dragging.
    */
   dragStartPos;
 
