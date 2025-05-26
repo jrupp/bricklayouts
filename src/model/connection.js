@@ -141,6 +141,7 @@ export class Connection {
         var tempPose = this.offsetVector.getEndPosition({ x: 0, y: 0, angle: this.component.sprite.rotation });
         this.circle.position.set(tempPose.x, tempPose.y);
         this.circle.circle(0, 0, 10).fill({ color: 0xffff00 });
+        // TODO: Check if this is dragStartConnection, and drag bigger if so
         if (this.circle.eventMode == "static") {
             this.circle.circle(0, 0, 1).fill({ color: 0x000000 });
         }

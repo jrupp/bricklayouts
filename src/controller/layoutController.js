@@ -620,8 +620,19 @@ export class LayoutController {
         LayoutController.dragTarget.isDragging = true;
         LayoutController.dragTarget.closeConnections();
       }
-
-      LayoutController.dragTarget.position.set(a.x + LayoutController.dragTarget.dragStartPos.x, a.y + LayoutController.dragTarget.dragStartPos.y);
+      a.x += LayoutController.dragTarget.dragStartPos.x;
+      a.y += LayoutController.dragTarget.dragStartPos.y;
+      // Snap to grid if enabled
+      // TODO: Make this a setting in the configuration
+      if (true) {
+        let gridSize = 16;
+        a.x = Math.round(a.x / gridSize) * gridSize;
+        a.y = Math.round(a.y / gridSize) * gridSize;
+      }
+      // TODO: Check for nearby connections and snap to them
+      a.x += LayoutController.dragTarget.dragStartOffset.x;
+      a.y += LayoutController.dragTarget.dragStartOffset.y;
+      LayoutController.dragTarget.position.set(a.x, a.y);
     }
   }
 
@@ -630,6 +641,24 @@ export class LayoutController {
     if (LayoutController.dragTarget) {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
       LayoutController.dragTarget.alpha = 1;
+      LayoutController.dragTarget.dragStartConnection = null;
+      if (LayoutController.dragTarget.connections.length > 0) {
+        let openConnections = LayoutController.dragTarget.getOpenConnections();
+        if (openConnections.length > 0) {
+          openConnections.forEach((openCon) => {
+            // TODO: Move this for loop to its own method in LayoutLayer
+            for (const [key, connection] of LayoutController.getInstance().currentLayer.openConnections) {
+              if (connection.component.uid === openCon.component.uid) {
+                continue;
+              }
+              if (connection.getPose().isInRadius(openCon.getPose(), 1) && connection.getPose().hasOppositeAngle(openCon.getPose())) {
+                openCon.connectTo(connection);
+                break;
+              }
+            }
+          });
+        }
+      }
       LayoutController.dragTarget = null;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);

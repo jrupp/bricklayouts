@@ -22,6 +22,17 @@ export class Component extends Container {
   dragStartPos;
 
   /**
+   * @type {Connection}
+   * The connection that was closest to the start of dragging this Component.
+   */
+  dragStartConnection;
+
+  /**
+   * @type {Pose}
+   */
+  dragStartOffset;
+
+  /**
    * 
    * @param {TrackData} baseData 
    * @param {Pose} pose 
@@ -59,7 +70,7 @@ export class Component extends Container {
     this.addChild(this.sprite);
 
     this.sprite.eventMode = 'static';
-    this.sprite.on('pointerdown', Component.onStartDrag, this);
+    this.sprite.on('pointerdown', this.onStartDrag, this);
     this.sprite.on('click', Component.onClick, this);
     this.sprite.on('tap', Component.onClick, this);
 
@@ -118,6 +129,7 @@ export class Component extends Container {
   }
 
   destroy() {
+    this.dragStartConnection = null;
     this.connections.forEach((connection) => connection.destroy());
     this.connections = null;
     this.layer = null;
@@ -270,7 +282,7 @@ export class Component extends Container {
    * 
    * @param {FederatedPointerEvent} e 
    */
-  static onStartDrag(e) {
+  onStartDrag(e) {
     if (e.button != 0 || !e.nativeEvent.isPrimary) {
       return;
     }
@@ -278,7 +290,26 @@ export class Component extends Container {
     this.alpha = 0.5;
     this.isDragging = false;
     let a = e.getLocalPosition(this.parent);
-    this.dragStartPos = this.getPose().subtract({...a, angle: 0});
+    this.dragStartConnection = null;
+    // Find the closest connection to the start of dragging
+    let closestDistance = Infinity;
+    for (let connection of this.connections) {
+      let distance = connection.getPose().subtract({...a, angle: 0}).magnitude();
+      if (this.dragStartConnection === null || distance < closestDistance) {
+        closestDistance = distance;
+        this.dragStartConnection = connection;
+      }
+    }
+    if (this.dragStartConnection) {
+      // If we found a connection, set the drag start position to the connection's pose
+      let b = this.dragStartConnection.getPose();
+      this.dragStartPos = b.subtract({...a, angle: 0});
+      this.dragStartOffset =  this.getPose().subtract(b);
+    } else {
+      // If we didn't find a connection, set the drag start position to the Component's pose
+      this.dragStartPos = this.getPose().subtract({...a, angle: 0});
+      this.dragStartOffset = new Pose(0, 0, 0);
+    }
     window.app.stage.on('pointermove', LayoutController.onDragMove);
     window.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
     console.log(this.baseData.alias);
