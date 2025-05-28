@@ -215,6 +215,7 @@ export class LayoutController {
     document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => {
       document.getElementById('toolbar').classList.toggle('open');
@@ -417,6 +418,16 @@ export class LayoutController {
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
     saveAs(blob, 'layout.json');
     this.hideFileMenu();
+  }
+
+  /**
+   * Export the current layout as an image.
+   */
+  async exportLayout() {
+    this.hideFileMenu();
+    LayoutController.selectComponent(null);
+    const url = await this.app.renderer.extract.base64(this.app.stage);
+    saveAs(url, 'layout.png');
   }
 
   /**
