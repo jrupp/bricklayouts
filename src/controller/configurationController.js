@@ -122,6 +122,15 @@ export class ConfigurationController {
             this.#layoutController.drawGrid();
         });
 
+        document.getElementById('snapToGrid').addEventListener('change', (ev) => {
+            const newSetting = { snapToGrid: ev.target.checked };
+            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.updateUserGridSettings(newSetting);
+            } else {
+                this.#config.updateWorkspaceGridSettings(newSetting);
+            }
+        });
+
         // Create tabs for user and workspace settings
         /*
         const tabs = this.#pane.addTab({
@@ -193,6 +202,7 @@ export class ConfigurationController {
         gridSubColor.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         gridSubColor.nextElementSibling.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', `#${subColorValue.toString(16).padStart(6, '0')}`);
+        document.getElementById('snapToGrid').checked = gridSettings.snapToGrid ?? this.#config._defaults.gridSettings.snapToGrid;
     }
 
     /**

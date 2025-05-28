@@ -623,8 +623,7 @@ export class LayoutController {
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
       // Snap to grid if enabled
-      // TODO: Make this a setting in the configuration
-      if (true) {
+      if (LayoutController.getInstance().config.gridSettings.snapToGrid) {
         let gridSize = 16;
         a.x = Math.round(a.x / gridSize) * gridSize;
         a.y = Math.round(a.y / gridSize) * gridSize;

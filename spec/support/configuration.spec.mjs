@@ -38,7 +38,8 @@ describe("Configuration", () => {
                 size: 1536,
                 divisions: 3,
                 mainColor: 0xffffff,
-                subColor: 0x9c9c9c
+                subColor: 0x9c9c9c,
+                snapToGrid: true
             });
         });
 
@@ -193,6 +194,13 @@ describe("Configuration", () => {
             expect(serialized.gridSettings.size).toBe(1024);
         });
 
+        it("serializes grid settings with snapToGrid", () => {
+            const config = Configuration.getInstance();
+            config.updateWorkspaceGridSettings({ snapToGrid: false });
+            const serialized = config.serializeWorkspaceSettings();
+            expect(serialized.gridSettings.snapToGrid).toBe(false);
+        });
+
         it("serializes an empty object when no settings are defined", () => {
             const config = Configuration.getInstance();
             const serialized = config.serializeWorkspaceSettings();
@@ -224,10 +232,16 @@ describe("Configuration", () => {
             expect(config.workspaceGridSettings.enabled).toBe(false);
         });
 
+        it("deserializes grid settings with snapToGrid", () => {
+            const config = Configuration.getInstance();
+            config.deserializeWorkspaceSettings({ gridSettings: { snapToGrid: false } });
+            expect(config.workspaceGridSettings.snapToGrid).toBe(false);
+        });
+
         it("deserializes a full set of settings", () => {
             const config = Configuration.getInstance();
             config.deserializeWorkspaceSettings({
-                gridSettings: { enabled: true, size: 1024, divisions: 4, mainColor: "#123456", subColor: "#abcdef" },
+                gridSettings: { enabled: true, size: 1024, divisions: 4, mainColor: "#123456", subColor: "#abcdef", snapToGrid: true },
                 defaultZoom: 0.79
             });
             expect(config.workspaceGridSettings.enabled).toBe(true);
@@ -236,6 +250,7 @@ describe("Configuration", () => {
             expect(config.workspaceGridSettings.mainColor).toBe(0x123456);
             expect(config.workspaceGridSettings.subColor).toBe(0xabcdef);
             expect(config.workspaceDefaultZoom).toBe(0.79);
+            expect(config.workspaceGridSettings.snapToGrid).toBe(true);
         });
 
         it("clears existing settings before deserialization", () => {
@@ -286,6 +301,10 @@ describe("Configuration", () => {
             expect(Configuration.validateImportData({ defaultZoom: "0.75" })).toBeFalse();
             expect(Configuration.validateImportData({ defaultZoom: -0.75 })).toBeFalse();
             expect(Configuration.validateImportData({ defaultZoom: 1.75 })).toBeFalse();
+        });
+        it("validates grid snapToGrid flag", () => {
+            expect(Configuration.validateImportData({ gridSettings: { snapToGrid: true } })).toBeTrue();
+            expect(Configuration.validateImportData({ gridSettings: { snapToGrid: "true" } })).toBeFalse();
         });
     });
 });

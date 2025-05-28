@@ -5,6 +5,7 @@
  * @property {number} divisions Number of subdivisions within each grid cell. If set to 1, no subdivisions are shown.
  * @property {number} mainColor The color of the main grid lines in hexadecimal (e.g. 0xffffff for white)
  * @property {number} subColor The color of the subdivision grid lines in hexadecimal (e.g. 0x9c9c9c for gray)
+ * @property {boolean} snapToGrid Whether objects should snap to the grid when moved
  */
 
 /**
@@ -14,6 +15,7 @@
  * @property {number} divisions Number of subdivisions within each grid cell. If set to 1, no subdivisions are shown.
  * @property {string} mainColor The color of the main grid lines in hexadecimal
  * @property {string} subColor The color of the subdivision grid lines in hexadecimal
+ * @property {boolean} snapToGrid Whether objects should snap to the grid when moved
  */
 
 /**
@@ -61,7 +63,8 @@ export class Configuration {
                 size: 1536,
                 divisions: 3,
                 mainColor: 0xffffff,
-                subColor: 0x9c9c9c
+                subColor: 0x9c9c9c,
+                snapToGrid: true
             },
             defaultZoom: 0.5
         };
@@ -135,6 +138,9 @@ export class Configuration {
             if (data.gridSettings.hasOwnProperty('subColor')) {
                 this._workspaceSettings.gridSettings.subColor = parseInt(data.gridSettings.subColor.slice(1), 16);
             }
+            if (data.gridSettings.hasOwnProperty('snapToGrid')) {
+                this._workspaceSettings.gridSettings.snapToGrid = data.gridSettings.snapToGrid;
+            }
         }
     }
 
@@ -189,7 +195,8 @@ export class Configuration {
             size: this._getEffectiveValue('gridSettings', 'size'),
             divisions: this._getEffectiveValue('gridSettings', 'divisions'),
             mainColor: this._getEffectiveValue('gridSettings', 'mainColor'),
-            subColor: this._getEffectiveValue('gridSettings', 'subColor')
+            subColor: this._getEffectiveValue('gridSettings', 'subColor'),
+            snapToGrid: this._getEffectiveValue('gridSettings', 'snapToGrid')
         };
     }
 
@@ -306,6 +313,9 @@ export class Configuration {
                 return false;
             }
             if (data.gridSettings.hasOwnProperty('subColor') && (typeof data.gridSettings.subColor !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.gridSettings.subColor))) {
+                return false;
+            }
+            if (data.gridSettings.hasOwnProperty('snapToGrid') && typeof data.gridSettings.snapToGrid !== 'boolean') {
                 return false;
             }
         }
