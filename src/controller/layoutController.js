@@ -322,7 +322,7 @@ export class LayoutController {
   }
 
   /**
-   * 
+   * Add a new component to the current layer.
    * @param {TrackData} track 
    * @param {Boolean} [checkConnections] Whether to check for open connections near the new component
    */
