@@ -72,7 +72,7 @@ canvas {
 }
 
 #toolbar.open {
-	height: calc(15rem + 1px);
+	height: calc(20rem + 1px);
 }
 
 .outsideMenu {
