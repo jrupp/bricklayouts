@@ -90,6 +90,14 @@ canvas {
 	display: block;
 }
 
+#exportloading {
+	z-index: 1200;
+}
+
+#exportloading.hidden {
+	display: none;
+}
+
 #darkMode-container {
 	position: fixed;
 	top: 10px;
@@ -126,7 +134,8 @@ canvas {
 #layerEditor,
 #editLayerDialog,
 #mobileLayersButton,
-#mobileLayerEditor {
+#mobileLayerEditor,
+#exportloading {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -170,7 +179,8 @@ canvas {
 [data-dark-mode=true] #layerEditor,
 [data-dark-mode=true] #editLayerDialog,
 [data-dark-mode=true] #mobileLayersButton,
-[data-dark-mode=true] #mobileLayerEditor {
+[data-dark-mode=true] #mobileLayerEditor,
+[data-dark-mode=true] #exportloading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;

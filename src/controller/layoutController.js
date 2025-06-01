@@ -426,12 +426,14 @@ export class LayoutController {
   async exportLayout() {
     this.hideFileMenu();
     LayoutController.selectComponent(null);
+    document.getElementById('exportloading').classList.remove('hidden');
     let preScale = this.workspace.scale.x;
     let prePos = this.workspace.position.clone();
     this.workspace.scale.set(1.0);
     this.workspace.position.set(0, 0);
     this.drawGrid(true);
     const url = await this.app.renderer.extract.base64(this.app.stage);
+    document.getElementById('exportloading').classList.add('hidden');
     this.workspace.scale.set(preScale);
     this.workspace.position.set(prePos.x, prePos.y);
     this.drawGrid();
