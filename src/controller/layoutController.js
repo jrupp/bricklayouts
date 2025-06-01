@@ -1,4 +1,4 @@
-import { Assets, Application, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
+import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
@@ -215,6 +215,7 @@ export class LayoutController {
     document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => {
       document.getElementById('toolbar').classList.toggle('open');
@@ -417,6 +418,26 @@ export class LayoutController {
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
     saveAs(blob, 'layout.json');
     this.hideFileMenu();
+  }
+
+  /**
+   * Export the current layout as an image.
+   */
+  async exportLayout() {
+    this.hideFileMenu();
+    LayoutController.selectComponent(null);
+    document.getElementById('exportloading').classList.remove('hidden');
+    let preScale = this.workspace.scale.x;
+    let prePos = this.workspace.position.clone();
+    this.workspace.scale.set(1.0);
+    this.workspace.position.set(0, 0);
+    this.drawGrid(true);
+    const url = await this.app.renderer.extract.base64(this.app.stage);
+    document.getElementById('exportloading').classList.add('hidden');
+    this.workspace.scale.set(preScale);
+    this.workspace.position.set(prePos.x, prePos.y);
+    this.drawGrid();
+    saveAs(url, 'layout.png');
   }
 
   /**
@@ -957,7 +978,12 @@ export class LayoutController {
     });
   }
 
-  drawGrid() {
+  /**
+   * 
+   * @param {boolean} forScreenshot Whether the grid is being drawn for a screenshot
+   * @returns 
+   */
+  drawGrid(forScreenshot = false) {
     let grid = this.grid;
     let subGrid = this.subGrid;
     subGrid.clear();
@@ -970,6 +996,8 @@ export class LayoutController {
     const originalGridSize = this.config.gridSettings.size; // 1536
     const originalGridDivisions = this.config.gridSettings.divisions;
     let gridSize = originalGridSize * this.workspace.scale.x;
+    let gridLeft = 0;
+    let gridTop = 0;
     let gridWidth = this.app.screen.width;
     let gridHeight = this.app.screen.height;
     let xOffset = this.workspace.x % gridSize;
@@ -981,21 +1009,83 @@ export class LayoutController {
     if (yOffset > 0) {
       yOffset -= gridSize;
     }
+    if (forScreenshot) {
+      /**
+       * @type {Bounds}
+       */
+      let bounds = this.workspace.getLocalBounds();
+      gridLeft = bounds.minX;
+      if (gridLeft % originalGridSize !== 0) {
+        gridLeft = Math.floor(gridLeft / originalGridSize) * originalGridSize;
+      }
+      gridLeft *= this.workspace.scale.x;
+      gridTop = bounds.minY;
+      if (gridTop % originalGridSize !== 0) {
+        gridTop = Math.floor(gridTop / originalGridSize) * originalGridSize;
+      }
+      gridTop *= this.workspace.scale.y;
+      xOffset = gridLeft;
+      yOffset = gridTop;
+      gridWidth = bounds.maxX - gridLeft;
+      if (gridWidth % originalGridSize !== 0) {
+        gridWidth += originalGridSize - (gridWidth % originalGridSize);
+      }
+      gridWidth *= this.workspace.scale.x;
+      gridHeight = bounds.maxY - gridTop;
+      if (gridHeight % originalGridSize !== 0) {
+        gridHeight += originalGridSize - (gridHeight % originalGridSize);
+      }
+      gridHeight *= this.workspace.scale.y;
+      subGrid.rect(gridLeft, gridTop, gridWidth, gridHeight);
+      subGrid.fill(0x93bee2);
+    }
 
+    /**
+     * i + xOffset
+     * @type {number}
+     */
+    let lXO = 0;
+    let lYO = 0;
+    /**
+     * i + xOffset + j * divisionSize
+     * @type {number}
+     */
+    let slXO = 0;
+    let slYO = 0;
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
-      grid.moveTo(i + xOffset, 0);
-      grid.lineTo(i + xOffset, gridHeight);
+      lXO = i + xOffset;
+      if (lXO >= gridLeft && lXO <= gridWidth + gridLeft) {
+        grid.moveTo(lXO, gridTop);
+        grid.lineTo(lXO, gridTop + gridHeight);
+      }
       for (let j = 1; j < originalGridDivisions; j++) {
-        subGrid.moveTo(i + xOffset + j * divisionSize, 0);
-        subGrid.lineTo(i + xOffset + j * divisionSize, gridHeight);
+        slXO = lXO + j * divisionSize;
+        if (slXO < gridLeft) {
+          continue;
+        }
+        if (slXO > gridWidth + gridLeft) {
+          break;
+        }
+        subGrid.moveTo(slXO, gridTop);
+        subGrid.lineTo(slXO, gridTop + gridHeight);
       }
     }
     for (let i = 0; i < gridHeight + gridSize; i += gridSize) {
-      grid.moveTo(0, i + yOffset);
-      grid.lineTo(gridWidth, i + yOffset);
+      lYO = i + yOffset;
+      if (lYO >= gridTop && lYO <= gridHeight + gridTop) {
+        grid.moveTo(gridLeft, lYO);
+        grid.lineTo(gridWidth + gridLeft, lYO);
+      }
       for (let j = 1; j < originalGridDivisions; j++) {
-        subGrid.moveTo(0, i + yOffset + j * divisionSize);
-        subGrid.lineTo(gridWidth, i + yOffset + j * divisionSize);
+        slYO = lYO + j * divisionSize;
+        if (slYO < gridTop) {
+          continue;
+        }
+        if (slYO > gridHeight + gridTop) {
+          break;
+        }
+        subGrid.moveTo(gridLeft, slYO);
+        subGrid.lineTo(gridLeft + gridWidth, slYO);
       }
     }
     this.grid.stroke({ color: this.config.gridSettings.mainColor, pixelLine: true, width: 1 });

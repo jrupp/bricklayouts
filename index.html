@@ -34,7 +34,7 @@
         <div>
             <div>
                 <button id="buttonDownload" class="menuItem" title="Download layout">
-                    <img class="icon" src="img/icon-save-black.png" alt="Download layout">
+                    <img class="icon" src="img/icon-download-black.png" alt="Download layout">
                     <span>Download Layout</span>
                 </button>
             </div>
@@ -46,13 +46,19 @@
             </div>
             <div>
                 <button id="buttonExport" class="menuItem" title="Export layout as image">
-                    <img class="icon" src="img/icon-save-black.png" alt="Export layout as image">
+                    <img class="icon" src="img/icon-export-black.png" alt="Export layout as image">
                     <span>Export Image</span>
                 </button>
             </div>
         </div>
     </div>
     <div id="outsideMenu" class="outsideMenu">&nbsp;</div>
+    <main id="exportloading" class="hidden max no-padding center-align middle-align responsive primary">
+        <div class="absolute center large-width middle padding responsive">
+            <h2>Generating...</h2>
+            <progress class="tertiary"></progress>
+        </div>
+    </main>
     <div id="darkMode-container">
         <button class="toggle" id="darktoggle" aria-pressed="false" title="Toggle Dark Mode">
             <span class="toggle__content">

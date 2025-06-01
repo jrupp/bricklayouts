@@ -26,6 +26,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonRemove').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('outsideMenu').and.returnValue(document.createElement('div'));
         geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
@@ -41,6 +42,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('mobileLayerList').and.returnValue(document.createElement('ul'));
         geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         window.Slip = class Slip {
             constructor() {
             }
