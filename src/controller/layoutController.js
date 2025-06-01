@@ -993,20 +993,52 @@ export class LayoutController {
       yOffset -= gridSize;
     }
 
+    /**
+     * i + xOffset
+     * @type {number}
+     */
+    let lXO = 0;
+    let lYO = 0;
+    /**
+     * i + xOffset + j * divisionSize
+     * @type {number}
+     */
+    let slXO = 0;
+    let slYO = 0;
     for (let i = 0; i < gridWidth + gridSize; i += gridSize) {
-      grid.moveTo(i + xOffset, 0);
-      grid.lineTo(i + xOffset, gridHeight);
+      lXO = i + xOffset;
+      if (lXO >= 0 && lXO <= gridWidth) {
+        grid.moveTo(lXO, 0);
+        grid.lineTo(lXO, gridHeight);
+      }
       for (let j = 1; j < originalGridDivisions; j++) {
-        subGrid.moveTo(i + xOffset + j * divisionSize, 0);
-        subGrid.lineTo(i + xOffset + j * divisionSize, gridHeight);
+        slXO = lXO + j * divisionSize;
+        if (slXO < 0) {
+          continue;
+        }
+        if (slXO > gridWidth) {
+          break;
+        }
+        subGrid.moveTo(slXO, 0);
+        subGrid.lineTo(slXO, gridHeight);
       }
     }
     for (let i = 0; i < gridHeight + gridSize; i += gridSize) {
-      grid.moveTo(0, i + yOffset);
-      grid.lineTo(gridWidth, i + yOffset);
+      lYO = i + yOffset;
+      if (lYO >= 0 && lYO <= gridHeight) {
+        grid.moveTo(0, lYO);
+        grid.lineTo(gridWidth, lYO);
+      }
       for (let j = 1; j < originalGridDivisions; j++) {
-        subGrid.moveTo(0, i + yOffset + j * divisionSize);
-        subGrid.lineTo(gridWidth, i + yOffset + j * divisionSize);
+        slYO = lYO + j * divisionSize;
+        if (slYO < 0) {
+          continue;
+        }
+        if (slYO > gridHeight) {
+          break;
+        }
+        subGrid.moveTo(0, slYO);
+        subGrid.lineTo(gridWidth, slYO);
       }
     }
     this.grid.stroke({ color: this.config.gridSettings.mainColor, pixelLine: true, width: 1 });
