@@ -427,17 +427,18 @@ export class LayoutController {
     this.hideFileMenu();
     LayoutController.selectComponent(null);
     document.getElementById('exportloading').classList.remove('hidden');
+    // This is just to make sure that the browser repaints before we move on
+    await this.app.renderer.extract.base64(this.app.stage);
     let preScale = this.workspace.scale.x;
     let prePos = this.workspace.position.clone();
     this.workspace.scale.set(1.0);
     this.workspace.position.set(0, 0);
     this.drawGrid(true);
-    const url = await this.app.renderer.extract.base64(this.app.stage);
+    this.app.renderer.extract.download({target:this.app.stage, filename:"layout.png"});
     document.getElementById('exportloading').classList.add('hidden');
     this.workspace.scale.set(preScale);
     this.workspace.position.set(prePos.x, prePos.y);
     this.drawGrid();
-    saveAs(url, 'layout.png');
   }
 
   /**
