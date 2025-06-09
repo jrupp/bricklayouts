@@ -28,9 +28,10 @@ export class Connection {
      * @param {Component} parent
      * @param {PolarVector} offsetVector
      * @param {Number} type
+     * @param {Number} connectionIndex The index of this connection in the parent component's connections array
      * @param {Number} nextConnectionIndex
      */
-    constructor(parent, offsetVector, type, nextConnectionIndex) {
+    constructor(parent, offsetVector, type, connectionIndex, nextConnectionIndex) {
         this.#uuid = crypto.randomUUID();
         /**
          * @type {Component}
@@ -48,6 +49,10 @@ export class Connection {
          * @type {Number}
          */
         this.type = type;
+        /**
+         * @type {Number}
+         */
+        this.connectionIndex = connectionIndex;
         /**
          * @type {Number}
          */

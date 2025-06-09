@@ -80,7 +80,7 @@ export class Component extends Container {
     this.connections = [];
 
     if (this.baseData.connections) {
-      this.connections = this.baseData.connections.map((connection) => new Connection(this, connection.vector, connection.type, connection.next));
+      this.connections = this.baseData.connections.map((connection, index) => new Connection(this, connection.vector, connection.type, index, connection.next));
     }
   }
 
@@ -147,10 +147,26 @@ export class Component extends Container {
 
   /**
    * Find the next open connection on this Component
+   * @param {Number} startIndex The index to start searching from, defaults to 0
    * @returns {Connection} The next open Connection, or null if none are open
    */
-  getOpenConnection() {
-    return this.connections.find((connection) => !connection.otherConnection);
+  getOpenConnection(startIndex = 0) {
+    if (startIndex < 0 || startIndex >= this.connections.length) {
+      startIndex = 0;
+    }
+    let openConnections = this.getOpenConnections();
+    let returnConnection = null;
+    openConnections.forEach((connection) => {
+      if (connection.otherConnection) {
+        return;
+      }
+      if (connection.connectionIndex >= startIndex) {
+        returnConnection = connection;
+      } else if (returnConnection === null) {
+        returnConnection = connection; // If no other open connections found, return the first one
+      }
+    });
+    return returnConnection;
   }
 
   /**
@@ -196,7 +212,10 @@ export class Component extends Container {
     } else if (currentConnections.length === 1) {
       const connection = currentConnections[0];
       const otherConnection = connection.otherConnection;
-      const nextOpen = this.getOpenConnection(); // BUG: This will break if there are more than one open connections, we need a getNextOpenConnection method
+      const nextOpen = this.getOpenConnection(connection.connectionIndex + 1);
+      if (!nextOpen) {
+        return;
+      }
       connection.disconnect();
       nextOpen.connectTo(otherConnection);
 
@@ -206,8 +225,22 @@ export class Component extends Container {
       this.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
       this.sprite.rotation = newPos.angle;
     }
+    let openConnections = this.getOpenConnections();
+    if (openConnections.length > 0) {
+      openConnections.forEach((openCon) => {
+        // TODO: Move this for loop to its own method in LayoutLayer
+        for (const [key, connectionTest] of this.layer.openConnections) {
+          if (connectionTest.component.uid === openCon.component.uid) {
+            continue;
+          }
+          if (connectionTest.getPose().isInRadius(openCon.getPose(), 1) && connectionTest.getPose().hasOppositeAngle(openCon.getPose())) {
+            openCon.connectTo(connectionTest);
+            break;
+          }
+        }
+      });
+    }
     this.connections.forEach((connection) => {
-      // BUG: If the connection is "open", check to see if it can be connected after rotation
       connection.updateCircle();
     });
   }

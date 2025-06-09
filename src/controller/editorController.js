@@ -85,7 +85,7 @@ export class EditorController {
     document.getElementById('componentEditorConnectionsAdd').addEventListener('click', () => {
       let connection = { type: 0, vector:new PolarVector(), next: 0 };
       this.baseData.connections.push(connection);
-      let newConnection = new Connection(this.newComp, connection.vector, connection.type, connection.next);
+      let newConnection = new Connection(this.newComp, connection.vector, connection.type, this.newComp.connections.length, connection.next);
       this.newComp.connections.push(newConnection);
       newConnection.circle.eventMode = 'static';
       newConnection.circle.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {

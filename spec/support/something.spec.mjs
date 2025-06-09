@@ -611,7 +611,7 @@ describe("LayoutController", function() {
     });
 
     describe("Component", function() {
-        xit("checks for connections on rotate", function() {
+        it("checks for open connection on rotate", function() {
             /** @type {LayoutController} */
             let layoutController = window.layoutController;
             layoutController._importLayout(layoutFileThree);
@@ -620,7 +620,7 @@ describe("LayoutController", function() {
             expect(curveTrack).toBeDefined();
             expect(curveTrack.getOpenConnections()).withContext("List of open connections").toHaveSize(1);
             curveTrack.rotate();
-            expect(curveTrack.getOpenConnections()).withContext("List of open connections").toHaveSize(0);
+            expect(curveTrack.getOpenConnections()).withContext("List of open connections after rotate").toHaveSize(0);
         });
     });
 });
