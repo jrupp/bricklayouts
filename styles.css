@@ -92,6 +92,7 @@ canvas {
 
 #exportloading {
 	z-index: 1200;
+	height: 100vh;
 }
 
 #exportloading.hidden {
