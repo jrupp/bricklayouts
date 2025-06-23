@@ -8,6 +8,9 @@
                     "src": "2865.png",
                     "category": "9V",
                     "name": "9V Straight Rail",
+                    "data": {
+                        "clearColor": "#ffffff"
+                    },
                     "connections": [
                         {
                             "type": 1,
@@ -118,6 +121,36 @@
                     "name": "Lancaster Table 30\"x60\"",
                     "category": "table",
                     "src": "lancaster-30x60.png"
+                },
+                {
+                    "alias": "shape",
+                    "name": "Custom Shape",
+                    "category": "custom",
+                    "src": "blank.png",
+                    "type": "shape",
+                    "color": "#ffffff",
+                    "width": 16,
+                    "height": 16
+                },
+                {
+                    "alias": "baseplate",
+                    "name": "Custom Baseplate",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#000000",
+                    "width": 16,
+                    "height": 16
+                },
+                {
+                    "alias": "baseplate32x32",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#237841",
+                    "width": 512,
+                    "height": 512
                 },
                 {
                     "alias": "r104",

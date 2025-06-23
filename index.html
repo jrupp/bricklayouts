@@ -413,6 +413,53 @@
             </nav>
         </div>
     </dialog>
+    <dialog id="newCustomComponentDialog" class="no-padding border surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">New Custom Component</h6>
+                    <button class="circle medium transparent" data-ui="#newCustomComponentDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div class="small-padding horizontal-padding">
+                <div class="field label prefix middle-align large-space border medium vertical-margin" id="componentWidthField">
+                    <i class="large no-round">width</i>
+                    <input id="componentWidth" type="number" min="1" placeholder=" " autofocus>
+                    <label>Component Width (studs)</label>
+                    <span class="error" id="componentWidthError">Error goes here</span>
+                </div>
+                <div class="field label prefix middle-align large-space border medium vertical-margin" id="componentHeightField">
+                    <i class="large no-round">height</i>
+                    <input id="componentHeight" type="number" min="1" placeholder=" ">
+                    <label>Component Height (studs)</label>
+                    <span class="error" id="componentHeightError">Error goes here</span>
+                </div>
+                <div class="field label prefix suffix middle-align large-space border medium vertical-margin active" id="componentColorSelect" data-color="green">
+                    <i class="fill"></i>
+                    <input id="componentColorName" type="text" placeholder=" " value="Green" readonly>
+                    <label class="active">Component Color</label>
+                    <menu class="max" id="componentColorMenu">
+                        <li><div class="field large prefix suffix"><i class="front">arrow_back</i><input id="componentColorFilter"><i>close</i></div></li>
+                    </menu>
+                    <i>arrow_drop_down</i>
+                    <span class="error" id="componentColorError">Error goes here</span>
+                </div>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button id="createComponentDialog" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important">
+                    <span>Create</span>
+                </button>
+                <button class="border no-border no-round max extra-text"
+                    style="border-end-end-radius: 0.5rem !important;" data-ui="#newCustomComponentDialog">
+                    <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
     <article class="left page medium-elevate no-padding margin" id="configurationEditor">
         <div>
             <header class="fill top-round small-round" style="min-block-size:auto">

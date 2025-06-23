@@ -1,6 +1,6 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
-import { Component } from '../model/component.js';
+import { Component, ComponentOptions } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
@@ -18,6 +18,21 @@ let ConnectionData;
 export { ConnectionData };
 
 /**
+ * Types of Track Data.
+ * @readonly
+ * @enum {String}
+ */
+const DataTypes = Object.freeze({
+  /** Represents a track component. */
+  TRACK: "track",
+  /** Represents a shape component. */
+  SHAPE: "shape",
+  /** Represents a baseplate component. */
+  BASEPLATE: "baseplate"
+});
+export { DataTypes };
+
+/**
  * @typedef {Object} TrackData
  * @property {String} alias
  * @property {String} name
@@ -26,6 +41,10 @@ export { ConnectionData };
  * @property {HTMLImageElement} image
  * @property {Number} [scale]
  * @property {Array<ConnectionData>} [connections]
+ * @property {DataTypes} [type] The type of the track.
+ * @property {Number} [color] The color of the component, represented as a hexadecimal number. Only used for shapes and baseplates.
+ * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
+ * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
  */
 let TrackData;
 export { TrackData };
@@ -81,6 +100,12 @@ export class LayoutController {
    * @type {LayoutLayer}
    */
   #currentLayer = null;
+
+  /**
+   * The type of custom component being created.
+   * @type {DataTypes}
+   */
+  #customComponentType = "shape";
 
   /**
    * 
@@ -175,6 +200,8 @@ export class LayoutController {
 
     this.newLayer();
 
+    this.initCustomComponentUI();
+
     this.drawGrid();
 
     var option = document.createElement('option');
@@ -246,6 +273,21 @@ export class LayoutController {
       image.className = "track";
       image.alt = track.name;
       track.image = image;
+      if (track.type === void 0) {
+        track.type = DataTypes.TRACK;
+      }
+      if (track.color !== void 0 && typeof track.color === 'string') {
+        track.color = parseInt(track.color.slice(1), 16);
+      }
+      if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
+        var tempGraphics = new Graphics();
+        tempGraphics.rect(0, 0, track.width, track.height);
+        tempGraphics.fill(track.color ?? 0xA0A5A9);
+        image = await this.app.renderer.extract.image(tempGraphics);
+        image.className = "track";
+        image.alt = track.name;
+        track.image = image;
+      }
       if (track.connections && track.connections.length > 0) {
         var newConnections = track.connections.map((connection) => {return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};});
         // TODO: We want to store more information with each connection, like the index of the preferred next connection
@@ -311,9 +353,28 @@ export class LayoutController {
     this.componentBrowser.innerHTML = '';
     var selectedCategory = this.groupSelect.options[this.groupSelect.selectedIndex].value;
     var searchQuery = this.searchElement.value.trim().toLowerCase();
+    if (selectedCategory === 'baseplates') {
+      let button = document.createElement('button');
+      button.title = "Custom Baseplate";
+      let image = new Image();
+      image.src = 'img/icon-add-black.png';
+      image.className = 'custom';
+      button.appendChild(image);
+      button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.BASEPLATE));
+      this.componentBrowser.appendChild(button);
+    } else if (selectedCategory === 'custom') {
+      let button = document.createElement('button');
+      button.title = "Custom Shape";
+      let image = new Image();
+      image.src = 'img/icon-add-black.png';
+      image.className = 'custom';
+      button.appendChild(image);
+      button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.SHAPE));
+      this.componentBrowser.appendChild(button);
+    }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery))) {
-        var button = document.createElement('button');
+      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape') {
+        let button = document.createElement('button');
         button.title = track.name;
         button.appendChild(track.image);
         button.addEventListener('click', this.addComponent.bind(this, track, true));
@@ -326,12 +387,13 @@ export class LayoutController {
    * Add a new component to the current layer.
    * @param {TrackData} track 
    * @param {Boolean} [checkConnections] Whether to check for open connections near the new component
+   * @param {ComponentOptions} [options] Additional options for the component
    */
-  addComponent(track, checkConnections = false) {
+  addComponent(track, checkConnections = false, options = {}) {
     console.log("Create component: " + track.alias);
     var newComp = null;
     if (LayoutController.selectedComponent) {
-      newComp = Component.fromComponent(track, LayoutController.selectedComponent, this.currentLayer);
+      newComp = Component.fromComponent(track, LayoutController.selectedComponent, this.currentLayer, options);
       if (newComp == null) {
         return;
       }
@@ -342,11 +404,11 @@ export class LayoutController {
         newPos.x = Math.fround(newPos.x);
         newPos.y = Math.fround(newPos.y);
       }
-      newComp = new Component(track, newPos, this.currentLayer);
+      newComp = new Component(track, newPos, this.currentLayer, options);
     }
     this.currentLayer.addChild(newComp);
     LayoutController.selectComponent(newComp);
-    this.currentLayer.overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics")));
+    this.currentLayer.overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
     if (checkConnections) {
       let openConnections = newComp.getOpenConnections();
       if (openConnections.length < newComp.connections.length) {
@@ -364,6 +426,119 @@ export class LayoutController {
         });
       }
     }
+  }
+
+  initCustomComponentUI() {
+    document.getElementById('createComponentDialog').addEventListener('click', this.onCreateCustomComponent.bind(this));
+    const componentWidthNode = document.getElementById('componentWidth');
+    const componentHeightNode = document.getElementById('componentHeight');
+    componentWidthNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onCreateCustomComponent();
+      }
+      if (event.key === 'Escape') {
+        ui("#newCustomComponentDialog");
+      }
+      event.stopPropagation();
+    });
+    componentWidthNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+    componentHeightNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onCreateCustomComponent();
+      }
+      if (event.key === 'Escape') {
+        ui("#newCustomComponentDialog");
+      }
+      event.stopPropagation();
+    });
+    componentHeightNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+    const colors = ["green", "red", "black", "white", "blue", "yellow", "orange", "brown", "dark red", "dark green", "light bluish gray", "dark bluish gray"];
+    const colorMenu = document.getElementById('componentColorMenu');
+    colors.forEach((color) => {
+      let menuItem = document.createElement('li');
+      let itemIcon = document.createElement('i');
+      itemIcon.className = `fill small lego${color.replaceAll(' ', '')}`;
+      menuItem.innerText = color.charAt(0).toUpperCase() + color.slice(1);
+      menuItem.prepend(itemIcon);
+      menuItem.addEventListener('click', () => this.selectComponentColor(color));
+      colorMenu.appendChild(menuItem);
+    });
+    document.getElementById('componentColorFilter').addEventListener('input', this.filterComponentColors.bind(this));
+  }
+
+  selectComponentColor(color) {
+    let icon = document.getElementById('componentColorSelect');
+    let input = document.getElementById('componentColorName');
+    icon.setAttribute('data-color', color.replaceAll(' ', ''));
+    input.value = color.charAt(0).toUpperCase() + color.slice(1);
+    document.getElementById('componentColorFilter').value = "";
+  }
+
+  filterComponentColors() {
+    const colorArray = [... document.querySelectorAll('#componentColorMenu li:nth-child(n+2)')];
+    const filter = document.getElementById('componentColorFilter').value.toLowerCase();
+    colorArray.forEach((item) => {
+      if (filter.length === 0 || item.innerText.toLowerCase().includes(filter)) {
+        item.classList.remove('hidden');
+      } else {
+        item.classList.add('hidden');
+      }
+    });
+  }
+
+  /**
+   * 
+   * @param {DataTypes} type 
+   */
+  showCreateCustomComponentDialog(type) {
+    const componentWidthNode = document.getElementById('componentWidth');
+    const componentHeightNode = document.getElementById('componentHeight');
+    this.#customComponentType = type;
+    componentHeightNode.value = '';
+    componentWidthNode.value = '';
+    document.getElementById('componentColorSelect').setAttribute('data-color', "green");
+    document.getElementById('componentColorName').value = "Green";
+    document.getElementById('componentWidthError').innerText = '';
+    document.getElementById('componentHeightError').innerText = '';
+    componentWidthNode.parentElement.classList.remove('invalid');
+    componentHeightNode.parentElement.classList.remove('invalid');
+    ui("#newCustomComponentDialog");
+  }
+
+  onCreateCustomComponent() {
+    const componentWidthNode = document.getElementById('componentWidth');
+    const componentHeightNode = document.getElementById('componentHeight');
+    let componentWidth = componentWidthNode.value;
+    let componentHeight = componentHeightNode.value;
+    if (componentWidth.length === 0 || isNaN(componentWidth) || componentWidth <= 0) {
+      document.getElementById('componentWidthError').innerText = "Width must be a positive number";
+      componentWidthNode.parentElement.classList.add('invalid');
+      componentWidthNode.focus();
+      return;
+    }
+    if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
+      document.getElementById('componentHeightError').innerText = "Height must be a positive number";
+      componentHeightNode.parentElement.classList.add('invalid');
+      componentHeightNode.focus();
+      return;
+    }
+    var track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
+    let componentColor = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    var options = {
+      width: parseInt(componentWidth) * 16,
+      height: parseInt(componentHeight) * 16,
+      color: componentColor
+    };
+    this.addComponent(track, false, options);
+    ui("#newCustomComponentDialog");
   }
 
   /**

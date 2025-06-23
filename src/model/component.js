@@ -1,5 +1,5 @@
-import { Assets, Container, FederatedPointerEvent, Sprite } from "../pixi.mjs";
-import { LayoutController, TrackData } from '../controller/layoutController.js';
+import { Assets, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
+import { LayoutController, TrackData, DataTypes } from '../controller/layoutController.js';
 import { Connection, SerializedConnection } from "./connection.js";
 import { Pose, SerializedPose } from "./pose.js";
 import { LayoutLayer } from "./layoutLayer.js";
@@ -14,7 +14,25 @@ import { PolarVector } from "./polarVector.js";
 let SerializedComponent;
 export { SerializedComponent };
 
+/**
+ * @typedef {Object} ComponentOptions
+ * @property {number} width The width of the component
+ * @property {number} height The height of the component
+ * @property {string} color The color of the component
+ */
+let ComponentOptions;
+export { ComponentOptions };
+
 export class Component extends Container {
+  /** @type {Color} */
+  #color;
+
+  /** @type {Number} */
+  #width;
+
+  /** @type {Number} */
+  #height;
+
   /**
    * @type {Pose}
    * The offset position from the mouse to this Component's position when dragging.
@@ -33,12 +51,17 @@ export class Component extends Container {
   dragStartOffset;
 
   /**
-   * 
-   * @param {TrackData} baseData 
-   * @param {Pose} pose 
-   * @param {LayoutLayer} layer The layer this Component will be on
+   * @type {Graphics | Sprite | TilingSprite}
    */
-  constructor(baseData, pose, layer) {
+  sprite;
+
+  /**
+   * @param {TrackData} baseData
+   * @param {Pose} pose
+   * @param {LayoutLayer} layer The layer this Component will be on
+   * @param {ComponentOptions} [options={}] Options for the Component
+   */
+  constructor(baseData, pose, layer, options = {}) {
     super();
 
     /**
@@ -56,15 +79,53 @@ export class Component extends Container {
      */
     this.isDragging = false;
 
-    /**
-     * @type {Sprite}
-     */
-    this.sprite = new Sprite(Assets.get(baseData.alias));
+    if (this.baseData.type === DataTypes.TRACK) {
+      this.sprite = new Sprite(Assets.get(baseData.alias));
+      this.sprite.anchor.set(0.5);
+    } else if (this.baseData.type === DataTypes.SHAPE) {
+      this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
+      ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
+      this.sprite = new Graphics();
+      this.sprite.rect(0, 0, this.#width, this.#height);
+      this.sprite.fill(this.#color);
+      if (options.outlineColor) {
+        // @todo Alignment should be 0, but there is a bug in PixiJS that causes the outline to be misaligned
+        // See: {@link https://github.com/pixijs/pixijs/issues/11494}
+        this.sprite.stroke({width: 1, alignment: 1, color: options.outlineColor});
+      }
+      this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+    } else if (this.baseData.type === DataTypes.BASEPLATE) {
+      /** @type {Texture} */
+      let plateTexture = undefined;
+      this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
+      ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
+      let plateAlias = `baseplate-${this.#width}x${this.#height}-${this.#color.toHex()}`;
+      if (Assets.cache.has(plateAlias)) {
+        plateTexture = Assets.get(plateAlias);
+      } else {
+        let tempSprite = new TilingSprite({
+          texture: Assets.get("baseplate"),
+          width: this.#width,
+          height: this.#height
+        });
+        if (this.#color.toYiq() < 92) {
+          // If the color is dark, we need to lighten the baseplate texture
+          const filter = new ColorMatrixFilter();
+          filter.negative(true);
+          tempSprite.filters = [filter];
+        }
+        plateTexture = LayoutController.getInstance().app.renderer.extract.texture({target: tempSprite, clearColor: this.#color});
+        Assets.cache.set(plateAlias, plateTexture);
+        tempSprite.destroy();
+        tempSprite = null;
+      }
+      this.sprite = new Sprite(plateTexture);
+      this.sprite.anchor.set(0.5);
+    }
     if (baseData.scale) {
       this.sprite.scale.set(baseData.scale);
     }
 
-    this.sprite.anchor.set(0.5);
     this.sprite.rotation = pose.angle;
     this.position.set(pose.x, pose.y);
     this.addChild(this.sprite);
@@ -89,9 +150,10 @@ export class Component extends Container {
    * @param {TrackData} baseData 
    * @param {Connection} connection 
    * @param {LayoutLayer} layer The layer this Component will be on
+   * @param {ComponentOptions} [options={}] Options for the Component
    * @returns {Component}
    */
-    static fromConnection(baseData, connection, layer) {
+    static fromConnection(baseData, connection, layer, options = {}) {
       let conPose = connection.getPose();
       conPose.turnAngle(Math.PI);
       let conIndex = 0;
@@ -102,7 +164,7 @@ export class Component extends Container {
       var newPos = baseData.connections[conIndex].vector.getStartPosition(conPose);
       newPos.x = Math.fround(newPos.x);
       newPos.y = Math.fround(newPos.y);
-      var newComp = new Component(baseData, newPos, layer);
+      var newComp = new Component(baseData, newPos, layer, options);
       newComp.connections[conIndex].connectTo(connection);
       return newComp;
     }
@@ -112,18 +174,19 @@ export class Component extends Container {
    * @param {TrackData} baseData 
    * @param {Component} component The Component to connect to
    * @param {LayoutLayer} layer The layer this Component will be on
+   * @param {ComponentOptions} [options={}] Options for the Component
    * @returns {Component|null} The new Component or null if no open connections found
    */
-  static fromComponent(baseData, component, layer) {
+  static fromComponent(baseData, component, layer, options = {}) {
     var connection = component.getOpenConnection();
     if (connection) {
-      return Component.fromConnection(baseData, connection, layer);
+      return Component.fromConnection(baseData, connection, layer, options);
     }
     if (component.connections.length === 0) {
       // Calculate a position that is next to the component instead.
       const vec = new PolarVector(component.sprite.width, 0, 0);
       let newPos = vec.getEndPosition(component.getPose());
-      return new Component(baseData, newPos, layer);
+      return new Component(baseData, newPos, layer, options);
     }
     return null;
   }
@@ -133,6 +196,9 @@ export class Component extends Container {
     this.connections.forEach((connection) => connection.destroy());
     this.connections = null;
     this.layer = null;
+    if (this.baseData.type === DataTypes.SHAPE) {
+      this.sprite.destroy();
+    }
     super.destroy();
     this.baseData = null;
   }
@@ -338,6 +404,10 @@ export class Component extends Container {
       let b = this.dragStartConnection.getPose();
       this.dragStartPos = b.subtract({...a, angle: 0});
       this.dragStartOffset =  this.getPose().subtract(b);
+    } else if (this.baseData.type === DataTypes.BASEPLATE) {
+      // Set the drag start to the upper left corner of the baseplate
+      this.dragStartPos = this.getPose().subtract({x: this.#width / 2, y: this.#height / 2, angle: 0}).subtract({...a, angle: 0});
+      this.dragStartOffset = new Pose(this.#width / 2, this.#height / 2, 0);
     } else {
       // If we didn't find a connection, set the drag start position to the Component's pose
       this.dragStartPos = this.getPose().subtract({...a, angle: 0});

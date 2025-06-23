@@ -1,6 +1,6 @@
 import { ConfigurationController } from './controller/configurationController.js';
 import { LayoutController } from './controller/layoutController.js';
-import { Application, Assets } from './pixi.mjs';
+import { Application, Assets, Color } from './pixi.mjs';
 
 const canvasContainer = document.getElementById('canvasContainer');
 document.body.style.setProperty('--canvas-bg', '#93bee2');
@@ -11,6 +11,9 @@ await Assets.init({ basePath: '../img/', manifest: "../data/manifest.json" });
 await Assets.loadBundle('track');
 window.app = app;
 window.assets = Assets;
+Color.prototype.toYiq = function () {
+  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
+};
 function listenOnDevicePixelRatio() {
   function onChange() {
     window.app.renderer.resolution = window.devicePixelRatio;
