@@ -71,6 +71,7 @@ export class Configuration {
 
         /**
          * User settings stored in localStorage
+         * @type {{gridSettings: GridSettings, defaultZoom: number}}
          * @private
          */
         this._userSettings = {
@@ -80,6 +81,7 @@ export class Configuration {
 
         /**
          * Workspace-specific settings
+         * @type {{gridSettings: GridSettings, defaultZoom: number|null}}
          * @private
          */
         this._workspaceSettings = {
