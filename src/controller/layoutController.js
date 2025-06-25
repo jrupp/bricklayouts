@@ -1,4 +1,4 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point } from '../pixi.mjs';
+import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point, Texture } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component, ComponentOptions } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
@@ -398,11 +398,29 @@ export class LayoutController {
         return;
       }
     } else {
-      let newPos = { x: 150, y: 275, angle: 0 };
+      let newPos = { x: 150, y: 274, angle: 0 };
       if (track.connections?.length ?? 0 > 0) {
         newPos = track.connections[0].vector.getStartPosition({ x: 512, y: 384, angle: 0 });
         newPos.x = Math.fround(newPos.x);
         newPos.y = Math.fround(newPos.y);
+      } else {
+        // Align to top left corner of component
+        if (track.width !== void 0 && track.height !== void 0) {
+          newPos.x += track.width / 2;
+          newPos.y += track.height / 2;
+        } else {
+          /** @type {Texture} */
+          let texture = Assets.get(track.alias);
+          if (texture !== void 0) {
+            newPos.x += texture.width / 2;
+            newPos.y += texture.height / 2;
+          }
+        }
+      }
+      newPos = { ...this.#currentLayer.toLocal({x: newPos.x / 2, y: newPos.y / 2}), angle: 0 };
+      if (this.config.gridSettings.snapToGrid) {
+        newPos.x = Math.round(newPos.x / 16) * 16;
+        newPos.y = Math.round(newPos.y / 16) * 16;
       }
       newComp = new Component(track, newPos, this.currentLayer, options);
     }
