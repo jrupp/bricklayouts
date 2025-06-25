@@ -536,6 +536,11 @@ i.legodarkbluishgray {
 
 #componentColorMenu {
 	z-index: 1101;
+	font-size: 1.1rem;
+}
+
+#componentColorMenu li {
+	gap: 0.5rem;
 }
 
 .list>li {

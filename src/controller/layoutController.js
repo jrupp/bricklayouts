@@ -483,7 +483,7 @@ export class LayoutController {
     colors.forEach((color) => {
       let menuItem = document.createElement('li');
       let itemIcon = document.createElement('i');
-      itemIcon.className = `fill small lego${color.replaceAll(' ', '')}`;
+      itemIcon.className = `fill lego${color.replaceAll(' ', '')}`;
       menuItem.innerText = color.charAt(0).toUpperCase() + color.slice(1);
       menuItem.prepend(itemIcon);
       menuItem.addEventListener('click', () => this.selectComponentColor(color));
