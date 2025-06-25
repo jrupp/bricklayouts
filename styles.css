@@ -565,7 +565,8 @@ i.legodarkbluishgray {
 #subcolorfield label,
 #layerNameField label,
 #componentWidthField label,
-#componentHeightField label {
+#componentHeightField label,
+#componentColorSelect label {
   font-size: 1.1rem;
 }
 
@@ -573,7 +574,8 @@ i.legodarkbluishgray {
 #subcolorfield input[type=text],
 #layerNameField input[type=text],
 #componentWidthField input[type=number],
-#componentHeightField input[type=number] {
+#componentHeightField input[type=number],
+#componentColorSelect input[type=text] {
   padding-inline-start: 3.4rem;
   font-size: 1.5rem !important;
 }
