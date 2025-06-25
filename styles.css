@@ -855,6 +855,11 @@ button span.label {
 		width: 100%;
 	}
 
+	#newCustomComponentDialog {
+		max-width: 30rem;
+		width: 100%;
+	}
+
 
 
 	@media (max-height: 30rem) {
