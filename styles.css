@@ -486,8 +486,6 @@ i.legoblack {
 i.legoblue {
   color: #0055BF;
 }
-
-/** "yellow", "orange", "brown", "dark red", "dark green", "light bluish gray", "dark bluish gray" **/
 #componentColorSelect[data-color=yellow] > i:first-child,
 i.legoyellow {
   color: #F2CD37;
