@@ -10,6 +10,10 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} type
  * @property {SerializedPose} pose
  * @property {Array<SerializedConnection>} connections
+ * @property {Number} [width] The width of the component, if applicable
+ * @property {Number} [height] The height of the component, if applicable
+ * @property {String} [color] The color of the component, if applicable
+ * @property {String} [outline_color] The color of the outline, if applicable
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -323,7 +327,20 @@ export class Component extends Container {
     if (baseData === undefined) {
       throw new Error('Component.deserialize: baseData is undefined');
     }
-    const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer);
+    var options = {};
+    if (data.width !== undefined) {
+      options.width = data.width;
+    }
+    if (data.height !== undefined) {
+      options.height = data.height;
+    }
+    if (data.color !== undefined) {
+      options.color = data.color;
+    }
+    if (data.outline_color !== undefined) {
+      options.outline_color = data.outline_color;
+    }
+    const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
     });
@@ -338,7 +355,10 @@ export class Component extends Container {
     return {
       type: this.baseData.alias,
       pose: this.getPose().serialize(),
-      connections: this.connections.map((connection) => connection.serialize())
+      connections: this.connections.map((connection) => connection.serialize()),
+      width: this.#width,
+      height: this.#height,
+      color: this.#color?.toHex()
     };
   }
 
@@ -358,7 +378,11 @@ export class Component extends Container {
       Pose._validateImportData(data?.pose),
       data?.connections,
       Array.isArray(data?.connections),
-      data?.connections?.every?.((connection) => Connection._validateImportData(connection))
+      data?.connections?.every?.((connection) => Connection._validateImportData(connection)),
+      data?.width === undefined || (typeof data?.width === 'number' && data?.width > 0),
+      data?.height === undefined || (typeof data?.height === 'number' && data?.height > 0),
+      data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
+      data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color))
     ]
     return validations.every(v => v);
   }
