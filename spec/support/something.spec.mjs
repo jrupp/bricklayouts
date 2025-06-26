@@ -267,7 +267,19 @@ describe("LayoutController", function() {
                                         "otherConnection": ""
                                     }
                                 ]
-                            }
+                            },
+                            {
+                                "type": "baseplate",
+                                "pose": {
+                                    "x": 240,
+                                    "y": 880,
+                                    "angle": 0
+                                },
+                                "connections": [],
+                                "width": 192,
+                                "height": 192,
+                                "color": "#a0a5a9"
+                            },
                         ],
                         "name": "Layer 2",
                         "visible": true
@@ -504,6 +516,27 @@ describe("LayoutController", function() {
             /** @type {SerializedLayout} */
             let testData = this.perfectImportData;
             delete testData.layers[0].components[0].connections[0].otherConnection;
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws errors with invalid component width", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.layers[0].components[1].width = "test";
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws errors with invalid component height", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.layers[0].components[1].height = "test";
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws errors with invalid component color", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.layers[0].components[1].color = "test";
             expect(LayoutController._validateImportData(testData)).toBeFalse();
         });
     });
