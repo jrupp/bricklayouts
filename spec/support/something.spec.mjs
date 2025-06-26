@@ -43,6 +43,12 @@ describe("LayoutController", function() {
         geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
+        geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('componentWidth').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('componentHeight').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('componentColorMenu').and.returnValue(document.createElement('menu'));
+        geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
         window.Slip = class Slip {
             constructor() {
             }
