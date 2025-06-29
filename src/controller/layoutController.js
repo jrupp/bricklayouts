@@ -28,7 +28,9 @@ const DataTypes = Object.freeze({
   /** Represents a shape component. */
   SHAPE: "shape",
   /** Represents a baseplate component. */
-  BASEPLATE: "baseplate"
+  BASEPLATE: "baseplate",
+  /** Represents a text component. */
+  TEXT: "text"
 });
 export { DataTypes };
 
@@ -371,9 +373,17 @@ export class LayoutController {
       button.appendChild(image);
       button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.SHAPE));
       this.componentBrowser.appendChild(button);
+      let textButton = document.createElement('button');
+      textButton.title = "Custom Text";
+      let textImage = new Image();
+      textImage.src = 'img/icon-addtext-black.png';
+      textImage.className = 'custom';
+      textButton.appendChild(textImage);
+      textButton.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.TEXT));
+      this.componentBrowser.appendChild(textButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape') {
+      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
         let button = document.createElement('button');
         button.title = track.name;
         button.appendChild(track.image);
@@ -450,6 +460,7 @@ export class LayoutController {
     document.getElementById('createComponentDialog').addEventListener('click', this.onCreateCustomComponent.bind(this));
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
+    const componentTextNode = document.getElementById('componentText');
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         this.onCreateCustomComponent();
@@ -478,13 +489,27 @@ export class LayoutController {
         event.target.parentElement.classList.remove('invalid');
       }
     });
-    const colors = ["green", "red", "black", "white", "blue", "yellow", "orange", "brown", "dark red", "dark green", "light bluish gray", "dark bluish gray"];
+    componentTextNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onCreateCustomComponent();
+      }
+      if (event.key === 'Escape') {
+        ui("#newCustomComponentDialog");
+      }
+      event.stopPropagation();
+    });
+    componentTextNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+    const colors = ["black", "blue", "brown", "dark bluish gray", "dark green", "dark red", "green", "light bluish gray", "orange", "red", "white", "yellow"];
     const colorMenu = document.getElementById('componentColorMenu');
     colors.forEach((color) => {
       let menuItem = document.createElement('li');
       let itemIcon = document.createElement('i');
       itemIcon.className = `fill lego${color.replaceAll(' ', '')}`;
-      menuItem.innerText = color.charAt(0).toUpperCase() + color.slice(1);
+      menuItem.innerText = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       menuItem.prepend(itemIcon);
       menuItem.addEventListener('click', () => this.selectComponentColor(color));
       colorMenu.appendChild(menuItem);
@@ -492,12 +517,17 @@ export class LayoutController {
     document.getElementById('componentColorFilter').addEventListener('input', this.filterComponentColors.bind(this));
   }
 
+  /**
+   * Called when the user selects a color for a custom component.
+   * @param {String} color The name of the color to select, e.g. "green", "red", etc.
+   */
   selectComponentColor(color) {
     let icon = document.getElementById('componentColorSelect');
     let input = document.getElementById('componentColorName');
     icon.setAttribute('data-color', color.replaceAll(' ', ''));
-    input.value = color.charAt(0).toUpperCase() + color.slice(1);
-    document.getElementById('componentColorFilter').value = "";
+    input.value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    document.getElementById('componentColorFilter').value = '';
+    this.filterComponentColors();
   }
 
   filterComponentColors() {
@@ -519,42 +549,77 @@ export class LayoutController {
   showCreateCustomComponentDialog(type) {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
+    const componentTextNode = document.getElementById('componentText');
     this.#customComponentType = type;
     componentHeightNode.value = '';
     componentWidthNode.value = '';
-    document.getElementById('componentColorSelect').setAttribute('data-color', "green");
-    document.getElementById('componentColorName').value = "Green";
+    componentTextNode.value = '';
     document.getElementById('componentWidthError').innerText = '';
     document.getElementById('componentHeightError').innerText = '';
+    document.getElementById('componentTextError').innerText = '';
+    document.getElementById('componentColorFilter').value = '';
+    this.filterComponentColors();
     componentWidthNode.parentElement.classList.remove('invalid');
     componentHeightNode.parentElement.classList.remove('invalid');
+    componentTextNode.parentElement.classList.remove('invalid');
+    if (type === DataTypes.TEXT) {
+      componentTextNode.parentElement.classList.remove('hidden');
+      componentWidthNode.parentElement.classList.add('hidden');
+      componentWidthNode.autofocus = false;
+      componentHeightNode.parentElement.classList.add('hidden');
+      componentTextNode.autofocus = true;
+      document.getElementById('componentColorSelect').setAttribute('data-color', "black");
+      document.getElementById('componentColorName').value = "Black";
+      document.getElementById('componentFontOptions').classList.remove('hidden');
+    } else {
+      componentTextNode.parentElement.classList.add('hidden');
+      componentTextNode.autofocus = false;
+      componentWidthNode.parentElement.classList.remove('hidden');
+      componentWidthNode.autofocus = true;
+      componentHeightNode.parentElement.classList.remove('hidden');
+      document.getElementById('componentColorSelect').setAttribute('data-color', "green");
+      document.getElementById('componentColorName').value = "Green";
+      document.getElementById('componentFontOptions').classList.add('hidden');
+    }
     ui("#newCustomComponentDialog");
   }
 
   onCreateCustomComponent() {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
+    const componentTextNode = document.getElementById('componentText');
     let componentWidth = componentWidthNode.value;
     let componentHeight = componentHeightNode.value;
-    if (componentWidth.length === 0 || isNaN(componentWidth) || componentWidth <= 0) {
-      document.getElementById('componentWidthError').innerText = "Width must be a positive number";
-      componentWidthNode.parentElement.classList.add('invalid');
-      componentWidthNode.focus();
-      return;
-    }
-    if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
-      document.getElementById('componentHeightError').innerText = "Height must be a positive number";
-      componentHeightNode.parentElement.classList.add('invalid');
-      componentHeightNode.focus();
-      return;
-    }
-    var track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
+    let componentText = componentTextNode.value.trim();
     let componentColor = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
-    var options = {
-      width: parseInt(componentWidth) * 16,
-      height: parseInt(componentHeight) * 16,
+    let options = {
       color: componentColor
-    };
+    }
+    if (this.#customComponentType !== DataTypes.TEXT) {
+      if (componentWidth.length === 0 || isNaN(componentWidth) || componentWidth <= 0) {
+        document.getElementById('componentWidthError').innerText = "Width must be a positive number";
+        componentWidthNode.parentElement.classList.add('invalid');
+        componentWidthNode.focus();
+        return;
+      }
+      if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
+        document.getElementById('componentHeightError').innerText = "Height must be a positive number";
+        componentHeightNode.parentElement.classList.add('invalid');
+        componentHeightNode.focus();
+        return;
+      }
+      options.width = parseInt(componentWidth) * 16;
+      options.height = parseInt(componentHeight) * 16;
+    } else {
+      if (componentText.length === 0) {
+        document.getElementById('componentTextError').innerText = "Text cannot be empty";
+        componentTextNode.parentElement.classList.add('invalid');
+        componentTextNode.focus();
+        return;
+      }
+      options.text = componentText;
+    }
+    let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
     this.addComponent(track, false, options);
     ui("#newCustomComponentDialog");
   }

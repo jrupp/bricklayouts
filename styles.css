@@ -458,6 +458,14 @@ canvas {
 	margin-block-end: 2rem !important
 }
 
+.field.hidden {
+	display: none;
+}
+
+#componentFontOptions.hidden {
+	display: none;
+}
+
 #componentColorSelect i.fill:before {
   content: "square";
 }
@@ -569,7 +577,9 @@ i.legodarkbluishgray {
 #layerNameField label,
 #componentWidthField label,
 #componentHeightField label,
-#componentColorSelect label {
+#componentColorSelect label,
+#componentTextField label,
+#componentFontOptions label {
   font-size: 1.1rem;
 }
 
@@ -578,8 +588,13 @@ i.legodarkbluishgray {
 #layerNameField input[type=text],
 #componentWidthField input[type=number],
 #componentHeightField input[type=number],
-#componentColorSelect input[type=text] {
+#componentColorSelect input[type=text],
+#componentTextField input[type=text] {
   padding-inline-start: 3.4rem;
+  font-size: 1.5rem !important;
+}
+
+#componentFontOptions :is(input, select) {
   font-size: 1.5rem !important;
 }
 

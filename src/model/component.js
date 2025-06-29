@@ -1,4 +1,4 @@
-import { Assets, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
+import { Assets, BitmapText, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
 import { LayoutController, TrackData, DataTypes } from '../controller/layoutController.js';
 import { Connection, SerializedConnection } from "./connection.js";
 import { Pose, SerializedPose } from "./pose.js";
@@ -14,6 +14,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {Number} [height] The height of the component, if applicable
  * @property {String} [color] The color of the component, if applicable
  * @property {String} [outline_color] The color of the outline, if applicable
+ * @property {String} [text] The text to display on the component, if applicable
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -23,6 +24,8 @@ export { SerializedComponent };
  * @property {number} width The width of the component
  * @property {number} height The height of the component
  * @property {string} color The color of the component
+ * @property {string} outlineColor The color of the outline
+ * @property {string} text The text to display on the component
  */
 let ComponentOptions;
 export { ComponentOptions };
@@ -31,11 +34,25 @@ export class Component extends Container {
   /** @type {Color} */
   #color;
 
-  /** @type {Number} */
+  /**
+   * @type {Number}
+   * The width of the component, if applicable.
+   * This is used for shapes and baseplates only.
+  */
   #width;
 
-  /** @type {Number} */
+  /**
+   * @type {Number}
+   * The height of the component, if applicable.
+   * This is used for shapes and baseplates only.
+   */
   #height;
+
+  /**
+   * @type {String}
+   * The text to display on the component, if applicable.
+   */
+  #text;
 
   /**
    * @type {Pose}
@@ -124,6 +141,19 @@ export class Component extends Container {
         tempSprite = null;
       }
       this.sprite = new Sprite(plateTexture);
+      this.sprite.anchor.set(0.5);
+    } else if (this.baseData.type === DataTypes.TEXT) {
+      this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
+      this.#text = options.text ?? this.baseData.text ?? 'Text';
+      this.sprite = new BitmapText({
+        text: this.#text,
+        style: {
+          fontFamily: 'sans-serif',
+          fontSize: 360,
+          fill: this.#color,
+          align: 'center',
+        },
+      });
       this.sprite.anchor.set(0.5);
     }
     if (baseData.scale) {
@@ -340,6 +370,9 @@ export class Component extends Container {
     if (data.outline_color !== undefined) {
       options.outline_color = data.outline_color;
     }
+    if (data.text !== undefined) {
+      options.text = data.text;
+    }
     const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
@@ -358,7 +391,8 @@ export class Component extends Container {
       connections: this.connections.map((connection) => connection.serialize()),
       width: this.#width,
       height: this.#height,
-      color: this.#color?.toHex()
+      color: this.#color?.toHex(),
+      text: this.#text
     };
   }
 
@@ -382,7 +416,8 @@ export class Component extends Container {
       data?.width === undefined || (typeof data?.width === 'number' && data?.width > 0),
       data?.height === undefined || (typeof data?.height === 'number' && data?.height > 0),
       data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
-      data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color))
+      data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
+      data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0)
     ]
     return validations.every(v => v);
   }

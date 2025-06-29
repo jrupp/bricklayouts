@@ -436,6 +436,48 @@
                     <label>Component Height (studs)</label>
                     <span class="error" id="componentHeightError">Error goes here</span>
                 </div>
+                <div class="field label prefix middle-align large-space border medium vertical-margin hidden" id="componentTextField">
+                    <i class="large no-round">text_fields</i>
+                    <input id="componentText" type="text" placeholder=" " value="" autofocus>
+                    <label>Text</label>
+                    <span class="error" id="componentTextError">Error goes here</span>
+                </div>
+                <div class="row vertical-margin hidden" id="componentFontOptions">
+                    <div class="max">
+                        <div class="field label suffix middle-align large-space border medium no-margin" id="componentFontSizeField">
+                            <select id="componentFontSize">
+                                <option value="10">10</option>
+                                <option value="12">12</option>
+                                <option value="14">14</option>
+                                <option value="18" selected>18</option>
+                                <option value="24">24</option>
+                                <option value="36">36</option>
+                                <option value="48">48</option>
+                                <option value="64">64</option>
+                                <option value="72">72</option>
+                                <option value="80">80</option>
+                                <option value="96">96</option>
+                                <option value="144">144</option>
+                                <option value="288">288</option>
+                            </select>
+                            <label>Font Size</label>
+                            <i class="extra">arrow_drop_down</i>
+                            <span class="error" id="componentFontSizeError">Error goes here</span>
+                        </div>
+                    </div>
+                    <div class="max">
+                        <div class="field label suffix middle-align large-space border medium no-margin" id="componentFontField">
+                            <select id="componentFont">
+                                <option value="Arial" selected>Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="sans-serif">Sans Serif</option>
+                            </select>
+                            <label>Font</label>
+                            <i class="extra">arrow_drop_down</i>
+                            <span class="error" id="componentFontError">Error goes here</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="field label prefix suffix middle-align large-space border medium vertical-margin active" id="componentColorSelect" data-color="green">
                     <i class="fill"></i>
                     <input id="componentColorName" type="text" placeholder=" " value="Green" readonly>
@@ -443,7 +485,7 @@
                     <menu class="max" id="componentColorMenu">
                         <li><div class="field large prefix suffix"><i class="front">arrow_back</i><input id="componentColorFilter"><i>close</i></div></li>
                     </menu>
-                    <i>arrow_drop_down</i>
+                    <i class="extra">arrow_drop_down</i>
                     <span class="error" id="componentColorError">Error goes here</span>
                 </div>
             </div>
