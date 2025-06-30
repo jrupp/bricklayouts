@@ -570,6 +570,8 @@ export class LayoutController {
       componentTextNode.autofocus = true;
       document.getElementById('componentColorSelect').setAttribute('data-color', "black");
       document.getElementById('componentColorName').value = "Black";
+      document.getElementById('componentFont').selectedIndex = 0;
+      document.getElementById('componentFontSize').selectedIndex = 3;
       document.getElementById('componentFontOptions').classList.remove('hidden');
     } else {
       componentTextNode.parentElement.classList.add('hidden');
@@ -592,6 +594,7 @@ export class LayoutController {
     let componentHeight = componentHeightNode.value;
     let componentText = componentTextNode.value.trim();
     let componentColor = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    /** @type {ComponentOptions} */
     let options = {
       color: componentColor
     }
@@ -618,6 +621,8 @@ export class LayoutController {
         return;
       }
       options.text = componentText;
+      options.font = document.getElementById('componentFont').value;
+      options.fontSize = parseInt(document.getElementById('componentFontSize').value) * 20;
     }
     let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
     this.addComponent(track, false, options);

@@ -15,6 +15,8 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [color] The color of the component, if applicable
  * @property {String} [outline_color] The color of the outline, if applicable
  * @property {String} [text] The text to display on the component, if applicable
+ * @property {String} [font] The font to use for the text, if applicable
+ * @property {Number} [fontSize] The font size to use for the text, if applicable
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -26,6 +28,8 @@ export { SerializedComponent };
  * @property {string} color The color of the component
  * @property {string} outlineColor The color of the outline
  * @property {string} text The text to display on the component
+ * @property {string} font The font to use for the text
+ * @property {number} fontSize The font size to use for the text
  */
 let ComponentOptions;
 export { ComponentOptions };
@@ -53,6 +57,20 @@ export class Component extends Container {
    * The text to display on the component, if applicable.
    */
   #text;
+
+  /**
+   * @type {String}
+   * The font to use for the text, if applicable.
+   * This is used for text components only.
+   */
+  #font;
+
+  /**
+   * @type {Number}
+   * The font size to use for the text, if applicable.
+   * This is used for text components only.
+   */
+  #fontSize;
 
   /**
    * @type {Pose}
@@ -145,11 +163,13 @@ export class Component extends Container {
     } else if (this.baseData.type === DataTypes.TEXT) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       this.#text = options.text ?? this.baseData.text ?? 'Text';
+      this.#font = options.font ?? 'sans-serif';
+      this.#fontSize = options.fontSize ?? 360;
       this.sprite = new BitmapText({
         text: this.#text,
         style: {
-          fontFamily: 'sans-serif',
-          fontSize: 360,
+          fontFamily: this.#font,
+          fontSize: this.#fontSize,
           fill: this.#color,
           align: 'center',
         },
@@ -373,6 +393,12 @@ export class Component extends Container {
     if (data.text !== undefined) {
       options.text = data.text;
     }
+    if (data.font !== undefined) {
+      options.font = data.font;
+    }
+    if (data.fontSize !== undefined) {
+      options.fontSize = data.fontSize;
+    }
     const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
@@ -392,7 +418,9 @@ export class Component extends Container {
       width: this.#width,
       height: this.#height,
       color: this.#color?.toHex(),
-      text: this.#text
+      text: this.#text,
+      font: this.#font,
+      fontSize: this.#fontSize
     };
   }
 
@@ -417,7 +445,9 @@ export class Component extends Container {
       data?.height === undefined || (typeof data?.height === 'number' && data?.height > 0),
       data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
-      data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0)
+      data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),
+      data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
+      data?.fontSize === undefined || (typeof data?.fontSize === 'number' && data?.fontSize > 0)
     ]
     return validations.every(v => v);
   }

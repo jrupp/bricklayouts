@@ -50,6 +50,8 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentText').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('componentFont').and.returnValue(document.createElement('select'));
+        geiSpy.withArgs('componentFontSize').and.returnValue(document.createElement('select'));
         window.Slip = class Slip {
             constructor() {
             }
