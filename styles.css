@@ -583,7 +583,8 @@ i.legodarkbluishgray {
 #componentHeightField label,
 #componentColorSelect label,
 #componentTextField label,
-#componentFontOptions label {
+#componentFontOptions label,
+#componentSizeUnitsField label {
   font-size: 1.1rem;
 }
 
@@ -598,7 +599,8 @@ i.legodarkbluishgray {
   font-size: 1.5rem !important;
 }
 
-#componentFontOptions :is(input, select) {
+#componentFontOptions :is(input, select),
+#componentSizeUnitsField select {
   font-size: 1.5rem !important;
 }
 
