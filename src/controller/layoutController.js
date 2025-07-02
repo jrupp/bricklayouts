@@ -550,6 +550,7 @@ export class LayoutController {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
+    const componentSizeUnits = document.getElementById('componentSizeUnits');
     this.#customComponentType = type;
     componentHeightNode.value = '';
     componentWidthNode.value = '';
@@ -558,15 +559,16 @@ export class LayoutController {
     document.getElementById('componentHeightError').innerText = '';
     document.getElementById('componentTextError').innerText = '';
     document.getElementById('componentColorFilter').value = '';
+    componentSizeUnits.selectedIndex = 0;
     this.filterComponentColors();
     componentWidthNode.parentElement.classList.remove('invalid');
     componentHeightNode.parentElement.classList.remove('invalid');
     componentTextNode.parentElement.classList.remove('invalid');
     if (type === DataTypes.TEXT) {
       componentTextNode.parentElement.classList.remove('hidden');
-      componentWidthNode.parentElement.classList.add('hidden');
+      componentWidthNode.parentElement.parentElement.parentElement.classList.add('hidden');
+      componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
       componentWidthNode.autofocus = false;
-      componentHeightNode.parentElement.classList.add('hidden');
       componentTextNode.autofocus = true;
       document.getElementById('componentColorSelect').setAttribute('data-color', "black");
       document.getElementById('componentColorName').value = "Black";
@@ -576,12 +578,26 @@ export class LayoutController {
     } else {
       componentTextNode.parentElement.classList.add('hidden');
       componentTextNode.autofocus = false;
-      componentWidthNode.parentElement.classList.remove('hidden');
+      componentWidthNode.parentElement.parentElement.parentElement.classList.remove('hidden');
+      componentHeightNode.parentElement.parentElement.parentElement.classList.remove('hidden');
       componentWidthNode.autofocus = true;
       componentHeightNode.parentElement.classList.remove('hidden');
       document.getElementById('componentColorSelect').setAttribute('data-color', "green");
       document.getElementById('componentColorName').value = "Green";
       document.getElementById('componentFontOptions').classList.add('hidden');
+      if (type === DataTypes.BASEPLATE) {
+        componentSizeUnits.parentElement.parentElement.classList.add('hidden');
+        componentWidthNode.parentElement.parentElement.classList.remove('s8');
+        componentHeightNode.parentElement.parentElement.classList.remove('s8');
+        componentWidthNode.parentElement.parentElement.classList.add('s12');
+        componentHeightNode.parentElement.parentElement.classList.add('s12');
+      } else {
+        componentSizeUnits.parentElement.parentElement.classList.remove('hidden');
+        componentWidthNode.parentElement.parentElement.classList.remove('s12');
+        componentHeightNode.parentElement.parentElement.classList.remove('s12');
+        componentWidthNode.parentElement.parentElement.classList.add('s8');
+        componentHeightNode.parentElement.parentElement.classList.add('s8');
+      }
     }
     ui("#newCustomComponentDialog");
   }
@@ -611,8 +627,18 @@ export class LayoutController {
         componentHeightNode.focus();
         return;
       }
-      options.width = parseInt(componentWidth) * 16;
-      options.height = parseInt(componentHeight) * 16;
+      let multiplier = 16; // 1 stud = 16 pixels
+      if (document.getElementById('componentSizeUnits').value === 'centimeters') {
+        multiplier = 20; // 1 cm = 20 pixels
+      } else if (document.getElementById('componentSizeUnits').value === 'millimeters') {
+        multiplier = 2; // 1 mm = 2 pixels
+      } else if (document.getElementById('componentSizeUnits').value === 'inches') {
+        multiplier = 51.2; // 1 inch = 51.2 pixels
+      } else if (document.getElementById('componentSizeUnits').value === 'feet') {
+        multiplier = 614.4; // 1 foot = 614.4 pixels
+      }
+      options.width = parseInt(componentWidth) * multiplier;
+      options.height = parseInt(componentHeight) * multiplier;
     } else {
       if (componentText.length === 0) {
         document.getElementById('componentTextError').innerText = "Text cannot be empty";

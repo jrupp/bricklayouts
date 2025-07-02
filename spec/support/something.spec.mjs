@@ -9,7 +9,17 @@ import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
 import layoutFileFour from './layout4.json' with { "type": "json" };
 
+function ui(s) {
+}
+window.ui = ui;
+
 describe("LayoutController", function() {
+    let componentWidth;
+    let componentWidthError;
+    let componentHeight;
+    let componentHeightError;
+    let componentSizeUnits;
+    let componentColorSelect;
     beforeAll(async () => {
         const app = new Application();
         await app.init();
@@ -44,14 +54,28 @@ describe("LayoutController", function() {
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
-        geiSpy.withArgs('componentWidth').and.returnValue(document.createElement('input'));
-        geiSpy.withArgs('componentHeight').and.returnValue(document.createElement('input'));
+        componentWidth = document.createElement('input');
+        componentWidthError = document.createElement('span');
+        geiSpy.withArgs('componentWidth').and.returnValue(componentWidth);
+        geiSpy.withArgs('componentWidthError').and.returnValue(componentWidthError);
+        componentHeight = document.createElement('input');
+        componentHeightError = document.createElement('span');
+        geiSpy.withArgs('componentHeight').and.returnValue(componentHeight);
+        geiSpy.withArgs('componentHeightError').and.returnValue(componentHeightError);
+        componentColorSelect = document.createElement('div');
+        let i = document.createElement('i');
+        i.setAttribute('data-color', 'green');
+        i.style.color = '#237841';
+        componentColorSelect.appendChild(i);
+        geiSpy.withArgs('componentColorSelect').and.returnValue(componentColorSelect);
         geiSpy.withArgs('componentColorMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentText').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentFont').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('componentFontSize').and.returnValue(document.createElement('select'));
+        componentSizeUnits = document.createElement('select');
+        geiSpy.withArgs('componentSizeUnits').and.returnValue(componentSizeUnits);
         window.Slip = class Slip {
             constructor() {
             }
@@ -106,6 +130,268 @@ describe("LayoutController", function() {
 
         it("exports the layout with proper data", function() {
             expect(LayoutController._validateImportData(this.exportedLayout)).toBeTrue();
+        });
+    });
+
+    describe("onCreateCustomComponent", function() {
+        beforeEach(function() {
+            window.layoutController.reset();
+        });
+
+        it("creates a custom shape component", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, height: 1600});
+        });
+
+        it("creates using studs as units", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 1600, height: 1600});
+            expect(layoutController.currentLayer.children[0].sprite.width).toBe(1600);
+            expect(layoutController.currentLayer.children[0].sprite.height).toBe(1600);
+        });
+
+        it("creates using centimeters as units", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('centimeters');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 2000, height: 2000});
+            expect(layoutController.currentLayer.children[0].sprite.width).toBe(2000);
+            expect(layoutController.currentLayer.children[0].sprite.height).toBe(2000);
+        });
+
+        it("creates using millimeters as units", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('millimeters');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 200, height: 200});
+            expect(layoutController.currentLayer.children[0].sprite.width).toBe(200);
+            expect(layoutController.currentLayer.children[0].sprite.height).toBe(200);
+        });
+
+        it("creates using inches as units", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('inches');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 5120, height: 5120});
+            expect(layoutController.currentLayer.children[0].sprite.width).toBe(5120);
+            expect(layoutController.currentLayer.children[0].sprite.height).toBe(5120);
+        });
+
+        it("creates using feet as units", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('feet');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 61440, height: 61440});
+            expect(layoutController.currentLayer.children[0].sprite.width).toBe(61440);
+            expect(layoutController.currentLayer.children[0].sprite.height).toBe(61440);
+        });
+
+        it("shows error when width is not a number", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('not a number');
+            spyOnProperty(componentWidth, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).toHaveBeenCalled();
+            expect(heightError).not.toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows error when height is not a number", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('not a number');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).not.toHaveBeenCalled();
+            expect(heightError).toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows an error when width is 0", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('0');
+            spyOnProperty(componentWidth, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).toHaveBeenCalled();
+            expect(heightError).not.toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows an error when height is 0", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('0');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).not.toHaveBeenCalled();
+            expect(heightError).toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows an error when width is empty", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('');
+            spyOnProperty(componentWidth, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).toHaveBeenCalled();
+            expect(heightError).not.toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("shows an error when height is empty", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.stub();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).not.toHaveBeenCalled();
+            expect(heightError).toHaveBeenCalled();
+            expect(uiSpy).not.toHaveBeenCalled();
+            expect(addSpy).not.toHaveBeenCalled();
         });
     });
 

@@ -424,17 +424,39 @@
                 </nav>
             </header>
             <div class="small-padding horizontal-padding">
-                <div class="field label prefix middle-align large-space border medium vertical-margin" id="componentWidthField">
-                    <i class="large no-round">width</i>
-                    <input id="componentWidth" type="number" min="1" placeholder=" " autofocus>
-                    <label>Component Width (studs)</label>
-                    <span class="error" id="componentWidthError">Error goes here</span>
+                <div class="grid vertical-margin">
+                    <div class="s8">
+                        <div class="field label prefix middle-align large-space border medium no-margin" id="componentWidthField">
+                            <i class="large no-round">width</i>
+                            <input id="componentWidth" type="number" min="1" placeholder=" " autofocus>
+                            <label>Component Width</label>
+                            <span class="error" id="componentWidthError">Error goes here</span>
+                        </div>
+                    </div>
+                    <div class="s4">
+                        <div class="field label suffix middle-align large-space border medium no-margin" id="componentSizeUnitsField">
+                            <select id="componentSizeUnits">
+                                <option value="studs" selected>Studs</option>
+                                <option value="inches">Inches</option>
+                                <option value="feet">Feet</option>
+                                <option value="centimeters">Centimeters</option>
+                                <option value="millimeters">Millimeters</option>
+                            </select>
+                            <label>Units</label>
+                            <i class="extra">arrow_drop_down</i>
+                            <span class="error" id="componentSizeUnitsError">Error goes here</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="field label prefix middle-align large-space border medium vertical-margin" id="componentHeightField">
-                    <i class="large no-round">height</i>
-                    <input id="componentHeight" type="number" min="1" placeholder=" ">
-                    <label>Component Height (studs)</label>
-                    <span class="error" id="componentHeightError">Error goes here</span>
+                <div class="grid vertical-margin">
+                    <div class="s8">
+                        <div class="field label prefix middle-align large-space border medium no-margin" id="componentHeightField">
+                            <i class="large no-round">height</i>
+                            <input id="componentHeight" type="number" min="1" placeholder=" ">
+                            <label>Component Height</label>
+                            <span class="error" id="componentHeightError">Error goes here</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="field label prefix middle-align large-space border medium vertical-margin hidden" id="componentTextField">
                     <i class="large no-round">text_fields</i>

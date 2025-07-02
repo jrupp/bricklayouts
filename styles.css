@@ -466,6 +466,10 @@ canvas {
 	display: none;
 }
 
+div.hidden {
+	display: none;
+}
+
 #componentColorSelect i.fill:before {
   content: "square";
 }
