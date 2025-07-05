@@ -17,7 +17,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {Number} [opacity] The opacity of the component, if applicable
  * @property {String} [text] The text to display on the component, if applicable
  * @property {String} [font] The font to use for the text, if applicable
- * @property {Number} [fontSize] The font size to use for the text, if applicable
+ * @property {Number} [font_size] The font size to use for the text, if applicable
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -421,8 +421,8 @@ export class Component extends Container {
     if (data.font !== undefined) {
       options.font = data.font;
     }
-    if (data.fontSize !== undefined) {
-      options.fontSize = data.fontSize;
+    if (data.font_size !== undefined) {
+      options.fontSize = data.font_size;
     }
     const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
@@ -447,7 +447,7 @@ export class Component extends Container {
       opacity: this.#opacity,
       text: this.#text,
       font: this.#font,
-      fontSize: this.#fontSize
+      font_size: this.#fontSize
     };
   }
 
@@ -474,7 +474,7 @@ export class Component extends Container {
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
       data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),
       data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
-      data?.fontSize === undefined || (typeof data?.fontSize === 'number' && data?.fontSize > 0),
+      data?.font_size === undefined || (typeof data?.font_size === 'number' && data?.font_size > 0),
       data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1)
     ]
     return validations.every(v => v);
