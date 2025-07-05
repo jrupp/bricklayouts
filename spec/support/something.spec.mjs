@@ -3,15 +3,19 @@ import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
-import { Application, Assets, RenderLayer } from '../../src/pixi.mjs';
+import { Application, Assets, Color, Graphics, RenderLayer, Sprite } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
 import layoutFileFour from './layout4.json' with { "type": "json" };
+import layoutFileFive from './layout5.json' with { "type": "json" };
 
 function ui(s) {
 }
 window.ui = ui;
+Color.prototype.toYiq = function () {
+  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
+};
 
 describe("LayoutController", function() {
     let componentWidth;
@@ -20,6 +24,9 @@ describe("LayoutController", function() {
     let componentHeightError;
     let componentSizeUnits;
     let componentColorSelect;
+    let componentOpacity;
+    let componentBorder;
+    let componentBorderColor;
     beforeAll(async () => {
         const app = new Application();
         await app.init();
@@ -76,6 +83,18 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentFontSize').and.returnValue(document.createElement('select'));
         componentSizeUnits = document.createElement('select');
         geiSpy.withArgs('componentSizeUnits').and.returnValue(componentSizeUnits);
+        geiSpy.withArgs('componentShapeOptions').and.returnValue(document.createElement('div'));
+        componentBorder = document.createElement('input');
+        componentBorder.type = 'checkbox';
+        componentBorder.checked = false;
+        geiSpy.withArgs('componentBorder').and.returnValue(componentBorder);
+        componentBorderColor = document.createElement('input');
+        componentBorderColor.type = 'color';
+        geiSpy.withArgs('componentBorderColor').and.returnValue(componentBorderColor);
+        componentOpacity = document.createElement('input');
+        componentOpacity.type = 'range';
+        componentOpacity.value = '100';
+        geiSpy.withArgs('componentOpacity').and.returnValue(componentOpacity);
         window.Slip = class Slip {
             constructor() {
             }
@@ -393,6 +412,72 @@ describe("LayoutController", function() {
             expect(uiSpy).not.toHaveBeenCalled();
             expect(addSpy).not.toHaveBeenCalled();
         });
+
+        it("creates with 50% opacity", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentOpacity, 'value', 'get').and.returnValue('50');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), opacity: 0.5});
+            expect(layoutController.currentLayer.children[0].sprite.alpha).toBe(0.5);
+        });
+        
+        it("creates with a border", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentBorder, 'checked', 'get').and.returnValue(true);
+            spyOnProperty(componentBorderColor, 'value', 'get').and.returnValue('#ff0000');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), outlineColor: '#ff0000'});
+            expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(8);
+            expect(layoutController.currentLayer.children[0].sprite.strokeStyle.color).toBe(16711680); // #ff0000 in hex
+        });
+
+        it("creates with no border", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('16');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentBorder, 'checked', 'get').and.returnValue(false);
+            spyOnProperty(componentBorderColor, 'value', 'get').and.returnValue('#ff0000');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
+            window.layoutController.onCreateCustomComponent();
+            let layoutController = window.layoutController;
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number)});
+            expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(1);
+        });
     });
 
     describe("addComponent", function() {
@@ -638,6 +723,10 @@ describe("LayoutController", function() {
 
         it("validates layout 4", function() {
             expect(LayoutController._validateImportData(layoutFileFour)).toBeTrue();
+        });
+
+        it("validates layout 5", function() {
+            expect(LayoutController._validateImportData(layoutFileFive)).toBeTrue();
         });
 
         it("throws errors with invalid version", function() {
@@ -894,6 +983,43 @@ describe("LayoutController", function() {
             expect(layoutController.layers[1].interactiveChildren).toBeFalse();
             expect(layoutController.layers[2].eventMode).toBe("passive");
             expect(layoutController.layers[2].interactiveChildren).toBeTrue();
+        });
+
+        it("imports layout 5", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            layoutController._importLayout(layoutFileFive);
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(layoutController.layers[0].children).toHaveSize(6);
+            layoutController.layers[0].children.forEach((child, index) => {
+                if (index == 5) {
+                    expect(child).toBeInstanceOf(RenderLayer);
+                    return;
+                }
+                expect(child).toBeInstanceOf(Component);
+                if (index == 4) {
+                    expect(child.sprite).toBeInstanceOf(Sprite);
+                } else {
+                    expect(child.sprite).toBeInstanceOf(Graphics);
+                    if (index == 0) {
+                        expect(child.sprite.alpha).toBe(0.5);
+                        expect(child.sprite.strokeStyle.width).toBe(8);
+                        expect(child.sprite.strokeStyle.color).toBe(6836680); // #6851C8
+                        expect(child.sprite.fillStyle.color).toBe(13179401); // #C91A09
+                    } else {
+                        expect(child.sprite.alpha).toBe(1);
+                        if (index == 1) {
+                           expect(child.sprite.strokeStyle.width).toBe(1);
+                        } else if (index == 2 || index == 3) {
+                            expect(child.sprite.strokeStyle.width).toBe(8);
+                            expect(child.sprite.strokeStyle.color).toBe(0); // #000000
+                            expect(child.sprite.fillStyle.color).toBe(2324545); // #237841
+                        }
+                    }
+                }
+                expect(child.connections.length).toBe(0);
+            });
         });
     });
 

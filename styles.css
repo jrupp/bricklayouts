@@ -584,7 +584,9 @@ i.legodarkbluishgray {
 #componentColorSelect label,
 #componentTextField label,
 #componentFontOptions label,
-#componentSizeUnitsField label {
+#componentSizeUnitsField label,
+#componentBorderColorField label,
+#componentBorderField > label {
   font-size: 1.1rem;
 }
 
@@ -594,25 +596,29 @@ i.legodarkbluishgray {
 #componentWidthField input[type=number],
 #componentHeightField input[type=number],
 #componentColorSelect input[type=text],
-#componentTextField input[type=text] {
+#componentTextField input[type=text],
+#componentBorderColorField input[type=text] {
   padding-inline-start: 3.4rem;
   font-size: 1.5rem !important;
 }
 
 #componentFontOptions :is(input, select),
-#componentSizeUnitsField select {
+#componentSizeUnitsField select,
+#componentBorderField nav {
   font-size: 1.5rem !important;
 }
 
 #colorfield>i,
-#subcolorfield>i {
+#subcolorfield>i,
+#componentBorderColorField>i {
   inline-size: var(---size);
   block-size: var(---size);
   padding-bottom: 1px;
 }
 
 #colorfield>i:after,
-#subcolorfield>i:after {
+#subcolorfield>i:after,
+#componentBorderColorField>i:after {
   border: 1px solid transparent;
   content: "";
   display: block;
@@ -628,6 +634,10 @@ i.legodarkbluishgray {
 
 #subcolorfield>i:after {
   background: var(--gridsubcolor);
+}
+
+#componentBorderColorField>i:after {
+  background: var(--component-border-color);
 }
 
 .toolbarItem {
@@ -726,6 +736,11 @@ button:active {
 .button span.label,
 button span.label {
 	display: none;
+}
+
+i + span.label {
+	inset: auto auto auto 0.2rem;
+	transform: translateY(100%);
 }
 
 .componentEditorActions button {

@@ -14,6 +14,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {Number} [height] The height of the component, if applicable
  * @property {String} [color] The color of the component, if applicable
  * @property {String} [outline_color] The color of the outline, if applicable
+ * @property {Number} [opacity] The opacity of the component, if applicable
  * @property {String} [text] The text to display on the component, if applicable
  * @property {String} [font] The font to use for the text, if applicable
  * @property {Number} [fontSize] The font size to use for the text, if applicable
@@ -27,6 +28,7 @@ export { SerializedComponent };
  * @property {number} height The height of the component
  * @property {string} color The color of the component
  * @property {string} outlineColor The color of the outline
+ * @property {number} opacity The opacity of the component
  * @property {string} text The text to display on the component
  * @property {string} font The font to use for the text
  * @property {number} fontSize The font size to use for the text
@@ -39,10 +41,17 @@ export class Component extends Container {
   #color;
 
   /**
+   * @type {String}
+   * The color of the outline, if applicable.
+   * This is used for shape components only.
+   */
+  #outlineColor;
+
+  /**
    * @type {Number}
    * The width of the component, if applicable.
    * This is used for shapes and baseplates only.
-  */
+   */
   #width;
 
   /**
@@ -71,6 +80,13 @@ export class Component extends Container {
    * This is used for text components only.
    */
   #fontSize;
+
+  /**
+   * @type {Number}
+   * The opacity of the component, if applicable.
+   * This is used for shapes components only.
+   */
+  #opacity;
 
   /**
    * @type {Pose}
@@ -130,7 +146,12 @@ export class Component extends Container {
       if (options.outlineColor) {
         // @todo Alignment should be 0, but there is a bug in PixiJS that causes the outline to be misaligned
         // See: {@link https://github.com/pixijs/pixijs/issues/11494}
-        this.sprite.stroke({width: 1, alignment: 1, color: options.outlineColor});
+        this.#outlineColor = new Color(options.outlineColor);
+        this.sprite.stroke({width: 8, alignment: 1, color: options.outlineColor});
+      }
+      if (options.opacity !== void 0) {
+        this.#opacity = options.opacity;
+        this.sprite.alpha = options.opacity;
       }
       this.sprite.pivot.set(this.#width / 2, this.#height / 2);
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
@@ -377,6 +398,7 @@ export class Component extends Container {
     if (baseData === undefined) {
       throw new Error('Component.deserialize: baseData is undefined');
     }
+    /** @type {ComponentOptions} */
     var options = {};
     if (data.width !== undefined) {
       options.width = data.width;
@@ -388,7 +410,10 @@ export class Component extends Container {
       options.color = data.color;
     }
     if (data.outline_color !== undefined) {
-      options.outline_color = data.outline_color;
+      options.outlineColor = data.outline_color;
+    }
+    if (data.opacity !== undefined) {
+      options.opacity = data.opacity;
     }
     if (data.text !== undefined) {
       options.text = data.text;
@@ -418,6 +443,8 @@ export class Component extends Container {
       width: this.#width,
       height: this.#height,
       color: this.#color?.toHex(),
+      outline_color: this.#outlineColor?.toHex(),
+      opacity: this.#opacity,
       text: this.#text,
       font: this.#font,
       fontSize: this.#fontSize
@@ -447,7 +474,8 @@ export class Component extends Container {
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
       data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),
       data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
-      data?.fontSize === undefined || (typeof data?.fontSize === 'number' && data?.fontSize > 0)
+      data?.fontSize === undefined || (typeof data?.fontSize === 'number' && data?.fontSize > 0),
+      data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1)
     ]
     return validations.every(v => v);
   }

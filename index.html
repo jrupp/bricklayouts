@@ -510,6 +510,41 @@
                     <i class="extra">arrow_drop_down</i>
                     <span class="error" id="componentColorError">Error goes here</span>
                 </div>
+                 <div class="grid vertical-margin" id="componentShapeOptions">
+                    <div class="s3">
+                        <div class="border field label large-space medium middle-align no-margin" id="componentBorderField">
+                            <label class="active">Border?</label>
+                            <nav class="border no-margin middle-align" style="clip-path: polygon(-2% -2%,.75rem -2%,.75rem .5rem,calc(100% - 5rem) .5rem,calc(100% - 2.5rem) -2%,102% -2%,102% 102%,-2% 102%);">
+                                <label class="switch icon">
+                                    <input type="checkbox" id="componentBorder">
+                                    <span>
+                                        <i>close</i>
+                                        <i>done</i>
+                                    </span>
+                                </label>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="s5">
+                        <div class="field label prefix middle-align large-space border medium no-margin" id="componentBorderColorField">
+                            <i class="bottom-align large no-round">edit</i>
+                            <input id="componentBorderColor" type="color" value="#ff0000">
+                            <input type="text">
+                            <label>Border Color</label>
+                        </div>
+                    </div>
+                    <div class="s12">
+                        <div class="field prefix middle-align large-space border medium no-margin" id="componentOpacityField">
+                            <i class="large no-round">opacity</i>
+                            <span class="absolute label">Opacity</span>
+                            <label class="slider">
+                                <input type="range" value="100" min="0" max="100" step="1" id="componentOpacity">
+                                <span></span>
+                                <div class="tooltip"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
             <hr style="background-color: var(--outline)">
             <nav class="no-padding no-space no-margin">

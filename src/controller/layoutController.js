@@ -461,6 +461,7 @@ export class LayoutController {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
+    const componentBorderColor = document.getElementById('componentBorderColor');
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         this.onCreateCustomComponent();
@@ -515,6 +516,9 @@ export class LayoutController {
       colorMenu.appendChild(menuItem);
     });
     document.getElementById('componentColorFilter').addEventListener('input', this.filterComponentColors.bind(this));
+    componentBorderColor.addEventListener('change', (event) => {
+      componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', event.currentTarget.value);
+    });
   }
 
   /**
@@ -551,6 +555,7 @@ export class LayoutController {
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
+    const componentBorderColor = document.getElementById('componentBorderColor');
     this.#customComponentType = type;
     componentHeightNode.value = '';
     componentWidthNode.value = '';
@@ -564,6 +569,12 @@ export class LayoutController {
     componentWidthNode.parentElement.classList.remove('invalid');
     componentHeightNode.parentElement.classList.remove('invalid');
     componentTextNode.parentElement.classList.remove('invalid');
+    document.getElementById('componentShapeOptions').classList.add('hidden');
+    componentBorderColor.value = '#000000';
+    componentBorderColor.nextElementSibling.value = '#000000';
+    componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', '#000000');
+    document.getElementById('componentOpacity').value = 100;
+    document.getElementById('componentBorder').checked = false;
     if (type === DataTypes.TEXT) {
       componentTextNode.parentElement.classList.remove('hidden');
       componentWidthNode.parentElement.parentElement.parentElement.classList.add('hidden');
@@ -597,6 +608,7 @@ export class LayoutController {
         componentHeightNode.parentElement.parentElement.classList.remove('s12');
         componentWidthNode.parentElement.parentElement.classList.add('s8');
         componentHeightNode.parentElement.parentElement.classList.add('s8');
+        document.getElementById('componentShapeOptions').classList.remove('hidden');
       }
     }
     ui("#newCustomComponentDialog");
@@ -639,6 +651,15 @@ export class LayoutController {
       }
       options.width = parseInt(componentWidth) * multiplier;
       options.height = parseInt(componentHeight) * multiplier;
+      if (this.#customComponentType === DataTypes.SHAPE) {
+        if (document.getElementById('componentBorder').checked) {
+          options.outlineColor = document.getElementById('componentBorderColor').value;
+        }
+        let opacity = parseInt(document.getElementById('componentOpacity').value);
+        if (opacity >= 0 && opacity < 100) {
+          options.opacity = opacity / 100;
+        }
+      }
     } else {
       if (componentText.length === 0) {
         document.getElementById('componentTextError').innerText = "Text cannot be empty";
