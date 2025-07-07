@@ -8,9 +8,6 @@
                     "src": "2865.png",
                     "category": "9V",
                     "name": "9V Straight Rail",
-                    "data": {
-                        "clearColor": "#ffffff"
-                    },
                     "connections": [
                         {
                             "type": 1,
@@ -186,6 +183,42 @@
                     "src": "blank.png",
                     "type": "text",
                     "color": "#000000"
+                },
+                {
+                    "alias": "railStraight9VHalf",
+                    "src": "2865-half.png",
+                    "category": "9V",
+                    "name": "9V Straight Rail Half",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [64, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [64, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "railStraight9VQuarter",
+                    "src": "2865-quarter.png",
+                    "category": "9V",
+                    "name": "9V Straight Rail Quarter",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [32, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [32, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
                 }
             ]
         }
