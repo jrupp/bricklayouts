@@ -1,7 +1,7 @@
 {
   "dependencies": {
     "file-saver": "^2.0.5",
-    "pixi.js": "^8.8.0",
+    "pixi.js": "^8.11.0",
     "tweakpane": "^4.0.5"
   },
   "devDependencies": {
@@ -12,7 +12,7 @@
   },
   "scripts": {
     "start": "http-server . --log-ip -c-1",
-    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/file-saver/dist/FileSaver.min.js src/ && copyfiles -f node_modules/file-saver/dist/FileSaver.min.js.map src/ && copyfiles -f node_modules/tweakpane/dist/tweakpane.js src/",
+    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/",
     "test": "jasmine-browser-runner serve"
   }
 }

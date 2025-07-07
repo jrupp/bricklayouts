@@ -144,8 +144,6 @@ export class Component extends Container {
       this.sprite.rect(0, 0, this.#width, this.#height);
       this.sprite.fill(this.#color);
       if (options.outlineColor) {
-        // @todo Alignment should be 0, but there is a bug in PixiJS that causes the outline to be misaligned
-        // See: {@link https://github.com/pixijs/pixijs/issues/11494}
         this.#outlineColor = new Color(options.outlineColor);
         this.sprite.stroke({width: 8, alignment: 1, color: options.outlineColor});
       }
