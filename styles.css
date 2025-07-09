@@ -775,7 +775,11 @@ i + span.label {
 	flex-direction: row;
 	justify-content: flex-start;
 	flex-wrap: wrap;
+	overflow-y: auto;
 	min-height: 8rem;
+	min-width: 33rem;
+	max-width: 33rem;
+	max-height: 16rem;
 }
 .componentBrowser img.custom,
 .componentBrowser img.track {
@@ -788,9 +792,9 @@ i + span.label {
 
 .componentBrowser>button {
 	box-sizing: border-box;
-	width: 4rem;
-	height: 4rem;
-	padding: 0.1rem;
+	width: 8rem;
+	height: 8rem;
+	padding: 1rem;
 	margin: 0;
 }
 
@@ -871,6 +875,7 @@ i + span.label {
 	display: none;
 }
 
+/* Media query for screens 40rem (640px) and wider - targets larger screens/tablets and desktop */
 @media (min-width: 40rem) {
 	h1 {
 		width: 24rem;
@@ -887,8 +892,14 @@ i + span.label {
 	#mobileLayerEditor {
 		max-width: 50vw;
 	}
+
+	.componentBrowser {
+		min-width: 41rem;
+		max-width: 41rem;
+	}
 }
 
+/* Media query for screens 50rem (800px) and narrower - targets tablets and mobile devices */
 @media (max-width: 50rem) {
 	#configurationEditor {
 		max-width: 48rem;
@@ -901,8 +912,7 @@ i + span.label {
 		width: 100%;
 	}
 
-
-
+	/* Nested media query for screens 30rem (480px) and shorter - targets mobile devices in landscape orientation */
 	@media (max-height: 30rem) {
 		#configurationEditor {
 			---margin: 0 0 0 0;
@@ -910,6 +920,14 @@ i + span.label {
 	}
 }
 
+/* Media query for screens 30rem (480px) and shorter - targets mobile devices in landscape orientation, or smaller mobile devices */
+@media (max-height: 50rem) {
+	.componentBrowser {
+		max-height: 8rem;
+	}
+}
+
+/* Media query for screens 28rem (448px) and narrower - targets small mobile devices */
 @media (max-width: 28rem) {
 	button[data-tab=appearance] {
 		font-size: 1rem !important;
