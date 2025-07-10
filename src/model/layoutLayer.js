@@ -51,8 +51,9 @@ export class LayoutLayer extends Container {
     }
 
     addChild(...children) {
+        let index = this.children.length - 1;
         children.forEach(child => {
-            super.addChildAt(child, 0);
+            super.addChildAt(child, index);
         });
         return children[0];
     }
@@ -103,7 +104,6 @@ export class LayoutLayer extends Container {
     serialize() {
         return {
             components: this.children.filter(/** @param {Container} child */(child) => child instanceof Component)
-                                    .reverse()
                                     .map(/** @param {Component} child */(child) => child.serialize()),
             name: this.label,
             visible: this.visible

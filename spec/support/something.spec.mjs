@@ -523,7 +523,7 @@ describe("LayoutController", function() {
             layoutController.addComponent(trackData, true);
             let firstComp = layoutController.currentLayer.children[0];
             layoutController.addComponent(trackData, true);
-            let midComp = layoutController.currentLayer.children[0];
+            let midComp = layoutController.currentLayer.children[1];
             layoutController.addComponent(trackData, true);
             LayoutController.selectComponent(midComp);
             layoutController.addComponent(trackData, true);
@@ -536,7 +536,8 @@ describe("LayoutController", function() {
             layoutController.addComponent(trackData, true);
             firstComp = undefined;
             expect(layoutController.layers[0].openConnections).withContext("All Open Connections").toHaveSize(12);
-            expect(layoutController.currentLayer.children[0].getOpenConnections()).withContext("Middle component open connections").toHaveSize(0);
+            let o = layoutController.currentLayer.children.length - 2;
+            expect(layoutController.currentLayer.children[o].getOpenConnections()).withContext("Middle component open connections").toHaveSize(0);
         });
 
         it("doesn't add a component when connections full", function() {
@@ -568,12 +569,12 @@ describe("LayoutController", function() {
             layoutController.addComponent(trackData);
             let firstPose = layoutController.currentLayer.children[0].getPose();
             layoutController.addComponent(trackData);
-            let secondPose = layoutController.currentLayer.children[0].getPose();
+            let secondPose = layoutController.currentLayer.children[1].getPose();
             expect(layoutController.currentLayer.children).toHaveSize(3);
             expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
             expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
             expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
-            expect(secondPose.x).withContext("X position of new component").toBe(firstPose.x + layoutController.currentLayer.children[0].sprite.width);
+            expect(secondPose.x).withContext("X position of new component").toBe(firstPose.x + layoutController.currentLayer.children[1].sprite.width);
             expect(secondPose.y).withContext("Y position of new component").toBe(firstPose.y);
             expect(secondPose.angle).toBe(firstPose.angle);
         });
@@ -586,12 +587,12 @@ describe("LayoutController", function() {
             LayoutController.selectedComponent.rotate();
             let firstPose = layoutController.currentLayer.children[0].getPose();
             layoutController.addComponent(trackData);
-            let secondPose = layoutController.currentLayer.children[0].getPose();
+            let secondPose = layoutController.currentLayer.children[1].getPose();
             expect(layoutController.currentLayer.children).toHaveSize(3);
             expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
             expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
             expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
-            const offsetDistance = layoutController.currentLayer.children[0].sprite.width;
+            const offsetDistance = layoutController.currentLayer.children[1].sprite.width;
             const dx = Math.cos(firstPose.angle) * offsetDistance;
             const dy = Math.sin(firstPose.angle) * offsetDistance;
             expect(secondPose.x).withContext("X position of new component").toBeCloseTo(Math.fround(firstPose.x + dx), 4);
@@ -999,20 +1000,20 @@ describe("LayoutController", function() {
                     return;
                 }
                 expect(child).toBeInstanceOf(Component);
-                if (index == 4) {
+                if (index == 0) {
                     expect(child.sprite).toBeInstanceOf(Sprite);
                 } else {
                     expect(child.sprite).toBeInstanceOf(Graphics);
-                    if (index == 0) {
+                    if (index == 4) {
                         expect(child.sprite.alpha).toBe(0.5);
                         expect(child.sprite.strokeStyle.width).toBe(8);
                         expect(child.sprite.strokeStyle.color).toBe(6836680); // #6851C8
                         expect(child.sprite.fillStyle.color).toBe(13179401); // #C91A09
                     } else {
                         expect(child.sprite.alpha).toBe(1);
-                        if (index == 1) {
+                        if (index == 3) {
                            expect(child.sprite.strokeStyle.width).toBe(1);
-                        } else if (index == 2 || index == 3) {
+                        } else if (index == 2 || index == 1) {
                             expect(child.sprite.strokeStyle.width).toBe(8);
                             expect(child.sprite.strokeStyle.color).toBe(0); // #000000
                             expect(child.sprite.fillStyle.color).toBe(2324545); // #237841
