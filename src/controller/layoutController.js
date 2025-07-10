@@ -767,6 +767,9 @@ export class LayoutController {
       if (event.key === 'r') {
         this.rotateSelectedComponent();
       }
+      if (event.key === 'PageUp') {
+        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+      }
     }
     if (event.key === '0' && event.ctrlKey) {
       this.workspace.scale.set(this.config.defaultZoom);
