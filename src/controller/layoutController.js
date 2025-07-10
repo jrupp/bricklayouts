@@ -888,7 +888,7 @@ export class LayoutController {
       layer.components.forEach((component) => {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
-        this.layers[index].overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics")));
+        this.layers[index].overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
       });
       // Clear between layers
       Connection.connectionDB.clear();

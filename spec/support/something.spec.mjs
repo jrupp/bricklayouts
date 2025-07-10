@@ -995,6 +995,7 @@ describe("LayoutController", function() {
             layoutController.layers[0].children.forEach((child, index) => {
                 if (index == 5) {
                     expect(child).toBeInstanceOf(RenderLayer);
+                    expect(child.renderLayerChildren).toHaveSize(0);
                     return;
                 }
                 expect(child).toBeInstanceOf(Component);
