@@ -9,7 +9,7 @@
     <link href="beer.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="darkmode.css">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.9.7/dist/cdn/beer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.11.31/dist/cdn/beer.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"></script>
 </head>
 <body>
@@ -403,7 +403,7 @@
             <hr style="background-color: var(--outline)">
             <nav class="no-padding no-space no-margin">
                 <button id="saveLayerDialog" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important">
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
                     <span>Save</span>
                 </button>
                 <button class="border no-border no-round max extra-text"
@@ -527,7 +527,7 @@
                     </div>
                     <div class="s5">
                         <div class="field label prefix middle-align large-space border medium no-margin" id="componentBorderColorField">
-                            <i class="bottom-align large no-round">edit</i>
+                            <i class="bottom-align large">edit</i>
                             <input id="componentBorderColor" type="color" value="#ff0000">
                             <input type="text">
                             <label>Border Color</label>
@@ -549,7 +549,7 @@
             <hr style="background-color: var(--outline)">
             <nav class="no-padding no-space no-margin">
                 <button id="createComponentDialog" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important">
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
                     <span>Create</span>
                 </button>
                 <button class="border no-border no-round max extra-text"
@@ -624,14 +624,14 @@
                     </div>
                     <div id="colorfield"
                         class="field label prefix middle-align large-space border round medium vertical-margin">
-                        <i class="bottom-align large no-round">colors</i>
+                        <i class="bottom-align large">colors</i>
                         <input id="gridMainColor" type="color" value="#ff0000">
                         <input type="text">
                         <label>Grid Color</label>
                     </div>
                     <div id="subcolorfield"
                         class="field label prefix middle-align large-space border round medium vertical-margin">
-                        <i class="bottom-align large no-round">colors</i>
+                        <i class="bottom-align large">colors</i>
                         <input id="gridSubColor" type="color">
                         <input type="text">
                         <label>Grid Sub Color</label>
@@ -648,11 +648,11 @@
         </div>
         <nav class="no-padding no-space no-margin">
             <button id="configurationEditorSave" class="border no-round max medium extra-text"
-                style="border-end-start-radius: 0.5rem !important;">
+                style="border-end-start-radius: 0.5rem !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
                 <span>Save</span>
             </button>
             <button id="configurationEditorCancel" class="error no-round max medium extra-text"
-                style="border-end-end-radius: 0.5rem !important;">
+                style="border-end-end-radius: 0.5rem !important; border-top-left-radius: 0 !important; border-bottom-left-radius: 0 !important;">
                 <span>Cancel</span>
             </button>
         </nav>
