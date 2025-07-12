@@ -555,7 +555,7 @@ i.legodarkbluishgray {
 
 #configurationEditor {
 	max-width: calc(100% - 5rem - 16px);
-	---margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
+	--_margin: calc(5rem + 20px) 0 0 calc(5rem + 16px);
 	width: 48rem;
 	z-index: 1050;
 	transition: background var(--speed) var(--easing);
@@ -605,8 +605,8 @@ i.legodarkbluishgray {
 #colorfield>i,
 #subcolorfield>i,
 #componentBorderColorField>i {
-  inline-size: var(---size);
-  block-size: var(---size);
+  inline-size: var(--_size);
+  block-size: var(--_size);
   padding-bottom: 1px;
 }
 
@@ -897,7 +897,7 @@ i + span.label {
 @media (max-width: 50rem) {
 	#configurationEditor {
 		max-width: 48rem;
-		---margin: calc(5rem + 20px) 0 0 0;
+		--_margin: calc(5rem + 20px) 0 0 0;
 		width: 100%;
 	}
 
@@ -909,7 +909,7 @@ i + span.label {
 	/* Nested media query for screens 30rem (480px) and shorter - targets mobile devices in landscape orientation */
 	@media (max-height: 30rem) {
 		#configurationEditor {
-			---margin: 0 0 0 0;
+			--_margin: 0 0 0 0;
 		}
 	}
 }
