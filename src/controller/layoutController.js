@@ -510,9 +510,14 @@ export class LayoutController {
       let menuItem = document.createElement('li');
       let itemIcon = document.createElement('i');
       itemIcon.className = `fill lego${color.replaceAll(' ', '')}`;
+      itemIcon.setAttribute('data-ui', '#componentColorMenu');
       menuItem.innerText = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       menuItem.prepend(itemIcon);
-      menuItem.addEventListener('click', () => this.selectComponentColor(color));
+      menuItem.setAttribute('data-ui', '#componentColorMenu');
+      menuItem.addEventListener('click', (e) => {
+        e.stopImmediatePropagation();
+        this.selectComponentColor(color);
+      });
       colorMenu.appendChild(menuItem);
     });
     document.getElementById('componentColorFilter').addEventListener('input', this.filterComponentColors.bind(this));
@@ -532,6 +537,7 @@ export class LayoutController {
     input.value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     document.getElementById('componentColorFilter').value = '';
     this.filterComponentColors();
+    document.getElementById('componentColorMenu').classList.remove('active');
   }
 
   filterComponentColors() {
