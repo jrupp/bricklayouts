@@ -407,11 +407,6 @@ canvas {
 	max-height: 50vh;
 }
 
-#mobileLayerEditor>header {
-	padding-block-start: 0.5rem !important;
-	padding-block-end: 0.5rem !important;
-}
-
 #editLayerDialog,
 #newCustomComponentDialog {
 	z-index: 1100;
