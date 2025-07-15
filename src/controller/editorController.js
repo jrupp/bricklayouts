@@ -1,5 +1,5 @@
 import { FederatedPointerEvent, Texture } from '../pixi.mjs';
-import { LayoutController, TrackData } from "./layoutController.js";
+import { LayoutController, DataTypes, TrackData } from "./layoutController.js";
 import { Component } from "../model/component.js";
 import { Connection } from "../model/connection.js";
 import { PolarVector } from '../model/polarVector.js';
@@ -26,6 +26,7 @@ export class EditorController {
       src: '',
       image: this.texture,
       scale: 1.0,
+      type: DataTypes.TRACK,
       connections: []
     }
     /**
