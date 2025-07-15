@@ -162,6 +162,30 @@
                     "height": 512
                 },
                 {
+                    "alias": "44336px4",
+                    "name": "Baseplate, Road 32x32 6-Stud Straight",
+                    "category": "baseplates",
+                    "src": "44336px4.png"
+                },
+                {
+                    "alias": "44342px2",
+                    "name": "Baseplate, Road 32x32 6-Stud Curve",
+                    "category": "baseplates",
+                    "src": "44342px2.png"
+                },
+                {
+                    "alias": "44343px3",
+                    "name": "Baseplate, Road 32x32 6-Stud Crossroad",
+                    "category": "baseplates",
+                    "src": "44343px3.png"
+                },
+                {
+                    "alias": "44341px2",
+                    "name": "Baseplate, Road 32x32 6-Stud T Intersection",
+                    "category": "baseplates",
+                    "src": "44341px2.png"
+                },
+                {
                     "alias": "r104",
                     "name": "Curved Rail R104",
                     "category": "9V",
