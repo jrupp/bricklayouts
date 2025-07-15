@@ -119,7 +119,7 @@
                     "category": "table",
                     "src": "lancaster-30x60.png"
                 },
-{
+                {
                     "alias": "wooden72x30",
                     "name": "Wooden Table 6'x30\"",
                     "category": "table",
@@ -182,6 +182,33 @@
                             "vector": [
                                 158.77121595765072,
                                 1.966604765809015,
+                                1.9375
+                            ],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "r120",
+                    "name": "Curved Rail R120",
+                    "category": "9V",
+                    "src": "r120.png",
+                    "scale": 1,
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                192.84190415985836,
+                                0.9702454164285823,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                183.54827944937594,
+                                1.9671788648283506,
                                 1.9375
                             ],
                             "next": 0
