@@ -906,6 +906,11 @@ i + span.label {
 		width: 100%;
 	}
 
+	.field.border>:is(input,textarea,select) {
+		border-width: 0.75px;
+		border-left-width: 0.75px;
+	}
+
 	/* Nested media query for screens 30rem (480px) and shorter - targets mobile devices in landscape orientation */
 	@media (max-height: 30rem) {
 		#configurationEditor {
