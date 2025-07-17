@@ -474,6 +474,7 @@ export class LayoutController {
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentBorderColor = document.getElementById('componentBorderColor');
+    const componentColorFilter = document.getElementById('componentColorFilter');
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         this.onCreateCustomComponent();
@@ -532,7 +533,15 @@ export class LayoutController {
       });
       colorMenu.appendChild(menuItem);
     });
-    document.getElementById('componentColorFilter').addEventListener('input', this.filterComponentColors.bind(this));
+    componentColorFilter.addEventListener('input', this.filterComponentColors.bind(this));
+    componentColorFilter.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+    });
+    document.getElementById('componentColorClear').addEventListener('click', () => {
+      componentColorFilter.value = '';
+      componentColorFilter.classList.remove('hasInput');
+      this.filterComponentColors();
+    });
     componentBorderColor.addEventListener('change', (event) => {
       componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', event.currentTarget.value);
     });
@@ -562,6 +571,11 @@ export class LayoutController {
         item.classList.add('hidden');
       }
     });
+    if (filter.trim().length === 0) {
+      document.getElementById('componentColorFilter').classList.remove('hasInput');
+    } else {
+      document.getElementById('componentColorFilter').classList.add('hasInput');
+    }
   }
 
   /**

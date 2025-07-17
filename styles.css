@@ -866,7 +866,7 @@ i + span.label {
 }
 
 .searchIcon {
-	display: flex;
+	display: inline-flex;
 }
 
 #searchClearButton {
@@ -878,7 +878,7 @@ i + span.label {
 }
 
 .hasInput ~ .searchClear {
-	display: flex;
+	display: inline-flex;
 }
 
 .hasInput ~ .searchIcon {
