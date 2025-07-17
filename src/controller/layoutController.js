@@ -362,6 +362,9 @@ export class LayoutController {
       image.src = 'img/icon-add-black.png';
       image.className = 'custom';
       button.appendChild(image);
+      let label = document.createElement('span');
+      label.textContent = "Custom Baseplate";
+      button.appendChild(label);
       button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.BASEPLATE));
       this.componentBrowser.appendChild(button);
     } else if (selectedCategory === 'custom') {
@@ -371,6 +374,9 @@ export class LayoutController {
       image.src = 'img/icon-add-black.png';
       image.className = 'custom';
       button.appendChild(image);
+      let label = document.createElement('span');
+      label.textContent = "Custom Shape";
+      button.appendChild(label);
       button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.SHAPE));
       this.componentBrowser.appendChild(button);
       let textButton = document.createElement('button');
@@ -379,14 +385,20 @@ export class LayoutController {
       textImage.src = 'img/icon-addtext-black.png';
       textImage.className = 'custom';
       textButton.appendChild(textImage);
+      let textLabel = document.createElement('span');
+      textLabel.textContent = "Custom Text";
+      textButton.appendChild(textLabel);
       textButton.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.TEXT));
       this.componentBrowser.appendChild(textButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
       if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
         let button = document.createElement('button');
+        let label = document.createElement('span');
+        label.textContent = track.name;
         button.title = track.name;
         button.appendChild(track.image);
+        button.appendChild(label);
         button.addEventListener('click', this.addComponent.bind(this, track, true));
         this.componentBrowser.appendChild(button);
       }

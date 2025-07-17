@@ -770,26 +770,42 @@ i + span.label {
 	justify-content: flex-start;
 	flex-wrap: wrap;
 	overflow-y: auto;
-	min-height: 8rem;
+	min-height: 9rem;
 	min-width: 33rem;
 	max-width: 33rem;
 	max-height: 16rem;
 }
 .componentBrowser img.custom,
 .componentBrowser img.track {
-	width: auto;
-	height: auto;
-	max-width: 100%;
-	max-height: 100%;
-	display: inline-block;
+	max-width: 6rem;
+	max-height: 6rem;
+	object-fit: contain;
+	flex-shrink: 0;
+	margin-top: auto;
+	margin-bottom: auto;
 }
 
 .componentBrowser>button {
 	box-sizing: border-box;
 	width: 8rem;
-	height: 8rem;
-	padding: 1rem;
+	height: 9rem;
+	padding: 1rem 1rem 0 1rem;
 	margin: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.componentBrowser>button>span {
+	color: var(--on-secondary-container);
+	width: 7.3rem;
+	text-align: center;
+	line-height: 1.2;
+	font-size: 0.9rem;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 @media (hover:hover) {
@@ -877,12 +893,6 @@ i + span.label {
 		max-width: 24rem;
 	}
 
-	.componentBrowser>button {
-		width: 8rem;
-		height: 8rem;
-		padding: 1rem;
-	}
-
 	#mobileLayerEditor {
 		max-width: 50vw;
 	}
@@ -922,7 +932,7 @@ i + span.label {
 /* Media query for screens 30rem (480px) and shorter - targets mobile devices in landscape orientation, or smaller mobile devices */
 @media (max-height: 50rem) {
 	.componentBrowser {
-		max-height: 8rem;
+		max-height: 9rem;
 	}
 }
 
