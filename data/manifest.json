@@ -294,6 +294,33 @@
                     ]
                 },
                 {
+                    "alias": "r56",
+                    "name": "Curved Rail R56",
+                    "category": "9V",
+                    "src": "r56.png",
+                    "scale": 1,
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                182.64993840677855,
+                                0.9457125147109949,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                167.07916472626718,
+                                1.928521933928693,
+                                1.875
+                            ],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "text",
                     "name": "Custom Text",
                     "category": "custom",
