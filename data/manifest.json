@@ -240,6 +240,33 @@
                     ]
                 },
                 {
+                    "alias": "r88",
+                    "name": "Curved Rail R88",
+                    "category": "9V",
+                    "src": "r88.png",
+                    "scale": 1,
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                142.59382875847047,
+                                0.9709399601358157,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                133.42942253061082,
+                                1.9664096230074315,
+                                1.9375
+                            ],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "text",
                     "name": "Custom Text",
                     "category": "custom",
