@@ -89,6 +89,7 @@ canvas {
 	display: block;
 }
 
+#apploading,
 #exportloading {
 	z-index: 1200;
 	height: 100vh;
@@ -136,7 +137,8 @@ canvas {
 #mobileLayersButton,
 #mobileLayerEditor,
 #newCustomComponentDialog,
-#exportloading {
+#exportloading,
+#apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
 	--primary-container:#cbe6ff;
@@ -182,7 +184,8 @@ canvas {
 [data-dark-mode=true] #mobileLayersButton,
 [data-dark-mode=true] #mobileLayerEditor,
 [data-dark-mode=true] #newCustomComponentDialog,
-[data-dark-mode=true] #exportloading {
+[data-dark-mode=true] #exportloading,
+[data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
 	--primary-container:#004b70;
