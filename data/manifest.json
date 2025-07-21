@@ -368,11 +368,7 @@
         }
     ],
     "categories": {
-        "9V": "9V Series",
-        "12V": "12V Series",
-        "45V": "4.5V Series",
-        "12Vblue": "12V Series Blue",
-        "45Vblue": "4.5V Series Blue",
+        "9V": "Track",
         "baseplates": "Baseplates",
         "table": "Tables",
         "custom": "Custom"
