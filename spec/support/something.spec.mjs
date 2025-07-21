@@ -78,6 +78,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentColorMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('componentColorClear').and.returnValue(document.createElement('i'));
         geiSpy.withArgs('componentText').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentFont').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('componentFontSize').and.returnValue(document.createElement('select'));
