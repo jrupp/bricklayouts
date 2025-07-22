@@ -3,7 +3,7 @@ import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
-import { Application, Assets, Color, Graphics, RenderLayer, Sprite } from '../../src/pixi.mjs';
+import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
@@ -32,6 +32,7 @@ describe("LayoutController", function() {
         await app.init();
         await Assets.init({ basePath: '../__spec__/img/', manifest: "../data/manifest.json" });
         await Assets.loadBundle('track');
+        await Assets.load({alias: path.toAbsolute('../data/manifest.json'), src: '../data/manifest.json' });
         window.app = app;
         window.assets = Assets;
         let geiSpy = spyOn(document, 'getElementById');

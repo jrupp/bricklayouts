@@ -1,4 +1,4 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, Point, Texture } from '../pixi.mjs';
+import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture } from '../pixi.mjs';
 import { EditorController } from './editorController.js';
 import { Component, ComponentOptions } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
@@ -151,7 +151,7 @@ export class LayoutController {
     /**
      * @type {Object}
      */
-    this.trackData = Assets.get("../data/manifest.json");
+    this.trackData = Assets.get(path.toAbsolute('../data/manifest.json'));
 
     /**
      * @type {Map<String, String>}
