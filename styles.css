@@ -90,9 +90,14 @@ canvas {
 }
 
 #apploading,
+#notfound,
 #exportloading {
 	z-index: 1200;
 	height: 100vh;
+}
+
+#notfound.hidden {
+	display: none;
 }
 
 #exportloading.hidden {
@@ -138,6 +143,7 @@ canvas {
 #mobileLayerEditor,
 #newCustomComponentDialog,
 #exportloading,
+#notfound,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -185,6 +191,7 @@ canvas {
 [data-dark-mode=true] #mobileLayerEditor,
 [data-dark-mode=true] #newCustomComponentDialog,
 [data-dark-mode=true] #exportloading,
+[data-dark-mode=true] #notfound,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -410,6 +417,10 @@ canvas {
 	max-height: 50vh;
 }
 
+#mobileLayerAdd.hidden {
+	display: none;
+}
+
 #editLayerDialog,
 #newCustomComponentDialog {
 	z-index: 1100;
@@ -464,6 +475,10 @@ canvas {
 }
 
 div.hidden {
+	display: none;
+}
+
+nav.hidden {
 	display: none;
 }
 

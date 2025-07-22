@@ -55,6 +55,9 @@ export { TrackData };
  * @typedef {Object} SerializedLayout
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
+ * @property {Number} [x] The x-coordinate of the layout's position in the workspace.
+ * @property {Number} [y] The y-coordinate of the layout's position in the workspace.
+ * @property {Number} [zoom] The zoom level of the layout.
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
  * @property {SerializedConfiguration} config The configuration settings for the layout.
  */
@@ -136,6 +139,10 @@ export class LayoutController {
      * @type {Application}
      */
     this.app = app;
+    /**
+     * @type {Boolean}
+     */
+    this.readOnly = false;
     /**
      * @type {HTMLDivElement}
      */
@@ -267,7 +274,44 @@ export class LayoutController {
     });
   }
 
+  /**
+   * Sanitizes a filename extracted from URL path to prevent security issues
+   * @param {string} filename - The raw filename from URL
+   * @returns {string} - Sanitized filename safe for file operations
+   */
+  _sanitizeFilename(filename) {
+    if (!filename || typeof filename !== 'string') {
+      return null;
+    }
+
+    // Remove leading/trailing slashes and whitespace
+    filename = filename.trim().replace(/^\/+|\/+$/g, '');
+
+    // Remove any file extensions (after path traversal prevention)
+    filename = filename.replace(/\.[a-zA-Z0-9]+$/, '');
+
+    // Prevent path traversal by removing any path separators and dots
+    filename = filename.replace(/[\/\\\.]/g, '');
+
+    // Keep only alphanumeric characters (letters, numbers)
+    filename = filename.replace(/[^a-zA-Z0-9]/g, '');
+
+    // Ensure filename is not empty and has reasonable length
+    if (!filename || filename.length === 0 || filename.length > 50) {
+      return null;
+    }
+    
+    return filename;
+  }
+
   async init() {
+    if (window.location.pathname !== '/') {
+      this.readOnly = true;
+      document.getElementById('layerAdd').parentElement.classList.add('hidden');
+      document.getElementById('mobileLayerAdd').classList.add('hidden');
+      document.getElementById('buttonRemove').disabled = true;
+      document.getElementById('buttonRotate').disabled = true;
+    }
     const trackBundle = await Assets.loadBundle('track');
     await Promise.all(this.trackData.bundles[0].assets.map(/** @param {TrackData} track */async (track) => {
       /** @type {HTMLImageElement} */
@@ -349,10 +393,35 @@ export class LayoutController {
       this.workspace.position.set(this.workspace.x + prePos.x - postPos.x, this.workspace.y + prePos.y - postPos.y);
       this.drawGrid();
     });
+    if (this.readOnly) {
+      try {
+        // Extract filename from URL path and sanitize it
+        const urlPath = window.location.pathname;
+        const rawFilename = urlPath.substring(1); // Remove leading slash
+        const sanitizedFilename = this._sanitizeFilename(rawFilename);
+        
+        if (!sanitizedFilename) {
+          // If sanitization fails, show not found
+          document.getElementById('notfound').classList.remove('hidden');
+          return;
+        }
+        
+        const layoutPath = path.toAbsolute(`../data/layouts/${sanitizedFilename}.json`);
+        let layout = await Assets.load(layoutPath);
+        this._importLayout(layout);
+      } catch (error) {
+        document.getElementById('notfound').classList.remove('hidden');
+      }
+      return;
+    }
   }
 
   createComponentBrowser() {
     this.componentBrowser.innerHTML = '';
+    if (this.readOnly) {
+      document.getElementById('componentMenu').classList.add('hidden');
+      return;
+    }
     var selectedCategory = this.groupSelect.options[this.groupSelect.selectedIndex].value;
     var searchQuery = this.searchElement.value.trim().toLowerCase();
     if (selectedCategory === 'baseplates') {
@@ -740,7 +809,7 @@ export class LayoutController {
       this.#currentLayer.interactiveChildren = false;
     }
     this.#currentLayer = layer;
-    if (this.#currentLayer) {
+    if (this.#currentLayer && this.readOnly === false) {
       this.#currentLayer.eventMode = 'passive';
       this.#currentLayer.interactiveChildren = true;
     }
@@ -754,6 +823,9 @@ export class LayoutController {
     const layout = {
       version: 1,
       date: Date.now(),
+      x: this.workspace.x,
+      y: this.workspace.y,
+      zoom: this.workspace.scale.x,
       layers: this.layers.map((layer) => layer.serialize()),
       config: this.config.serializeWorkspaceSettings()
     };
@@ -810,17 +882,21 @@ export class LayoutController {
     }
     if (event.key === 'ArrowUp') {
       this.workspace.position.set(this.workspace.x, this.workspace.y + 10);
+      this.drawGrid();
     }
     if (event.key === 'ArrowDown') {
       this.workspace.position.set(this.workspace.x, this.workspace.y - 10);
+      this.drawGrid();
     }
     if (event.key === 'ArrowLeft') {
       this.workspace.position.set(this.workspace.x + 10, this.workspace.y);
+      this.drawGrid();
     }
     if (event.key === 'ArrowRight') {
       this.workspace.position.set(this.workspace.x - 10, this.workspace.y);
+      this.drawGrid();
     }
-    if (event.key === 'l' && event.ctrlKey) {
+    if (event.key === 'l' && event.ctrlKey && this.readOnly === false) {
       this.newLayer();
     }
     if (event.key === '}' && event.ctrlKey && event.shiftKey) {
@@ -928,6 +1004,13 @@ export class LayoutController {
       // Clear between layers
       Connection.connectionDB.clear();
     });
+    if (data.x !== void 0 && data.y !== void 0) {
+      this.workspace.position.set(data.x, data.y);
+    }
+    if (data.zoom !== void 0) {
+      this.workspace.scale.set(data.zoom);
+      this.drawGrid();
+    }
     this.updateLayerList();
   }
 
@@ -941,6 +1024,9 @@ export class LayoutController {
       data,
       data?.version === 1,
       data?.date,
+      data?.x === undefined || (typeof data?.x === 'number'),
+      data?.y === undefined || (typeof data?.y === 'number'),
+      data?.zoom === undefined || (typeof data?.zoom === 'number' && data?.zoom > 0.0),
       data?.layers,
       data?.layers?.length > 0
     ]
@@ -1136,6 +1222,10 @@ export class LayoutController {
     this.layers.push(this.#currentLayer);
     this.workspace.addChild(this.#currentLayer);
     this.#currentLayer.label = `Layer ${this.layers.length}`;
+    if (this.readOnly === true) {
+      this.#currentLayer.eventMode = 'none';
+      this.#currentLayer.interactiveChildren = false;
+    }
     LayoutController.selectComponent(null);
     this.updateLayerList();
   }
@@ -1276,7 +1366,10 @@ export class LayoutController {
     this.layers.forEach((layer, index) => {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
-      let itemHtml = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div><i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      let itemHtml = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div>`;
+      if (this.readOnly === false) {
+        itemHtml += `<i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
+      }
       layerItem.innerHTML = itemHtml;
       if (layer === this.#currentLayer) {
         layerItem.classList.add('primary');

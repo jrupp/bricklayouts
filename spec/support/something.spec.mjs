@@ -603,6 +603,128 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("_sanitizeFileName", function() {
+        let layoutController;
+        
+        beforeEach(function() {
+            layoutController = window.layoutController;
+        });
+
+        it("returns null for null input", function() {
+            expect(layoutController._sanitizeFilename(null)).toBe(null);
+        });
+
+        it("returns null for undefined input", function() {
+            expect(layoutController._sanitizeFilename(undefined)).toBe(null);
+        });
+
+        it("returns null for non-string input", function() {
+            expect(layoutController._sanitizeFilename(123)).toBe(null);
+            expect(layoutController._sanitizeFilename({})).toBe(null);
+            expect(layoutController._sanitizeFilename([])).toBe(null);
+        });
+
+        it("returns null for empty string", function() {
+            expect(layoutController._sanitizeFilename("")).toBe(null);
+        });
+
+        it("returns null for whitespace-only string", function() {
+            expect(layoutController._sanitizeFilename("   ")).toBe(null);
+            expect(layoutController._sanitizeFilename("\t\n")).toBe(null);
+        });
+
+        it("removes leading and trailing slashes", function() {
+            expect(layoutController._sanitizeFilename("/test/")).toBe("test");
+            expect(layoutController._sanitizeFilename("///test///")).toBe("test");
+            expect(layoutController._sanitizeFilename("/test")).toBe("test");
+            expect(layoutController._sanitizeFilename("test/")).toBe("test");
+        });
+
+        it("removes leading and trailing whitespace", function() {
+            expect(layoutController._sanitizeFilename("  test  ")).toBe("test");
+            expect(layoutController._sanitizeFilename("\ttest\n")).toBe("test");
+        });
+
+        it("removes path separators (forward slashes)", function() {
+            expect(layoutController._sanitizeFilename("test/file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("path/to/file")).toBe("pathtofile");
+        });
+
+        it("removes path separators (backslashes)", function() {
+            expect(layoutController._sanitizeFilename("test\\file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("path\\to\\file")).toBe("pathtofile");
+        });
+
+        it("removes dots to prevent path traversal", function() {
+            expect(layoutController._sanitizeFilename("..")).toBe(null); // becomes empty after sanitization
+            expect(layoutController._sanitizeFilename("../test")).toBe("test");
+            expect(layoutController._sanitizeFilename("test.")).toBe("test");
+            expect(layoutController._sanitizeFilename("./test")).toBe("test");
+            expect(layoutController._sanitizeFilename("../../malicious")).toBe("malicious");
+        });
+
+        it("removes file extensions", function() {
+            expect(layoutController._sanitizeFilename("test.json")).toBe("test");
+            expect(layoutController._sanitizeFilename("test.exe")).toBe("test");
+            expect(layoutController._sanitizeFilename("test.txt")).toBe("test");
+            expect(layoutController._sanitizeFilename("test.config.json")).toBe("testconfig");
+        });
+
+        it("keeps only alphanumeric characters", function() {
+            expect(layoutController._sanitizeFilename("test123")).toBe("test123");
+            expect(layoutController._sanitizeFilename("Test123")).toBe("Test123");
+            expect(layoutController._sanitizeFilename("test-file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("test_file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("test@file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("test file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("test!@#$%^&*()file")).toBe("testfile");
+        });
+
+        it("returns null for strings that become empty after sanitization", function() {
+            expect(layoutController._sanitizeFilename("!@#$%^&*()")).toBe(null);
+            expect(layoutController._sanitizeFilename("./../../")).toBe(null);
+            expect(layoutController._sanitizeFilename("...")).toBe(null);
+            expect(layoutController._sanitizeFilename("/////")).toBe(null);
+        });
+
+        it("returns null for strings longer than 50 characters", function() {
+            const longString = "a".repeat(51);
+            expect(layoutController._sanitizeFilename(longString)).toBe(null);
+        });
+
+        it("accepts strings exactly 50 characters long", function() {
+            const exactString = "a".repeat(50);
+            expect(layoutController._sanitizeFilename(exactString)).toBe(exactString);
+        });
+
+        it("accepts strings shorter than 50 characters", function() {
+            expect(layoutController._sanitizeFilename("test")).toBe("test");
+            expect(layoutController._sanitizeFilename("a")).toBe("a");
+        });
+
+        it("handles complex path traversal attempts", function() {
+            expect(layoutController._sanitizeFilename("../../../etc/passwd")).toBe("etcpasswd");
+            expect(layoutController._sanitizeFilename("..\\..\\windows\\system32")).toBe("windowssystem32");
+        });
+
+        it("handles mixed case and numbers", function() {
+            expect(layoutController._sanitizeFilename("TestFile123")).toBe("TestFile123");
+            expect(layoutController._sanitizeFilename("test123FILE456")).toBe("test123FILE456");
+        });
+
+        it("handles real-world examples", function() {
+            expect(layoutController._sanitizeFilename("q2WE4ty")).toBe("q2WE4ty");
+            expect(layoutController._sanitizeFilename("layout123")).toBe("layout123");
+            expect(layoutController._sanitizeFilename("user_layout_v2")).toBe("userlayoutv2");
+            expect(layoutController._sanitizeFilename("my-awesome-layout.json")).toBe("myawesomelayout");
+        });
+
+        it("combines all sanitization rules", function() {
+            const maliciousInput = "  /../../../malicious@file!.exe  ";
+            expect(layoutController._sanitizeFilename(maliciousInput)).toBe("maliciousfile");
+        });
+    });
+
     describe("_validateImportData", function() {
         beforeEach(function() {
             /**
@@ -624,6 +746,9 @@ describe("LayoutController", function() {
             this.perfectImportData = {
                 "version": 1,
                 "date": "2021-09-01T00:00:00.000Z",
+                "x": 1,
+                "y": 2,
+                "zoom": 0.5,
                 "layers": [
                     {
                         "components": [
@@ -736,6 +861,34 @@ describe("LayoutController", function() {
             /** @type {SerializedLayout} */
             let testData = this.perfectImportData;
             testData.version = 0;
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws error with invalid x", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.x = "not a number";
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws error with invalid y", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.y = "not a number";
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws error with invalid zoom", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.zoom = "not a number";
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+
+        it("throws error with negative zoom", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            testData.zoom = -1;
             expect(LayoutController._validateImportData(testData)).toBeFalse();
         });
 
