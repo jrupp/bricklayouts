@@ -685,7 +685,7 @@ export class LayoutController {
       document.getElementById('componentColorSelect').setAttribute('data-color', "black");
       document.getElementById('componentColorName').value = "Black";
       document.getElementById('componentFont').selectedIndex = 0;
-      document.getElementById('componentFontSize').selectedIndex = 3;
+      document.getElementById('componentFontSize').selectedIndex = 7;
       document.getElementById('componentFontOptions').classList.remove('hidden');
     } else {
       componentTextNode.parentElement.classList.add('hidden');
