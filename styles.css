@@ -498,17 +498,45 @@ i.legogreen {
 i.legored {
   color: #C91A09;
 }
+#componentColorSelect[data-color=darkpink] > i:first-child,
+i.legodarkpink {
+  color: #EF5BB3;
+}
 #componentColorSelect[data-color=white] > i:first-child,
 i.legowhite {
   color: #ffffff;
+}
+#componentColorSelect[data-color=aqua] > i:first-child,
+i.legoaqua {
+  color: #B3D7D1;
 }
 #componentColorSelect[data-color=black] > i:first-child,
 i.legoblack {
   color: #000000;
 }
+#componentColorSelect[data-color=darkazure] > i:first-child,
+i.legodarkazure {
+  color: #009FE0;
+}
 #componentColorSelect[data-color=blue] > i:first-child,
 i.legoblue {
   color: #0055BF;
+}
+#componentColorSelect[data-color=lilac] > i:first-child,
+i.legolilac {
+  color: #7862ce;
+}
+#componentColorSelect[data-color=tan] > i:first-child,
+i.legotan {
+  color: #EED9A4;
+}
+#componentColorSelect[data-color=olivegreen] > i:first-child,
+i.legoolivegreen {
+  color: #ABA953;
+}
+#componentColorSelect[data-color=lime] > i:first-child,
+i.legolime {
+  color: #BBE90B;
 }
 #componentColorSelect[data-color=yellow] > i:first-child,
 i.legoyellow {
