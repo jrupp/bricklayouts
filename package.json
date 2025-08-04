@@ -1,8 +1,7 @@
 {
   "dependencies": {
     "file-saver": "^2.0.5",
-    "pixi.js": "^8.11.0",
-    "tweakpane": "^4.0.5"
+    "pixi.js": "^8.11.0"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1",
