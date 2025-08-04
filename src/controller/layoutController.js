@@ -311,6 +311,8 @@ export class LayoutController {
       document.getElementById('mobileLayerAdd').classList.add('hidden');
       document.getElementById('buttonRemove').disabled = true;
       document.getElementById('buttonRotate').disabled = true;
+      document.getElementById('layerList').classList.add('readonly');
+      document.getElementById('mobileLayerList').classList.add('readonly');
     }
     const trackBundle = await Assets.loadBundle('track');
     await Promise.all(this.trackData.bundles[0].assets.map(/** @param {TrackData} track */async (track) => {
@@ -1366,54 +1368,60 @@ export class LayoutController {
     this.layers.forEach((layer, index) => {
       const layerItem = document.createElement('li');
       const layerVisible = layer.visible ? '' : '_off';
-      let itemHtml = `<i class="instant">menu</i><i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div>`;
+      let itemHtml = "";
+      if (this.readOnly === false) {
+        itemHtml += "<i class=\"instant\">menu</i>";
+      }
+      itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div>`;
       if (this.readOnly === false) {
         itemHtml += `<i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
       }
       layerItem.innerHTML = itemHtml;
-      if (layer === this.#currentLayer) {
+      if (layer === this.#currentLayer && this.readOnly === false) {
         layerItem.classList.add('primary');
       }
       let mobileLayerItem = layerItem.cloneNode(true);
       layerList.prepend(layerItem);
       mobileLayerList.prepend(mobileLayerItem);
     });
-    document.querySelectorAll('#layerList .instant, #mobileLayerList .instant').forEach((item) => {
-      item.addEventListener('mousedown', () => {
-        item.style.cursor = "grabbing";
+    if (this.readOnly === false) {
+      document.querySelectorAll('#layerList .instant, #mobileLayerList .instant').forEach((item) => {
+        item.addEventListener('mousedown', () => {
+          item.style.cursor = "grabbing";
+        });
+        item.addEventListener('mouseup', () => {
+          item.style.cursor = "grab";
+        });
+        item.addEventListener('mouseover', () => {
+          item.style.cursor = "grab";
+        });
       });
-      item.addEventListener('mouseup', () => {
-        item.style.cursor = "grab";
+      let deleteCallback = this.onDeleteLayer.bind(this);
+      document.querySelectorAll('#layerList .delete, #mobileLayerList .delete').forEach((item) => {
+        item.addEventListener('click', deleteCallback);
       });
-      item.addEventListener('mouseover', () => {
-        item.style.cursor = "grab";
+      let editCallback = this.onEditLayer.bind(this);
+      document.querySelectorAll('#layerList .edit, #mobileLayerList .edit').forEach((item) => {
+        item.addEventListener('click', editCallback);
       });
-    });
-    let deleteCallback = this.onDeleteLayer.bind(this);
-    document.querySelectorAll('#layerList .delete, #mobileLayerList .delete').forEach((item) => {
-      item.addEventListener('click', deleteCallback);
-    });
-    let editCallback = this.onEditLayer.bind(this);
-    document.querySelectorAll('#layerList .edit, #mobileLayerList .edit').forEach((item) => {
-      item.addEventListener('click', editCallback);
-    });
+      layerList.querySelectorAll('div').forEach((item, index) => {
+        item.addEventListener('click', () => {
+          this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+          LayoutController.selectComponent(null);
+          this.updateLayerList();
+        });
+      });
+      mobileLayerList.querySelectorAll('div').forEach((item, index) => {
+        item.addEventListener('click', () => {
+          this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+          LayoutController.selectComponent(null);
+          this.updateLayerList();
+        });
+      });
+    }
     let visibilityCallback = this.onToggleLayerVisibility.bind(this);
     document.querySelectorAll('#layerList .visible, #mobileLayerList .visible').forEach((item) => {
       item.addEventListener('click', visibilityCallback);
-    });
-    layerList.querySelectorAll('div').forEach((item, index) => {
-      item.addEventListener('click', () => {
-        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
-        LayoutController.selectComponent(null);
-        this.updateLayerList();
-      });
-    });
-    mobileLayerList.querySelectorAll('div').forEach((item, index) => {
-      item.addEventListener('click', () => {
-        this.currentLayer = this.layers[(this.layers.length - 1 - index)];
-        LayoutController.selectComponent(null);
-        this.updateLayerList();
-      });
     });
   }
 

@@ -436,6 +436,11 @@ canvas {
 	user-select: none;
 }
 
+#layerList:is(.readonly) li:nth-child(even),
+#mobileLayerList:is(.readonly) li:nth-child(odd) {
+	background-color: var(--secondary-container);
+}
+
 #layerList i:is(.visible,.edit,.delete),
 #mobileLayerList i:is(.visible,.edit,.delete) {
 	cursor: pointer;
