@@ -6,6 +6,13 @@ import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
 import '../FileSaver.min.js';
 
+/**
+ * @module editorController
+ */
+
+/**
+ * @class EditorController
+ */
 export class EditorController {
   /**
    * 

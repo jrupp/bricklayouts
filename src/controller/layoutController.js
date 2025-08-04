@@ -1,5 +1,4 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture } from '../pixi.mjs';
-import { EditorController } from './editorController.js';
 import { Component, ComponentOptions } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -97,7 +96,7 @@ export class LayoutController {
    */
   static previousPinchDistance = -1;
 
-  /** @type {?EditorController} */
+  /** @type {?editorController.EditorController} */
   static editorController = null;
 
   /**
@@ -921,7 +920,9 @@ export class LayoutController {
             this.reset();
             Assets.add({alias:'newComponent', src:reader.result});
             Assets.load('newComponent').then((textures) => {
-              LayoutController.editorController = new EditorController(textures.newComponent, this);
+              import('./editorController.js').then((module) => {
+                LayoutController.editorController = new module.EditorController(textures.newComponent, this);
+              });
             });
           };
           reader.onabort = (e) => {
