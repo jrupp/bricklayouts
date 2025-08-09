@@ -271,6 +271,15 @@ export class LayoutController {
         target.dispatchEvent(newEvent);
       }
     });
+
+    /**
+     * Floating toolbar element for selected component
+     * @type {HTMLDivElement}
+     */
+    this.selectionToolbar = document.getElementById('selectionToolbar');
+    // Wire toolbar actions to existing handlers
+    this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
   }
 
   /**
@@ -358,6 +367,7 @@ export class LayoutController {
           LayoutController.dragTarget.alpha = 1;
           LayoutController.dragTarget = null;
         }
+        this._hideSelectionToolbar();
         this.app.stage.on('touchmove', LayoutController.onPinch, this);
         this.app.stage.off('pointermove', LayoutController.onPan);
         this.app.stage.off('pointerupoutside', LayoutController.onDragEnd);
@@ -371,6 +381,7 @@ export class LayoutController {
       }
       if (event.button == 1) {
         LayoutController.isPanning = true;
+        this._hideSelectionToolbar();
       }
       LayoutController.panDistance = 0;
       this.panOffset.set(event.global.x - this.workspace.x, event.global.y - this.workspace.y);
@@ -393,6 +404,7 @@ export class LayoutController {
       );
       this.workspace.position.set(this.workspace.x + prePos.x - postPos.x, this.workspace.y + prePos.y - postPos.y);
       this.drawGrid();
+      this._positionSelectionToolbar();
     });
     if (this.readOnly) {
       try {
@@ -791,6 +803,7 @@ export class LayoutController {
     this.config.clearWorkspaceSettings();
     this.workspace.scale.set(this.config.defaultZoom);
     this.drawGrid();
+    this._hideSelectionToolbar();
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
     LayoutController.isPanning = false;
@@ -879,22 +892,27 @@ export class LayoutController {
     if (event.key === '0' && event.ctrlKey) {
       this.workspace.scale.set(this.config.defaultZoom);
       this.workspace.position.set(0, 0);
+      this._positionSelectionToolbar();
       this.drawGrid();
     }
     if (event.key === 'ArrowUp') {
       this.workspace.position.set(this.workspace.x, this.workspace.y + 10);
+      this._positionSelectionToolbar();
       this.drawGrid();
     }
     if (event.key === 'ArrowDown') {
       this.workspace.position.set(this.workspace.x, this.workspace.y - 10);
+      this._positionSelectionToolbar();
       this.drawGrid();
     }
     if (event.key === 'ArrowLeft') {
       this.workspace.position.set(this.workspace.x + 10, this.workspace.y);
+      this._positionSelectionToolbar();
       this.drawGrid();
     }
     if (event.key === 'ArrowRight') {
       this.workspace.position.set(this.workspace.x - 10, this.workspace.y);
+      this._positionSelectionToolbar();
       this.drawGrid();
     }
     if (event.key === 'l' && event.ctrlKey && this.readOnly === false) {
@@ -1055,6 +1073,7 @@ export class LayoutController {
         return;
       }
       LayoutController.isPanning = true;
+      LayoutController.getInstance()._hideSelectionToolbar();
     }
     this.workspace.position.set(event.global.x - this.panOffset.x, event.global.y - this.panOffset.y);
     this.drawGrid();
@@ -1074,7 +1093,11 @@ export class LayoutController {
           return;
         }
         LayoutController.dragTarget.isDragging = true;
+        LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
+        if (LayoutController.selectedComponent.uid !== LayoutController.dragTarget.uid) {
+          LayoutController.selectComponent(null);
+        }
       }
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
@@ -1123,6 +1146,10 @@ export class LayoutController {
         LayoutController.selectComponent(null);
       }
     }
+    if (LayoutController.selectedComponent) {
+      LayoutController.getInstance()._showSelectionToolbar();
+      LayoutController.getInstance()._positionSelectionToolbar();
+    }
   }
 
   /**
@@ -1158,6 +1185,7 @@ export class LayoutController {
       );
       this.workspace.position.set(this.workspace.x + midPoint.x - postPos.x, this.workspace.y + midPoint.y - postPos.y);
       this.drawGrid();
+      LayoutController.getInstance()._positionSelectionToolbar();
     }
     LayoutController.previousPinchDistance = curDiff;
   }
@@ -1178,9 +1206,17 @@ export class LayoutController {
     } else if (LayoutController.eventCache.size < 2) {
       LayoutController.previousPinchDistance = -1;
       window.app.stage.off('touchmove', LayoutController.onPinch);
+      if (LayoutController.selectedComponent) {
+        LayoutController.getInstance()._showSelectionToolbar();
+        LayoutController.getInstance()._positionSelectionToolbar();
+      }
     }
   }
 
+  /**
+   * Select a component and highlight it.
+   * @param {Component} component - The component to select.
+   */
   static selectComponent(component) {
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.tint = 0xffffff;
@@ -1188,12 +1224,28 @@ export class LayoutController {
     LayoutController.selectedComponent = component;
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.tint = 0xffff00;
+      // Show and position toolbar when a component is selected
+      const inst = LayoutController.getInstance();
+      inst._showSelectionToolbar();
+      inst._positionSelectionToolbar();
+    } else {
+      // Hide toolbar when nothing selected
+      try {
+        LayoutController.getInstance()._hideSelectionToolbar();
+      } catch (error) {
+        return;
+      }
     }
   }
 
+  /**
+   * Delete a component from the layout.
+   * @param {Component} component - The component to delete.
+   */
   static deleteComponent(component) {
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
+      LayoutController.getInstance()._hideSelectionToolbar();
     }
     component.destroy();
     component = null;
@@ -1210,6 +1262,11 @@ export class LayoutController {
     }
   }
 
+  /**
+   * Rotate the selected component.
+   * @see {@link LayoutController.selectedComponent}
+   * @see {@link Component.rotate}
+   */
   rotateSelectedComponent() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
@@ -1563,9 +1620,62 @@ export class LayoutController {
         timeoutId = setTimeout(() => func.apply(this), delay);
       };
     }
-    const debouncedHandler = debounce(this.drawGrid.bind(this), 300);
+    const debouncedHandler = debounce(() => {
+      this.drawGrid();
+      this._positionSelectionToolbar();
+    }, 300);
     const orientationQuery = window.matchMedia('(orientation: portrait)');
     window.addEventListener('resize', debouncedHandler);
     orientationQuery.addEventListener('change', debouncedHandler);
+  }
+
+  /**
+   * Show the floating selection toolbar.
+   */
+  _showSelectionToolbar() {
+    if (!this.selectionToolbar || this.readOnly) return;
+    this.selectionToolbar.classList.remove('hidden');
+  }
+
+  /**
+   * Hide the floating selection toolbar.
+   */
+  _hideSelectionToolbar() {
+    if (!this.selectionToolbar) return;
+    this.selectionToolbar.classList.add('hidden');
+  }
+
+  /**
+   * Position the selection toolbar above or below the selected component, in viewport pixels.
+   */
+  _positionSelectionToolbar() {
+    if (!this.selectionToolbar) return;
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.destroyed) {
+      this._hideSelectionToolbar();
+      return;
+    }
+    // Get component global bounds (axis-aligned, includes rotation/scale)
+    const gb = comp.getBounds();
+    const screenTop = Math.round(gb.minY);
+    const screenBottom = Math.round(gb.maxY);
+    const compCenterX = Math.round(comp.getGlobalPosition().x);
+    // Measure toolbar
+    const tbRect = this.selectionToolbar.getBoundingClientRect();
+    const gap = 8;
+    let left = Math.round(compCenterX - tbRect.width / 2);
+    let top = screenTop - tbRect.height - gap;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (left + tbRect.width > vw - 8) left = vw - tbRect.width - 8;
+    if (left < 8) left = 8;
+    if (top < 8) {
+      top = screenBottom + gap;
+      if (top + tbRect.height > vh - 8) {
+        top = Math.max(8, Math.min(vh - tbRect.height - 8, top));
+      }
+    }
+    this.selectionToolbar.style.left = `${left}px`;
+    this.selectionToolbar.style.top = `${top}px`;
   }
 }

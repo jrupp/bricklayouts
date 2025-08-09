@@ -55,6 +55,31 @@ canvas {
 	touch-action: manipulation;
 }
 
+/* Floating toolbar that follows the selected component */
+#selectionToolbar {
+	position: fixed;
+	z-index: 1098; /* above canvas and componentMenu */
+	pointer-events: auto;
+	overflow: hidden;
+	margin-block-start: 0;
+	padding: 4px;
+	max-height: 4.8rem;
+	gap: 0;
+}
+
+#selectionToolbar.hidden {
+	display: none;
+}
+
+#selectionToolbar > button {
+	width: 4rem;
+	height: 4rem;
+}
+
+#selectionToolbar i.extra {
+	--_size: 2.4rem;
+}
+
 #toolbar {
 	position: fixed;
 	box-sizing: content-box;
@@ -142,6 +167,7 @@ canvas {
 #mobileLayersButton,
 #mobileLayerEditor,
 #newCustomComponentDialog,
+#selectionToolbar,
 #exportloading,
 #notfound,
 #apploading {
@@ -190,6 +216,7 @@ canvas {
 [data-dark-mode=true] #mobileLayersButton,
 [data-dark-mode=true] #mobileLayerEditor,
 [data-dark-mode=true] #newCustomComponentDialog,
+[data-dark-mode=true] #selectionToolbar,
 [data-dark-mode=true] #exportloading,
 [data-dark-mode=true] #notfound,
 [data-dark-mode=true] #apploading {

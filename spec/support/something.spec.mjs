@@ -61,6 +61,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
+        geiSpy.withArgs('selectionToolbar').and.returnValue(document.createElement('nav'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
         componentWidth = document.createElement('input');
         componentWidthError = document.createElement('span');
