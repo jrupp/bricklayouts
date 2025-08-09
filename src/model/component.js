@@ -36,6 +36,9 @@ export { SerializedComponent };
 let ComponentOptions;
 export { ComponentOptions };
 
+/**
+ * Any thing that can be placed on the layout.
+ */
 export class Component extends Container {
   /** @type {Color} */
   #color;
@@ -342,6 +345,10 @@ export class Component extends Container {
     return connection?.otherConnection?.component ?? null;
   }
 
+  /**
+   * Rotate this component.
+   * Checks for open connections and rotates accordingly.
+   */
   rotate() {
     const currentConnections = this.getUsedConnections();
     if (currentConnections.length > 1) {
