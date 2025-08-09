@@ -1548,4 +1548,24 @@ export class LayoutController {
   hideFileMenu() {
     document.getElementById('toolbar')?.classList.remove('open');
   }
+
+  initWindowEvents() {
+    /**
+     * 
+     * @param {Function} func 
+     * @param {number} delay 
+     * @returns {Function}
+     */
+    function debounce(func, delay) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this), delay);
+      };
+    }
+    const debouncedHandler = debounce(this.drawGrid.bind(this), 300);
+    const orientationQuery = window.matchMedia('(orientation: portrait)');
+    window.addEventListener('resize', debouncedHandler);
+    orientationQuery.addEventListener('change', debouncedHandler);
+  }
 }

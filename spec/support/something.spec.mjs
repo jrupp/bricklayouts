@@ -106,6 +106,163 @@ describe("LayoutController", function() {
         return layoutController.init();
     });
 
+    describe("initWindowEvents", function() {
+        let layoutController;
+        let drawGridSpy;
+        let originalAddEventListener;
+        let addEventListenerSpy;
+        let eventListeners;
+
+        beforeAll(function() {
+            layoutController = window.layoutController;
+            // Mock the matchMedia API
+            spyOn(window, 'matchMedia').and.returnValue({
+                matches: false,
+                addEventListener: jasmine.createSpy('addEventListener'),
+                removeEventListener: jasmine.createSpy('removeEventListener')
+            });
+
+            // Track event listeners
+            eventListeners = {};
+            originalAddEventListener = window.addEventListener;
+
+            addEventListenerSpy = spyOn(window, 'addEventListener').and.callFake(function(event, callback) {
+                eventListeners[event] = callback;
+                return originalAddEventListener.call(window, event, callback);
+            });
+
+            drawGridSpy = spyOn(layoutController, 'drawGrid').and.stub();
+            layoutController.initWindowEvents();
+        });
+        beforeEach(function () {
+            jasmine.clock().install();
+        });
+        afterEach(function () {
+            jasmine.clock().uninstall();
+            drawGridSpy.calls.reset();
+        });
+        describe("window resize events", function() {
+            it("calls drawGrid after debounce delay when window resized", function() {
+                window.dispatchEvent(new Event('resize'));
+                window.dispatchEvent(new Event('resize'));
+                window.dispatchEvent(new Event('resize'));
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                jasmine.clock().tick(250);
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                jasmine.clock().tick(60);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it("resets debounce timer with rapid resize events", function() {
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(250);
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(250);
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                jasmine.clock().tick(60);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+            });
+            it("handles multiple separate resize sequences", function() {
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+                jasmine.clock().tick(1000);
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(2);
+            });
+        });
+        describe("orientation change events", function() {
+            let portraitQuery;
+            beforeEach(function() {
+                portraitQuery = window.matchMedia("(orientation: portrait)");
+            });
+            it("calls drawGrid on orientation change", function() {
+                // Simulate orientation change by calling the listener directly
+                const changeEvent = { matches: true };
+                const orientationListener = portraitQuery.addEventListener.calls.mostRecent().args[1];
+                orientationListener(changeEvent);
+
+                // Should not be called immediately due to debounce
+                expect(drawGridSpy).not.toHaveBeenCalled();
+
+                // Should be called after debounce delay
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+            });
+            it("debounces rapid orientation changes", function() {
+                const orientationListener = portraitQuery.addEventListener.calls.mostRecent().args[1];
+                // Simulate rapid orientation changes
+                orientationListener({ matches: true });
+                orientationListener({ matches: false });
+                orientationListener({ matches: true });
+                // Should not be called immediately due to debounce
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                // Should be called after debounce delay
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+            });
+        });
+        describe("combined resize and orientation events", function() {
+            let portraitQuery;
+            beforeEach(function() {
+                portraitQuery = window.matchMedia("(orientation: portrait)");
+            });
+            it("debounces mixed resize and orientation changes", function() {
+                const orientationListener = portraitQuery.addEventListener.calls.mostRecent().args[1];
+                // Mix of resize and orientation events
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(100);
+                orientationListener({ matches: true });
+                jasmine.clock().tick(100);
+                window.dispatchEvent(new Event('resize'));
+                expect(drawGridSpy).not.toHaveBeenCalled();
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+            });
+            it("handles overlapping event sequences", function() {
+                const orientationListener = portraitQuery.addEventListener.calls.mostRecent().args[1];
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(200);
+                orientationListener({ matches: true });
+                jasmine.clock().tick(350); // Complete first sequence
+                expect(drawGridSpy).withContext("After first sequence of events").toHaveBeenCalledTimes(1);
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(100);
+                orientationListener({ matches: false });
+                jasmine.clock().tick(350); // Complete second sequence
+                expect(drawGridSpy).withContext("After second sequence of events").toHaveBeenCalledTimes(2);
+            });
+        });
+        describe("event listener registration", function() {
+            it("registers resize event listener", function() {
+                expect(addEventListenerSpy).toHaveBeenCalledWith('resize', jasmine.any(Function));
+            });
+            it("registers orientation change listener", function() {
+                const portraitQuery = window.matchMedia("(orientation: portrait)");
+                expect(portraitQuery.addEventListener).toHaveBeenCalledWith('change', jasmine.any(Function));
+            });
+            it("uses correct media query for orientation detection", function() {
+                expect(window.matchMedia).toHaveBeenCalledWith("(orientation: portrait)");
+            });
+        });
+        describe("debounce function behavior", function() {
+            it("preserves function context when using bind", function() {
+                // This test ensures that layoutController.drawGrid maintains proper 'this' context
+                window.dispatchEvent(new Event('resize'));
+                jasmine.clock().tick(350);
+                expect(drawGridSpy).toHaveBeenCalledTimes(1);
+                // The spy should be called on the layoutController instance
+                expect(drawGridSpy.calls.mostRecent().object).toBe(layoutController);
+            });
+            it("does not call function if no events occur", function() {
+                jasmine.clock().tick(1000);
+                expect(drawGridSpy).not.toHaveBeenCalled();
+            });
+        });
+    });
+
     describe("reset", function() {
         it("resets the layout", function() {
             /** @type {LayoutController} */

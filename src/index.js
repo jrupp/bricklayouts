@@ -26,5 +26,6 @@ function listenOnDevicePixelRatio() {
 listenOnDevicePixelRatio();
 const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
+layoutController.initWindowEvents();
 new ConfigurationController();
 document.getElementById('apploading').remove();
