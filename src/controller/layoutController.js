@@ -1095,7 +1095,7 @@ export class LayoutController {
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
-        if (LayoutController.selectedComponent.uid !== LayoutController.dragTarget.uid) {
+        if (LayoutController.selectedComponent?.uid !== LayoutController.dragTarget.uid) {
           LayoutController.selectComponent(null);
         }
       }
