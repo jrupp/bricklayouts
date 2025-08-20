@@ -1,9 +1,10 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture } from '../pixi.mjs';
-import { Component, ComponentOptions } from '../model/component.js';
+import { Component, ComponentOptions, HexToColorName } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
+import { getOptionIndexByValue } from '../utils/utils.js';
 import '../FileSaver.min.js';
 
 
@@ -62,6 +63,13 @@ export { TrackData };
  */
 let SerializedLayout;
 export { SerializedLayout };
+
+/**
+ * The current version of the serialized file format.
+ * @type {Number}
+ */
+const CurrentFormatVersion = 2;
+export { CurrentFormatVersion };
 
 export class LayoutController {
   static _instance = null;
@@ -280,6 +288,7 @@ export class LayoutController {
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
   }
 
   /**
@@ -552,6 +561,7 @@ export class LayoutController {
 
   initCustomComponentUI() {
     document.getElementById('createComponentDialog').addEventListener('click', this.onCreateCustomComponent.bind(this));
+    document.getElementById('saveComponentDialog').addEventListener('click', this.onSaveCustomComponent.bind(this));
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
@@ -559,7 +569,11 @@ export class LayoutController {
     const componentColorFilter = document.getElementById('componentColorFilter');
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
-        this.onCreateCustomComponent();
+        if (document.getElementById('newCustomComponentDialog').classList.contains('editing')) {
+          this.onSaveCustomComponent();
+        } else {
+          this.onCreateCustomComponent();
+        }
       }
       if (event.key === 'Escape') {
         ui("#newCustomComponentDialog");
@@ -573,7 +587,11 @@ export class LayoutController {
     });
     componentHeightNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
-        this.onCreateCustomComponent();
+        if (document.getElementById('newCustomComponentDialog').classList.contains('editing')) {
+          this.onSaveCustomComponent();
+        } else {
+          this.onCreateCustomComponent();
+        }
       }
       if (event.key === 'Escape') {
         ui("#newCustomComponentDialog");
@@ -587,7 +605,11 @@ export class LayoutController {
     });
     componentTextNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
-        this.onCreateCustomComponent();
+        if (document.getElementById('newCustomComponentDialog').classList.contains('editing')) {
+          this.onSaveCustomComponent();
+        } else {
+          this.onCreateCustomComponent();
+        }
       }
       if (event.key === 'Escape') {
         ui("#newCustomComponentDialog");
@@ -661,19 +683,31 @@ export class LayoutController {
   }
 
   /**
-   * 
-   * @param {DataTypes} type 
+   * Show the create custom component dialog.
+   * @param {DataTypes} type The type of the component to create.
+   * @param {Boolean} [editing] Whether this is called while editing an existing custom component. Defaults to false
    */
-  showCreateCustomComponentDialog(type) {
+  showCreateCustomComponentDialog(type, editing=false) {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
     const componentBorderColor = document.getElementById('componentBorderColor');
     this.#customComponentType = type;
+    const typeName = type.charAt(0).toUpperCase() + type.slice(1);
+    if (editing) {
+      document.getElementById('componentDialogTitle').innerText = `Edit Custom ${typeName}`;
+      document.getElementById('newCustomComponentDialog').classList.add('editing');
+    } else {
+      document.getElementById('componentDialogTitle').innerText = `New Custom ${typeName}`;
+      document.getElementById('newCustomComponentDialog').classList.remove('editing');
+    }
     componentHeightNode.value = '';
     componentWidthNode.value = '';
     componentTextNode.value = '';
+    if (editing) {
+      componentTextNode.value = LayoutController.selectedComponent.text ?? '';
+    }
     document.getElementById('componentWidthError').innerText = '';
     document.getElementById('componentHeightError').innerText = '';
     document.getElementById('componentTextError').innerText = '';
@@ -689,16 +723,21 @@ export class LayoutController {
     componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', '#000000');
     document.getElementById('componentOpacity').value = 100;
     document.getElementById('componentBorder').checked = false;
+    let color = "black";
     if (type === DataTypes.TEXT) {
       componentTextNode.parentElement.classList.remove('hidden');
       componentWidthNode.parentElement.parentElement.parentElement.classList.add('hidden');
       componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
       componentWidthNode.autofocus = false;
       componentTextNode.autofocus = true;
-      document.getElementById('componentColorSelect').setAttribute('data-color', "black");
-      document.getElementById('componentColorName').value = "Black";
-      document.getElementById('componentFont').selectedIndex = 0;
-      document.getElementById('componentFontSize').selectedIndex = 7;
+      let font = 0;
+      let fontSize = 7;
+      if (editing) {
+        font = getOptionIndexByValue('componentFont', LayoutController.selectedComponent.font, 0);
+        fontSize = getOptionIndexByValue('componentFontSize', (LayoutController.selectedComponent.fontSize / 20).toString(), 7);
+      }
+      document.getElementById('componentFont').selectedIndex = font;
+      document.getElementById('componentFontSize').selectedIndex = fontSize;
       document.getElementById('componentFontOptions').classList.remove('hidden');
     } else {
       componentTextNode.parentElement.classList.add('hidden');
@@ -707,16 +746,47 @@ export class LayoutController {
       componentHeightNode.parentElement.parentElement.parentElement.classList.remove('hidden');
       componentWidthNode.autofocus = true;
       componentHeightNode.parentElement.classList.remove('hidden');
-      document.getElementById('componentColorSelect').setAttribute('data-color', "green");
-      document.getElementById('componentColorName').value = "Green";
+      color = "green";
       document.getElementById('componentFontOptions').classList.add('hidden');
       if (type === DataTypes.BASEPLATE) {
+        if (editing) {
+          componentHeightNode.value = (LayoutController.selectedComponent.componentHeight / 16).toString();
+          componentWidthNode.value = (LayoutController.selectedComponent.componentWidth / 16).toString();
+        }
         componentSizeUnits.parentElement.parentElement.classList.add('hidden');
         componentWidthNode.parentElement.parentElement.classList.remove('s8');
         componentHeightNode.parentElement.parentElement.classList.remove('s8');
         componentWidthNode.parentElement.parentElement.classList.add('s12');
         componentHeightNode.parentElement.parentElement.classList.add('s12');
       } else {
+        if (editing) {
+          let units = LayoutController.selectedComponent.units;
+          componentSizeUnits.selectedIndex = getOptionIndexByValue('componentSizeUnits', units, 0);
+          let multiplier = 16;
+          if (units === 'centimeters') {
+            multiplier = 20; // 1 cm = 20 pixels
+          } else if (units === 'millimeters') {
+            multiplier = 2; // 1 mm = 2 pixels
+          } else if (units === 'inches') {
+            multiplier = 51.2; // 1 inch = 51.2 pixels
+          } else if (units === 'feet') {
+            multiplier = 614.4; // 1 foot = 614.4 pixels
+          }
+          componentHeightNode.value = Math.round(LayoutController.selectedComponent.componentHeight / multiplier).toString();
+          componentWidthNode.value = Math.round(LayoutController.selectedComponent.componentWidth / multiplier).toString();
+          let opacity = Math.min(
+            Math.round((LayoutController.selectedComponent.opacity ?? 1) * 100),
+            100
+          );
+          document.getElementById('componentOpacity').value = opacity;
+          if (LayoutController.selectedComponent.outlineColor !== void 0) {
+            document.getElementById('componentBorder').checked = true;
+            let outlineColor = LayoutController.selectedComponent.outlineColor;
+            componentBorderColor.value = outlineColor;
+            componentBorderColor.nextElementSibling.value = outlineColor;
+            componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', outlineColor);
+          }
+        }
         componentSizeUnits.parentElement.parentElement.classList.remove('hidden');
         componentWidthNode.parentElement.parentElement.classList.remove('s12');
         componentHeightNode.parentElement.parentElement.classList.remove('s12');
@@ -725,6 +795,11 @@ export class LayoutController {
         document.getElementById('componentShapeOptions').classList.remove('hidden');
       }
     }
+    if (editing) {
+      color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+    }
+    document.getElementById('componentColorSelect').setAttribute('data-color', color.replaceAll(' ', ''));
+    document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     ui("#newCustomComponentDialog");
   }
 
@@ -754,23 +829,25 @@ export class LayoutController {
         return;
       }
       let multiplier = 16; // 1 stud = 16 pixels
-      if (document.getElementById('componentSizeUnits').value === 'centimeters') {
+      let units = document.getElementById('componentSizeUnits').value;
+      if (units === 'centimeters') {
         multiplier = 20; // 1 cm = 20 pixels
-      } else if (document.getElementById('componentSizeUnits').value === 'millimeters') {
+      } else if (units === 'millimeters') {
         multiplier = 2; // 1 mm = 2 pixels
-      } else if (document.getElementById('componentSizeUnits').value === 'inches') {
+      } else if (units === 'inches') {
         multiplier = 51.2; // 1 inch = 51.2 pixels
-      } else if (document.getElementById('componentSizeUnits').value === 'feet') {
+      } else if (units === 'feet') {
         multiplier = 614.4; // 1 foot = 614.4 pixels
       }
       options.width = parseInt(componentWidth) * multiplier;
       options.height = parseInt(componentHeight) * multiplier;
+      options.units = units;
       if (this.#customComponentType === DataTypes.SHAPE) {
         if (document.getElementById('componentBorder').checked) {
           options.outlineColor = document.getElementById('componentBorderColor').value;
         }
         let opacity = parseInt(document.getElementById('componentOpacity').value);
-        if (opacity >= 0 && opacity < 100) {
+        if (opacity >= 0 && opacity <= 100) {
           options.opacity = opacity / 100;
         }
       }
@@ -787,6 +864,72 @@ export class LayoutController {
     }
     let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
     this.addComponent(track, false, options);
+    ui("#newCustomComponentDialog");
+  }
+
+  onSaveCustomComponent() {
+    const componentWidthNode = document.getElementById('componentWidth');
+    const componentHeightNode = document.getElementById('componentHeight');
+    const componentTextNode = document.getElementById('componentText');
+    let componentWidth = componentWidthNode.value;
+    let componentHeight = componentHeightNode.value;
+    let componentText = componentTextNode.value.trim();
+    if (this.#customComponentType === DataTypes.TEXT) {
+      if (componentText.length === 0) {
+        document.getElementById('componentTextError').innerText = "Text cannot be empty";
+        componentTextNode.parentElement.classList.add('invalid');
+        componentTextNode.focus();
+        return;
+      }
+      LayoutController.selectedComponent.text = componentText;
+      LayoutController.selectedComponent.font = document.getElementById('componentFont').value;
+      LayoutController.selectedComponent.fontSize = parseInt(document.getElementById('componentFontSize').value) * 20;
+    } else {
+      if (componentWidth.length === 0 || isNaN(componentWidth) || componentWidth <= 0) {
+        document.getElementById('componentWidthError').innerText = "Width must be a positive number";
+        componentWidthNode.parentElement.classList.add('invalid');
+        componentWidthNode.focus();
+        return;
+      }
+      if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
+        document.getElementById('componentHeightError').innerText = "Height must be a positive number";
+        componentHeightNode.parentElement.classList.add('invalid');
+        componentHeightNode.focus();
+        return;
+      }
+      let multiplier = 16;
+      let units = 'studs';
+      if (this.#customComponentType !== DataTypes.BASEPLATE) {
+        units = document.getElementById('componentSizeUnits').value;
+        if (units === 'centimeters') {
+          multiplier = 20; // 1 cm = 20 pixels
+        } else if (units === 'millimeters') {
+          multiplier = 2; // 1 mm = 2 pixels
+        } else if (units === 'inches') {
+          multiplier = 51.2; // 1 inch = 51.2 pixels
+        } else if (units === 'feet') {
+          multiplier = 614.4; // 1 foot = 614.4 pixels
+        }
+      }
+      LayoutController.selectedComponent.resize(
+        parseInt(document.getElementById('componentWidth').value) * multiplier,
+        parseInt(document.getElementById('componentHeight').value) * multiplier,
+        units
+      );
+      if (this.#customComponentType === DataTypes.SHAPE) {
+        if (document.getElementById('componentBorder').checked) {
+          LayoutController.selectedComponent.outlineColor = document.getElementById('componentBorderColor').value;
+        } else {
+          LayoutController.selectedComponent.outlineColor = undefined;
+        }
+        let opacity = parseInt(document.getElementById('componentOpacity').value);
+        if (opacity >= 0 && opacity <= 100) {
+          LayoutController.selectedComponent.opacity = opacity / 100;
+        }
+      }
+    }
+    LayoutController.selectedComponent.color = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    this._positionSelectionToolbar();
     ui("#newCustomComponentDialog");
   }
 
@@ -835,7 +978,7 @@ export class LayoutController {
   downloadLayout() {
     /** @type {SerializedLayout} */
     const layout = {
-      version: 1,
+      version: CurrentFormatVersion,
       date: Date.now(),
       x: this.workspace.x,
       y: this.workspace.y,
@@ -974,10 +1117,15 @@ export class LayoutController {
       const file = input.files[0];
       if (file && file.type === 'application/json') {
         const reader = new FileReader();
-        reader.onload = _ => {
+        reader.onload = async _ => {
           try {
             /** @type {SerializedLayout} */
             const data = JSON.parse(reader.result);
+            if (data && data?.version < CurrentFormatVersion) {
+              await import('../utils/layoutUpgrade.js').then((module) => {
+                module.upgradeLayout(data);
+              });
+            }
             if (LayoutController._validateImportData(data) === false) {
               console.error("Invalid layout data");
               // TODO: Show an error message to user
@@ -1043,7 +1191,7 @@ export class LayoutController {
   static _validateImportData(data) {
     let validations = [
       data,
-      data?.version === 1,
+      data?.version === CurrentFormatVersion,
       data?.date,
       data?.x === undefined || (typeof data?.x === 'number'),
       data?.y === undefined || (typeof data?.y === 'number'),
@@ -1259,6 +1407,13 @@ export class LayoutController {
       if (nextComp) {
         LayoutController.selectComponent(nextComp);
       }
+    }
+  }
+
+  editSelectedComponent() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
     }
   }
 
@@ -1484,8 +1639,8 @@ export class LayoutController {
   }
 
   /**
-   * 
-   * @param {boolean} forScreenshot Whether the grid is being drawn for a screenshot
+   * Draw the grid on the workspace.
+   * @param {boolean} [forScreenshot=false] Whether the grid is being drawn for a screenshot
    * @returns 
    */
   drawGrid(forScreenshot = false) {
@@ -1634,6 +1789,15 @@ export class LayoutController {
    */
   _showSelectionToolbar() {
     if (!this.selectionToolbar || this.readOnly) return;
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.destroyed) {
+      return;
+    }
+    if (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate")) {
+      this.selectionToolbar.classList.add('editable');
+    } else {
+      this.selectionToolbar.classList.remove('editable');
+    }
     this.selectionToolbar.classList.remove('hidden');
   }
 

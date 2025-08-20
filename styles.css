@@ -67,6 +67,14 @@ canvas {
 	gap: 0;
 }
 
+#selToolEdit {
+	display: none;
+}
+
+#selectionToolbar.editable > #selToolEdit {
+	display: block;
+}
+
 #selectionToolbar.hidden {
 	display: none;
 }
@@ -512,6 +520,15 @@ div.hidden {
 
 nav.hidden {
 	display: none;
+}
+
+#saveComponentDialog,
+#newCustomComponentDialog.editing #createComponentDialog {
+	display: none;
+}
+
+#newCustomComponentDialog.editing #saveComponentDialog {
+	display: block;
 }
 
 #componentColorSelect i.fill:before {

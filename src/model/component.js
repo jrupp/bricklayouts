@@ -12,7 +12,8 @@ import { PolarVector } from "./polarVector.js";
  * @property {Array<SerializedConnection>} connections
  * @property {Number} [width] The width of the component, if applicable
  * @property {Number} [height] The height of the component, if applicable
- * @property {String} [color] The color of the component, if applicable
+ * @property {String} [units] The units that the component is measured in (e.g., "studs", "inches", "feet")
+ * @property {String} color The color of the component
  * @property {String} [outline_color] The color of the outline, if applicable
  * @property {Number} [opacity] The opacity of the component, if applicable
  * @property {String} [text] The text to display on the component, if applicable
@@ -26,6 +27,7 @@ export { SerializedComponent };
  * @typedef {Object} ComponentOptions
  * @property {number} width The width of the component
  * @property {number} height The height of the component
+ * @property {string} units The units that the component is measured in (e.g., "studs", "inches", "feet")
  * @property {string} color The color of the component
  * @property {string} outlineColor The color of the outline
  * @property {number} opacity The opacity of the component
@@ -37,6 +39,42 @@ let ComponentOptions;
 export { ComponentOptions };
 
 /**
+ * A read-only map from color name to hex value taken from styles.css `i.lego*` classes.
+ * Keys are lowercase names like "green", "darkred", etc.
+ * @type {Readonly<Record<string, string>>}
+ * @see HexToColorName
+ */
+export const ColorNameToHex = Object.freeze({
+  green: "#237841",
+  red: "#C91A09",
+  "dark pink": "#EF5BB3",
+  white: "#ffffff",
+  aqua: "#B3D7D1",
+  black: "#000000",
+  "dark azure": "#009FE0",
+  blue: "#0055BF",
+  lilac: "#7862ce",
+  tan: "#EED9A4",
+  "olive green": "#ABA953",
+  lime: "#BBE90B",
+  yellow: "#F2CD37",
+  orange: "#FE8A18",
+  brown: "#582A12",
+  "dark red": "#720E0F",
+  "dark green": "#184632",
+  "light bluish gray": "#A0A5A9",
+  "dark bluish gray": "#6C6E68",
+});
+
+/**
+ * A read-only map from hex value to color name.
+ * Keys are lowercase hex values like "#237841"
+ * @type {Readonly<Record<string, string>>}
+ * @see ColorNameToHex
+ */
+export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(ColorNameToHex).map(([name, hex]) => [hex.toLowerCase(), name])));
+
+/**
  * Any thing that can be placed on the layout.
  */
 export class Component extends Container {
@@ -44,7 +82,7 @@ export class Component extends Container {
   #color;
 
   /**
-   * @type {String}
+   * @type {?String}
    * The color of the outline, if applicable.
    * This is used for shape components only.
    */
@@ -63,6 +101,13 @@ export class Component extends Container {
    * This is used for shapes and baseplates only.
    */
   #height;
+
+  /**
+   * @type {String}
+   * The units of the component, if applicable.
+   * Example: studs, inches, centimeters
+   */
+  #units;
 
   /**
    * @type {String}
@@ -143,43 +188,23 @@ export class Component extends Container {
     } else if (this.baseData.type === DataTypes.SHAPE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
-      this.sprite = new Graphics();
-      this.sprite.rect(0, 0, this.#width, this.#height);
-      this.sprite.fill(this.#color);
+      this.#units = options.units ?? 'studs';
+      this.#outlineColor = undefined;
       if (options.outlineColor) {
         this.#outlineColor = new Color(options.outlineColor);
-        this.sprite.stroke({width: 8, alignment: 1, color: options.outlineColor});
       }
+      this.sprite = new Graphics();
+      this._drawShape();
       if (options.opacity !== void 0) {
         this.#opacity = options.opacity;
         this.sprite.alpha = options.opacity;
       }
       this.sprite.pivot.set(this.#width / 2, this.#height / 2);
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
-      /** @type {Texture} */
-      let plateTexture = undefined;
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
-      let plateAlias = `baseplate-${this.#width}x${this.#height}-${this.#color.toHex()}`;
-      if (Assets.cache.has(plateAlias)) {
-        plateTexture = Assets.get(plateAlias);
-      } else {
-        let tempSprite = new TilingSprite({
-          texture: Assets.get("baseplate"),
-          width: this.#width,
-          height: this.#height
-        });
-        if (this.#color.toYiq() < 92) {
-          // If the color is dark, we need to lighten the baseplate texture
-          const filter = new ColorMatrixFilter();
-          filter.negative(true);
-          tempSprite.filters = [filter];
-        }
-        plateTexture = LayoutController.getInstance().app.renderer.extract.texture({target: tempSprite, clearColor: this.#color});
-        Assets.cache.set(plateAlias, plateTexture);
-        tempSprite.destroy();
-        tempSprite = null;
-      }
+      this.#units = 'studs';
+      let plateTexture = this._generateBaseplateTexture();
       this.sprite = new Sprite(plateTexture);
       this.sprite.anchor.set(0.5);
     } else if (this.baseData.type === DataTypes.TEXT) {
@@ -391,6 +416,187 @@ export class Component extends Container {
     });
   }
 
+  _drawShape() {
+    this.sprite.clear();
+    this.sprite.rect(0, 0, this.#width, this.#height);
+    this.sprite.fill(this.#color);
+    if (this.#outlineColor) {
+      this.sprite.stroke({width: 8, alignment: 1, color: this.#outlineColor});
+    }
+  }
+
+  /**
+   * Generates the texture for the baseplate.
+   * @returns {Texture} The generated baseplate texture.
+   */
+  _generateBaseplateTexture() {
+    /** @type {Texture} */
+    let plateTexture = undefined;
+    let plateAlias = `baseplate-${this.#width}x${this.#height}-${this.#color.toHex()}`;
+    if (Assets.cache.has(plateAlias)) {
+      plateTexture = Assets.get(plateAlias);
+    } else {
+      let tempSprite = new TilingSprite({
+        texture: Assets.get("baseplate"),
+        width: this.#width,
+        height: this.#height
+      });
+      if (this.#color.toYiq() < 92) {
+        // If the color is dark, we need to lighten the baseplate texture
+        const filter = new ColorMatrixFilter();
+        filter.negative(true);
+        tempSprite.filters = [filter];
+      }
+      plateTexture = LayoutController.getInstance().app.renderer.extract.texture({target: tempSprite, clearColor: this.#color});
+      Assets.cache.set(plateAlias, plateTexture);
+      tempSprite.destroy();
+      tempSprite = null;
+    }
+    return plateTexture;
+  }
+
+  /**
+   * Get the color of this Component.
+   * @returns {String} The color of this Component
+   */
+  get color() {
+    return this.#color?.toHex();
+  }
+
+  /**
+   * Set the color of this Component.
+   * @param {String} value The new color to set
+   */
+  set color(value) {
+    this.#color = new Color(value ?? this.baseData.color ?? 0xA0A5A9);
+    if (this.baseData.type === DataTypes.SHAPE) {
+      this._drawShape();
+    } else if (this.baseData.type === DataTypes.TEXT) {
+      this.sprite.style.fill = this.#color;
+    } else if (this.baseData.type === DataTypes.BASEPLATE) {
+      this.sprite.texture = this._generateBaseplateTexture();
+    }
+  }
+
+  /**
+   * Get the width of this Component.
+   * @returns {Number} The width of this Component in pixels.
+   */
+  get componentWidth() {
+    return this.#width;
+  }
+
+  /**
+   * Get the height of this Component.
+   * @returns {Number} The height of this Component in pixels.
+   */
+  get componentHeight() {
+    return this.#height;
+  }
+
+  resize(width, height, units = 'studs') {
+    this.#width = width;
+    this.#height = height;
+    this.#units = units;
+    if (this.baseData.type === DataTypes.BASEPLATE) {
+      this.sprite.texture = this._generateBaseplateTexture();
+    } else if (this.baseData.type === DataTypes.SHAPE) {
+      this._drawShape();
+    }
+  }
+
+  get font() {
+    return this.#font;
+  }
+
+  /**
+   * Set the font for this Component.
+   * @param {String} value The new font to set
+   */
+  set font(value) {
+    if (this.baseData.type !== DataTypes.TEXT) {
+      return;
+    }
+    this.#font = value;
+    this.sprite.style.fontFamily = value;
+  }
+
+  get fontSize() {
+    return this.#fontSize;
+  }
+
+  /**
+   * Set the font size for this Component.
+   * @param {Number} value The new font size to set
+   */
+  set fontSize(value) {
+    if (this.baseData.type !== DataTypes.TEXT) {
+      return;
+    }
+    this.#fontSize = value;
+    this.sprite.style.fontSize = value;
+  }
+
+  /**
+   * Get the opacity of this Component.
+   * @returns {Number} The opacity of this Component
+   */
+  get opacity() {
+    return this.#opacity;
+  }
+
+  set opacity(value) {
+    if (this.baseData.type !== DataTypes.SHAPE || this.#opacity === value) {
+      return;
+    }
+    this.#opacity = Math.min(Math.max(value, 0), 1);
+    this.sprite.alpha = this.#opacity;
+  }
+
+  /**
+   * Get the outline color of this Component.
+   * @returns {?String} The outline color of this Component
+   */
+  get outlineColor() {
+    return this.#outlineColor?.toHex();
+  }
+
+  /**
+   * Set the outline color of this Component.
+   * @param {?String} value The new outline color to set
+   */
+  set outlineColor(value) {
+    if (this.baseData.type !== DataTypes.SHAPE || this.#outlineColor?.toHex() === value) {
+      return;
+    }
+    if (value === undefined || value === null || value === '') {
+      this.#outlineColor = undefined;
+    } else {
+      this.#outlineColor = new Color(value);
+    }
+    this._drawShape();
+  }
+
+  get text() {
+    return this.#text;
+  }
+
+  /**
+   * Set the text for this Component.
+   * @param {String} value The new text to set
+   */
+  set text(value) {
+    if (this.baseData.type !== DataTypes.TEXT) {
+      return;
+    }
+    this.#text = value;
+    this.sprite.text = value;
+  }
+
+  get units() {
+    return this.#units;
+  }
+
   /**
    * 
    * @param {TrackData} baseData 
@@ -410,6 +616,9 @@ export class Component extends Container {
     }
     if (data.height !== undefined) {
       options.height = data.height;
+    }
+    if (data.units !== undefined) {
+      options.units = data.units;
     }
     if (data.color !== undefined) {
       options.color = data.color;
@@ -447,6 +656,7 @@ export class Component extends Container {
       connections: this.connections.map((connection) => connection.serialize()),
       width: this.#width,
       height: this.#height,
+      units: this.#units,
       color: this.#color?.toHex(),
       outline_color: this.#outlineColor?.toHex(),
       opacity: this.#opacity,
@@ -475,6 +685,9 @@ export class Component extends Container {
       data?.connections?.every?.((connection) => Connection._validateImportData(connection)),
       data?.width === undefined || (typeof data?.width === 'number' && data?.width > 0),
       data?.height === undefined || (typeof data?.height === 'number' && data?.height > 0),
+      data?.units === undefined || (typeof data?.units === 'string' && data?.units.length > 0),
+      data?.type !== "baseplate" || data?.units === "studs",
+      data?.type !== "shape" || data?.units !== undefined,
       data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
       data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),

@@ -3,12 +3,14 @@ import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
+import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
 import layoutFileFour from './layout4.json' with { "type": "json" };
-import layoutFileFive from './layout5.json' with { "type": "json" };
+import layoutFileFiveVOne from './layout5-v1.json' with { "type": "json" };
+import layoutFileFiveVTwo from './layout5-v2.json' with { "type": "json" };
 
 function ui(s) {
 }
@@ -27,6 +29,9 @@ describe("LayoutController", function() {
     let componentOpacity;
     let componentBorder;
     let componentBorderColor;
+    let componentText;
+    let componentFont;
+    let componentFontSize;
     beforeAll(async () => {
         const app = new Application();
         await app.init();
@@ -63,12 +68,29 @@ describe("LayoutController", function() {
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         geiSpy.withArgs('selectionToolbar').and.returnValue(document.createElement('nav'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
+        geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
+        let p = document.createElement('div');
+        let p2 = document.createElement('div');
+        let p3 = document.createElement('div');
+        p.appendChild(p2);
+        p2.appendChild(p3);
         componentWidth = document.createElement('input');
+        p3.appendChild(componentWidth);
         componentWidthError = document.createElement('span');
+        p3.appendChild(componentWidthError);
         geiSpy.withArgs('componentWidth').and.returnValue(componentWidth);
         geiSpy.withArgs('componentWidthError').and.returnValue(componentWidthError);
+        let h = document.createElement('div');
+        let h2 = document.createElement('div');
+        let h3 = document.createElement('div');
+        h.appendChild(h2);
+        h2.appendChild(h3);
         componentHeight = document.createElement('input');
+        h3.appendChild(componentHeight);
         componentHeightError = document.createElement('span');
+        h3.appendChild(componentHeightError);
         geiSpy.withArgs('componentHeight').and.returnValue(componentHeight);
         geiSpy.withArgs('componentHeightError').and.returnValue(componentHeightError);
         componentColorSelect = document.createElement('div');
@@ -81,10 +103,20 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorClear').and.returnValue(document.createElement('i'));
-        geiSpy.withArgs('componentText').and.returnValue(document.createElement('input'));
-        geiSpy.withArgs('componentFont').and.returnValue(document.createElement('select'));
-        geiSpy.withArgs('componentFontSize').and.returnValue(document.createElement('select'));
+        componentText = document.createElement('input');
+        spyOnProperty(componentText, 'parentElement', 'get').and.returnValue(document.createElement('div'));
+        geiSpy.withArgs('componentText').and.returnValue(componentText);
+        geiSpy.withArgs('componentTextError').and.returnValue(document.createElement('span'));
+        geiSpy.withArgs('componentFontOptions').and.returnValue(document.createElement('div'));
+        componentFont = document.createElement('select');
+        geiSpy.withArgs('componentFont').and.returnValue(componentFont);
+        componentFontSize = document.createElement('select');
+        geiSpy.withArgs('componentFontSize').and.returnValue(componentFontSize);
+        let csu = document.createElement('div');
+        let csu2 = document.createElement('div');
+        csu.appendChild(csu2);
         componentSizeUnits = document.createElement('select');
+        csu2.appendChild(componentSizeUnits);
         geiSpy.withArgs('componentSizeUnits').and.returnValue(componentSizeUnits);
         geiSpy.withArgs('componentShapeOptions').and.returnValue(document.createElement('div'));
         componentBorder = document.createElement('input');
@@ -93,6 +125,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentBorder').and.returnValue(componentBorder);
         componentBorderColor = document.createElement('input');
         componentBorderColor.type = 'color';
+        spyOnProperty(componentBorderColor, 'nextElementSibling', 'get').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentBorderColor').and.returnValue(componentBorderColor);
         componentOpacity = document.createElement('input');
         componentOpacity.type = 'range';
@@ -296,7 +329,7 @@ describe("LayoutController", function() {
             layoutController.addComponent(trackData);
             /** @type {SerializedLayout} */
             this.exportedLayout = {
-              version: 1,
+              version: 2,
               date: Date.now(),
               layers: layoutController.layers.map((layer) => layer.serialize())
             };
@@ -315,9 +348,11 @@ describe("LayoutController", function() {
     describe("onCreateCustomComponent", function() {
         beforeEach(function() {
             window.layoutController.reset();
+            layoutController.showCreateCustomComponentDialog('shape', false);
         });
 
         it("creates a custom shape component", function() {
+            let layoutController = window.layoutController;
             spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
             spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
             spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
@@ -325,15 +360,14 @@ describe("LayoutController", function() {
             spyOn(window, 'getComputedStyle').and.returnValue(j);
             let uiSpy = spyOn(window, 'ui').and.stub();
             let addSpy = spyOn(window.layoutController, 'addComponent').and.callThrough();
-            window.layoutController.onCreateCustomComponent();
-            let layoutController = window.layoutController;
+            layoutController.onCreateCustomComponent();
             expect(layoutController.layers).toHaveSize(1);
             expect(layoutController.layers[0].children).toHaveSize(2);
             expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, height: 1600});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, height: 1600, units: "studs", opacity: jasmine.any(Number)});
         });
 
         it("creates using studs as units", function() {
@@ -352,7 +386,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 1600, height: 1600});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 1600, height: 1600, units: "studs", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(1600);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(1600);
         });
@@ -373,7 +407,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 2000, height: 2000});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 2000, height: 2000, units: "centimeters", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(2000);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(2000);
         });
@@ -394,7 +428,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 200, height: 200});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 200, height: 200, units: "millimeters", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(200);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(200);
         });
@@ -415,7 +449,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 5120, height: 5120});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 5120, height: 5120, units: "inches", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(5120);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(5120);
         });
@@ -436,7 +470,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 61440, height: 61440});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 61440, height: 61440, units: "feet", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(61440);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(61440);
         });
@@ -590,7 +624,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), opacity: 0.5});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", opacity: 0.5});
             expect(layoutController.currentLayer.children[0].sprite.alpha).toBe(0.5);
         });
         
@@ -612,7 +646,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), outlineColor: '#ff0000'});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), outlineColor: '#ff0000', units: "studs", opacity: 1});
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(8);
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.color).toBe(16711680); // #ff0000 in hex
         });
@@ -635,8 +669,101 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", opacity: 1});
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(1);
+        });
+    });
+
+    describe("onSaveCustomComponent", function() {
+        beforeEach(function() {
+            window.layoutController.reset();
+        });
+
+        it("saves changes to a custom shape component", function() {
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "shape");
+            layoutController.addComponent(trackData, false, {width: 16, height: 16, units: "studs", color: "#237841", opacity: 1});
+            layoutController.showCreateCustomComponentDialog('shape', true);
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let resizeSpy = spyOn(layoutController.layers[0].children[0], 'resize').and.callThrough();
+            window.layoutController.onSaveCustomComponent();
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(layoutController.currentLayer.children[0].componentWidth).toBe(1600);
+            expect(layoutController.currentLayer.children[0].componentHeight).toBe(1600);
+            expect(resizeSpy).toHaveBeenCalledOnceWith(1600, 1600, "studs");
+        });
+
+        it("saves changes to a custom baseplate component", function() {
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate");
+            layoutController.addComponent(trackData, false, {width: 16, height: 16, units: "studs", color: "#237841", opacity: 1});
+            layoutController.showCreateCustomComponentDialog('baseplate', true);
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let resizeSpy = spyOn(layoutController.layers[0].children[0], 'resize').and.callThrough();
+            window.layoutController.onSaveCustomComponent();
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(layoutController.currentLayer.children[0].componentWidth).toBe(1600);
+            expect(layoutController.currentLayer.children[0].componentHeight).toBe(1600);
+            expect(resizeSpy).toHaveBeenCalledOnceWith(1600, 1600, "studs");
+        });
+
+        it("saves changes to a custom text component", function() {
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "text");
+            layoutController.addComponent(trackData, false, {color: "#237841", text: "Sample Text", font: "Arial", fontSize: 40});
+            layoutController.showCreateCustomComponentDialog('text', true);
+            spyOnProperty(componentText, 'value', 'get').and.returnValue('Hello');
+            spyOnProperty(componentFont, 'value', 'get').and.returnValue('Arial');
+            spyOnProperty(componentFontSize, 'value', 'get').and.returnValue(2);
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let textSpy = spyOnProperty(layoutController.layers[0].children[0], 'text', 'set').and.callThrough();
+            window.layoutController.onSaveCustomComponent();
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(layoutController.currentLayer.children[0].font).toBe("Arial");
+            expect(layoutController.currentLayer.children[0].fontSize).toBe(40);
+            expect(textSpy).toHaveBeenCalledOnceWith('Hello');
+        });
+
+        it("saves font size", function() {
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "text");
+            layoutController.addComponent(trackData, false, {color: "#237841", text: "Hello", font: "Arial", fontSize: 40});
+            layoutController.showCreateCustomComponentDialog('text', true);
+            spyOnProperty(componentText, 'value', 'get').and.returnValue('Hello');
+            spyOnProperty(componentFont, 'value', 'get').and.returnValue('Arial');
+            spyOnProperty(componentFontSize, 'value', 'get').and.returnValue(8);
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let fontSizeSpy = spyOnProperty(layoutController.layers[0].children[0], 'fontSize', 'set').and.callThrough();
+            let textSpy = spyOnProperty(layoutController.layers[0].children[0], 'text', 'set').and.callThrough();
+            let fontSpy = spyOnProperty(layoutController.layers[0].children[0], 'font', 'set').and.callThrough();
+            let colorSpy = spyOnProperty(layoutController.layers[0].children[0], 'color', 'set').and.callThrough();
+            window.layoutController.onSaveCustomComponent();
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(layoutController.currentLayer.children[0].font).toBe("Arial");
+            expect(layoutController.currentLayer.children[0].fontSize).toBe(160);
+            expect(layoutController.currentLayer.children[0].text).toBe("Hello");
+            expect(fontSizeSpy).toHaveBeenCalledOnceWith(160);
+            expect(textSpy).toHaveBeenCalledOnceWith("Hello");
+            expect(fontSpy).toHaveBeenCalledOnceWith("Arial");
+            expect(colorSpy).toHaveBeenCalledOnceWith("#237841");
         });
     });
 
@@ -889,7 +1016,7 @@ describe("LayoutController", function() {
              * @type {SerializedLayout}
              */
             this.perfectMinimalImportData = {
-                "version": 1,
+                "version": 2,
                 "date": "2021-09-01T00:00:00.000Z",
                 "layers": [
                     {
@@ -902,7 +1029,7 @@ describe("LayoutController", function() {
              * @type {SerializedLayout}
              */
             this.perfectImportData = {
-                "version": 1,
+                "version": 2,
                 "date": "2021-09-01T00:00:00.000Z",
                 "x": 1,
                 "y": 2,
@@ -938,6 +1065,7 @@ describe("LayoutController", function() {
                                 "connections": [],
                                 "width": 192,
                                 "height": 192,
+                                "units": "studs",
                                 "color": "#a0a5a9"
                             },
                         ],
@@ -1012,7 +1140,11 @@ describe("LayoutController", function() {
         });
 
         it("validates layout 5", function() {
-            expect(LayoutController._validateImportData(layoutFileFive)).toBeTrue();
+            expect(LayoutController._validateImportData(layoutFileFiveVTwo)).toBeTrue();
+        });
+
+        it("fails validation for layout 5 v1", function() {
+            expect(LayoutController._validateImportData(layoutFileFiveVOne)).toBeFalse();
         });
 
         it("throws errors with invalid version", function() {
@@ -1231,6 +1363,158 @@ describe("LayoutController", function() {
             testData.layers[0].components[1].color = "test";
             expect(LayoutController._validateImportData(testData)).toBeFalse();
         });
+
+        it("throws errors with missing component units", function() {
+            /** @type {SerializedLayout} */
+            let testData = this.perfectImportData;
+            delete testData.layers[0].components[1].units;
+            expect(LayoutController._validateImportData(testData)).toBeFalse();
+        });
+    });
+
+    describe("LayoutUpgrade", function() {
+        beforeEach(function() {
+            /**
+             * @type {SerializedLayout}
+             */
+            this.perfectMinimalImportData = {
+                "version": 1,
+                "date": "2021-09-01T00:00:00.000Z",
+                "layers": [
+                    {
+                        "components": []
+                    }
+                ],
+                "config": {}
+            }
+            /**
+             * @type {SerializedLayout}
+             */
+            this.perfectImportData = {
+                "version": 1,
+                "date": "2021-09-01T00:00:00.000Z",
+                "x": 1,
+                "y": 2,
+                "zoom": 0.5,
+                "layers": [
+                    {
+                        "components": [
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 542,
+                                    "y": 420,
+                                    "angle": 0
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "7944efd3-78de-400e-8534-d9529d421f0e",
+                                        "otherConnection": ""
+                                    },
+                                    {
+                                        "uuid": "b2584add-d96b-4720-bd02-a3b1b8218c86",
+                                        "otherConnection": ""
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "baseplate",
+                                "pose": {
+                                    "x": 240,
+                                    "y": 880,
+                                    "angle": 0
+                                },
+                                "connections": [],
+                                "width": 192,
+                                "height": 192,
+                                "color": "#a0a5a9"
+                            },
+                        ],
+                        "name": "Layer 2",
+                        "visible": true
+                    },
+                    {
+                        "name": "Test Layer",
+                        "visible": true,
+                        "components": [
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 0,
+                                    "y": 0,
+                                    "angle": 0
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "2235bb96-e4bb-4ef8-985f-9a1e38bd9dd0",
+                                        "otherConnection": "402cbcf9-21d8-4fdf-91e4-976af48bd204"
+                                    },
+                                    {
+                                        "uuid": "ebed056f-4987-44a8-9318-72a43f5b834e",
+                                        "otherConnection": ""
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "railStraight9V",
+                                "pose": {
+                                    "x": 1174,
+                                    "y": 275,
+                                    "angle": 3.141592653589793
+                                },
+                                "connections": [
+                                    {
+                                        "uuid": "dad179d1-b328-4ffd-aa25-c289d97230d1",
+                                        "otherConnection": "a407fe20-dd56-44c1-9d77-64bd5ffd40bd"
+                                    },
+                                    {
+                                        "uuid": "402cbcf9-21d8-4fdf-91e4-976af48bd204",
+                                        "otherConnection": "2235bb96-e4bb-4ef8-985f-9a1e38bd9dd0"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
+                "config": {}
+            }
+        });
+
+        it("properly upgrades layout 5", function() {
+            let layout = JSON.parse(JSON.stringify(layoutFileFiveVOne));
+            upgradeLayout(layout);
+            expect(LayoutController._validateImportData(layout)).toBeTrue();
+        });
+
+        it("properly upgrades minimal import data", function() {
+            upgradeLayout(this.perfectMinimalImportData);
+            expect(this.perfectMinimalImportData.version).toBe(2);
+            expect(LayoutController._validateImportData(this.perfectMinimalImportData)).toBeTrue();
+        });
+
+        it("properly upgrades import data", function() {
+            upgradeLayout(this.perfectImportData);
+            expect(this.perfectImportData.layers[0].components[1].units).toBe("studs");
+            expect(LayoutController._validateImportData(this.perfectImportData)).toBeTrue();
+        });
+
+        it("properly selects feet units", function() {
+            this.perfectImportData.layers[0].components[1].type = "shape";
+            this.perfectImportData.layers[0].components[1].width = 614.4;
+            this.perfectImportData.layers[0].components[1].height = 1228.8;
+            upgradeLayout(this.perfectImportData);
+            expect(this.perfectImportData.layers[0].components[1].units).toBe("feet");
+            expect(LayoutController._validateImportData(this.perfectImportData)).toBeTrue();
+        });
+
+        it("properly selects inches units", function() {
+            this.perfectImportData.layers[0].components[1].type = "shape";
+            this.perfectImportData.layers[0].components[1].width = 51.200000001;
+            this.perfectImportData.layers[0].components[1].height = 51.2 * 9;
+            upgradeLayout(this.perfectImportData);
+            expect(this.perfectImportData.layers[0].components[1].units).toBe("inches");
+            expect(LayoutController._validateImportData(this.perfectImportData)).toBeTrue();
+        });
     });
 
     describe("_importLayout", function() {
@@ -1302,7 +1586,7 @@ describe("LayoutController", function() {
         it("imports layout 5", function() {
             /** @type {LayoutController} */
             let layoutController = window.layoutController;
-            layoutController._importLayout(layoutFileFive);
+            layoutController._importLayout(layoutFileFiveVTwo);
             expect(layoutController.layers).toHaveSize(1);
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(layoutController.layers[0].children).toHaveSize(6);

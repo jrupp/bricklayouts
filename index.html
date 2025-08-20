@@ -371,6 +371,9 @@
         </div>
     </div>
     <nav id="selectionToolbar" class="background small-round small-elevate hidden" role="toolbar" aria-label="Selected component tools">
+        <button id="selToolEdit" class="square background" title="Edit">
+            <i class="extra">edit</i>
+        </button>
         <button id="selToolRotate" class="square background" title="Rotate">
             <i class="extra">rotate_right</i>
         </button>
@@ -452,7 +455,7 @@
         <div>
             <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
                 <nav>
-                    <h6 class="max">New Custom Component</h6>
+                    <h6 id="componentDialogTitle" class="max">New Custom Component</h6>
                     <button class="circle medium transparent" data-ui="#newCustomComponentDialog">
                         <i class="medium bold">close</i>
                     </button>
@@ -590,6 +593,10 @@
                 <button id="createComponentDialog" class="border no-border no-round max extra-text"
                     style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
                     <span>Create</span>
+                </button>
+                <button id="saveComponentDialog" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                    <span>Save</span>
                 </button>
                 <button class="border no-border no-round max extra-text"
                     style="border-end-end-radius: 0.5rem !important;" data-ui="#newCustomComponentDialog">
