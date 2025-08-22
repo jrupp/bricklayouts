@@ -1585,7 +1585,7 @@ export class LayoutController {
       if (this.readOnly === false) {
         itemHtml += "<i class=\"instant\">menu</i>";
       }
-      itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate">${layer.label}</div>`;
+      itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate" data-layer="${index}">${layer.label}</div>`;
       if (this.readOnly === false) {
         itemHtml += `<i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
       }
@@ -1619,10 +1619,13 @@ export class LayoutController {
       });
       layerList.querySelectorAll('div').forEach((item, index) => {
         item.addEventListener('click', () => {
-          this.currentLayer = this.layers[(this.layers.length - 1 - index)];
-          LayoutController.selectComponent(null);
-          this.updateLayerList();
+          if (this.currentLayer !== this.layers[(this.layers.length - 1 - index)]) {
+            this.currentLayer = this.layers[(this.layers.length - 1 - index)];
+            LayoutController.selectComponent(null);
+            this.updateLayerList();
+          }
         });
+        item.addEventListener('dblclick', editCallback);
       });
       mobileLayerList.querySelectorAll('div').forEach((item, index) => {
         item.addEventListener('click', () => {
