@@ -71,6 +71,20 @@ export { SerializedLayout };
 const CurrentFormatVersion = 2;
 export { CurrentFormatVersion };
 
+/**
+ * Drag thresholds for component movement.
+ * @type {Number}
+ * @constant
+ */
+const DRAG_THRESHOLD = 8.0;
+
+/**
+ * Drag threshold for movement of components with connections.
+ * @type {Number}
+ * @constant
+ */
+const DRAG_THRESHOLD_CONNECTION = 16.0;
+
 export class LayoutController {
   static _instance = null;
 
@@ -78,6 +92,11 @@ export class LayoutController {
    * @type {?Component}
    */
   static dragTarget = null;
+
+  /**
+   * @type {Number}
+   */
+  static dragDistance = 0;
 
   /**
    * @type {?Component}
@@ -1233,11 +1252,14 @@ export class LayoutController {
    */
   static onDragMove(event) {
     if (LayoutController.dragTarget) {
-      let a = event.getLocalPosition(LayoutController.dragTarget.parent);
       if (!LayoutController.dragTarget.isDragging) {
-        let diff = LayoutController.dragTarget.getPose().subtract(LayoutController.dragTarget.dragStartPos).subtract({ ...a, angle: 0 });
-        const distance = diff.magnitude();
-        if (distance <= 16.0) {
+        const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
+        LayoutController.dragDistance += diff;
+        let threshold = DRAG_THRESHOLD;
+        if (LayoutController.dragTarget.getUsedConnections().length > 0) {
+          threshold = DRAG_THRESHOLD_CONNECTION;
+        }
+        if (LayoutController.dragDistance <= threshold) {
           return;
         }
         LayoutController.dragTarget.isDragging = true;
@@ -1247,6 +1269,7 @@ export class LayoutController {
           LayoutController.selectComponent(null);
         }
       }
+      let a = event.getLocalPosition(LayoutController.dragTarget.parent);
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
       // Snap to grid if enabled
@@ -1286,6 +1309,7 @@ export class LayoutController {
         }
       }
       LayoutController.dragTarget = null;
+      LayoutController.dragDistance = 0;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);
       if (LayoutController.isPanning) {
