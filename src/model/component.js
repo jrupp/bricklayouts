@@ -721,6 +721,7 @@ export class Component extends Container {
       return;
     }
     LayoutController.dragTarget = this;
+    LayoutController.dragDistance = 0;
     this.alpha = 0.5;
     this.isDragging = false;
     let a = e.getLocalPosition(this.parent);
