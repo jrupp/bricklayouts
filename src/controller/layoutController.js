@@ -1215,7 +1215,7 @@ export class LayoutController {
    */
   static onPan(event) {
     if (LayoutController.isPanning === false) {
-      const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY)
+      const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
       LayoutController.panDistance += diff;
       if (LayoutController.panDistance < 5) {
         return;
