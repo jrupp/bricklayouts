@@ -71,6 +71,20 @@ export { SerializedLayout };
 const CurrentFormatVersion = 2;
 export { CurrentFormatVersion };
 
+/**
+ * Drag thresholds for component movement.
+ * @type {Number}
+ * @constant
+ */
+const DRAG_THRESHOLD = 8.0;
+
+/**
+ * Drag threshold for movement of components with connections.
+ * @type {Number}
+ * @constant
+ */
+const DRAG_THRESHOLD_CONNECTION = 16.0;
+
 export class LayoutController {
   static _instance = null;
 
@@ -1241,9 +1255,9 @@ export class LayoutController {
       if (!LayoutController.dragTarget.isDragging) {
         const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
         LayoutController.dragDistance += diff;
-        let threshold = 8.0;
+        let threshold = DRAG_THRESHOLD;
         if (LayoutController.dragTarget.getUsedConnections().length > 0) {
-          threshold = 16.0;
+          threshold = DRAG_THRESHOLD_CONNECTION;
         }
         if (LayoutController.dragDistance <= threshold) {
           return;
