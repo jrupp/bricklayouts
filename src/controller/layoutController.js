@@ -4,6 +4,7 @@ import { Configuration, SerializedConfiguration } from '../model/configuration.j
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
+import { Pose } from '../model/pose.js';
 import { getOptionIndexByValue } from '../utils/utils.js';
 import '../FileSaver.min.js';
 
@@ -306,6 +307,7 @@ export class LayoutController {
     this.selectionToolbar = document.getElementById('selectionToolbar');
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
   }
@@ -530,35 +532,12 @@ export class LayoutController {
         return;
       }
     } else {
-      let newPos = { x: 150, y: 274, angle: 0 };
-      if (track.connections?.length ?? 0 > 0) {
-        newPos = track.connections[0].vector.getStartPosition({ x: 512, y: 384, angle: 0 });
-        newPos.x = Math.fround(newPos.x);
-        newPos.y = Math.fround(newPos.y);
-      } else {
-        // Align to top left corner of component
-        if (track.width !== void 0 && track.height !== void 0) {
-          newPos.x += track.width / 2;
-          newPos.y += track.height / 2;
-        } else {
-          /** @type {Texture} */
-          let texture = Assets.get(track.alias);
-          if (texture !== void 0) {
-            newPos.x += texture.width / 2;
-            newPos.y += texture.height / 2;
-          }
-        }
-      }
-      newPos = { ...this.#currentLayer.toLocal({x: newPos.x / 2, y: newPos.y / 2}), angle: 0 };
-      if (this.config.gridSettings.snapToGrid) {
-        newPos.x = Math.round(newPos.x / 16) * 16;
-        newPos.y = Math.round(newPos.y / 16) * 16;
-      }
+      let newPos = this._newComponentPosition(track, 0);
       newComp = new Component(track, newPos, this.currentLayer, options);
     }
     this.currentLayer.addChild(newComp);
     LayoutController.selectComponent(newComp);
-    this.currentLayer.overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
+    //this.currentLayer.overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
     if (checkConnections) {
       let openConnections = newComp.getOpenConnections();
       if (openConnections.length < newComp.connections.length) {
@@ -576,6 +555,41 @@ export class LayoutController {
         });
       }
     }
+  }
+
+  /**
+   * Get the position for a new component based on the base data.
+   * @param {TrackData} baseData 
+   * @param {Number} [angle=0] Angle to have the new component rotated to.
+   * @return {Object} The position and angle for the new component.
+   */
+  _newComponentPosition(baseData, angle = 0) {
+    /** @type {Pose} */
+    let newPos = { x: 150, y: 274, angle: angle };
+    if (baseData.connections?.length ?? 0 > 0) {
+      newPos = baseData.connections[0].vector.getStartPosition({ x: 512, y: 384, angle: angle });
+      newPos.x = Math.fround(newPos.x);
+      newPos.y = Math.fround(newPos.y);
+    } else {
+      // Align to top left corner of component
+      if (baseData.width !== void 0 && baseData.height !== void 0) {
+        newPos.x += baseData.width / 2;
+        newPos.y += baseData.height / 2;
+      } else {
+        /** @type {Texture} */
+        let texture = Assets.get(baseData.alias);
+        if (texture !== void 0) {
+          newPos.x += texture.width / 2;
+          newPos.y += texture.height / 2;
+        }
+      }
+    }
+    newPos = { ...this.#currentLayer.toLocal({x: newPos.x / 2, y: newPos.y / 2}), angle: angle };
+    if (this.config.gridSettings.snapToGrid) {
+      newPos.x = Math.round(newPos.x / 16) * 16;
+      newPos.y = Math.round(newPos.y / 16) * 16;
+    }
+    return newPos;
   }
 
   initCustomComponentUI() {
@@ -1044,11 +1058,15 @@ export class LayoutController {
       if (event.key === 'Escape') {
         LayoutController.selectComponent(null);
       }
-      if (event.key === 'r') {
+      if (event.key === 'r' && !event.ctrlKey) {
         this.rotateSelectedComponent();
       }
       if (event.key === 'PageUp') {
         this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+      }
+      if (event.key === 'd' && event.ctrlKey) {
+        this.duplicateSelectedComponent();
+        event.preventDefault();
       }
     }
     if (event.key === '0' && event.ctrlKey) {
@@ -1187,7 +1205,7 @@ export class LayoutController {
       layer.components.forEach((component) => {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
-        this.layers[index].overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
+        //this.layers[index].overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
       });
       // Clear between layers
       Connection.connectionDB.clear();
@@ -1434,6 +1452,22 @@ export class LayoutController {
     }
   }
 
+  duplicateSelectedComponent() {
+    this.hideFileMenu();
+    if (!LayoutController.selectedComponent) {
+      return;
+    }
+    /** @type {Component} */
+    let clone = LayoutController.selectedComponent.clone(this.currentLayer, LayoutController.selectedComponent);
+    if (clone.connections.length > 0 && clone.getUsedConnections().length === 0) {
+      let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle);
+      clone.position.set(newPos.x, newPos.y);
+    }
+    this.currentLayer.addChild(clone);
+    LayoutController.selectComponent(clone);
+    // TODO: Check open connections
+  }
+
   editSelectedComponent() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
@@ -1448,9 +1482,11 @@ export class LayoutController {
    */
   rotateSelectedComponent() {
     this.hideFileMenu();
-    if (LayoutController.selectedComponent) {
-      LayoutController.selectedComponent.rotate();
+    if (!LayoutController.selectedComponent) {
+      return;
     }
+    LayoutController.selectedComponent.rotate();
+    this._positionSelectionToolbar();
   }
 
   /**
@@ -1824,6 +1860,11 @@ export class LayoutController {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');
+    }
+    if (comp.canRotate()) {
+      this.selectionToolbar.classList.add('rotatable');
+    } else {
+      this.selectionToolbar.classList.remove('rotatable');
     }
     this.selectionToolbar.classList.remove('hidden');
   }
