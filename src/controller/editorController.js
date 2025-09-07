@@ -125,6 +125,7 @@ export class EditorController {
           let tempComp = Component.fromConnection(this.baseData, connection, layoutController.currentLayer);
           this.testComps.push(tempComp);
           layoutController.currentLayer.addChild(tempComp);
+          layoutController.currentLayer.overlay.attach(...(tempComp.children.filter((component) => component.renderPipeId == "graphics")));
         });
       }
     });

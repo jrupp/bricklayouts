@@ -292,35 +292,6 @@ export class Component extends Container {
     return null;
   }
 
-  /**
-   * Clone the component.
-   * @param {LayoutLayer} layer The layer to clone the component to.
-   * @param {Component} [connectTo] The component to connect to.
-   * @returns {Component} The cloned component.
-   */
-  clone(layer, connectTo = null) {
-    /** @type {ComponentOptions} */
-    let options = {
-      width: this.#width,
-      height: this.#height,
-      units: this.#units,
-      color: this.#color?.toHex(),
-      outlineColor: this.#outlineColor?.toHex(),
-      opacity: this.#opacity,
-      text: this.#text,
-      font: this.#font,
-      fontSize: this.#fontSize
-    };
-    if (connectTo) {
-      let newComp = Component.fromComponent(this.baseData, connectTo, layer, options);
-      if (newComp) {
-        return newComp;
-      }
-    }
-    let newComp = new Component(this.baseData, this.getPose(), layer, options);
-    return newComp;
-  }
-
   destroy() {
     this.dragStartConnection = null;
     this.connections.forEach((connection) => connection.destroy());
@@ -397,15 +368,6 @@ export class Component extends Container {
   getAdjacentComponent() {
     const connection = this.connections.find((connection) => connection.otherConnection);
     return connection?.otherConnection?.component ?? null;
-  }
-
-  /**
-   * Checks if this component can be rotated.
-   * @returns {Boolean} True if this component can be rotated, false otherwise
-   */
-  canRotate() {
-    const currentConnections = this.getUsedConnections();
-    return currentConnections.length <= 1;
   }
 
   /**

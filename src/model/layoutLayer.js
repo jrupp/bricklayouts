@@ -54,7 +54,6 @@ export class LayoutLayer extends Container {
         let index = this.children.length - 1;
         children.forEach(child => {
             super.addChildAt(child, index);
-            this.overlay.attach(...(child.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
         });
         return children[0];
     }
