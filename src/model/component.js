@@ -437,16 +437,7 @@ export class Component extends Container {
     let openConnections = this.getOpenConnections();
     if (openConnections.length > 0) {
       openConnections.forEach((openCon) => {
-        // TODO: Move this for loop to its own method in LayoutLayer
-        for (const [key, connectionTest] of this.layer.openConnections) {
-          if (connectionTest.component.uid === openCon.component.uid) {
-            continue;
-          }
-          if (connectionTest.getPose().isInRadius(openCon.getPose(), 1) && connectionTest.getPose().hasOppositeAngle(openCon.getPose())) {
-            openCon.connectTo(connectionTest);
-            break;
-          }
-        }
+        this.layer.findMatchingConnection(openCon, true);
       });
     }
     this.connections.forEach((connection) => {

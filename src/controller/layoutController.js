@@ -536,25 +536,15 @@ export class LayoutController {
       newComp = new Component(track, newPos, this.currentLayer, options);
     }
     this.currentLayer.addChild(newComp);
-    LayoutController.selectComponent(newComp);
-    //this.currentLayer.overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
     if (checkConnections) {
       let openConnections = newComp.getOpenConnections();
       if (openConnections.length < newComp.connections.length) {
         openConnections.forEach((openCon) => {
-          // TODO: Move this for loop to its own method in LayoutLayer
-          for (const [key, connection] of this.currentLayer.openConnections) {
-            if (connection.component.uid === openCon.component.uid) {
-              continue;
-            }
-            if (connection.getPose().isInRadius(openCon.getPose(), 1) && connection.getPose().hasOppositeAngle(openCon.getPose())) {
-              openCon.connectTo(connection);
-              break;
-            }
-          }
+          this.currentLayer.findMatchingConnection(openCon, true);
         });
       }
     }
+    LayoutController.selectComponent(newComp);
   }
 
   /**
@@ -1205,7 +1195,6 @@ export class LayoutController {
       layer.components.forEach((component) => {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
-        //this.layers[index].overlay.attach(...(newComp.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
       });
       // Clear between layers
       Connection.connectionDB.clear();
@@ -1312,17 +1301,9 @@ export class LayoutController {
       if (LayoutController.dragTarget.connections.length > 0) {
         let openConnections = LayoutController.dragTarget.getOpenConnections();
         if (openConnections.length > 0) {
+          let currentLayer = LayoutController.getInstance().currentLayer
           openConnections.forEach((openCon) => {
-            // TODO: Move this for loop to its own method in LayoutLayer
-            for (const [key, connection] of LayoutController.getInstance().currentLayer.openConnections) {
-              if (connection.component.uid === openCon.component.uid) {
-                continue;
-              }
-              if (connection.getPose().isInRadius(openCon.getPose(), 1) && connection.getPose().hasOppositeAngle(openCon.getPose())) {
-                openCon.connectTo(connection);
-                break;
-              }
-            }
+            currentLayer.findMatchingConnection(openCon, true);
           });
         }
       }
@@ -1464,8 +1445,13 @@ export class LayoutController {
       clone.position.set(newPos.x, newPos.y);
     }
     this.currentLayer.addChild(clone);
+    let openConnections = clone.getOpenConnections();
+    if (openConnections.length < clone.connections.length) {
+      openConnections.forEach((openCon) => {
+        this.currentLayer.findMatchingConnection(openCon, true);
+      });
+    }
     LayoutController.selectComponent(clone);
-    // TODO: Check open connections
   }
 
   editSelectedComponent() {

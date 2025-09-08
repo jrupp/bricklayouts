@@ -99,6 +99,27 @@ export class LayoutLayer extends Container {
     }
 
     /**
+     * Find a matching connection for the given openConnection
+     * @param {Connection} openConnection Connection to find a match for
+     * @param {Boolean} connect Whether to connect the connections if a match is found
+     * @returns {?Connection} The matching connection, or null if none was found
+     */
+    findMatchingConnection(openConnection, connect = false) {
+        for (const [key, connectionTest] of this.openConnections) {
+          if (connectionTest.component.uid === openConnection.component.uid) {
+            continue;
+          }
+          if (connectionTest.getPose().isInRadius(openConnection.getPose(), 1) && connectionTest.getPose().hasOppositeAngle(openConnection.getPose())) {
+            if (connect) {
+              openConnection.connectTo(connectionTest);
+            }
+            return connectionTest;
+          }
+        }
+        return null;
+    }
+
+    /**
      * Serialize this LayoutLayer to a SerializedLayoutLayer
      * @returns {SerializedLayoutLayer}
      */
