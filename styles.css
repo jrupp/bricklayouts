@@ -478,6 +478,11 @@ canvas {
 	z-index: 1000;
 }
 
+#layerEditor button:hover {
+	background: var(--component-hover);
+	opacity: 1 !important;
+}
+
 #layerList,
 #mobileLayerList {
 	user-select: none;
