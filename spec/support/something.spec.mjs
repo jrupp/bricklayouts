@@ -1,4 +1,4 @@
-import { LayoutController, SerializedLayout } from "../../src/controller/layoutController.js";
+import { LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
 import { Component } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
@@ -32,6 +32,7 @@ describe("LayoutController", function() {
     let componentText;
     let componentFont;
     let componentFontSize;
+    let selectionToolbar;
     beforeAll(async () => {
         const app = new Application();
         await app.init();
@@ -66,7 +67,8 @@ describe("LayoutController", function() {
         geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
-        geiSpy.withArgs('selectionToolbar').and.returnValue(document.createElement('nav'));
+        selectionToolbar = document.createElement('nav');
+        geiSpy.withArgs('selectionToolbar').and.returnValue(selectionToolbar);
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
@@ -888,6 +890,57 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("duplicateSelectedComponent", function() {
+        let layoutController;
+        let straightTrackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(straightTrackData);
+        });
+
+        it("duplicates a selected component", function() {
+            layoutController.duplicateSelectedComponent();
+            expect(layoutController.currentLayer.children).toHaveSize(3); // 2 components and 1 render layer
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[1]);
+            expect(LayoutController.selectedComponent).not.toBe(layoutController.currentLayer.children[0]);
+            expect(LayoutController.selectedComponent.getPose().angle).toBe(layoutController.currentLayer.children[0].getPose().angle);
+            expect(layoutController.layers[0].openConnections).toHaveSize(2); // Because they are connected to each other
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("automatically connects the duplicated component", function() {
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            LayoutController.deleteComponent(layoutController.currentLayer.children[1]);
+            LayoutController.selectComponent(layoutController.currentLayer.children[0]);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+            layoutController.duplicateSelectedComponent();
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[2]);
+            expect(selectionToolbar.classList).not.toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("doesn't autoconnect when no open connections", function() {
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            LayoutController.selectComponent(layoutController.currentLayer.children[1]);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+            layoutController.duplicateSelectedComponent();
+            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[3]);
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+    });
+
     describe("_sanitizeFileName", function() {
         let layoutController;
         
@@ -1664,9 +1717,21 @@ describe("LayoutController", function() {
     });
 
     describe("Component", function() {
+        /** @type {LayoutController} */
+        let layoutController;
+        /** @type {TrackData} */
+        let straightTrackData;
+        /** @type {TrackData} */
+        let baseplateData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+        });
+
         it("checks for open connection on rotate", function() {
-            /** @type {LayoutController} */
-            let layoutController = window.layoutController;
             layoutController._importLayout(layoutFileThree);
             /** @type {Component} */
             let curveTrack = layoutController.currentLayer.children.find(/** @param {Component} c */(c) => c.baseData.alias == "railCurved9V");
@@ -1674,6 +1739,157 @@ describe("LayoutController", function() {
             expect(curveTrack.getOpenConnections()).withContext("List of open connections").toHaveSize(1);
             curveTrack.rotate();
             expect(curveTrack.getOpenConnections()).withContext("List of open connections after rotate").toHaveSize(0);
+        });
+
+        it("canRotate when all connections open", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            expect(component.canRotate()).toBeTrue();
+        });
+
+        it("canRotate when no connections", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            expect(component.canRotate()).toBeTrue();
+        });
+
+        it("canRotate when only one connection used", function() {
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component1 = layoutController.currentLayer.children[0];
+            /** @type {Component} */
+            let component2 = layoutController.currentLayer.children[1];
+            expect(component1.canRotate()).toBeTrue();
+            expect(component2.canRotate()).toBeTrue();
+        });
+
+        it("canRotate is false when no open connections", function() {
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            expect(layoutController.currentLayer.children[1].canRotate()).toBeFalse();
+        });
+
+        it("clones a component", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            let newcomp = component.clone(layoutController.currentLayer);
+            expect(newcomp).toBeDefined();
+            expect(newcomp.uid).not.toBe(component.uid);
+            expect(newcomp.baseData).toEqual(component.baseData);
+            expect(newcomp.getPose().equals(component.getPose())).toBeTrue();
+            expect(newcomp.connections).toHaveSize(component.connections.length);
+        });
+
+        it("clones a component and connects it", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            const spy = spyOn(Component, 'fromComponent').and.callThrough();
+            let newcomp = component.clone(layoutController.currentLayer, component);
+            expect(newcomp).toBeDefined();
+            const a = {
+                width: component.componentWidth,
+                height: component.componentHeight,
+                units: undefined,
+                color: undefined,
+                outlineColor: undefined,
+                opacity: undefined,
+                text: undefined,
+                font: undefined,
+                fontSize: undefined
+            };
+            expect(spy).toHaveBeenCalledOnceWith(component.baseData, component, layoutController.currentLayer, a);
+            expect(newcomp.uid).not.toBe(component.uid);
+            expect(newcomp.baseData).toEqual(component.baseData);
+            expect(newcomp.getPose().equals(component.getPose())).toBeFalse();
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+        });
+    });
+
+    describe("_newComponentPosition", function() {
+        /** @type {LayoutController} */
+        let layoutController;
+        /** @type {TrackData} */
+        let straightTrackData;
+        /** @type {TrackData} */
+        let baseplateData;
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            layoutController.config.clearWorkspaceSettings();
+        });
+
+        it("computes position for track with connections using first connection vector (custom angle, no snap)", function() {
+            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
+            expect(straightTrackData.connections.length).toBeGreaterThan(0);
+            const fakeReturn = { x: 600.31234, y: 401.98761 }; // intentionally non-rounded
+            const angle = Math.PI / 5;
+            const spy = spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
+            const pos = layoutController._newComponentPosition(straightTrackData, angle);
+            expect(spy).toHaveBeenCalledOnceWith({ x: 512, y: 384, angle });
+            // fround applied before layer transform
+            expect(pos.x).toBeCloseTo(Math.fround(fakeReturn.x), 6);
+            expect(pos.y).toBeCloseTo(Math.fround(fakeReturn.y), 6);
+            expect(pos.angle).toBe(angle);
+        });
+
+        it("computes position for component without connections (default angle, no snap)", function() {
+            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
+            expect(layoutController.config.gridSettings.snapToGrid).toBeFalse();
+            expect(baseplateData.connections || []).toHaveSize(0);
+            // expected raw position before layer transform logic: (150,274) + half width/height
+            const expectedX = 150 + (baseplateData.width / 2);
+            const expectedY = 274 + (baseplateData.height / 2);
+            const pos = layoutController._newComponentPosition(baseplateData); // angle defaults to 0
+            expect(pos.angle).toBe(0);
+            // After internal toLocal() trick the coordinates should remain the computed values
+            expect(pos.x).toBeCloseTo(expectedX, 6);
+            expect(pos.y).toBeCloseTo(expectedY, 6);
+        });
+
+        it("snaps position to grid for component without connections when snapToGrid enabled", function() {
+            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: true });
+            const rawX = 150 + (baseplateData.width / 2);
+            const rawY = 274 + (baseplateData.height / 2);
+            const expectedX = Math.round(rawX / 16) * 16;
+            const expectedY = Math.round(rawY / 16) * 16;
+            const pos = layoutController._newComponentPosition(baseplateData);
+            expect(pos.x % 16).toBe(0);
+            expect(pos.y % 16).toBe(0);
+            expect(pos.x).toBe(expectedX);
+            expect(pos.y).toBe(expectedY);
+        });
+
+        it("snaps position to grid for component with connections when snapToGrid enabled", function() {
+            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: true });
+            const fakeReturn = { x: 593.27, y: 377.61 }; // non multiples of 16 so rounding happens
+            spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
+            const pos = layoutController._newComponentPosition(straightTrackData, 0);
+            const frx = Math.fround(fakeReturn.x);
+            const fry = Math.fround(fakeReturn.y);
+            expect(pos.x).toBe(Math.round(frx / 16) * 16);
+            expect(pos.y).toBe(Math.round(fry / 16) * 16);
+            expect(pos.x % 16).toBe(0);
+            expect(pos.y % 16).toBe(0);
+        });
+
+        it("preserves provided angle for component without connections", function() {
+            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
+            const angle = Math.PI / 7;
+            const pos = layoutController._newComponentPosition(baseplateData, angle);
+            expect(pos.angle).toBe(angle);
+        });
+
+        it("uses default angle 0 when none provided", function() {
+            const pos = layoutController._newComponentPosition(straightTrackData);
+            expect(pos.angle).toBe(0);
         });
     });
 });
