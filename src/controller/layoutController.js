@@ -1301,7 +1301,7 @@ export class LayoutController {
       if (LayoutController.dragTarget.connections.length > 0) {
         let openConnections = LayoutController.dragTarget.getOpenConnections();
         if (openConnections.length > 0) {
-          let currentLayer = LayoutController.getInstance().currentLayer
+          let currentLayer = LayoutController.getInstance().currentLayer;
           openConnections.forEach((openCon) => {
             currentLayer.findMatchingConnection(openCon, true);
           });
