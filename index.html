@@ -371,14 +371,21 @@
         </div>
     </div>
     <nav id="selectionToolbar" class="background small-round small-elevate hidden" role="toolbar" aria-label="Selected component tools">
-        <button id="selToolEdit" class="square background" title="Edit">
+        <button id="selToolEdit" class="square background">
             <i class="extra">edit</i>
+            <div class="tooltip medium-space">Edit</div>
         </button>
-        <button id="selToolRotate" class="square background" title="Rotate">
+        <button id="selToolRotate" class="square background">
             <i class="extra">rotate_right</i>
+            <div class="tooltip medium-space">Rotate (R)</div>
         </button>
-        <button id="selToolDelete" class="square background" title="Delete">
+        <button id="selToolDuplicate" class="square background">
+            <i class="extra">library_add</i>
+            <div class="tooltip medium-space">Duplicate (Ctrl+D)</div>
+        </button>
+        <button id="selToolDelete" class="square background">
             <i class="extra">delete</i>
+            <div class="tooltip medium-space">Delete (Del)</div>
         </button>
         <!--button id="selToolMore" class="square background" title="More">
             <i class="extra">more_vert</i>
@@ -399,6 +406,7 @@
         <nav class="no-margin bottom-round small-round" style="background-color: var(--outline-variant);">
             <button id="layerAdd" class="small-round small transparent">
                 <i class="bold">add</i>
+                <div class="tooltip medium-space">New Layer</div>
             </button>
         </nav>
     </article>

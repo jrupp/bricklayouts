@@ -54,6 +54,7 @@ export class LayoutLayer extends Container {
         let index = this.children.length - 1;
         children.forEach(child => {
             super.addChildAt(child, index);
+            this.overlay.attach(...(child.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
         });
         return children[0];
     }
@@ -95,6 +96,27 @@ export class LayoutLayer extends Container {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Find a matching connection for the given openConnection
+     * @param {Connection} openConnection Connection to find a match for
+     * @param {Boolean} connect Whether to connect the connections if a match is found
+     * @returns {?Connection} The matching connection, or null if none was found
+     */
+    findMatchingConnection(openConnection, connect = false) {
+        for (const [key, connectionTest] of this.openConnections) {
+          if (connectionTest.component.uid === openConnection.component.uid) {
+            continue;
+          }
+          if (connectionTest.getPose().isInRadius(openConnection.getPose(), 1) && connectionTest.getPose().hasOppositeAngle(openConnection.getPose())) {
+            if (connect) {
+              openConnection.connectTo(connectionTest);
+            }
+            return connectionTest;
+          }
+        }
+        return null;
     }
 
     /**
