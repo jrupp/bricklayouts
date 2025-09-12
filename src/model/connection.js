@@ -63,12 +63,12 @@ export class Connection {
         this.circle = new Graphics();
         this.updateCircle();
         parent.addChild(this.circle);
-        this.component.layer.openConnections.set(this.#uuid, this);
+        this.component.layer?.openConnections.set(this.#uuid, this);
     }
 
     destroy() {
         this.disconnect();
-        this.component.layer.openConnections.delete(this.#uuid);
+        this.component.layer?.openConnections.delete(this.#uuid);
         this.component = null;
         this.offsetVector = null;
         this.circle.destroy();

@@ -69,6 +69,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         selectionToolbar = document.createElement('nav');
         geiSpy.withArgs('selectionToolbar').and.returnValue(selectionToolbar);
+        geiSpy.withArgs('selToolMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
@@ -306,6 +307,7 @@ describe("LayoutController", function() {
             let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
             expect(trackData).toBeDefined();
             layoutController.addComponent(trackData);
+            let copySpy = layoutController.copiedComponent = jasmine.createSpyObj(["destroy"]);
             layoutController.workspace.scale.set(2);
             layoutController.reset();
             expect(layoutController.layers).toHaveSize(1);
@@ -315,6 +317,8 @@ describe("LayoutController", function() {
             expect(layoutController.workspace.position.equals({ x: 0, y: 0 })).toBeTrue();
             expect(layoutController.workspace.scale.x).toBe(0.5);
             expect(layoutController.workspace.scale.y).toBe(0.5);
+            expect(layoutController.copiedComponent).toBeNull();
+            expect(copySpy.destroy).toHaveBeenCalledTimes(1);
             expect(LayoutController.selectedComponent).toBeNull();
             expect(LayoutController.dragTarget).toBeNull();
         });
@@ -890,6 +894,282 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("copySelectedComponent", function() {
+        let layoutController;
+        let straightTrackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(straightTrackData);
+        });
+
+        it("does nothing if no component selected", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            LayoutController.selectedComponent = null;
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            layoutController.copySelectedComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(layoutController.currentLayer.children).toHaveSize(2); // 1 component and 1 render layer
+            expect(layoutController.currentLayer.children[0]).toBe(originalComponent);
+            expect(LayoutController.selectedComponent).toBeNull();
+            expect(layoutController.copiedComponent).toBeNull();
+            expect(layoutController.layers[0].openConnections).toHaveSize(2);
+        });
+
+        it("copies the selected component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            expect(LayoutController.selectedComponent).not.toBeNull(); // Sanity check
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let cloneSpy = spyOn(originalComponent, 'clone').and.callThrough();
+            layoutController.copySelectedComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(cloneSpy).toHaveBeenCalledOnceWith();
+            expect(LayoutController.selectedComponent).toBe(originalComponent);
+            expect(layoutController.copiedComponent).not.toBeNull();
+            expect(layoutController.copiedComponent).toBeInstanceOf(Component);
+            expect(layoutController.copiedComponent).not.toBe(originalComponent);
+        });
+
+        it("destroys previous copied component when copying a new one", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            expect(LayoutController.selectedComponent).not.toBeNull(); // Sanity check
+            let cloneSpy = spyOn(originalComponent, 'clone').and.callThrough();
+            let destroySpy = spyOn(Component.prototype, 'destroy').and.callThrough();
+            layoutController.copySelectedComponent();
+            expect(cloneSpy).toHaveBeenCalledOnceWith();
+            expect(destroySpy).not.toHaveBeenCalled();
+            expect(layoutController.copiedComponent).not.toBeNull();
+            let firstCopyUid = layoutController.copiedComponent.uid;
+            layoutController.copySelectedComponent();
+            expect(cloneSpy).toHaveBeenCalledTimes(2);
+            expect(destroySpy).toHaveBeenCalledTimes(1);
+            expect(layoutController.copiedComponent).not.toBeNull();
+            expect(layoutController.copiedComponent).toBeInstanceOf(Component);
+            expect(layoutController.copiedComponent.uid).not.toBe(originalComponent.uid);
+            expect(layoutController.copiedComponent.uid).not.toBe(firstCopyUid);
+        });
+    });
+
+    describe("deleteComponent", function() {
+        let layoutController;
+        let straightTrackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(straightTrackData);
+        });
+
+        it("destroys the component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            LayoutController.selectedComponent = null;
+            let destroySpy = spyOn(originalComponent, 'destroy').and.stub();
+            let hideToolbarSpy = spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            layoutController.deleteComponent(originalComponent);
+            expect(destroySpy).toHaveBeenCalledTimes(1);
+            expect(hideToolbarSpy).not.toHaveBeenCalled();
+        });
+
+        it("handles deleting the selected component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            LayoutController.selectedComponent = originalComponent;
+            let destroySpy = spyOn(originalComponent, 'destroy').and.stub();
+            let hideToolbarSpy = spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            layoutController.deleteComponent(originalComponent);
+            expect(destroySpy).toHaveBeenCalledTimes(1);
+            expect(hideToolbarSpy).toHaveBeenCalledTimes(1);
+            expect(LayoutController.selectedComponent).toBeNull();
+        });
+
+        it("doesn't delete selected component when not the same", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            layoutController.addComponent(straightTrackData);
+            expect(LayoutController.selectedComponent).not.toBe(originalComponent); // Sanity check
+            let destroySpy = spyOn(originalComponent, 'destroy').and.stub();
+            let hideToolbarSpy = spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            let selectedDestroySpy = spyOn(LayoutController.selectedComponent, 'destroy').and.stub();
+            layoutController.deleteComponent(originalComponent);
+            expect(destroySpy).toHaveBeenCalledTimes(1);
+            expect(hideToolbarSpy).not.toHaveBeenCalled();
+            expect(selectedDestroySpy).not.toHaveBeenCalled();
+            expect(LayoutController.selectedComponent).not.toBeNull();
+        });
+
+        it("handles deleting the copied component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            layoutController.copySelectedComponent();
+            expect(layoutController.copiedComponent).not.toBeNull(); // Sanity check
+            let destroySpy = spyOn(originalComponent, 'destroy').and.stub();
+            let copiedDestroySpy = spyOn(layoutController.copiedComponent, 'destroy').and.stub();
+            let hideToolbarSpy = spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            layoutController.deleteComponent(layoutController.copiedComponent);
+            expect(destroySpy).not.toHaveBeenCalled();
+            expect(copiedDestroySpy).toHaveBeenCalledTimes(1);
+            expect(hideToolbarSpy).not.toHaveBeenCalled();
+            expect(LayoutController.selectedComponent).not.toBeNull();
+            expect(layoutController.copiedComponent).toBeNull();
+        });
+    });
+
+    describe("deleteSelectedComponent", function() {
+        let layoutController;
+        let straightTrackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(straightTrackData);
+        });
+
+        it("does nothing if no component selected", function() {
+            LayoutController.selectedComponent = null;
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let selectComponentSpy = spyOn(LayoutController, 'selectComponent').and.stub();
+            let deleteComponentSpy = spyOn(layoutController, 'deleteComponent').and.stub();
+            let getAdjacentSpy = spyOn(Component.prototype, 'getAdjacentComponent').and.returnValue(null);
+            layoutController.deleteSelectedComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(selectComponentSpy).not.toHaveBeenCalled();
+            expect(deleteComponentSpy).not.toHaveBeenCalled();
+            expect(getAdjacentSpy).not.toHaveBeenCalled();
+        });
+
+        it("deletes the selected component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            expect(LayoutController.selectedComponent).not.toBeNull(); // Sanity check
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let selectComponentSpy = spyOn(LayoutController, 'selectComponent').and.stub();
+            let deleteComponentSpy = spyOn(layoutController, 'deleteComponent').and.stub();
+            let getAdjacentSpy = spyOn(Component.prototype, 'getAdjacentComponent').and.returnValue(null);
+            layoutController.deleteSelectedComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(selectComponentSpy).not.toHaveBeenCalled();
+            expect(deleteComponentSpy).toHaveBeenCalledOnceWith(originalComponent);
+            expect(getAdjacentSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("selects an adjacent component after deletion", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            expect(LayoutController.selectedComponent).not.toBeNull(); // Sanity check
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let selectComponentSpy = spyOn(LayoutController, 'selectComponent').and.stub();
+            let deleteComponentSpy = spyOn(layoutController, 'deleteComponent').and.stub();
+            let getAdjacentSpy = spyOn(Component.prototype, 'getAdjacentComponent').and.returnValue("hello");
+            layoutController.deleteSelectedComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(selectComponentSpy).toHaveBeenCalledOnceWith("hello");
+            expect(deleteComponentSpy).toHaveBeenCalledOnceWith(originalComponent);
+            expect(getAdjacentSpy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe("duplicateComponent", function() {
+        let layoutController;
+        let straightTrackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(straightTrackData);
+        });
+
+        it("does nothing if component is null", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            layoutController.duplicateComponent(null);
+            expect(layoutController.currentLayer.children).toHaveSize(2); // 1 component and 1 render layer
+            expect(layoutController.currentLayer.children[0]).toBe(originalComponent);
+            expect(LayoutController.selectedComponent).toBe(originalComponent);
+            expect(layoutController.layers[0].openConnections).toHaveSize(2);
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("duplicates a component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            layoutController.duplicateComponent(originalComponent);
+            expect(layoutController.currentLayer.children).toHaveSize(3); // 2 components and 1 render layer
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[1]);
+            expect(LayoutController.selectedComponent).not.toBe(originalComponent);
+            expect(LayoutController.selectedComponent.getPose().angle).toBe(originalComponent.getPose().angle);
+            expect(layoutController.layers[0].openConnections).toHaveSize(2); // Because they are connected to each other
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("duplicates a in-memory component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            let clone = originalComponent.clone();
+            expect(clone).not.toBe(originalComponent);
+            LayoutController.selectedComponent = null;
+            layoutController.duplicateComponent(clone);
+            expect(layoutController.currentLayer.children).toHaveSize(3); // 2 components and 1 render layer
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[0]).not.toBe(clone);
+            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
+            expect(layoutController.currentLayer.children[1]).not.toBe(clone);
+            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[1]);
+            expect(LayoutController.selectedComponent).not.toBe(clone);
+            expect(LayoutController.selectedComponent.getPose().angle).toBe(clone.getPose().angle);
+            expect(layoutController.layers[0].openConnections).toHaveSize(4); // Because they are not connected to each other
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("automatically connects the selected same component", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.deleteComponent(layoutController.currentLayer.children[1]);
+            LayoutController.selectComponent(originalComponent);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+            layoutController.duplicateComponent(originalComponent);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[2]);
+            expect(LayoutController.selectedComponent).not.toBe(originalComponent);
+            expect(selectionToolbar.classList).not.toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("automatically connects the selected different component", function() {
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            let originalComponent = layoutController.currentLayer.children[2];
+            layoutController.deleteComponent(layoutController.currentLayer.children[1]);
+            LayoutController.selectComponent(layoutController.currentLayer.children[0]);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+            layoutController.duplicateComponent(originalComponent);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[2]);
+            expect(LayoutController.selectedComponent).not.toBe(originalComponent);
+            expect(LayoutController.selectedComponent).not.toBe(layoutController.currentLayer.children[0]);
+            expect(selectionToolbar.classList).not.toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+
+        it("doesn't autoconnect when no open connections", function() {
+            layoutController.addComponent(straightTrackData);
+            let originalComponent = layoutController.currentLayer.children[1];
+            layoutController.addComponent(straightTrackData);
+            LayoutController.selectComponent(originalComponent);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+            layoutController.duplicateComponent(originalComponent);
+            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[3]);
+            expect(LayoutController.selectedComponent).not.toBe(originalComponent);
+            expect(selectionToolbar.classList).toContain("rotatable");
+            expect(selectionToolbar.classList).not.toContain("editable");
+        });
+    });
+
     describe("duplicateSelectedComponent", function() {
         let layoutController;
         let straightTrackData;
@@ -902,42 +1182,49 @@ describe("LayoutController", function() {
         });
 
         it("duplicates a selected component", function() {
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let duplicateComponentSpy = spyOn(layoutController, 'duplicateComponent').and.stub();
             layoutController.duplicateSelectedComponent();
-            expect(layoutController.currentLayer.children).toHaveSize(3); // 2 components and 1 render layer
-            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
-            expect(layoutController.currentLayer.children[1]).toBeInstanceOf(Component);
-            expect(layoutController.currentLayer.children[2]).toBeInstanceOf(RenderLayer);
-            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[1]);
-            expect(LayoutController.selectedComponent).not.toBe(layoutController.currentLayer.children[0]);
-            expect(LayoutController.selectedComponent.getPose().angle).toBe(layoutController.currentLayer.children[0].getPose().angle);
-            expect(layoutController.layers[0].openConnections).toHaveSize(2); // Because they are connected to each other
-            expect(selectionToolbar.classList).toContain("rotatable");
-            expect(selectionToolbar.classList).not.toContain("editable");
+            expect(hideFileMenuSpy).toHaveBeenCalled();
+            expect(duplicateComponentSpy).toHaveBeenCalledOnceWith(LayoutController.selectedComponent);
         });
 
-        it("automatically connects the duplicated component", function() {
-            layoutController.addComponent(straightTrackData);
-            layoutController.addComponent(straightTrackData);
-            LayoutController.deleteComponent(layoutController.currentLayer.children[1]);
-            LayoutController.selectComponent(layoutController.currentLayer.children[0]);
-            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
+        it("does nothing if no component selected", function() {
+            LayoutController.selectedComponent = null;
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let duplicateComponentSpy = spyOn(layoutController, 'duplicateComponent').and.stub();
             layoutController.duplicateSelectedComponent();
-            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
-            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[2]);
-            expect(selectionToolbar.classList).not.toContain("rotatable");
-            expect(selectionToolbar.classList).not.toContain("editable");
+            expect(hideFileMenuSpy).toHaveBeenCalled();
+            expect(duplicateComponentSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe("pasteComponent", function() {
+        let layoutController;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
         });
 
-        it("doesn't autoconnect when no open connections", function() {
-            layoutController.addComponent(straightTrackData);
-            layoutController.addComponent(straightTrackData);
-            LayoutController.selectComponent(layoutController.currentLayer.children[1]);
-            expect(layoutController.currentLayer.openConnections).toHaveSize(2);
-            layoutController.duplicateSelectedComponent();
-            expect(layoutController.currentLayer.openConnections).toHaveSize(4);
-            expect(LayoutController.selectedComponent).toBe(layoutController.currentLayer.children[3]);
-            expect(selectionToolbar.classList).toContain("rotatable");
-            expect(selectionToolbar.classList).not.toContain("editable");
+        it("does nothing if copiedComponent is null", function() {
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let duplicateComponentSpy = spyOn(layoutController, 'duplicateComponent').and.stub();
+            layoutController.pasteComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalled();
+            expect(duplicateComponentSpy).not.toHaveBeenCalled();
+        });
+
+        it("pastes the copied component", function() {
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            layoutController.copySelectedComponent();
+            expect(layoutController.copiedComponent).not.toBeNull(); // Sanity check
+            let hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            let duplicateComponentSpy = spyOn(layoutController, 'duplicateComponent').and.stub();
+            layoutController.pasteComponent();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+            expect(duplicateComponentSpy).toHaveBeenCalledOnceWith(layoutController.copiedComponent);
         });
     });
 
@@ -1783,6 +2070,22 @@ describe("LayoutController", function() {
             expect(newcomp.baseData).toEqual(component.baseData);
             expect(newcomp.getPose().equals(component.getPose())).toBeTrue();
             expect(newcomp.connections).toHaveSize(component.connections.length);
+            expect(layoutController.currentLayer.openConnections.values()).toContain(newcomp.connections[0]);
+            expect(layoutController.currentLayer.openConnections.values()).toContain(newcomp.connections[1]);
+        });
+
+        it("clones a component with no layer", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            let newcomp = component.clone();
+            expect(newcomp).toBeDefined();
+            expect(newcomp.uid).not.toBe(component.uid);
+            expect(newcomp.baseData).toEqual(component.baseData);
+            expect(newcomp.getPose().equals(component.getPose())).toBeTrue();
+            expect(newcomp.connections).toHaveSize(component.connections.length);
+            expect(layoutController.currentLayer.openConnections.values()).not.toContain(newcomp.connections[0]);
+            expect(layoutController.currentLayer.openConnections.values()).not.toContain(newcomp.connections[1]);
         });
 
         it("clones a component and connects it", function() {
@@ -1951,6 +2254,8 @@ describe("LayoutLayer", function() {
         layoutLayer.destroy();
         expect(layoutLayer.overlay).toBeNull();
     });
+
+    // TODO: Test findMatchingConnection
 
     it("validates a valid serialized layout layer", function() {
         let compSpy = spyOn(Component, '_validateImportData').and.returnValue(true);

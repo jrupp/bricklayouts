@@ -103,7 +103,7 @@ export class LayoutController {
    * @type {?Component}
    */
   static selectedComponent = null;
-
+ 
   /**
    * @type {Boolean}
    */
@@ -175,6 +175,10 @@ export class LayoutController {
      */
     this.componentBrowser = document.getElementById('componentBrowser');
     /**
+     * @type {Component}
+     */
+    this.copiedComponent = null;
+    /**
      * @type {HTMLSelectElement}
      */
     this.groupSelect = document.getElementById('categories');
@@ -186,23 +190,19 @@ export class LayoutController {
      * @type {Object}
      */
     this.trackData = Assets.get(path.toAbsolute('../data/manifest.json'));
-
     /**
      * @type {Map<String, String>}
      */
     this.categories = new Map(Object.entries(this.trackData.categories));
-
     /**
      * @type {Point}
      */
     this.panOffset = new Point();
-
     /**
      * The grid
      * @type {Graphics}
      */
     this.grid = new Graphics();
-
     /**
      * The subgrid
      * @type {Graphics}
@@ -217,7 +217,6 @@ export class LayoutController {
      * @type {Configuration}
      */
     this.config = Configuration.getInstance();
-
     /**
      * @type {Container}
      */
@@ -305,11 +304,23 @@ export class LayoutController {
      * @type {HTMLDivElement}
      */
     this.selectionToolbar = document.getElementById('selectionToolbar');
+
+    /**
+     * Context menu for selected component
+     * @type {HTMLMenuElement}
+     */
+    this.selectionToolMenu = document.getElementById('selToolMenu');
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolCopy')?.addEventListener('click', () => this.copySelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolPaste')?.addEventListener('click', () => this.pasteComponent());
     this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolBringFront')?.addEventListener('click', () => this.bringSelectedComponentToFront());
   }
 
   /**
@@ -970,6 +981,10 @@ export class LayoutController {
     this.workspace.scale.set(this.config.defaultZoom);
     this.drawGrid();
     this._hideSelectionToolbar();
+    if (this.copiedComponent) {
+      this.copiedComponent.destroy();
+      this.copiedComponent = null;
+    }
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
     LayoutController.isPanning = false;
@@ -1052,12 +1067,21 @@ export class LayoutController {
         this.rotateSelectedComponent();
       }
       if (event.key === 'PageUp') {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+        this.bringSelectedComponentToFront();
+        event.preventDefault();
       }
       if (event.key === 'd' && event.ctrlKey) {
         this.duplicateSelectedComponent();
         event.preventDefault();
       }
+      if (event.key === 'c' && event.ctrlKey) {
+        this.copySelectedComponent();
+        event.preventDefault();
+      }
+    }
+    if (event.key === 'v' && event.ctrlKey) {
+      this.pasteComponent();
+      event.preventDefault();
     }
     if (event.key === '0' && event.ctrlKey) {
       this.workspace.scale.set(this.config.defaultZoom);
@@ -1409,14 +1433,42 @@ export class LayoutController {
     }
   }
 
+  bringSelectedComponentToFront() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+    }
+  }
+
+  copySelectedComponent() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      if (this.copiedComponent) {
+        this.copiedComponent.destroy();
+        this.copiedComponent = null;
+      }
+      this.copiedComponent = LayoutController.selectedComponent.clone();
+    }
+  }
+
+  pasteComponent() {
+    this.hideFileMenu();
+    if (this.copiedComponent) {
+      this.duplicateComponent(this.copiedComponent);
+    }
+  }
+
   /**
    * Delete a component from the layout.
    * @param {Component} component - The component to delete.
    */
-  static deleteComponent(component) {
+  deleteComponent(component) {
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
-      LayoutController.getInstance()._hideSelectionToolbar();
+      this._hideSelectionToolbar();
+    }
+    if (this.copiedComponent === component) {
+      this.copiedComponent = null;
     }
     component.destroy();
     component = null;
@@ -1426,21 +1478,27 @@ export class LayoutController {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       let nextComp = LayoutController.selectedComponent.getAdjacentComponent();
-      LayoutController.deleteComponent(LayoutController.selectedComponent);
+      this.deleteComponent(LayoutController.selectedComponent);
       if (nextComp) {
         LayoutController.selectComponent(nextComp);
       }
     }
   }
 
-  duplicateSelectedComponent() {
-    this.hideFileMenu();
-    if (!LayoutController.selectedComponent) {
-      return;
+  /**
+   * Duplicate a component and add it to the layout.
+   * @param {Component} component - The component to duplicate.
+   */
+  duplicateComponent(component) {
+    if (!component) return;
+    /** @type {?Component} */
+    let connectTo = null;
+    if (LayoutController.selectedComponent) {
+      connectTo = LayoutController.selectedComponent;
     }
     /** @type {Component} */
-    let clone = LayoutController.selectedComponent.clone(this.currentLayer, LayoutController.selectedComponent);
-    if (clone.connections.length > 0 && clone.getUsedConnections().length === 0) {
+    let clone = component.clone(this.currentLayer, connectTo);
+    if (clone.getUsedConnections().length === 0) {
       let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle);
       clone.position.set(newPos.x, newPos.y);
     }
@@ -1452,6 +1510,14 @@ export class LayoutController {
       });
     }
     LayoutController.selectComponent(clone);
+  }
+
+  duplicateSelectedComponent() {
+    this.hideFileMenu();
+    if (!LayoutController.selectedComponent) {
+      return;
+    }
+    this.duplicateComponent(LayoutController.selectedComponent);
   }
 
   editSelectedComponent() {
@@ -1873,6 +1939,7 @@ export class LayoutController {
       this._hideSelectionToolbar();
       return;
     }
+    this.selectionToolMenu.classList.remove('left', 'top');
     // Get component global bounds (axis-aligned, includes rotation/scale)
     const gb = comp.getBounds();
     const screenTop = Math.round(gb.minY);
@@ -1880,6 +1947,7 @@ export class LayoutController {
     const compCenterX = Math.round(comp.getGlobalPosition().x);
     // Measure toolbar
     const tbRect = this.selectionToolbar.getBoundingClientRect();
+    const menuRect = this.selectionToolMenu.getBoundingClientRect();
     const gap = 8;
     let left = Math.round(compCenterX - tbRect.width / 2);
     let top = screenTop - tbRect.height - gap;
@@ -1895,5 +1963,13 @@ export class LayoutController {
     }
     this.selectionToolbar.style.left = `${left}px`;
     this.selectionToolbar.style.top = `${top}px`;
+    if (vw > 800) {
+      if (left + tbRect.width + menuRect.width > vw) {
+        this.selectionToolMenu.classList.add('left');
+      }
+      if (top + tbRect.height + menuRect.height > vh - 32) {
+        this.selectionToolMenu.classList.add('top');
+      }
+    }
   }
 }
