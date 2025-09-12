@@ -1074,12 +1074,12 @@ export class LayoutController {
         this.duplicateSelectedComponent();
         event.preventDefault();
       }
-      if (event.key == 'c' && event.ctrlKey) {
+      if (event.key === 'c' && event.ctrlKey) {
         this.copySelectedComponent();
         event.preventDefault();
       }
     }
-    if (event.key == 'v' && event.ctrlKey) {
+    if (event.key === 'v' && event.ctrlKey) {
       this.pasteComponent();
       event.preventDefault();
     }
