@@ -304,11 +304,23 @@ export class LayoutController {
      * @type {HTMLDivElement}
      */
     this.selectionToolbar = document.getElementById('selectionToolbar');
+
+    /**
+     * Context menu for selected component
+     * @type {HTMLMenuElement}
+     */
+    this.selectionToolMenu = document.getElementById('selToolMenu');
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolCopy')?.addEventListener('click', () => this.copySelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolPaste')?.addEventListener('click', () => this.pasteComponent());
     this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolBringFront')?.addEventListener('click', () => this.bringSelectedComponentToFront());
   }
 
   /**
@@ -1055,7 +1067,8 @@ export class LayoutController {
         this.rotateSelectedComponent();
       }
       if (event.key === 'PageUp') {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+        this.bringSelectedComponentToFront();
+        event.preventDefault();
       }
       if (event.key === 'd' && event.ctrlKey) {
         this.duplicateSelectedComponent();
@@ -1417,6 +1430,13 @@ export class LayoutController {
       } catch (error) {
         return;
       }
+    }
+  }
+
+  bringSelectedComponentToFront() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
     }
   }
 
@@ -1919,6 +1939,7 @@ export class LayoutController {
       this._hideSelectionToolbar();
       return;
     }
+    this.selectionToolMenu.classList.remove('left', 'top');
     // Get component global bounds (axis-aligned, includes rotation/scale)
     const gb = comp.getBounds();
     const screenTop = Math.round(gb.minY);
@@ -1926,6 +1947,7 @@ export class LayoutController {
     const compCenterX = Math.round(comp.getGlobalPosition().x);
     // Measure toolbar
     const tbRect = this.selectionToolbar.getBoundingClientRect();
+    const menuRect = this.selectionToolMenu.getBoundingClientRect();
     const gap = 8;
     let left = Math.round(compCenterX - tbRect.width / 2);
     let top = screenTop - tbRect.height - gap;
@@ -1941,5 +1963,13 @@ export class LayoutController {
     }
     this.selectionToolbar.style.left = `${left}px`;
     this.selectionToolbar.style.top = `${top}px`;
+    if (vw > 800) {
+      if (left + tbRect.width + menuRect.width > vw) {
+        this.selectionToolMenu.classList.add('left');
+      }
+      if (top + tbRect.height + menuRect.height > vh - 32) {
+        this.selectionToolMenu.classList.add('top');
+      }
+    }
   }
 }

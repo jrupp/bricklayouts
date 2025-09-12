@@ -74,12 +74,17 @@ canvas {
 	display: block;
 }
 
+#selToolMenuRotate,
 #selToolRotate {
 	display: none;
 }
 
 #selectionToolbar.rotatable > #selToolRotate {
 	display: block;
+}
+
+#selectionToolbar.rotatable li#selToolMenuRotate {
+	display: flex;
 }
 
 #selectionToolbar.hidden {
@@ -1026,6 +1031,21 @@ i + span.label {
 	#newCustomComponentDialog {
 		max-width: 30rem;
 		width: 100%;
+	}
+
+	#selToolMenu {
+		min-inline-size: 16rem;
+		inline-size: 100%;
+		position: fixed;
+		right: 0;
+		left: 0;
+		bottom: 0;
+		min-block-size: auto;
+		z-index: 100;
+		transform: none !important;
+		background-color: var(--surface-variant) !important;
+		color: var(--on-surface-variant) !important;
+		border-radius: 0;
 	}
 
 	.field.border>:is(input,textarea,select) {

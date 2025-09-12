@@ -69,6 +69,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         selectionToolbar = document.createElement('nav');
         geiSpy.withArgs('selectionToolbar').and.returnValue(selectionToolbar);
+        geiSpy.withArgs('selToolMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));

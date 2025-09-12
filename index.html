@@ -387,9 +387,42 @@
             <i class="extra">delete</i>
             <div class="tooltip medium-space">Delete (Del)</div>
         </button>
-        <!--button id="selToolMore" class="square background" title="More">
+        <button id="selToolMore" class="square background">
             <i class="extra">more_vert</i>
-        </button-->
+            <menu class="no-wrap extra-text" id="selToolMenu">
+                <li id="selToolCopy" data-ui="#selToolMenu">
+                    <i class="large">content_copy</i>
+                    <div class="max"><div>Copy</div></div>
+                    Ctrl + C
+                </li>
+                <li id="selToolPaste" data-ui="#selToolMenu">
+                    <i class="large">content_paste</i>
+                    <div class="max"><div>Paste</div></div>
+                    Ctrl + V
+                </li>
+                <li id="selToolMenuDuplicate" data-ui="#selToolMenu">
+                    <i class="large">library_add</i>
+                    <div class="max"><div>Duplicate</div></div>
+                    Ctrl + D
+                </li>
+                <li id="selToolMenuDelete" data-ui="#selToolMenu">
+                    <i class="large">delete</i>
+                    <div class="max"><div>Delete</div></div>
+                    Del
+                </li>
+                <hr class="small">
+                <li id="selToolBringFront" data-ui="#selToolMenu">
+                    <i class="large">flip_to_front</i>
+                    <div class="max"><div>Bring to Front</div></div>
+                    PgUp
+                </li>
+                <li id="selToolMenuRotate" data-ui="#selToolMenu">
+                    <i class="large">rotate_right</i>
+                    <div class="max"><div>Rotate</div></div>
+                    R
+                </li>
+            </menu>
+        </button>
     </nav>
     <button class="fixed top right border background circle large small-elevate margin responsive s m" id="mobileLayersButton" data-ui="#mobileLayerEditor">
         <i class="extra">layers</i>
