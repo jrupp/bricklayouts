@@ -769,6 +769,10 @@ export class Component extends Container {
       let b = this.dragStartConnection.getPose();
       this.dragStartPos = b.subtract({...a, angle: 0});
       this.dragStartOffset =  this.getPose().subtract(b);
+    } else if (this.baseData.type === DataTypes.TRACK) {
+      // Set the drag start to the top left of the track
+      this.dragStartPos = this.getPose().subtract({x: this.width / 2, y: this.height / 2, angle: 0}).subtract({...a, angle: 0});
+      this.dragStartOffset = new Pose(this.width / 2, this.height / 2, 0);
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
       // Set the drag start to the upper left corner of the baseplate
       this.dragStartPos = this.getPose().subtract({x: this.#width / 2, y: this.#height / 2, angle: 0}).subtract({...a, angle: 0});

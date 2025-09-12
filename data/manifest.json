@@ -363,6 +363,12 @@
                             "next": 0
                         }
                     ]
+                },
+                {
+                    "alias": "pineTreeSmall",
+                    "name": "Small Pine Tree",
+                    "category": "structures",
+                    "src": "pinetree-small.png"
                 }
             ]
         }
@@ -370,6 +376,7 @@
     "categories": {
         "9V": "Track",
         "baseplates": "Baseplates",
+        "structures": "Structures",
         "table": "Tables",
         "custom": "Custom"
     },
