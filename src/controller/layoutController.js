@@ -103,7 +103,7 @@ export class LayoutController {
    * @type {?Component}
    */
   static selectedComponent = null;
-
+ 
   /**
    * @type {Boolean}
    */
@@ -175,6 +175,10 @@ export class LayoutController {
      */
     this.componentBrowser = document.getElementById('componentBrowser');
     /**
+     * @type {Component}
+     */
+    this.copiedComponent = null;
+    /**
      * @type {HTMLSelectElement}
      */
     this.groupSelect = document.getElementById('categories');
@@ -186,23 +190,19 @@ export class LayoutController {
      * @type {Object}
      */
     this.trackData = Assets.get(path.toAbsolute('../data/manifest.json'));
-
     /**
      * @type {Map<String, String>}
      */
     this.categories = new Map(Object.entries(this.trackData.categories));
-
     /**
      * @type {Point}
      */
     this.panOffset = new Point();
-
     /**
      * The grid
      * @type {Graphics}
      */
     this.grid = new Graphics();
-
     /**
      * The subgrid
      * @type {Graphics}
@@ -217,7 +217,6 @@ export class LayoutController {
      * @type {Configuration}
      */
     this.config = Configuration.getInstance();
-
     /**
      * @type {Container}
      */
@@ -970,6 +969,10 @@ export class LayoutController {
     this.workspace.scale.set(this.config.defaultZoom);
     this.drawGrid();
     this._hideSelectionToolbar();
+    if (this.copiedComponent) {
+      this.copiedComponent.destroy();
+      this.copiedComponent = null;
+    }
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
     LayoutController.isPanning = false;
@@ -1058,6 +1061,14 @@ export class LayoutController {
         this.duplicateSelectedComponent();
         event.preventDefault();
       }
+      if (event.key == 'c' && event.ctrlKey) {
+        this.copySelectedComponent();
+        event.preventDefault();
+      }
+    }
+    if (event.key == 'v' && event.ctrlKey) {
+      this.pasteComponent();
+      event.preventDefault();
     }
     if (event.key === '0' && event.ctrlKey) {
       this.workspace.scale.set(this.config.defaultZoom);
@@ -1409,14 +1420,35 @@ export class LayoutController {
     }
   }
 
+  copySelectedComponent() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      if (this.copiedComponent) {
+        this.copiedComponent.destroy();
+        this.copiedComponent = null;
+      }
+      this.copiedComponent = LayoutController.selectedComponent.clone();
+    }
+  }
+
+  pasteComponent() {
+    this.hideFileMenu();
+    if (this.copiedComponent) {
+      this.duplicateComponent(this.copiedComponent);
+    }
+  }
+
   /**
    * Delete a component from the layout.
    * @param {Component} component - The component to delete.
    */
-  static deleteComponent(component) {
+  deleteComponent(component) {
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
-      LayoutController.getInstance()._hideSelectionToolbar();
+      this._hideSelectionToolbar();
+    }
+    if (this.copiedComponent === component) {
+      this.copiedComponent = null;
     }
     component.destroy();
     component = null;
@@ -1426,21 +1458,27 @@ export class LayoutController {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       let nextComp = LayoutController.selectedComponent.getAdjacentComponent();
-      LayoutController.deleteComponent(LayoutController.selectedComponent);
+      this.deleteComponent(LayoutController.selectedComponent);
       if (nextComp) {
         LayoutController.selectComponent(nextComp);
       }
     }
   }
 
-  duplicateSelectedComponent() {
-    this.hideFileMenu();
-    if (!LayoutController.selectedComponent) {
-      return;
+  /**
+   * Duplicate a component and add it to the layout.
+   * @param {Component} component - The component to duplicate.
+   */
+  duplicateComponent(component) {
+    if (!component) return;
+    /** @type {?Component} */
+    let connectTo = null;
+    if (LayoutController.selectedComponent) {
+      connectTo = LayoutController.selectedComponent;
     }
     /** @type {Component} */
-    let clone = LayoutController.selectedComponent.clone(this.currentLayer, LayoutController.selectedComponent);
-    if (clone.connections.length > 0 && clone.getUsedConnections().length === 0) {
+    let clone = component.clone(this.currentLayer, connectTo);
+    if (clone.getUsedConnections().length === 0) {
       let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle);
       clone.position.set(newPos.x, newPos.y);
     }
@@ -1452,6 +1490,14 @@ export class LayoutController {
       });
     }
     LayoutController.selectComponent(clone);
+  }
+
+  duplicateSelectedComponent() {
+    this.hideFileMenu();
+    if (!LayoutController.selectedComponent) {
+      return;
+    }
+    this.duplicateComponent(LayoutController.selectedComponent);
   }
 
   editSelectedComponent() {
