@@ -195,6 +195,10 @@ export class LayoutController {
      */
     this.categories = new Map(Object.entries(this.trackData.categories));
     /**
+     * @type {Boolean}
+     */
+    this.isSpaceDown = false;
+    /**
      * @type {Point}
      */
     this.panOffset = new Point();
@@ -259,6 +263,9 @@ export class LayoutController {
     this.searchElement.addEventListener('keydown', (event) => {
       event.stopPropagation();
     });
+    this.searchElement.addEventListener('keyup', (event) => {
+      event.stopPropagation();
+    });
     this.searchElement.addEventListener('input', () => {
       this.createComponentBrowser();
       if (this.searchElement.value.trim().length === 0) {
@@ -279,6 +286,7 @@ export class LayoutController {
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
+    window.addEventListener('keyup', this.onKeyUp.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => {
       document.getElementById('toolbar').classList.toggle('open');
     });
@@ -416,13 +424,14 @@ export class LayoutController {
       }
     });
     this.app.stage.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {
-      if (event.button != 1 && (event.pointerType != "touch" || !event.nativeEvent.isPrimary || LayoutController.dragTarget)) {
+      if (event.button != 1 && !this.isSpaceDown && (event.pointerType != "touch" || !event.nativeEvent.isPrimary || LayoutController.dragTarget)) {
         LayoutController.isPanning = false;
         return;
       }
-      if (event.button == 1) {
+      if (event.button == 1 || (event.button == 0 && this.isSpaceDown)) {
         LayoutController.isPanning = true;
         this._hideSelectionToolbar();
+        this.updateCursor();
       }
       LayoutController.panDistance = 0;
       this.panOffset.set(event.global.x - this.workspace.x, event.global.y - this.workspace.y);
@@ -1052,7 +1061,7 @@ export class LayoutController {
 
   /**
    * Handler for the keydown event.
-   * @param {KeyboardEvent} event - The keydown event
+   * @param {KeyboardEvent} event The keydown event
    */
   onKeyDown(event) {
     this.hideFileMenu();
@@ -1112,6 +1121,14 @@ export class LayoutController {
     if (event.key === 'l' && event.ctrlKey && this.readOnly === false) {
       this.newLayer();
     }
+    if (event.code === 'Space' && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      if (!this.isSpaceDown) {
+        this.isSpaceDown = true;
+        this.updateCursor();
+      }
+      event.preventDefault();
+      return;
+    }
     if (event.key === '}' && event.ctrlKey && event.shiftKey) {
       if (LayoutController.editorController) {
         return;
@@ -1149,6 +1166,27 @@ export class LayoutController {
         }
       };
       input.click();
+    }
+  }
+
+/**
+ * 
+ * @param {KeyboardEvent} event The keyup event
+ */
+  onKeyUp(event) {
+    if (event.code === 'Space') {
+      this.isSpaceDown = false;
+      this.updateCursor();
+    }
+  }
+
+  updateCursor() {
+    if (LayoutController.isPanning) {
+      this.app.canvas.style.cursor = 'grabbing';
+    } else if (this.isSpaceDown) {
+      this.app.canvas.style.cursor = 'grab';
+    } else {
+      this.app.canvas.style.cursor = 'default';
     }
   }
 
@@ -1337,6 +1375,7 @@ export class LayoutController {
       window.app.stage.off('pointermove', LayoutController.onPan);
       if (LayoutController.isPanning) {
         LayoutController.isPanning = false;
+        LayoutController.getInstance().updateCursor();
       } else if (LayoutController.selectedComponent) {
         LayoutController.selectComponent(null);
       }

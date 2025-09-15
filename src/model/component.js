@@ -746,7 +746,7 @@ export class Component extends Container {
    * @param {FederatedPointerEvent} e 
    */
   onStartDrag(e) {
-    if (e.button != 0 || !e.nativeEvent.isPrimary) {
+    if (e.button != 0 || !e.nativeEvent.isPrimary || LayoutController._instance.isSpaceDown) {
       return;
     }
     LayoutController.dragTarget = this;
