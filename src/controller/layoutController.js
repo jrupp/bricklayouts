@@ -1170,7 +1170,6 @@ export class LayoutController {
   }
 
 /**
- * 
  * @param {KeyboardEvent} event The keyup event
  */
   onKeyUp(event) {
