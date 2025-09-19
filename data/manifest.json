@@ -369,6 +369,12 @@
                     "name": "Small Pine Tree",
                     "category": "structures",
                     "src": "pinetree-small.png"
+                },
+                {
+                    "alias": "waterTower",
+                    "name": "Water Tower",
+                    "category": "structures",
+                    "src": "watertower.png"
                 }
             ]
         }
