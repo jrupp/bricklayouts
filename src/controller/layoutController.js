@@ -86,6 +86,13 @@ const DRAG_THRESHOLD = 8.0;
  */
 const DRAG_THRESHOLD_CONNECTION = 16.0;
 
+/**
+ * Index of the "All" category in the category dropdown.
+ * @type {Number}
+ * @constant
+ */
+const ALL_CATEGORY_INDEX = 0;
+
 export class LayoutController {
   static _instance = null;
 
@@ -508,7 +515,7 @@ export class LayoutController {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
         let button = document.createElement('button');
         let label = document.createElement('span');
         label.textContent = track.name;
@@ -519,7 +526,7 @@ export class LayoutController {
         this.componentBrowser.appendChild(button);
       }
     });
-    if (this.groupSelect.selectedIndex == 0 && searchQuery.length === 0) {
+    if (this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX && searchQuery.length === 0) {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.BASEPLATE, "Custom Baseplate", 'img/icon-add-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
