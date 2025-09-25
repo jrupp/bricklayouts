@@ -2130,7 +2130,7 @@ describe("LayoutController", function() {
         });
 
         it("computes position for track with connections using first connection vector (custom angle, no snap)", function() {
-            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
+            layoutController.config.workspaceSnapToSize = 0;
             expect(straightTrackData.connections.length).toBeGreaterThan(0);
             const fakeReturn = { x: 600.31234, y: 401.98761 }; // intentionally non-rounded
             const angle = Math.PI / 5;
@@ -2144,8 +2144,7 @@ describe("LayoutController", function() {
         });
 
         it("computes position for component without connections (default angle, no snap)", function() {
-            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
-            expect(layoutController.config.gridSettings.snapToGrid).toBeFalse();
+            layoutController.config.workspaceSnapToSize = 0;
             expect(baseplateData.connections || []).toHaveSize(0);
             // expected raw position before layer transform logic: (150,274) + half width/height
             const expectedX = 150 + (baseplateData.width / 2);
@@ -2158,7 +2157,7 @@ describe("LayoutController", function() {
         });
 
         it("snaps position to grid for component without connections when snapToGrid enabled", function() {
-            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: true });
+            layoutController.config.workspaceSnapToSize = 16;
             const rawX = 150 + (baseplateData.width / 2);
             const rawY = 274 + (baseplateData.height / 2);
             const expectedX = Math.round(rawX / 16) * 16;
@@ -2171,7 +2170,7 @@ describe("LayoutController", function() {
         });
 
         it("snaps position to grid for component with connections when snapToGrid enabled", function() {
-            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: true });
+            layoutController.config.workspaceSnapToSize = 16;
             const fakeReturn = { x: 593.27, y: 377.61 }; // non multiples of 16 so rounding happens
             spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
             const pos = layoutController._newComponentPosition(straightTrackData, 0);
@@ -2184,7 +2183,7 @@ describe("LayoutController", function() {
         });
 
         it("preserves provided angle for component without connections", function() {
-            layoutController.config.updateWorkspaceGridSettings({ snapToGrid: false });
+            layoutController.config.workspaceSnapToSize = 0;
             const angle = Math.PI / 7;
             const pos = layoutController._newComponentPosition(baseplateData, angle);
             expect(pos.angle).toBe(angle);

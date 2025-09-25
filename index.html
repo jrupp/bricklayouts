@@ -675,13 +675,28 @@
                 </nav>
                 <div class="page config-page" data-tab="general">
                     <h6>General Settings</h6>
-                    <div class="field middle-align extra-text">
+                    <div class="field middle-align small tiny-margin extra-text">
                         <span>Default Zoom Level</span>
                         <label class="slider auto-width">
                             <input type="range" id="defaultZoom" min="0.1" max="1.0" value="0.5" step="0.1">
                             <span></span>
                             <div class="tooltip"></div>
                         </label>
+                    </div>
+                    <div class="field suffix middle-align border round small tiny-margin extra-text">
+                        <span class="right-padding no-wrap">Snap to</span>
+                        <select id="snapToWhat">
+                            <option value="0">Nothing</option>
+                            <option value="8">1/2 stud</option>
+                            <option value="16" selected>Stud</option>
+                            <option value="32">2 studs</option>
+                            <option value="64">4 studs</option>
+                            <option value="128">8 studs</option>
+                            <option value="256">16 studs</option>
+                            <option value="512">32 studs</option>
+                            <option value="768">48 studs</option>
+                        </select>
+                        <i>arrow_drop_down</i>
                     </div>
                 </div>
                 <div class="page config-page active" data-tab="appearance">
@@ -722,13 +737,6 @@
                         <input id="gridSubColor" type="color">
                         <input type="text">
                         <label>Grid Sub Color</label>
-                    </div>
-                    <div class="field middle-align small tiny-margin extra-text">
-                        <span class="right-padding">Snap to Grid</span>
-                        <label class="switch">
-                            <input type="checkbox" id="snapToGrid" checked>
-                            <span></span>
-                        </label>
                     </div>
                 </div>
             </div>

@@ -595,9 +595,10 @@ export class LayoutController {
       }
     }
     newPos = { ...this.#currentLayer.toLocal({x: newPos.x / 2, y: newPos.y / 2}), angle: angle };
-    if (this.config.gridSettings.snapToGrid) {
-      newPos.x = Math.round(newPos.x / 16) * 16;
-      newPos.y = Math.round(newPos.y / 16) * 16;
+    const snapToSize = this.config.snapToSize;
+    if (snapToSize > 0) {
+      newPos.x = Math.round(newPos.x / snapToSize) * snapToSize;
+      newPos.y = Math.round(newPos.y / snapToSize) * snapToSize;
     }
     return newPos;
   }
@@ -1341,8 +1342,8 @@ export class LayoutController {
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
       // Snap to grid if enabled
-      if (LayoutController.getInstance().config.gridSettings.snapToGrid) {
-        let gridSize = 16;
+      let gridSize = LayoutController.getInstance().config.snapToSize;
+      if (gridSize > 0) {
         a.x = Math.round(a.x / gridSize) * gridSize;
         a.y = Math.round(a.y / gridSize) * gridSize;
       }
