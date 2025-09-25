@@ -63,7 +63,7 @@ export class ConfigurationController {
         document.getElementById('defaultZoom').addEventListener('input', (ev) => {
             // TODO: Check if the value is valid
             const newZoom = parseFloat(ev.target.value);
-            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.closest('[data-type]').getAttribute('data-type') === 'user') {
                 this.#config.userDefaultZoom = newZoom;
             } else {
                 this.#config.workspaceDefaultZoom = newZoom;
@@ -128,7 +128,7 @@ export class ConfigurationController {
 
         document.getElementById('snapToWhat').addEventListener('change', (ev) => {
             const snapToSize = parseInt(ev.target.options[ev.target.selectedIndex].value);
-            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+            if (ev.target.closest('[data-type]').getAttribute('data-type') === 'user') {
                 this.#config.userSnapToSize = snapToSize;
             } else {
                 this.#config.workspaceSnapToSize = snapToSize;
