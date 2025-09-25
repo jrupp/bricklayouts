@@ -1,5 +1,6 @@
 import { Configuration } from '../model/configuration.js';
 import { LayoutController } from './layoutController.js';
+import { getOptionIndexByValue } from '../utils/utils.js';
 
 export class ConfigurationController {
     /** @type {Configuration} */
@@ -22,6 +23,7 @@ export class ConfigurationController {
 
         document.getElementById('buttonConfig').addEventListener('click', () => {
             this.#layoutController.hideFileMenu();
+            this.#layoutController._hideSelectionToolbar();
             document.getElementById('configurationEditor').classList.toggle('active');
             // Reload the data into the UI, in case something has changed
             const configType = this.#tabPanels[0].getAttribute('data-type');
@@ -30,12 +32,15 @@ export class ConfigurationController {
         });
         document.getElementById('configurationEditorClose').addEventListener('click', () => {
             document.getElementById('configurationEditor').classList.remove('active');
+            this.#layoutController._showSelectionToolbar();
         });
         document.getElementById('configurationEditorSave').addEventListener('click', () => {
             document.getElementById('configurationEditor').classList.remove('active');
+            this.#layoutController._showSelectionToolbar();
         });
         document.getElementById('configurationEditorCancel').addEventListener('click', () => {
             document.getElementById('configurationEditor').classList.remove('active');
+            this.#layoutController._showSelectionToolbar();
         });
 
         this.#tabButtons.forEach((button) => {
@@ -121,12 +126,12 @@ export class ConfigurationController {
             this.#layoutController.drawGrid();
         });
 
-        document.getElementById('snapToGrid').addEventListener('change', (ev) => {
-            const newSetting = { snapToGrid: ev.target.checked };
-            if (ev.target.parentElement.parentElement.parentElement.getAttribute('data-type') === 'user') {
-                this.#config.updateUserGridSettings(newSetting);
+        document.getElementById('snapToWhat').addEventListener('change', (ev) => {
+            const snapToSize = parseInt(ev.target.options[ev.target.selectedIndex].value);
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.userSnapToSize = snapToSize;
             } else {
-                this.#config.updateWorkspaceGridSettings(newSetting);
+                this.#config.workspaceSnapToSize = snapToSize;
             }
         });
     }
@@ -166,6 +171,7 @@ export class ConfigurationController {
 
         const gridSettings = configType === 'user' ? this.#config.userGridSettings : this.#config.workspaceGridSettings;
         const zoom = configType === 'user' ? this.#config.userDefaultZoom : this.#config.workspaceDefaultZoom;
+        const snapToSize = configType === 'user' ? this.#config.userSnapToSize : this.#config.workspaceSnapToSize;
         let mainColorValue = gridSettings.mainColor ?? this.#config._defaults.gridSettings.mainColor;
         let subColorValue = gridSettings.subColor ?? this.#config._defaults.gridSettings.subColor;
         document.getElementById('defaultZoom').value = zoom ?? this.#config._defaults.defaultZoom;
@@ -180,6 +186,6 @@ export class ConfigurationController {
         gridSubColor.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         gridSubColor.nextElementSibling.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', `#${subColorValue.toString(16).padStart(6, '0')}`);
-        document.getElementById('snapToGrid').checked = gridSettings.snapToGrid ?? this.#config._defaults.gridSettings.snapToGrid;
+        document.getElementById('snapToWhat').selectedIndex = getOptionIndexByValue('snapToWhat', (snapToSize ?? this.#config._defaults.snapToSize).toString(), 2);
     }
 }

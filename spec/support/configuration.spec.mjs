@@ -38,14 +38,18 @@ describe("Configuration", () => {
                 size: 1536,
                 divisions: 3,
                 mainColor: 0xffffff,
-                subColor: 0x9c9c9c,
-                snapToGrid: true
+                subColor: 0x9c9c9c
             });
         });
 
         it("provides default zoom level", () => {
             const config = Configuration.getInstance();
             expect(config.defaultZoom).toBe(0.5);
+        });
+
+        it("provides default snapToSize", () => {
+            const config = Configuration.getInstance();
+            expect(config.snapToSize).toBe(16);
         });
     });
 
@@ -67,25 +71,41 @@ describe("Configuration", () => {
         it("persists user zoom level to localStorage", () => {
             const config = Configuration.getInstance();
             config.userDefaultZoom = 0.75;
-            
+
             // Verify localStorage was updated
             const saved = JSON.parse(localStorage.getItem('bricklayouts-config'));
             expect(saved.defaultZoom).toBe(0.75);
-            
+
             // Create new instance to verify loading
             Configuration._instance = null;
             const newConfig = Configuration.getInstance();
             expect(newConfig.userDefaultZoom).toBe(0.75);
         });
 
+        it("persists user snapToSize to localStorage", () => {
+            const config = Configuration.getInstance();
+            config.userSnapToSize = 64;
+
+            // Verify localStorage was updated
+            const saved = JSON.parse(localStorage.getItem('bricklayouts-config'));
+            expect(saved.snapToSize).toBe(64);
+
+            // Create new instance to verify loading
+            Configuration._instance = null;
+            const newConfig = Configuration.getInstance();
+            expect(newConfig.userSnapToSize).toBe(64);
+        });
+
         it("loads user settings from localStorage", () => {
             localStorage.setItem('bricklayouts-config', JSON.stringify({
                 gridSettings: { divisions: 7 },
-                defaultZoom: 0.65
+                defaultZoom: 0.65,
+                snapToSize: 128
             }));
             const config = Configuration.getInstance();
             expect(config.userGridSettings.divisions).toBe(7);
             expect(config.userDefaultZoom).toBe(0.65);
+            expect(config.userSnapToSize).toBe(128);
         });
     });
 
@@ -110,15 +130,27 @@ describe("Configuration", () => {
             expect(savedData).toBeNull();
         });
 
+        it("stores workspace snapToSize in memory", () => {
+            const config = Configuration.getInstance();
+            config.workspaceSnapToSize = 32;
+            expect(config.workspaceSnapToSize).toBe(32);
+            
+            // Verify it wasn't saved to localStorage
+            const savedData = JSON.parse(localStorage.getItem('bricklayouts-config'));
+            expect(savedData).toBeNull();
+        });
+
         it("clears workspace settings", () => {
             const config = Configuration.getInstance();
             config.updateWorkspaceGridSettings({ divisions: 5 });
             config.workspaceDefaultZoom = 0.25;
+            config.workspaceSnapToSize = 32;
             
             config.clearWorkspaceSettings();
             
             expect(config.workspaceGridSettings).toEqual({});
             expect(config.workspaceDefaultZoom).toBeNull();
+            expect(config.workspaceSnapToSize).toBeNull();
         });
     });
 
@@ -172,6 +204,13 @@ describe("Configuration", () => {
             expect(serialized.defaultZoom).toBe(0.76);
         });
 
+        it("serializes snapToSize", () => {
+            const config = Configuration.getInstance();
+            config.workspaceSnapToSize = 32;
+            const serialized = config.serializeWorkspaceSettings();
+            expect(serialized.snapToSize).toBe(32);
+        });
+
         it("serializes grid colors", () => {
             const config = Configuration.getInstance();
             config.updateWorkspaceGridSettings({ mainColor: 0x123456, subColor: 0xabcdef });
@@ -194,13 +233,6 @@ describe("Configuration", () => {
             expect(serialized.gridSettings.size).toBe(1024);
         });
 
-        it("serializes grid settings with snapToGrid", () => {
-            const config = Configuration.getInstance();
-            config.updateWorkspaceGridSettings({ snapToGrid: false });
-            const serialized = config.serializeWorkspaceSettings();
-            expect(serialized.gridSettings.snapToGrid).toBe(false);
-        });
-
         it("serializes an empty object when no settings are defined", () => {
             const config = Configuration.getInstance();
             const serialized = config.serializeWorkspaceSettings();
@@ -219,6 +251,12 @@ describe("Configuration", () => {
             expect(config.workspaceDefaultZoom).toBe(0.75);
         });
 
+        it("deserializes snapToSize", () => {
+            const config = Configuration.getInstance();
+            config.deserializeWorkspaceSettings({ snapToSize: 256 });
+            expect(config.workspaceSnapToSize).toBe(256);
+        });
+
         it("deserializes grid colors", () => {
             const config = Configuration.getInstance();
             config.deserializeWorkspaceSettings({ gridSettings: { mainColor: "#123456", subColor: "#abcdef" } });
@@ -232,17 +270,12 @@ describe("Configuration", () => {
             expect(config.workspaceGridSettings.enabled).toBe(false);
         });
 
-        it("deserializes grid settings with snapToGrid", () => {
-            const config = Configuration.getInstance();
-            config.deserializeWorkspaceSettings({ gridSettings: { snapToGrid: false } });
-            expect(config.workspaceGridSettings.snapToGrid).toBe(false);
-        });
-
         it("deserializes a full set of settings", () => {
             const config = Configuration.getInstance();
             config.deserializeWorkspaceSettings({
-                gridSettings: { enabled: true, size: 1024, divisions: 4, mainColor: "#123456", subColor: "#abcdef", snapToGrid: true },
-                defaultZoom: 0.79
+                gridSettings: { enabled: true, size: 1024, divisions: 4, mainColor: "#123456", subColor: "#abcdef" },
+                defaultZoom: 0.79,
+                snapToSize: 7
             });
             expect(config.workspaceGridSettings.enabled).toBe(true);
             expect(config.workspaceGridSettings.size).toBe(1024);
@@ -250,17 +283,19 @@ describe("Configuration", () => {
             expect(config.workspaceGridSettings.mainColor).toBe(0x123456);
             expect(config.workspaceGridSettings.subColor).toBe(0xabcdef);
             expect(config.workspaceDefaultZoom).toBe(0.79);
-            expect(config.workspaceGridSettings.snapToGrid).toBe(true);
+            expect(config.workspaceSnapToSize).toBe(7);
         });
 
         it("clears existing settings before deserialization", () => {
             const config = Configuration.getInstance();
             config.updateWorkspaceGridSettings({ divisions: 4, mainColor: 0x123456 });
             config.workspaceDefaultZoom = 0.76;
+            config.workspaceSnapToSize = 100;
             config.deserializeWorkspaceSettings({ gridSettings: { divisions: 5 } });
             expect(config.workspaceGridSettings.divisions).toBe(5);
             expect(config.workspaceGridSettings.mainColor).toBeUndefined();
             expect(config.workspaceDefaultZoom).toBeNull();
+            expect(config.workspaceSnapToSize).toBeNull();
         });
     });
 
@@ -302,9 +337,11 @@ describe("Configuration", () => {
             expect(Configuration.validateImportData({ defaultZoom: -0.75 })).toBeFalse();
             expect(Configuration.validateImportData({ defaultZoom: 1.75 })).toBeFalse();
         });
-        it("validates grid snapToGrid flag", () => {
-            expect(Configuration.validateImportData({ gridSettings: { snapToGrid: true } })).toBeTrue();
-            expect(Configuration.validateImportData({ gridSettings: { snapToGrid: "true" } })).toBeFalse();
+        it("validates snapToSize", () => {
+            expect(Configuration.validateImportData({ snapToSize: 32 })).toBeTrue();
+            expect(Configuration.validateImportData({ snapToSize: "32" })).toBeFalse();
+            expect(Configuration.validateImportData({ snapToSize: 0 })).toBeTrue();
+            expect(Configuration.validateImportData({ snapToSize: -16 })).toBeFalse();
         });
     });
 });

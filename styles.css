@@ -713,6 +713,7 @@ i.legodarkbluishgray {
   font-size: 1.5rem !important;
 }
 
+#snapToWhat,
 #componentFontOptions :is(input, select),
 #componentSizeUnitsField select,
 #componentBorderField nav {
