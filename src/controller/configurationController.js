@@ -13,6 +13,8 @@ export class ConfigurationController {
     #tabPanels;
     /** @type {LayoutController} */
     #layoutController;
+    /** @type {Number} */
+    #snapToWhatDefaultIndex;
 
     constructor() {
         this.#config = Configuration.getInstance();
@@ -134,6 +136,7 @@ export class ConfigurationController {
                 this.#config.workspaceSnapToSize = snapToSize;
             }
         });
+        this.#snapToWhatDefaultIndex = getOptionIndexByValue('snapToWhat', this.#config._defaults.snapToSize.toString());
     }
 
     /**
@@ -186,6 +189,10 @@ export class ConfigurationController {
         gridSubColor.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         gridSubColor.nextElementSibling.value = `#${subColorValue.toString(16).padStart(6, '0')}`;
         document.querySelector('#subcolorfield>i').style.setProperty('--gridsubcolor', `#${subColorValue.toString(16).padStart(6, '0')}`);
-        document.getElementById('snapToWhat').selectedIndex = getOptionIndexByValue('snapToWhat', (snapToSize ?? this.#config._defaults.snapToSize).toString(), 2);
+        document.getElementById('snapToWhat').selectedIndex = getOptionIndexByValue(
+            'snapToWhat',
+            (snapToSize ?? this.#config._defaults.snapToSize).toString(),
+            this.#snapToWhatDefaultIndex
+        );
     }
 }
