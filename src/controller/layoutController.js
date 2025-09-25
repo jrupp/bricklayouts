@@ -86,6 +86,13 @@ const DRAG_THRESHOLD = 8.0;
  */
 const DRAG_THRESHOLD_CONNECTION = 16.0;
 
+/**
+ * Index of the "All" category in the category dropdown.
+ * @type {Number}
+ * @constant
+ */
+const ALL_CATEGORY_INDEX = 0;
+
 export class LayoutController {
   static _instance = null;
 
@@ -479,6 +486,20 @@ export class LayoutController {
     }
   }
 
+  _createCustomComponentButton(type, labelText, iconSrc) {
+    let button = document.createElement('button');
+    button.title = labelText;
+    let image = new Image();
+    image.src = iconSrc;
+    image.className = 'custom';
+    button.appendChild(image);
+    let label = document.createElement('span');
+    label.textContent = labelText;
+    button.appendChild(label);
+    button.addEventListener('click', () => this.showCreateCustomComponentDialog(type));
+    return button;
+  }
+
   createComponentBrowser() {
     this.componentBrowser.innerHTML = '';
     if (this.readOnly) {
@@ -488,43 +509,13 @@ export class LayoutController {
     var selectedCategory = this.groupSelect.options[this.groupSelect.selectedIndex].value;
     var searchQuery = this.searchElement.value.trim().toLowerCase();
     if (selectedCategory === 'baseplates') {
-      let button = document.createElement('button');
-      button.title = "Custom Baseplate";
-      let image = new Image();
-      image.src = 'img/icon-add-black.png';
-      image.className = 'custom';
-      button.appendChild(image);
-      let label = document.createElement('span');
-      label.textContent = "Custom Baseplate";
-      button.appendChild(label);
-      button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.BASEPLATE));
-      this.componentBrowser.appendChild(button);
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.BASEPLATE, "Custom Baseplate", 'img/icon-add-black.png'));
     } else if (selectedCategory === 'custom') {
-      let button = document.createElement('button');
-      button.title = "Custom Shape";
-      let image = new Image();
-      image.src = 'img/icon-add-black.png';
-      image.className = 'custom';
-      button.appendChild(image);
-      let label = document.createElement('span');
-      label.textContent = "Custom Shape";
-      button.appendChild(label);
-      button.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.SHAPE));
-      this.componentBrowser.appendChild(button);
-      let textButton = document.createElement('button');
-      textButton.title = "Custom Text";
-      let textImage = new Image();
-      textImage.src = 'img/icon-addtext-black.png';
-      textImage.className = 'custom';
-      textButton.appendChild(textImage);
-      let textLabel = document.createElement('span');
-      textLabel.textContent = "Custom Text";
-      textButton.appendChild(textLabel);
-      textButton.addEventListener('click', () => this.showCreateCustomComponentDialog(DataTypes.TEXT));
-      this.componentBrowser.appendChild(textButton);
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == 0 || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
         let button = document.createElement('button');
         let label = document.createElement('span');
         label.textContent = track.name;
@@ -535,6 +526,11 @@ export class LayoutController {
         this.componentBrowser.appendChild(button);
       }
     });
+    if (this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX && searchQuery.length === 0) {
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.BASEPLATE, "Custom Baseplate", 'img/icon-add-black.png'));
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
+      this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
+    }
   }
 
   /**
