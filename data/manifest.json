@@ -375,6 +375,19 @@
                     "name": "Water Tower",
                     "category": "structures",
                     "src": "watertower.png"
+                },
+                {
+                    "alias": "railRamp9V",
+                    "src": "53834.png",
+                    "category": "9V",
+                    "name": "Track Ramp 8 x 12",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [92, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
                 }
             ]
         }
