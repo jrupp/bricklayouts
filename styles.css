@@ -649,6 +649,13 @@ i.legodarkbluishgray {
 #componentColorSelect[data-color=darkgreen] .legodarkgreen:before,
 #componentColorSelect[data-color=lightbluishgray] .legolightbluishgray:before,
 #componentColorSelect[data-color=darkbluishgray] .legodarkbluishgray:before,
+#componentColorSelect[data-color=darkpink] .legodarkpink:before,
+#componentColorSelect[data-color=aqua] .legoaqua:before,
+#componentColorSelect[data-color=darkazure] .legodarkazure:before,
+#componentColorSelect[data-color=lilac] .legolilac:before,
+#componentColorSelect[data-color=tan] .legotan:before,
+#componentColorSelect[data-color=olivegreen] .legoolivegreen:before,
+#componentColorSelect[data-color=lime] .legolime:before,
 #componentColorSelect[data-color=red] .legored:before {
   content: "check_box";
 }
