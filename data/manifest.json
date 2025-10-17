@@ -162,6 +162,16 @@
                     "height": 512
                 },
                 {
+                    "alias": "baseplate48x48",
+                    "name": "Baseplate 48x48",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#a0a5a9",
+                    "width": 768,
+                    "height": 768
+                },
+                {
                     "alias": "44336px4",
                     "name": "Baseplate, Road 32x32 6-Stud Straight",
                     "category": "baseplates",
