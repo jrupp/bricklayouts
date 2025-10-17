@@ -2011,11 +2011,14 @@ describe("LayoutController", function() {
         /** @type {TrackData} */
         let baseplateData;
 
-        beforeEach(function() {
+        beforeAll(function() {
             layoutController = window.layoutController;
-            layoutController.reset();
             straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
             baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+        });
+
+        beforeEach(function() {
+            layoutController.reset();
         });
 
         it("checks for open connection on rotate", function() {
@@ -2111,6 +2114,61 @@ describe("LayoutController", function() {
             expect(newcomp.baseData).toEqual(component.baseData);
             expect(newcomp.getPose().equals(component.getPose())).toBeFalse();
             expect(layoutController.currentLayer.openConnections).toHaveSize(2);
+        });
+
+        describe("fromComponent", function() {
+            /** @type {TrackData} */
+            let bigBaseplateData;
+
+            beforeAll(function() {
+                bigBaseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate48x48");
+            });
+
+            it("creates a new component connected to an existing one", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                let newcomp = Component.fromComponent(straightTrackData, component, layoutController.currentLayer, {});
+                expect(newcomp).toBeDefined();
+                expect(newcomp.uid).not.toBe(component.uid);
+                expect(newcomp.baseData).toEqual(straightTrackData);
+                expect(layoutController.currentLayer.openConnections.values()).toContain(newcomp.connections[1]);
+                expect(layoutController.currentLayer.openConnections.values()).not.toContain(newcomp.connections[0]);
+                expect(newcomp.connections[0].otherConnection).toBe(component.connections[1]);
+                expect(component.connections[1].otherConnection).toBe(newcomp.connections[0]);
+            });
+
+            it("positions a new component next to the existing when no connections", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                let newComp = Component.fromComponent(baseplateData, component, layoutController.currentLayer, {});
+                expect(component.getOpenConnections()).toHaveSize(2);
+                expect(newComp.getPose().x).toBe(component.getPose().x + (component.sprite.width / 2) + (newComp.sprite.width / 2));
+                expect(newComp.getPose().y).toBe(component.getPose().y);
+                expect(newComp.getPose().angle).toBe(0);
+            });
+
+            it("positions a new big component next to the existing when no connections", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                let newComp = Component.fromComponent(bigBaseplateData, component, layoutController.currentLayer, {});
+                expect(component.getOpenConnections()).toHaveSize(2);
+                expect(newComp.getPose().x).toBe(component.getPose().x + (component.sprite.width / 2) + (newComp.sprite.width / 2));
+                expect(newComp.getPose().y).toBe(component.getPose().y);
+                expect(newComp.getPose().angle).toBe(0);
+            });
+
+            it("positions a new big component next to the existing when neither have connections", function() {
+                layoutController.addComponent(baseplateData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                let newComp = Component.fromComponent(bigBaseplateData, component, layoutController.currentLayer, {});
+                expect(newComp.getPose().x).toBe(component.getPose().x + (component.sprite.width / 2) + (newComp.sprite.width / 2));
+                expect(newComp.getPose().y).toBe(component.getPose().y);
+                expect(newComp.getPose().angle).toBe(0);
+            });
         });
     });
 
