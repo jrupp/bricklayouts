@@ -7,7 +7,10 @@
                     "alias": "railStraight9V",
                     "src": "2865.png",
                     "category": "9V",
-                    "name": "9V Straight Rail",
+                    "name": "Straight Rail",
+                    "partNumber": "2865",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -25,7 +28,10 @@
                     "alias": "railCurved9V",
                     "src": "2867.png",
                     "category": "9V",
-                    "name": "9V Curved Rail",
+                    "name": "Curved Rail",
+                    "partNumber": "2867",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -43,7 +49,10 @@
                     "alias": "railCrossing9V",
                     "src": "32087.png",
                     "category": "9V",
-                    "name": "9V Crossing Rail",
+                    "name": "Crossing Rail",
+                    "partNumber": "32087",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -69,7 +78,10 @@
                 },
                 {
                     "alias": "railSwitchRight9V",
-                    "name": "9V Switch Right",
+                    "name": "Switch Right",
+                    "partNumber": "2859",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "2859.png",
                     "connections": [
@@ -92,7 +104,10 @@
                 },
                 {
                     "alias": "railSwitchLeft9V",
-                    "name": "9V Switch Left",
+                    "name": "Switch Left",
+                    "partNumber": "2861",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "2861.png",
                     "connections": [
@@ -116,18 +131,22 @@
                 {
                     "alias": "lancaster30x60",
                     "name": "Lancaster Table 30\"x60\"",
+                    "partNumber": "384YCZ6030",
+                    "make": 3,
                     "category": "table",
                     "src": "lancaster-30x60.png"
                 },
                 {
                     "alias": "wooden72x30",
                     "name": "Wooden Table 6'x30\"",
+                    "make": 0,
                     "category": "table",
                     "src": "wooden-72x30.png"
                 },
                 {
                     "alias": "wooden96x30",
                     "name": "Wooden Table 8'x30\"",
+                    "make": 0,
                     "category": "table",
                     "src": "wooden-96x30.png"
                 },
@@ -158,6 +177,20 @@
                     "src": "stud.png",
                     "type": "baseplate",
                     "color": "#237841",
+                    "partNumber": "3811",
+                    "make": 1,
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "alias": "baseplate32x32brightgreen",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#10cb31",
+                    "partNumber": "3811",
+                    "make": 1,
                     "width": 512,
                     "height": 512
                 },
@@ -168,36 +201,52 @@
                     "src": "stud.png",
                     "type": "baseplate",
                     "color": "#a0a5a9",
+                    "partNumber": "4186",
+                    "make": 1,
                     "width": 768,
                     "height": 768
                 },
                 {
                     "alias": "44336px4",
                     "name": "Baseplate, Road 32x32 6-Stud Straight",
+                    "partNumber": "44336px4",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "baseplates",
                     "src": "44336px4.png"
                 },
                 {
                     "alias": "44342px2",
                     "name": "Baseplate, Road 32x32 6-Stud Curve",
+                    "partNumber": "44342px2",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "baseplates",
                     "src": "44342px2.png"
                 },
                 {
                     "alias": "44343px3",
                     "name": "Baseplate, Road 32x32 6-Stud Crossroad",
+                    "partNumber": "44343px3",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "baseplates",
                     "src": "44343px3.png"
                 },
                 {
                     "alias": "44341px2",
                     "name": "Baseplate, Road 32x32 6-Stud T Intersection",
+                    "partNumber": "44341px2",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "category": "baseplates",
                     "src": "44341px2.png"
                 },
                 {
                     "alias": "r104",
                     "name": "Curved Rail R104",
+                    "make": 2,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "r104.png",
                     "scale": 1,
@@ -225,6 +274,8 @@
                 {
                     "alias": "r120",
                     "name": "Curved Rail R120",
+                    "make": 2,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "r120.png",
                     "scale": 1,
@@ -252,6 +303,8 @@
                 {
                     "alias": "r88",
                     "name": "Curved Rail R88",
+                    "make": 0,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "r88.png",
                     "scale": 1,
@@ -279,6 +332,8 @@
                 {
                     "alias": "r72",
                     "name": "Curved Rail R72",
+                    "make": 0,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "r72.png",
                     "scale": 1,
@@ -306,6 +361,8 @@
                 {
                     "alias": "r56",
                     "name": "Curved Rail R56",
+                    "make": 2,
+                    "color": "#6c6e68",
                     "category": "9V",
                     "src": "r56.png",
                     "scale": 1,
@@ -342,7 +399,9 @@
                     "alias": "railStraight9VHalf",
                     "src": "2865-half.png",
                     "category": "9V",
-                    "name": "9V Straight Rail Half",
+                    "name": "Straight Rail Half",
+                    "make": 2,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -360,7 +419,9 @@
                     "alias": "railStraight9VQuarter",
                     "src": "2865-quarter.png",
                     "category": "9V",
-                    "name": "9V Straight Rail Quarter",
+                    "name": "Straight Rail Quarter",
+                    "make": 2,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -377,12 +438,14 @@
                 {
                     "alias": "pineTreeSmall",
                     "name": "Small Pine Tree",
+                    "make": 0,
                     "category": "structures",
                     "src": "pinetree-small.png"
                 },
                 {
                     "alias": "waterTower",
                     "name": "Water Tower",
+                    "make": 0,
                     "category": "structures",
                     "src": "watertower.png"
                 },
@@ -391,6 +454,9 @@
                     "src": "53834.png",
                     "category": "9V",
                     "name": "Track Ramp 8 x 12",
+                    "partNumber": "53834",
+                    "make": 1,
+                    "color": "#6c6e68",
                     "connections": [
                         {
                             "type": 1,
@@ -409,6 +475,12 @@
         "table": "Tables",
         "custom": "Custom"
     },
+    "makes": [
+        { "name": "Other" },
+        { "name": "LEGO®" },
+        { "name": "BrickTracks" },
+        { "name": "Lancaster" }
+    ],
     "other": {
         "ignore": "this"
     }

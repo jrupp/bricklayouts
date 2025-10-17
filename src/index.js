@@ -1,4 +1,5 @@
 import { ConfigurationController } from './controller/configurationController.js';
+import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
 
@@ -28,4 +29,5 @@ const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
 layoutController.initWindowEvents();
 new ConfigurationController();
+InventoryController.getInstance();
 document.getElementById('apploading').remove();
