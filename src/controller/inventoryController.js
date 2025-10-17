@@ -1,7 +1,6 @@
 import { Component, HexToColorName } from '../model/component.js';
 import { DataTypes, LayoutController } from './layoutController.js';
 
-
 export class InventoryController {
     /** @type {InventoryController} */
     static _instance;
