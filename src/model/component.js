@@ -282,13 +282,16 @@ export class Component extends Container {
     if (component.connections.length === 0 || (baseData.connections ?? []).length === 0) {
       // Calculate a position that is next to the component instead.
       let width = baseData.width ?? 0;
-      let vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
-      let newPos = vec.getEndPosition(component.getPose());
+      // Helper to calculate the position vector for a new component next to another
+      function calculateNextToPosition(component, width) {
+        let vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
+        return vec.getEndPosition(component.getPose());
+      }
+      let newPos = calculateNextToPosition(component, width);
       const newComp = new Component(baseData, newPos, layer, options);
       if (width === 0) {
         width = newComp.sprite.width;
-        vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
-        newPos = vec.getEndPosition(component.getPose());
+        newPos = calculateNextToPosition(component, width);
         newComp.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
       }
       return newComp;
