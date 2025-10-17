@@ -281,10 +281,7 @@ export class Component extends Container {
   static fromComponent(baseData, component, layer, options = {}) {
     if (component.connections.length === 0 || (baseData.connections ?? []).length === 0) {
       // Calculate a position that is next to the component instead.
-      let width = 0;
-      if (baseData.width !== undefined) {
-        width = baseData.width;
-      }
+      let width = baseData.width ?? 0;
       let vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
       let newPos = vec.getEndPosition(component.getPose());
       const newComp = new Component(baseData, newPos, layer, options);
