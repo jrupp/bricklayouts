@@ -25,6 +25,7 @@
     <link href="beer.min.css" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="darkmode.css">
+    <link rel="stylesheet" href="src/tabulator.min.css" media="print" onload="this.media='all'; this.onload=null;">
     <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.11.31/dist/cdn/beer.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"></script>
 </head>
@@ -44,11 +45,20 @@
     </div>
     <div id="toolbar">
         <div class="mainbar">
-            <button id="buttonMenu" class="toolbarItem" title="Open File Menu">
-                <img class="icon" src="img/icon-menu-black.png" alt="Open File Menu">
+            <button id="buttonMenu" class="toolbarItem m l" title="Open File Menu">
+                <i class="extra">menu</i>
+                <menu class="right no-wrap extra-text">
+                    <li title="Download the current layout" id="buttonDownload"><i>file_save</i>Download Layout</li>
+                    <li title="Open an existing layout" id="buttonImport"><i>folder_open</i>Open Layout</li>
+                    <li title="Export the layout as an image" id="buttonExport"><i>download</i>Export Image</li>
+                    <li title="View the part inventory" id="buttonPartInventory"><i>inventory</i>Part Inventory</li>
+                </menu>
+            </button>
+            <button id="buttonMenuMobile" class="toolbarItem s" title="Open File Menu" data-ui="#mobileMenu">
+                <i class="extra">menu</i>
             </button>
             <button id="buttonConfig" class="toolbarItem" title="Configuration">
-                <img class="icon" src="img/icon-gear-black.png" alt="Configuration">
+                <i class="extra fill">settings</i>
             </button>
             <button id="buttonRemove" class="toolbarItem" title="Delete component">
                 <img class="icon" src="img/icon-delete-black.png" alt="Delete component">
@@ -57,29 +67,17 @@
                 <img class="icon" src="img/icon-rotate-black.png" alt="Rotate component (R)">
             </button>
         </div>
-        <div class="menuDivider"></div>
-        <div>
-            <div>
-                <button id="buttonDownload" class="menuItem" title="Download layout">
-                    <img class="icon" src="img/icon-download-black.png" alt="Download layout">
-                    <span>Download Layout</span>
-                </button>
-            </div>
-            <div>
-                <button id="buttonImport" class="menuItem" title="Open layout file">
-                    <img class="icon" src="img/icon-open-black.png" alt="Open layout file">
-                    <span>Open Layout</span>
-                </button>
-            </div>
-            <div>
-                <button id="buttonExport" class="menuItem" title="Export layout as image">
-                    <img class="icon" src="img/icon-export-black.png" alt="Export layout as image">
-                    <span>Export Image</span>
-                </button>
-            </div>
-        </div>
     </div>
-    <div id="outsideMenu" class="outsideMenu">&nbsp;</div>
+    <dialog id="mobileMenu" class="bottom large-padding no-scroll">
+        <div class="no-padding no-margin extra-text no-round scroll" style="max-block-size: 24rem; max-height: calc(50vh - 3.5rem);">
+            <ul  class="list border medium-space">
+                <li title="Download the current layout" id="mobileButtonDownload" data-ui="#mobileMenu"><i class="extra">file_save</i>Download Layout</li>
+                <li title="Open an existing layout" id="mobileButtonImport" data-ui="#mobileMenu"><i class="extra">folder_open</i>Open Layout</li>
+                <li title="Export the layout as an image" id="mobileButtonExport" data-ui="#mobileMenu"><i class="extra">download</i>Export Image</li>
+                <li title="View the part inventory" id="mobileButtonPartInventory" data-ui="#mobileMenu"><i class="extra">inventory</i>Part Inventory</li>
+            </ul>
+        </div>
+    </dialog>
     <section id="exportloading" class="hidden max no-padding center-align middle-align responsive primary">
         <div class="absolute center large-width middle padding responsive">
             <h2>Generating...</h2>
@@ -488,6 +486,34 @@
                 <button class="border no-border no-round max extra-text"
                     style="border-end-end-radius: 0.5rem !important;" data-ui="#editLayerDialog">
                     <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
+    <dialog id="partInventoryDialog" class="no-padding border large surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">Part Inventory</h6>
+                    <button class="circle medium transparent" data-ui="#partInventoryDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div style="padding-left: 0.5rem; padding-right: 0.5rem;">
+                <div id="partInventoryList" class="scroll" style="max-block-size: 40vh; border-radius: unset !important;"></div>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button id="exportPartInventory" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                    <i>csv</i>
+                    <span>Export</span>
+                </button>
+                <button id="printPartInventory" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                    <i>print</i>
+                    <span>Print</span>
                 </button>
             </nav>
         </div>

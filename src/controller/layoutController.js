@@ -291,28 +291,13 @@ export class LayoutController {
     document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('buttonMenu').addEventListener('click', () => { LayoutController.selectComponent(null); });
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
+    document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
+    document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('mobileButtonExport')?.addEventListener('click', this.exportLayout.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
     window.addEventListener('keyup', this.onKeyUp.bind(this));
-    document.getElementById('buttonMenu').addEventListener('click', () => {
-      document.getElementById('toolbar').classList.toggle('open');
-    });
-    document.getElementById('outsideMenu').addEventListener('click', /** @param {MouseEvent} event */ (event) => {
-      this.hideFileMenu();
-      const target = document.elementFromPoint(event.clientX, event.clientY);
-      if (target) {
-        let newPointerEvent = new PointerEvent('pointerdown', event);
-        target.dispatchEvent(newPointerEvent);
-        let newEvent = new MouseEvent('mousedown', event);
-        target.dispatchEvent(newEvent);
-        newPointerEvent = new PointerEvent('pointerup', event);
-        target.dispatchEvent(newPointerEvent);
-        newEvent = new MouseEvent('mouseup', event);
-        target.dispatchEvent(newEvent);
-        newEvent = new MouseEvent('click', event);
-        target.dispatchEvent(newEvent);
-      }
-    });
 
     /**
      * Floating toolbar element for selected component
@@ -661,7 +646,7 @@ export class LayoutController {
         event.target.parentElement.classList.remove('invalid');
       }
     });
-    const colors = ["aqua", "black", "blue", "brown", "dark azure", "dark bluish gray", "dark green", "dark pink", "dark red", "green", "light bluish gray", "lilac", "lime", "olive green", "orange", "red", "tan", "white", "yellow"];
+    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure", "dark bluish gray", "dark green", "dark pink", "dark red", "green", "light bluish gray", "lilac", "lime", "olive green", "orange", "red", "tan", "white", "yellow"];
     const colorMenu = document.getElementById('componentColorMenu');
     colors.forEach((color) => {
       let menuItem = document.createElement('li');
@@ -1908,7 +1893,7 @@ export class LayoutController {
    * Hide the file menu.
    */
   hideFileMenu() {
-    document.getElementById('toolbar')?.classList.remove('open');
+    document.getElementById('buttonMenu')?.blur();
   }
 
   initWindowEvents() {

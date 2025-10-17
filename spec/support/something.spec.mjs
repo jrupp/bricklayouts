@@ -48,11 +48,13 @@ describe("LayoutController", function() {
         geiSpy.withArgs('searchClearButton').and.returnValue(document.createElement('span'));
         geiSpy.withArgs('buttonRotate').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonRemove').and.returnValue(document.createElement('button'));
-        geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('button'));
-        geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('button'));
-        geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonDownload').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonImport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonExport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
-        geiSpy.withArgs('outsideMenu').and.returnValue(document.createElement('div'));
         geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorSave').and.returnValue(document.createElement('button'));
@@ -2102,7 +2104,7 @@ describe("LayoutController", function() {
                 width: component.componentWidth,
                 height: component.componentHeight,
                 units: undefined,
-                color: undefined,
+                color: '#6c6e68',
                 outlineColor: undefined,
                 opacity: undefined,
                 text: undefined,

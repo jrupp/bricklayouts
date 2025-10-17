@@ -64,6 +64,7 @@ export const ColorNameToHex = Object.freeze({
   "dark green": "#184632",
   "light bluish gray": "#A0A5A9",
   "dark bluish gray": "#6C6E68",
+  "bright green": "#10CB31",
 });
 
 /**
@@ -185,6 +186,9 @@ export class Component extends Container {
     if (this.baseData.type === DataTypes.TRACK) {
       this.sprite = new Sprite(Assets.get(baseData.alias));
       this.sprite.anchor.set(0.5);
+      if (this.baseData.color !== undefined) {
+        this.#color = new Color(this.baseData.color);
+      }
     } else if (this.baseData.type === DataTypes.SHAPE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
