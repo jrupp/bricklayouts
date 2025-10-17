@@ -279,15 +279,26 @@ export class Component extends Container {
    * @returns {Component|null} The new Component or null if no open connections found
    */
   static fromComponent(baseData, component, layer, options = {}) {
+    if (component.connections.length === 0 || (baseData.connections ?? []).length === 0) {
+      // Calculate a position that is next to the component instead.
+      let width = 0;
+      if (baseData.width !== undefined) {
+        width = baseData.width;
+      }
+      let vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
+      let newPos = vec.getEndPosition(component.getPose());
+      const newComp = new Component(baseData, newPos, layer, options);
+      if (width === 0) {
+        width = newComp.sprite.width;
+        vec = new PolarVector((component.sprite.width / 2) + (width / 2), 0, 0);
+        newPos = vec.getEndPosition(component.getPose());
+        newComp.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
+      }
+      return newComp;
+    }
     var connection = component.getOpenConnection();
     if (connection) {
       return Component.fromConnection(baseData, connection, layer, options);
-    }
-    if (component.connections.length === 0) {
-      // Calculate a position that is next to the component instead.
-      const vec = new PolarVector(component.sprite.width, 0, 0);
-      let newPos = vec.getEndPosition(component.getPose());
-      return new Component(baseData, newPos, layer, options);
     }
     return null;
   }
