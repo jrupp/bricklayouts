@@ -39,3 +39,24 @@ export function getOptionIndexByValue(selectElementId, optionValue, defaultValue
 
   return defaultValue;
 }
+
+/**
+ * Detects if the current browser is running on iOS (iPhone, iPad, iPod).
+ * This includes Safari, Chrome, Firefox, and other browsers on iOS.
+ *
+ * @returns {boolean} True if running on iOS, false otherwise.
+ */
+export function isIOSBrowser() {
+  // Check for iOS devices using user agent
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+  // Check for iPhone, iPod in user agent
+  // Temporarily removed 'iPad' until I have time to actually test it on iPadOS
+  const isIOSDevice = /iPhone|iPod/.test(userAgent);
+  
+  // Additional check for iOS 13+ on iPad which may show desktop user agent
+  const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+  // Temporarily removed ' || isIPadOS' until I have time to actually test it on iPadOS
+  return isIOSDevice;
+}
