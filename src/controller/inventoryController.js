@@ -1,5 +1,6 @@
 import { Component, HexToColorName } from '../model/component.js';
 import { DataTypes, LayoutController } from './layoutController.js';
+import { isIOSBrowser } from '../utils/utils.js';
 
 export class InventoryController {
     /** @type {InventoryController} */
@@ -43,7 +44,8 @@ export class InventoryController {
             this.#loading = true;
             import('../tabulator_esm.min.mjs').then((module) => {
                 this.#tabulator = new module.TabulatorFull('#partInventoryList', {
-                    layout: 'fitColumns',
+                    // Use fitData layout on iOS to avoid maximum stack size exceeded errors
+                    layout: isIOSBrowser() ? 'fitData' : 'fitColumns',
                     resizableColumnFit: true,
                     printAsHtml: true,
                     printStyled: true,
@@ -85,7 +87,6 @@ export class InventoryController {
     async loadData() {
         this.#loading = true;
         this.#tableData = [];
-        this.#tabulator.clearData();
         this.#layoutController.layers.forEach(layer => {
             layer.children.forEach(/** @param {Component} child */(child) => {
                 if (child instanceof Component && (child.baseData.type === DataTypes.TRACK || child.baseData.type === DataTypes.BASEPLATE)) {
