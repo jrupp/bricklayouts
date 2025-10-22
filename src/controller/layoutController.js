@@ -1034,9 +1034,26 @@ export class LayoutController {
     this.workspace.scale.set(1.0);
     this.workspace.position.set(0, 0);
     this.drawGrid(true);
+    // Adjust scale so we don't exceed gl.MAX_TEXTURE_SIZE
+    const maxTextureSize = this.app.renderer.gl.MAX_TEXTURE_SIZE;
+    const stageWidth = this.app.stage.width;
+    const stageHeight = this.app.stage.height;
+    
+    let rescale = 1.0;
+    if (stageWidth > maxTextureSize || stageHeight > maxTextureSize) {
+      // Calculate scale to fit both dimensions within max texture size while maintaining aspect ratio
+      const scaleX = maxTextureSize / stageWidth;
+      const scaleY = maxTextureSize / stageHeight;
+      rescale = Math.min(scaleX, scaleY);
+    }
+    this.workspace.scale.set(rescale);
+    this.grid.scale.set(rescale);
+    this.subGrid.scale.set(rescale);
     this.app.renderer.extract.download({target:this.app.stage, filename:"layout.png"});
     document.getElementById('exportloading').classList.add('hidden');
     this.workspace.scale.set(preScale);
+    this.grid.scale.set(1.0);
+    this.subGrid.scale.set(1.0);
     this.workspace.position.set(prePos.x, prePos.y);
     this.drawGrid();
   }
