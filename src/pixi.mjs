@@ -1,26 +1,26 @@
 /*!
- * PixiJS - v8.11.0
- * Compiled Thu, 03 Jul 2025 15:06:29 UTC
+ * PixiJS - v8.14.0
+ * Compiled Mon, 06 Oct 2025 21:31:20 UTC
  *
  * PixiJS is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 "use strict";
-var __defProp$1f = Object.defineProperty;
+var __defProp$1g = Object.defineProperty;
 var __defProps$t = Object.defineProperties;
 var __getOwnPropDescs$t = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$1g = Object.getOwnPropertySymbols;
-var __hasOwnProp$1g = Object.prototype.hasOwnProperty;
-var __propIsEnum$1g = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1f = (obj, key, value) => key in obj ? __defProp$1f(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1f = (a, b) => {
+var __getOwnPropSymbols$1h = Object.getOwnPropertySymbols;
+var __hasOwnProp$1h = Object.prototype.hasOwnProperty;
+var __propIsEnum$1h = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1g = (obj, key, value) => key in obj ? __defProp$1g(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1g = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1g.call(b, prop))
-      __defNormalProp$1f(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1g)
-    for (var prop of __getOwnPropSymbols$1g(b)) {
-      if (__propIsEnum$1g.call(b, prop))
-        __defNormalProp$1f(a, prop, b[prop]);
+    if (__hasOwnProp$1h.call(b, prop))
+      __defNormalProp$1g(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1h)
+    for (var prop of __getOwnPropSymbols$1h(b)) {
+      if (__propIsEnum$1h.call(b, prop))
+        __defNormalProp$1g(a, prop, b[prop]);
     }
   return a;
 };
@@ -55,10 +55,10 @@ const normalizeExtension = (ext) => {
       throw new Error("Extension class must have an extension object");
     }
     const metadata = typeof ext.extension !== "object" ? { type: ext.extension } : ext.extension;
-    ext = __spreadProps$t(__spreadValues$1f({}, metadata), { ref: ext });
+    ext = __spreadProps$t(__spreadValues$1g({}, metadata), { ref: ext });
   }
   if (typeof ext === "object") {
-    ext = __spreadValues$1f({}, ext);
+    ext = __spreadValues$1g({}, ext);
   } else {
     throw new Error("Invalid extension type");
   }
@@ -685,19 +685,19 @@ var r={grad:.9,turn:360,rad:360/(2*Math.PI)},t=function(r){return "string"==type
 function namesPlugin(e,f){var a={white:"#ffffff",bisque:"#ffe4c4",blue:"#0000ff",cadetblue:"#5f9ea0",chartreuse:"#7fff00",chocolate:"#d2691e",coral:"#ff7f50",antiquewhite:"#faebd7",aqua:"#00ffff",azure:"#f0ffff",whitesmoke:"#f5f5f5",papayawhip:"#ffefd5",plum:"#dda0dd",blanchedalmond:"#ffebcd",black:"#000000",gold:"#ffd700",goldenrod:"#daa520",gainsboro:"#dcdcdc",cornsilk:"#fff8dc",cornflowerblue:"#6495ed",burlywood:"#deb887",aquamarine:"#7fffd4",beige:"#f5f5dc",crimson:"#dc143c",cyan:"#00ffff",darkblue:"#00008b",darkcyan:"#008b8b",darkgoldenrod:"#b8860b",darkkhaki:"#bdb76b",darkgray:"#a9a9a9",darkgreen:"#006400",darkgrey:"#a9a9a9",peachpuff:"#ffdab9",darkmagenta:"#8b008b",darkred:"#8b0000",darkorchid:"#9932cc",darkorange:"#ff8c00",darkslateblue:"#483d8b",gray:"#808080",darkslategray:"#2f4f4f",darkslategrey:"#2f4f4f",deeppink:"#ff1493",deepskyblue:"#00bfff",wheat:"#f5deb3",firebrick:"#b22222",floralwhite:"#fffaf0",ghostwhite:"#f8f8ff",darkviolet:"#9400d3",magenta:"#ff00ff",green:"#008000",dodgerblue:"#1e90ff",grey:"#808080",honeydew:"#f0fff0",hotpink:"#ff69b4",blueviolet:"#8a2be2",forestgreen:"#228b22",lawngreen:"#7cfc00",indianred:"#cd5c5c",indigo:"#4b0082",fuchsia:"#ff00ff",brown:"#a52a2a",maroon:"#800000",mediumblue:"#0000cd",lightcoral:"#f08080",darkturquoise:"#00ced1",lightcyan:"#e0ffff",ivory:"#fffff0",lightyellow:"#ffffe0",lightsalmon:"#ffa07a",lightseagreen:"#20b2aa",linen:"#faf0e6",mediumaquamarine:"#66cdaa",lemonchiffon:"#fffacd",lime:"#00ff00",khaki:"#f0e68c",mediumseagreen:"#3cb371",limegreen:"#32cd32",mediumspringgreen:"#00fa9a",lightskyblue:"#87cefa",lightblue:"#add8e6",midnightblue:"#191970",lightpink:"#ffb6c1",mistyrose:"#ffe4e1",moccasin:"#ffe4b5",mintcream:"#f5fffa",lightslategray:"#778899",lightslategrey:"#778899",navajowhite:"#ffdead",navy:"#000080",mediumvioletred:"#c71585",powderblue:"#b0e0e6",palegoldenrod:"#eee8aa",oldlace:"#fdf5e6",paleturquoise:"#afeeee",mediumturquoise:"#48d1cc",mediumorchid:"#ba55d3",rebeccapurple:"#663399",lightsteelblue:"#b0c4de",mediumslateblue:"#7b68ee",thistle:"#d8bfd8",tan:"#d2b48c",orchid:"#da70d6",mediumpurple:"#9370db",purple:"#800080",pink:"#ffc0cb",skyblue:"#87ceeb",springgreen:"#00ff7f",palegreen:"#98fb98",red:"#ff0000",yellow:"#ffff00",slateblue:"#6a5acd",lavenderblush:"#fff0f5",peru:"#cd853f",palevioletred:"#db7093",violet:"#ee82ee",teal:"#008080",slategray:"#708090",slategrey:"#708090",aliceblue:"#f0f8ff",darkseagreen:"#8fbc8f",darkolivegreen:"#556b2f",greenyellow:"#adff2f",seagreen:"#2e8b57",seashell:"#fff5ee",tomato:"#ff6347",silver:"#c0c0c0",sienna:"#a0522d",lavender:"#e6e6fa",lightgreen:"#90ee90",orange:"#ffa500",orangered:"#ff4500",steelblue:"#4682b4",royalblue:"#4169e1",turquoise:"#40e0d0",yellowgreen:"#9acd32",salmon:"#fa8072",saddlebrown:"#8b4513",sandybrown:"#f4a460",rosybrown:"#bc8f8f",darksalmon:"#e9967a",lightgoldenrodyellow:"#fafad2",snow:"#fffafa",lightgrey:"#d3d3d3",lightgray:"#d3d3d3",dimgray:"#696969",dimgrey:"#696969",olivedrab:"#6b8e23",olive:"#808000"},r={};for(var d in a)r[a[d]]=d;var l={};e.prototype.toName=function(f){if(!(this.rgba.a||this.rgba.r||this.rgba.g||this.rgba.b))return "transparent";var d,i,n=r[this.toHex()];if(n)return n;if(null==f?void 0:f.closest){var o=this.toRgb(),t=1/0,b="black";if(!l.length)for(var c in a)l[c]=new e(a[c]).toRgb();for(var g in a){var u=(d=o,i=l[g],Math.pow(d.r-i.r,2)+Math.pow(d.g-i.g,2)+Math.pow(d.b-i.b,2));u<t&&(t=u,b=g);}return b}};f.string.push([function(f){var r=f.toLowerCase(),d="transparent"===r?"#0000":a[r];return d?new e(d).toRgb():null},"name"]);}
 
 "use strict";
-var __defProp$1e = Object.defineProperty;
-var __getOwnPropSymbols$1f = Object.getOwnPropertySymbols;
-var __hasOwnProp$1f = Object.prototype.hasOwnProperty;
-var __propIsEnum$1f = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1e = (obj, key, value) => key in obj ? __defProp$1e(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1e = (a, b) => {
+var __defProp$1f = Object.defineProperty;
+var __getOwnPropSymbols$1g = Object.getOwnPropertySymbols;
+var __hasOwnProp$1g = Object.prototype.hasOwnProperty;
+var __propIsEnum$1g = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1f = (obj, key, value) => key in obj ? __defProp$1f(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1f = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1f.call(b, prop))
-      __defNormalProp$1e(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1f)
-    for (var prop of __getOwnPropSymbols$1f(b)) {
-      if (__propIsEnum$1f.call(b, prop))
-        __defNormalProp$1e(a, prop, b[prop]);
+    if (__hasOwnProp$1g.call(b, prop))
+      __defNormalProp$1f(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1g)
+    for (var prop of __getOwnPropSymbols$1g(b)) {
+      if (__propIsEnum$1g.call(b, prop))
+        __defNormalProp$1f(a, prop, b[prop]);
     }
   return a;
 };
@@ -868,7 +868,7 @@ const _Color = class _Color {
     } else if (Array.isArray(value) || ArrayBuffer.isView(value)) {
       return value.slice(0);
     } else if (typeof value === "object" && value !== null) {
-      return __spreadValues$1e({}, value);
+      return __spreadValues$1f({}, value);
     }
     return value;
   }
@@ -2738,37 +2738,58 @@ function resetUids() {
 }
 
 "use strict";
-const warnings = {};
+const warnings = /* @__PURE__ */ new Set();
 const v8_0_0 = "8.0.0";
 const v8_3_4 = "8.3.4";
-function deprecation(version, message, ignoreDepth = 3) {
-  if (warnings[message]) {
+const deprecationState = {
+  quiet: false,
+  noColor: false
+};
+const deprecation = (version, message, ignoreDepth = 3) => {
+  if (deprecationState.quiet || warnings.has(message))
     return;
-  }
   let stack = new Error().stack;
+  const deprecationMessage = `${message}
+Deprecated since v${version}`;
+  const useGroup = typeof console.groupCollapsed === "function" && !deprecationState.noColor;
   if (typeof stack === "undefined") {
-    console.warn("PixiJS Deprecation Warning: ", `${message}
-Deprecated since v${version}`);
+    console.warn("PixiJS Deprecation Warning: ", deprecationMessage);
   } else {
     stack = stack.split("\n").splice(ignoreDepth).join("\n");
-    if (console.groupCollapsed) {
+    if (useGroup) {
       console.groupCollapsed(
         "%cPixiJS Deprecation Warning: %c%s",
         "color:#614108;background:#fffbe6",
         "font-weight:normal;color:#614108;background:#fffbe6",
-        `${message}
-Deprecated since v${version}`
+        deprecationMessage
       );
       console.warn(stack);
       console.groupEnd();
     } else {
-      console.warn("PixiJS Deprecation Warning: ", `${message}
-Deprecated since v${version}`);
+      console.warn("PixiJS Deprecation Warning: ", deprecationMessage);
       console.warn(stack);
     }
   }
-  warnings[message] = true;
-}
+  warnings.add(message);
+};
+Object.defineProperties(deprecation, {
+  quiet: {
+    get: () => deprecationState.quiet,
+    set: (value) => {
+      deprecationState.quiet = value;
+    },
+    enumerable: true,
+    configurable: false
+  },
+  noColor: {
+    get: () => deprecationState.noColor,
+    set: (value) => {
+      deprecationState.noColor = value;
+    },
+    enumerable: true,
+    configurable: false
+  }
+});
 
 "use strict";
 let warnCount = 0;
@@ -2783,6 +2804,55 @@ function warn(...args) {
     console.warn("PixiJS Warning: ", ...args);
   }
 }
+
+"use strict";
+const GlobalResourceRegistry = {
+  /**
+   * Set of registered pools and cleanable objects.
+   * @private
+   */
+  _registeredResources: /* @__PURE__ */ new Set(),
+  /**
+   * Registers a pool or cleanable object for cleanup.
+   * @param {Cleanable} pool - The pool or object to register.
+   */
+  register(pool) {
+    this._registeredResources.add(pool);
+  },
+  /**
+   * Unregisters a pool or cleanable object from cleanup.
+   * @param {Cleanable} pool - The pool or object to unregister.
+   */
+  unregister(pool) {
+    this._registeredResources.delete(pool);
+  },
+  /** Clears all registered pools and cleanable objects. This will call clear() on each registered item. */
+  release() {
+    this._registeredResources.forEach((pool) => pool.clear());
+  },
+  /**
+   * Gets the number of registered pools and cleanable objects.
+   * @returns {number} The count of registered items.
+   */
+  get registeredCount() {
+    return this._registeredResources.size;
+  },
+  /**
+   * Checks if a specific pool or cleanable object is registered.
+   * @param {Cleanable} pool - The pool or object to check.
+   * @returns {boolean} True if the item is registered, false otherwise.
+   */
+  isRegistered(pool) {
+    return this._registeredResources.has(pool);
+  },
+  /**
+   * Removes all registrations without clearing the pools.
+   * Useful if you want to reset the collector without affecting the pools.
+   */
+  reset() {
+    this._registeredResources.clear();
+  }
+};
 
 "use strict";
 class Pool {
@@ -2857,9 +2927,15 @@ class Pool {
   get totalUsed() {
     return this._count - this._index;
   }
-  /** clears the pool - mainly used for debugging! */
+  /** clears the pool */
   clear() {
+    if (this._pool.length > 0 && this._pool[0].destroy) {
+      for (let i = 0; i < this._index; i++) {
+        this._pool[i].destroy();
+      }
+    }
     this._pool.length = 0;
+    this._count = 0;
     this._index = 0;
   }
 }
@@ -2927,8 +3003,14 @@ class PoolGroupClass {
     });
     return stats;
   }
+  /** Clears all pools in the group. This will reset all pools and free their resources. */
+  clear() {
+    this._poolsByClass.forEach((pool) => pool.clear());
+    this._poolsByClass.clear();
+  }
 }
 const BigPool = new PoolGroupClass();
+GlobalResourceRegistry.register(BigPool);
 
 "use strict";
 const cacheAsTextureMixin = {
@@ -3212,19 +3294,19 @@ const MaskEffectManager = new MaskEffectManagerClass();
 extensions.handleByList(ExtensionType.MaskEffect, MaskEffectManager._effectClasses);
 
 "use strict";
-var __defProp$1d = Object.defineProperty;
-var __getOwnPropSymbols$1e = Object.getOwnPropertySymbols;
-var __hasOwnProp$1e = Object.prototype.hasOwnProperty;
-var __propIsEnum$1e = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1d = (obj, key, value) => key in obj ? __defProp$1d(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1d = (a, b) => {
+var __defProp$1e = Object.defineProperty;
+var __getOwnPropSymbols$1f = Object.getOwnPropertySymbols;
+var __hasOwnProp$1f = Object.prototype.hasOwnProperty;
+var __propIsEnum$1f = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1e = (obj, key, value) => key in obj ? __defProp$1e(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1e = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1e.call(b, prop))
-      __defNormalProp$1d(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1e)
-    for (var prop of __getOwnPropSymbols$1e(b)) {
-      if (__propIsEnum$1e.call(b, prop))
-        __defNormalProp$1d(a, prop, b[prop]);
+    if (__hasOwnProp$1f.call(b, prop))
+      __defNormalProp$1e(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1f)
+    for (var prop of __getOwnPropSymbols$1f(b)) {
+      if (__propIsEnum$1f.call(b, prop))
+        __defNormalProp$1e(a, prop, b[prop]);
     }
   return a;
 };
@@ -3277,7 +3359,7 @@ const effectsMixin = {
     return (_a = this._maskEffect) == null ? void 0 : _a.mask;
   },
   setMask(options) {
-    this._maskOptions = __spreadValues$1d(__spreadValues$1d({}, this._maskOptions), options);
+    this._maskOptions = __spreadValues$1e(__spreadValues$1e({}, this._maskOptions), options);
     if (options.mask) {
       this.mask = options.mask;
     }
@@ -3867,6 +3949,31 @@ class Rectangle {
     this.y = Math.floor((this.y + eps) * resolution) / resolution;
     this.width = x2 - this.x;
     this.height = y2 - this.y;
+    return this;
+  }
+  /**
+   * Scales the rectangle's dimensions and position by the specified factors.
+   * @example
+   * ```ts
+   * const rect = new Rectangle(50, 50, 100, 100);
+   *
+   * // Scale uniformly
+   * rect.scale(0.5, 0.5);
+   * // rect is now: x=25, y=25, width=50, height=50
+   *
+   * // non-uniformly
+   * rect.scale(0.5, 1);
+   * // rect is now: x=25, y=50, width=50, height=100
+   * ```
+   * @param x - The factor by which to scale the horizontal properties (x, width).
+   * @param y - The factor by which to scale the vertical properties (y, height).
+   * @returns Returns itself
+   */
+  scale(x, y = x) {
+    this.x *= x;
+    this.y *= y;
+    this.width *= x;
+    this.height *= y;
     return this;
   }
   /**
@@ -4840,8 +4947,8 @@ class Bounds {
 }
 
 "use strict";
-const matrixPool = new Pool(Matrix);
-const boundsPool = new Pool(Bounds);
+const matrixPool = BigPool.getPool(Matrix);
+const boundsPool = BigPool.getPool(Bounds);
 
 "use strict";
 const tempMatrix$5 = new Matrix();
@@ -4900,7 +5007,6 @@ const getFastGlobalBoundsMixin = {
       }
       if (advanced) {
         localBounds.applyMatrix(renderGroup.worldTransform.copyTo(tempMatrix$5).invert());
-        bounds.addBounds(localBounds, this.relativeGroupTransform);
       }
       bounds.addBounds(localBounds);
       boundsPool.return(localBounds);
@@ -4955,9 +5061,10 @@ function _getGlobalBounds(target, bounds, parentTransform, skipUpdateTransform) 
   if (target.boundsArea) {
     bounds.addRect(target.boundsArea, worldTransform);
   } else {
-    if (target.bounds) {
+    const renderableBounds = target.bounds;
+    if (renderableBounds && !renderableBounds.isEmpty()) {
       bounds.matrix = worldTransform;
-      bounds.addBounds(target.bounds);
+      bounds.addBounds(renderableBounds);
     }
     for (let i = 0; i < target.children.length; i++) {
       _getGlobalBounds(target.children[i], bounds, worldTransform, skipUpdateTransform);
@@ -5037,7 +5144,7 @@ const getGlobalMixin = {
     }
     return alpha;
   },
-  getGlobalTransform(matrix, skipUpdate) {
+  getGlobalTransform(matrix = new Matrix(), skipUpdate) {
     if (skipUpdate) {
       return matrix.copyFrom(this.worldTransform);
     }
@@ -5291,6 +5398,16 @@ class InstructionSet {
     this.instructionSize = 0;
   }
   /**
+   * Destroy the instruction set, clearing the instructions and renderables.
+   * @internal
+   */
+  destroy() {
+    this.instructions.length = 0;
+    this.renderables.length = 0;
+    this.renderPipes = null;
+    this.gcTick = 0;
+  }
+  /**
    * Add an instruction to the set
    * @param instruction - add an instruction to the set
    */
@@ -5348,19 +5465,19 @@ function definedProps(obj) {
 }
 
 "use strict";
-var __defProp$1c = Object.defineProperty;
-var __getOwnPropSymbols$1d = Object.getOwnPropertySymbols;
-var __hasOwnProp$1d = Object.prototype.hasOwnProperty;
-var __propIsEnum$1d = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1c = (obj, key, value) => key in obj ? __defProp$1c(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1c = (a, b) => {
+var __defProp$1d = Object.defineProperty;
+var __getOwnPropSymbols$1e = Object.getOwnPropertySymbols;
+var __hasOwnProp$1e = Object.prototype.hasOwnProperty;
+var __propIsEnum$1e = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1d = (obj, key, value) => key in obj ? __defProp$1d(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1d = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1d.call(b, prop))
-      __defNormalProp$1c(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1d)
-    for (var prop of __getOwnPropSymbols$1d(b)) {
-      if (__propIsEnum$1d.call(b, prop))
-        __defNormalProp$1c(a, prop, b[prop]);
+    if (__hasOwnProp$1e.call(b, prop))
+      __defNormalProp$1d(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1e)
+    for (var prop of __getOwnPropSymbols$1e(b)) {
+      if (__propIsEnum$1e.call(b, prop))
+        __defNormalProp$1d(a, prop, b[prop]);
     }
   return a;
 };
@@ -5396,7 +5513,7 @@ const _TextureStyle = class _TextureStyle extends EventEmitter {
      * @readonly
      */
     this.destroyed = false;
-    options = __spreadValues$1c(__spreadValues$1c({}, _TextureStyle.defaultOptions), options);
+    options = __spreadValues$1d(__spreadValues$1d({}, _TextureStyle.defaultOptions), options);
     this.addressMode = options.addressMode;
     this.addressModeU = (_a = options.addressModeU) != null ? _a : this.addressModeU;
     this.addressModeV = (_b = options.addressModeV) != null ? _b : this.addressModeV;
@@ -5474,19 +5591,19 @@ _TextureStyle.defaultOptions = {
 let TextureStyle = _TextureStyle;
 
 "use strict";
-var __defProp$1b = Object.defineProperty;
-var __getOwnPropSymbols$1c = Object.getOwnPropertySymbols;
-var __hasOwnProp$1c = Object.prototype.hasOwnProperty;
-var __propIsEnum$1c = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1b = (obj, key, value) => key in obj ? __defProp$1b(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1b = (a, b) => {
+var __defProp$1c = Object.defineProperty;
+var __getOwnPropSymbols$1d = Object.getOwnPropertySymbols;
+var __hasOwnProp$1d = Object.prototype.hasOwnProperty;
+var __propIsEnum$1d = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1c = (obj, key, value) => key in obj ? __defProp$1c(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1c = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1c.call(b, prop))
-      __defNormalProp$1b(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1c)
-    for (var prop of __getOwnPropSymbols$1c(b)) {
-      if (__propIsEnum$1c.call(b, prop))
-        __defNormalProp$1b(a, prop, b[prop]);
+    if (__hasOwnProp$1d.call(b, prop))
+      __defNormalProp$1c(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1d)
+    for (var prop of __getOwnPropSymbols$1d(b)) {
+      if (__propIsEnum$1d.call(b, prop))
+        __defNormalProp$1c(a, prop, b[prop]);
     }
   return a;
 };
@@ -5577,7 +5694,7 @@ const _TextureSource = class _TextureSource extends EventEmitter {
      * @protected
      */
     this._textureBindLocation = -1;
-    options = __spreadValues$1b(__spreadValues$1b({}, _TextureSource.defaultOptions), options);
+    options = __spreadValues$1c(__spreadValues$1c({}, _TextureSource.defaultOptions), options);
     this.label = (_a = options.label) != null ? _a : "";
     this.resource = options.resource;
     this.autoGarbageCollect = options.autoGarbageCollect;
@@ -5622,14 +5739,21 @@ const _TextureSource = class _TextureSource extends EventEmitter {
     (_b = this._style) == null ? void 0 : _b.on("change", this._onStyleChange, this);
     this._onStyleChange();
   }
-  /** setting this will set wrapModeU,wrapModeV and wrapModeW all at once! */
+  /** Specifies the maximum anisotropy value clamp used by the sampler. */
+  set maxAnisotropy(value) {
+    this._style.maxAnisotropy = value;
+  }
+  get maxAnisotropy() {
+    return this._style.maxAnisotropy;
+  }
+  /** setting this will set wrapModeU, wrapModeV and wrapModeW all at once! */
   get addressMode() {
     return this._style.addressMode;
   }
   set addressMode(value) {
     this._style.addressMode = value;
   }
-  /** setting this will set wrapModeU,wrapModeV and wrapModeW all at once! */
+  /** setting this will set wrapModeU, wrapModeV and wrapModeW all at once! */
   get repeatMode() {
     return this._style.addressMode;
   }
@@ -6068,6 +6192,46 @@ const groupD8 = {
     mat.tx = tx;
     mat.ty = ty;
     matrix.append(mat);
+  },
+  /**
+   * Transforms rectangle coordinates based on texture packer rotation.
+   * Used when texture atlas pages are rotated and coordinates need to be adjusted.
+   * @group groupD8
+   * @param {RectangleLike} rect - Rectangle with original coordinates to transform
+   * @param {RectangleLike} sourceFrame - Source texture frame (includes offset and dimensions)
+   * @param {GD8Symmetry} rotation - The groupD8 rotation value
+   * @param {Rectangle} out - Rectangle to store the result
+   * @returns {Rectangle} Transformed coordinates (includes source frame offset)
+   */
+  transformRectCoords: (rect, sourceFrame, rotation, out) => {
+    const { x, y, width, height } = rect;
+    const { x: frameX, y: frameY, width: frameWidth, height: frameHeight } = sourceFrame;
+    if (rotation === groupD8.E) {
+      out.set(x + frameX, y + frameY, width, height);
+      return out;
+    } else if (rotation === groupD8.S) {
+      return out.set(
+        frameWidth - y - height + frameX,
+        x + frameY,
+        height,
+        width
+      );
+    } else if (rotation === groupD8.W) {
+      return out.set(
+        frameWidth - x - width + frameX,
+        frameHeight - y - height + frameY,
+        width,
+        height
+      );
+    } else if (rotation === groupD8.N) {
+      return out.set(
+        y + frameX,
+        frameHeight - x - width + frameY,
+        height,
+        width
+      );
+    }
+    return out.set(x + frameX, y + frameY, width, height);
   }
 };
 
@@ -6076,21 +6240,21 @@ const NOOP = () => {
 };
 
 "use strict";
-var __defProp$1a = Object.defineProperty;
+var __defProp$1b = Object.defineProperty;
 var __defProps$s = Object.defineProperties;
 var __getOwnPropDescs$s = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$1b = Object.getOwnPropertySymbols;
-var __hasOwnProp$1b = Object.prototype.hasOwnProperty;
-var __propIsEnum$1b = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$1a = (obj, key, value) => key in obj ? __defProp$1a(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$1a = (a, b) => {
+var __getOwnPropSymbols$1c = Object.getOwnPropertySymbols;
+var __hasOwnProp$1c = Object.prototype.hasOwnProperty;
+var __propIsEnum$1c = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1b = (obj, key, value) => key in obj ? __defProp$1b(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1b = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1b.call(b, prop))
-      __defNormalProp$1a(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1b)
-    for (var prop of __getOwnPropSymbols$1b(b)) {
-      if (__propIsEnum$1b.call(b, prop))
-        __defNormalProp$1a(a, prop, b[prop]);
+    if (__hasOwnProp$1c.call(b, prop))
+      __defNormalProp$1b(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1c)
+    for (var prop of __getOwnPropSymbols$1c(b)) {
+      if (__propIsEnum$1c.call(b, prop))
+        __defNormalProp$1b(a, prop, b[prop]);
     }
   return a;
 };
@@ -6116,7 +6280,7 @@ class BufferImageSource extends TextureSource {
         format = "bgra8unorm";
       }
     }
-    super(__spreadProps$s(__spreadValues$1a({}, options), {
+    super(__spreadProps$s(__spreadValues$1b({}, options), {
       resource: buffer,
       format
     }));
@@ -6405,21 +6569,21 @@ Texture.WHITE = new Texture({
 Texture.WHITE.destroy = NOOP;
 
 "use strict";
-var __defProp$19 = Object.defineProperty;
+var __defProp$1a = Object.defineProperty;
 var __defProps$r = Object.defineProperties;
 var __getOwnPropDescs$r = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$1a = Object.getOwnPropertySymbols;
-var __hasOwnProp$1a = Object.prototype.hasOwnProperty;
-var __propIsEnum$1a = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$19 = (obj, key, value) => key in obj ? __defProp$19(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$19 = (a, b) => {
+var __getOwnPropSymbols$1b = Object.getOwnPropertySymbols;
+var __hasOwnProp$1b = Object.prototype.hasOwnProperty;
+var __propIsEnum$1b = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1a = (obj, key, value) => key in obj ? __defProp$1a(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1a = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$1a.call(b, prop))
-      __defNormalProp$19(a, prop, b[prop]);
-  if (__getOwnPropSymbols$1a)
-    for (var prop of __getOwnPropSymbols$1a(b)) {
-      if (__propIsEnum$1a.call(b, prop))
-        __defNormalProp$19(a, prop, b[prop]);
+    if (__hasOwnProp$1b.call(b, prop))
+      __defNormalProp$1a(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1b)
+    for (var prop of __getOwnPropSymbols$1b(b)) {
+      if (__propIsEnum$1b.call(b, prop))
+        __defNormalProp$1a(a, prop, b[prop]);
     }
   return a;
 };
@@ -6444,7 +6608,7 @@ class TexturePoolClass {
    * @param antialias
    */
   createTexture(pixelWidth, pixelHeight, antialias) {
-    const textureSource = new TextureSource(__spreadProps$r(__spreadValues$19({}, this.textureOptions), {
+    const textureSource = new TextureSource(__spreadProps$r(__spreadValues$1a({}, this.textureOptions), {
       width: pixelWidth,
       height: pixelHeight,
       resolution: 1,
@@ -6533,6 +6697,7 @@ class TexturePoolClass {
   }
 }
 const TexturePool = new TexturePoolClass();
+GlobalResourceRegistry.register(TexturePool);
 
 "use strict";
 class RenderGroup {
@@ -6588,12 +6753,16 @@ class RenderGroup {
   disableCacheAsTexture() {
     this.isCachedAsTexture = false;
     if (this.texture) {
-      TexturePool.returnTexture(this.texture);
+      TexturePool.returnTexture(this.texture, true);
       this.texture = null;
     }
   }
   updateCacheTexture() {
     this.textureNeedsUpdate = true;
+    const cachedParent = this._parentCacheAsTextureRenderGroup;
+    if (cachedParent && !cachedParent.textureNeedsUpdate) {
+      cachedParent.updateCacheTexture();
+    }
   }
   reset() {
     this.renderGroupChildren.length = 0;
@@ -6791,6 +6960,9 @@ class RenderGroup {
    * or null if no parent is cached as texture.
    */
   get cacheToLocalTransform() {
+    if (this.isCachedAsTexture) {
+      return this.textureOffsetInverseTransform;
+    }
     if (!this._parentCacheAsTextureRenderGroup)
       return null;
     return this._parentCacheAsTextureRenderGroup.textureOffsetInverseTransform;
@@ -6890,6 +7062,13 @@ class Container extends EventEmitter {
     this.measurable = true;
     /** @private */
     this.isSimple = true;
+    /**
+     * The RenderLayer this container belongs to, if any.
+     * If it belongs to a RenderLayer, it will be rendered from the RenderLayer's position in the scene.
+     * @readonly
+     * @advanced
+     */
+    this.parentRenderLayer = null;
     // / /////////////Transform related props//////////////
     // used by the transform system to check if a container needs to be updated that frame
     // if the tick matches the current transform system tick, it is not updated again
@@ -7361,7 +7540,7 @@ class Container extends EventEmitter {
    *
    * > [!NOTE] 'rotation' and 'angle' have the same effect on a display object;
    * > rotation is in radians, angle is in degrees.
-   @example
+   * @example
    * ```ts
    * // Basic angle rotation
    * sprite.angle = 45; // 45 degrees
@@ -7517,7 +7696,7 @@ class Container extends EventEmitter {
    * > [!NOTE] Changing the width will adjust the scale.x property of the container while maintaining its aspect ratio.
    * > [!NOTE] If you want to set both width and height at the same time, use {@link Container#setSize}
    * as it is more optimized by not recalculating the local bounds twice.
-   *  @example
+   * @example
    * ```ts
    * // Basic width setting
    * container.width = 100;
@@ -7567,7 +7746,7 @@ class Container extends EventEmitter {
    * container.getSize(reuseSize);
    * ```
    * @param out - Optional object to store the size in.
-   * @returns - The size of the container.
+   * @returns The size of the container.
    */
   getSize(out) {
     if (!out) {
@@ -7729,8 +7908,8 @@ class Container extends EventEmitter {
     lt.b = this._sx * sx;
     lt.c = this._cy * sy;
     lt.d = this._sy * sy;
-    lt.tx = position._x - (px * lt.a + py * lt.c) + (ox * lt.a + oy * lt.c) - ox * sx;
-    lt.ty = position._y - (px * lt.b + py * lt.d) + (ox * lt.b + oy * lt.d) - oy * sy;
+    lt.tx = position._x - (px * lt.a + py * lt.c) + (ox * lt.a + oy * lt.c) - ox;
+    lt.ty = position._y - (px * lt.b + py * lt.d) + (ox * lt.b + oy * lt.d) - oy;
   }
   // / ///// color related stuff
   set alpha(value) {
@@ -7967,985 +8146,6 @@ extensions.mixin(
 );
 
 "use strict";
-class FederatedEvent {
-  /**
-   * @param manager - The event boundary which manages this event. Propagation can only occur
-   *  within the boundary's jurisdiction.
-   */
-  constructor(manager) {
-    /** Flags whether this event bubbles. This will take effect only if it is set before propagation. */
-    this.bubbles = true;
-    /** @deprecated since 7.0.0 */
-    this.cancelBubble = true;
-    /**
-     * Flags whether this event can be canceled using {@link FederatedEvent.preventDefault}. This is always
-     * false (for now).
-     */
-    this.cancelable = false;
-    /**
-     * Flag added for compatibility with DOM `Event`. It is not used in the Federated Events
-     * API.
-     * @see https://dom.spec.whatwg.org/#dom-event-composed
-     * @ignore
-     */
-    this.composed = false;
-    /** Flags whether the default response of the user agent was prevent through this event. */
-    this.defaultPrevented = false;
-    /**
-     * The propagation phase.
-     * @default {@link FederatedEvent.NONE}
-     */
-    this.eventPhase = FederatedEvent.prototype.NONE;
-    /** Flags whether propagation was stopped. */
-    this.propagationStopped = false;
-    /** Flags whether propagation was immediately stopped. */
-    this.propagationImmediatelyStopped = false;
-    /** The coordinates of the event relative to the nearest DOM layer. This is a non-standard property. */
-    this.layer = new Point();
-    /** The coordinates of the event relative to the DOM document. This is a non-standard property. */
-    this.page = new Point();
-    /**
-     * The event propagation phase NONE that indicates that the event is not in any phase.
-     * @default 0
-     * @advanced
-     */
-    this.NONE = 0;
-    /**
-     * The event propagation phase CAPTURING_PHASE that indicates that the event is in the capturing phase.
-     * @default 1
-     * @advanced
-     */
-    this.CAPTURING_PHASE = 1;
-    /**
-     * The event propagation phase AT_TARGET that indicates that the event is at the target.
-     * @default 2
-     * @advanced
-     */
-    this.AT_TARGET = 2;
-    /**
-     * The event propagation phase BUBBLING_PHASE that indicates that the event is in the bubbling phase.
-     * @default 3
-     * @advanced
-     */
-    this.BUBBLING_PHASE = 3;
-    this.manager = manager;
-  }
-  /** @readonly */
-  get layerX() {
-    return this.layer.x;
-  }
-  /** @readonly */
-  get layerY() {
-    return this.layer.y;
-  }
-  /** @readonly */
-  get pageX() {
-    return this.page.x;
-  }
-  /** @readonly */
-  get pageY() {
-    return this.page.y;
-  }
-  /**
-   * Fallback for the deprecated `InteractionEvent.data`.
-   * @deprecated since 7.0.0
-   */
-  get data() {
-    return this;
-  }
-  /**
-   * The propagation path for this event. Alias for {@link EventBoundary.propagationPath}.
-   * @advanced
-   */
-  composedPath() {
-    if (this.manager && (!this.path || this.path[this.path.length - 1] !== this.target)) {
-      this.path = this.target ? this.manager.propagationPath(this.target) : [];
-    }
-    return this.path;
-  }
-  /**
-   * Unimplemented method included for implementing the DOM interface `Event`. It will throw an `Error`.
-   * @deprecated
-   * @ignore
-   * @param _type
-   * @param _bubbles
-   * @param _cancelable
-   */
-  initEvent(_type, _bubbles, _cancelable) {
-    throw new Error("initEvent() is a legacy DOM API. It is not implemented in the Federated Events API.");
-  }
-  /**
-   * Unimplemented method included for implementing the DOM interface `UIEvent`. It will throw an `Error`.
-   * @ignore
-   * @deprecated
-   * @param _typeArg
-   * @param _bubblesArg
-   * @param _cancelableArg
-   * @param _viewArg
-   * @param _detailArg
-   */
-  initUIEvent(_typeArg, _bubblesArg, _cancelableArg, _viewArg, _detailArg) {
-    throw new Error("initUIEvent() is a legacy DOM API. It is not implemented in the Federated Events API.");
-  }
-  /**
-   * Prevent default behavior of both PixiJS and the user agent.
-   * @example
-   * ```ts
-   * sprite.on('click', (event) => {
-   *     // Prevent both browser's default click behavior
-   *     // and PixiJS's default handling
-   *     event.preventDefault();
-   *
-   *     // Custom handling
-   *     customClickHandler();
-   * });
-   * ```
-   * @remarks
-   * - Only works if the native event is cancelable
-   * - Does not stop event propagation
-   */
-  preventDefault() {
-    if (this.nativeEvent instanceof Event && this.nativeEvent.cancelable) {
-      this.nativeEvent.preventDefault();
-    }
-    this.defaultPrevented = true;
-  }
-  /**
-   * Stop this event from propagating to any additional listeners, including those
-   * on the current target and any following targets in the propagation path.
-   * @example
-   * ```ts
-   * container.on('pointerdown', (event) => {
-   *     // Stop all further event handling
-   *     event.stopImmediatePropagation();
-   *
-   *     // These handlers won't be called:
-   *     // - Other pointerdown listeners on this container
-   *     // - Any pointerdown listeners on parent containers
-   * });
-   * ```
-   * @remarks
-   * - Immediately stops all event propagation
-   * - Prevents other listeners on same target from being called
-   * - More aggressive than stopPropagation()
-   */
-  stopImmediatePropagation() {
-    this.propagationImmediatelyStopped = true;
-  }
-  /**
-   * Stop this event from propagating to the next target in the propagation path.
-   * The rest of the listeners on the current target will still be notified.
-   * @example
-   * ```ts
-   * child.on('pointermove', (event) => {
-   *     // Handle event on child
-   *     updateChild();
-   *
-   *     // Prevent parent handlers from being called
-   *     event.stopPropagation();
-   * });
-   *
-   * // This won't be called if child handles the event
-   * parent.on('pointermove', (event) => {
-   *     updateParent();
-   * });
-   * ```
-   * @remarks
-   * - Stops event bubbling to parent containers
-   * - Does not prevent other listeners on same target
-   * - Less aggressive than stopImmediatePropagation()
-   */
-  stopPropagation() {
-    this.propagationStopped = true;
-  }
-}
-
-var appleIphone = /iPhone/i;
-var appleIpod = /iPod/i;
-var appleTablet = /iPad/i;
-var appleUniversal = /\biOS-universal(?:.+)Mac\b/i;
-var androidPhone = /\bAndroid(?:.+)Mobile\b/i;
-var androidTablet = /Android/i;
-var amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i;
-var amazonTablet = /Silk/i;
-var windowsPhone = /Windows Phone/i;
-var windowsTablet = /\bWindows(?:.+)ARM\b/i;
-var otherBlackBerry = /BlackBerry/i;
-var otherBlackBerry10 = /BB10/i;
-var otherOpera = /Opera Mini/i;
-var otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i;
-var otherFirefox = /Mobile(?:.+)Firefox\b/i;
-var isAppleTabletOnIos13 = function (navigator) {
-    return (typeof navigator !== 'undefined' &&
-        navigator.platform === 'MacIntel' &&
-        typeof navigator.maxTouchPoints === 'number' &&
-        navigator.maxTouchPoints > 1 &&
-        typeof MSStream === 'undefined');
-};
-function createMatch(userAgent) {
-    return function (regex) { return regex.test(userAgent); };
-}
-function isMobile$1(param) {
-    var nav = {
-        userAgent: '',
-        platform: '',
-        maxTouchPoints: 0
-    };
-    if (!param && typeof navigator !== 'undefined') {
-        nav = {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            maxTouchPoints: navigator.maxTouchPoints || 0
-        };
-    }
-    else if (typeof param === 'string') {
-        nav.userAgent = param;
-    }
-    else if (param && param.userAgent) {
-        nav = {
-            userAgent: param.userAgent,
-            platform: param.platform,
-            maxTouchPoints: param.maxTouchPoints || 0
-        };
-    }
-    var userAgent = nav.userAgent;
-    var tmp = userAgent.split('[FBAN');
-    if (typeof tmp[1] !== 'undefined') {
-        userAgent = tmp[0];
-    }
-    tmp = userAgent.split('Twitter');
-    if (typeof tmp[1] !== 'undefined') {
-        userAgent = tmp[0];
-    }
-    var match = createMatch(userAgent);
-    var result = {
-        apple: {
-            phone: match(appleIphone) && !match(windowsPhone),
-            ipod: match(appleIpod),
-            tablet: !match(appleIphone) &&
-                (match(appleTablet) || isAppleTabletOnIos13(nav)) &&
-                !match(windowsPhone),
-            universal: match(appleUniversal),
-            device: (match(appleIphone) ||
-                match(appleIpod) ||
-                match(appleTablet) ||
-                match(appleUniversal) ||
-                isAppleTabletOnIos13(nav)) &&
-                !match(windowsPhone)
-        },
-        amazon: {
-            phone: match(amazonPhone),
-            tablet: !match(amazonPhone) && match(amazonTablet),
-            device: match(amazonPhone) || match(amazonTablet)
-        },
-        android: {
-            phone: (!match(windowsPhone) && match(amazonPhone)) ||
-                (!match(windowsPhone) && match(androidPhone)),
-            tablet: !match(windowsPhone) &&
-                !match(amazonPhone) &&
-                !match(androidPhone) &&
-                (match(amazonTablet) || match(androidTablet)),
-            device: (!match(windowsPhone) &&
-                (match(amazonPhone) ||
-                    match(amazonTablet) ||
-                    match(androidPhone) ||
-                    match(androidTablet))) ||
-                match(/\bokhttp\b/i)
-        },
-        windows: {
-            phone: match(windowsPhone),
-            tablet: match(windowsTablet),
-            device: match(windowsPhone) || match(windowsTablet)
-        },
-        other: {
-            blackberry: match(otherBlackBerry),
-            blackberry10: match(otherBlackBerry10),
-            opera: match(otherOpera),
-            firefox: match(otherFirefox),
-            chrome: match(otherChrome),
-            device: match(otherBlackBerry) ||
-                match(otherBlackBerry10) ||
-                match(otherOpera) ||
-                match(otherFirefox) ||
-                match(otherChrome)
-        },
-        any: false,
-        phone: false,
-        tablet: false
-    };
-    result.any =
-        result.apple.device ||
-            result.android.device ||
-            result.windows.device ||
-            result.other.device;
-    result.phone =
-        result.apple.phone || result.android.phone || result.windows.phone;
-    result.tablet =
-        result.apple.tablet || result.android.tablet || result.windows.tablet;
-    return result;
-}
-
-"use strict";
-var _a;
-const isMobileCall = (_a = isMobile$1.default) != null ? _a : isMobile$1;
-const isMobile = isMobileCall(globalThis.navigator);
-
-"use strict";
-var __defProp$18 = Object.defineProperty;
-var __getOwnPropSymbols$19 = Object.getOwnPropertySymbols;
-var __hasOwnProp$19 = Object.prototype.hasOwnProperty;
-var __propIsEnum$19 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$18 = (obj, key, value) => key in obj ? __defProp$18(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$18 = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp$19.call(b, prop))
-      __defNormalProp$18(a, prop, b[prop]);
-  if (__getOwnPropSymbols$19)
-    for (var prop of __getOwnPropSymbols$19(b)) {
-      if (__propIsEnum$19.call(b, prop))
-        __defNormalProp$18(a, prop, b[prop]);
-    }
-  return a;
-};
-const KEY_CODE_TAB = 9;
-const DIV_TOUCH_SIZE = 100;
-const DIV_TOUCH_POS_X = 0;
-const DIV_TOUCH_POS_Y = 0;
-const DIV_TOUCH_ZINDEX = 2;
-const DIV_HOOK_SIZE = 1;
-const DIV_HOOK_POS_X = -1e3;
-const DIV_HOOK_POS_Y = -1e3;
-const DIV_HOOK_ZINDEX = 2;
-const _AccessibilitySystem = class _AccessibilitySystem {
-  // 2fps
-  // eslint-disable-next-line jsdoc/require-param
-  /**
-   * @param {WebGLRenderer|WebGPURenderer} renderer - A reference to the current renderer
-   */
-  constructor(renderer, _mobileInfo = isMobile) {
-    this._mobileInfo = _mobileInfo;
-    /** Whether accessibility divs are visible for debugging */
-    this.debug = false;
-    /** Whether to activate on tab key press */
-    this._activateOnTab = true;
-    /** Whether to deactivate accessibility when mouse moves */
-    this._deactivateOnMouseMove = true;
-    /** Internal variable, see isActive getter. */
-    this._isActive = false;
-    /** Internal variable, see isMobileAccessibility getter. */
-    this._isMobileAccessibility = false;
-    /** This is the dom element that will sit over the PixiJS element. This is where the div overlays will go. */
-    this._div = null;
-    /** A simple pool for storing divs. */
-    this._pool = [];
-    /** This is a tick used to check if an object is no longer being rendered. */
-    this._renderId = 0;
-    /** The array of currently active accessible items. */
-    this._children = [];
-    /** Count to throttle div updates on android devices. */
-    this._androidUpdateCount = 0;
-    /**  The frequency to update the div elements. */
-    this._androidUpdateFrequency = 500;
-    this._hookDiv = null;
-    if (_mobileInfo.tablet || _mobileInfo.phone) {
-      this._createTouchHook();
-    }
-    this._renderer = renderer;
-  }
-  /**
-   * Value of `true` if accessibility is currently active and accessibility layers are showing.
-   * @type {boolean}
-   * @readonly
-   */
-  get isActive() {
-    return this._isActive;
-  }
-  /**
-   * Value of `true` if accessibility is enabled for touch devices.
-   * @type {boolean}
-   * @readonly
-   */
-  get isMobileAccessibility() {
-    return this._isMobileAccessibility;
-  }
-  /**
-   * The DOM element that will sit over the PixiJS element. This is where the div overlays will go.
-   * @readonly
-   */
-  get hookDiv() {
-    return this._hookDiv;
-  }
-  /**
-   * Creates the touch hooks.
-   * @private
-   */
-  _createTouchHook() {
-    const hookDiv = document.createElement("button");
-    hookDiv.style.width = `${DIV_HOOK_SIZE}px`;
-    hookDiv.style.height = `${DIV_HOOK_SIZE}px`;
-    hookDiv.style.position = "absolute";
-    hookDiv.style.top = `${DIV_HOOK_POS_X}px`;
-    hookDiv.style.left = `${DIV_HOOK_POS_Y}px`;
-    hookDiv.style.zIndex = DIV_HOOK_ZINDEX.toString();
-    hookDiv.style.backgroundColor = "#FF0000";
-    hookDiv.title = "select to enable accessibility for this content";
-    hookDiv.addEventListener("focus", () => {
-      this._isMobileAccessibility = true;
-      this._activate();
-      this._destroyTouchHook();
-    });
-    document.body.appendChild(hookDiv);
-    this._hookDiv = hookDiv;
-  }
-  /**
-   * Destroys the touch hooks.
-   * @private
-   */
-  _destroyTouchHook() {
-    if (!this._hookDiv) {
-      return;
-    }
-    document.body.removeChild(this._hookDiv);
-    this._hookDiv = null;
-  }
-  /**
-   * Activating will cause the Accessibility layer to be shown.
-   * This is called when a user presses the tab key.
-   * @private
-   */
-  _activate() {
-    if (this._isActive) {
-      return;
-    }
-    this._isActive = true;
-    if (!this._div) {
-      this._div = document.createElement("div");
-      this._div.style.width = `${DIV_TOUCH_SIZE}px`;
-      this._div.style.height = `${DIV_TOUCH_SIZE}px`;
-      this._div.style.position = "absolute";
-      this._div.style.top = `${DIV_TOUCH_POS_X}px`;
-      this._div.style.left = `${DIV_TOUCH_POS_Y}px`;
-      this._div.style.zIndex = DIV_TOUCH_ZINDEX.toString();
-      this._div.style.pointerEvents = "none";
-    }
-    if (this._activateOnTab) {
-      this._onKeyDown = this._onKeyDown.bind(this);
-      globalThis.addEventListener("keydown", this._onKeyDown, false);
-    }
-    if (this._deactivateOnMouseMove) {
-      this._onMouseMove = this._onMouseMove.bind(this);
-      globalThis.document.addEventListener("mousemove", this._onMouseMove, true);
-    }
-    const canvas = this._renderer.view.canvas;
-    if (!canvas.parentNode) {
-      const observer = new MutationObserver(() => {
-        if (canvas.parentNode) {
-          canvas.parentNode.appendChild(this._div);
-          observer.disconnect();
-          this._initAccessibilitySetup();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-    } else {
-      canvas.parentNode.appendChild(this._div);
-      this._initAccessibilitySetup();
-    }
-  }
-  // New method to handle initialization after div is ready
-  _initAccessibilitySetup() {
-    this._renderer.runners.postrender.add(this);
-    if (this._renderer.lastObjectRendered) {
-      this._updateAccessibleObjects(this._renderer.lastObjectRendered);
-    }
-  }
-  /**
-   * Deactivates the accessibility system. Removes listeners and accessibility elements.
-   * @private
-   */
-  _deactivate() {
-    if (!this._isActive || this._isMobileAccessibility) {
-      return;
-    }
-    this._isActive = false;
-    globalThis.document.removeEventListener("mousemove", this._onMouseMove, true);
-    if (this._activateOnTab) {
-      globalThis.addEventListener("keydown", this._onKeyDown, false);
-    }
-    this._renderer.runners.postrender.remove(this);
-    for (const child of this._children) {
-      if (child._accessibleDiv && child._accessibleDiv.parentNode) {
-        child._accessibleDiv.parentNode.removeChild(child._accessibleDiv);
-        child._accessibleDiv = null;
-      }
-      child._accessibleActive = false;
-    }
-    this._pool.forEach((div) => {
-      if (div.parentNode) {
-        div.parentNode.removeChild(div);
-      }
-    });
-    if (this._div && this._div.parentNode) {
-      this._div.parentNode.removeChild(this._div);
-    }
-    this._pool = [];
-    this._children = [];
-  }
-  /**
-   * This recursive function will run through the scene graph and add any new accessible objects to the DOM layer.
-   * @private
-   * @param {Container} container - The Container to check.
-   */
-  _updateAccessibleObjects(container) {
-    if (!container.visible || !container.accessibleChildren) {
-      return;
-    }
-    if (container.accessible) {
-      if (!container._accessibleActive) {
-        this._addChild(container);
-      }
-      container._renderId = this._renderId;
-    }
-    const children = container.children;
-    if (children) {
-      for (let i = 0; i < children.length; i++) {
-        this._updateAccessibleObjects(children[i]);
-      }
-    }
-  }
-  /**
-   * Runner init called, view is available at this point.
-   * @ignore
-   */
-  init(options) {
-    const defaultOpts = _AccessibilitySystem.defaultOptions;
-    const mergedOptions = {
-      accessibilityOptions: __spreadValues$18(__spreadValues$18({}, defaultOpts), (options == null ? void 0 : options.accessibilityOptions) || {})
-    };
-    this.debug = mergedOptions.accessibilityOptions.debug;
-    this._activateOnTab = mergedOptions.accessibilityOptions.activateOnTab;
-    this._deactivateOnMouseMove = mergedOptions.accessibilityOptions.deactivateOnMouseMove;
-    if (mergedOptions.accessibilityOptions.enabledByDefault) {
-      this._activate();
-    } else if (this._activateOnTab) {
-      this._onKeyDown = this._onKeyDown.bind(this);
-      globalThis.addEventListener("keydown", this._onKeyDown, false);
-    }
-    this._renderer.runners.postrender.remove(this);
-  }
-  /**
-   * Updates the accessibility layer during rendering.
-   * - Removes divs for containers no longer in the scene
-   * - Updates the position and dimensions of the root div
-   * - Updates positions of active accessibility divs
-   * Only fires while the accessibility system is active.
-   * @ignore
-   */
-  postrender() {
-    const now = performance.now();
-    if (this._mobileInfo.android.device && now < this._androidUpdateCount) {
-      return;
-    }
-    this._androidUpdateCount = now + this._androidUpdateFrequency;
-    if (!this._renderer.renderingToScreen || !this._renderer.view.canvas) {
-      return;
-    }
-    const activeIds = /* @__PURE__ */ new Set();
-    if (this._renderer.lastObjectRendered) {
-      this._updateAccessibleObjects(this._renderer.lastObjectRendered);
-      for (const child of this._children) {
-        if (child._renderId === this._renderId) {
-          activeIds.add(this._children.indexOf(child));
-        }
-      }
-    }
-    for (let i = this._children.length - 1; i >= 0; i--) {
-      const child = this._children[i];
-      if (!activeIds.has(i)) {
-        if (child._accessibleDiv && child._accessibleDiv.parentNode) {
-          child._accessibleDiv.parentNode.removeChild(child._accessibleDiv);
-          this._pool.push(child._accessibleDiv);
-          child._accessibleDiv = null;
-        }
-        child._accessibleActive = false;
-        removeItems(this._children, i, 1);
-      }
-    }
-    if (this._renderer.renderingToScreen) {
-      const { x, y, width: viewWidth, height: viewHeight } = this._renderer.screen;
-      const div = this._div;
-      div.style.left = `${x}px`;
-      div.style.top = `${y}px`;
-      div.style.width = `${viewWidth}px`;
-      div.style.height = `${viewHeight}px`;
-    }
-    for (let i = 0; i < this._children.length; i++) {
-      const child = this._children[i];
-      if (!child._accessibleActive || !child._accessibleDiv) {
-        continue;
-      }
-      const div = child._accessibleDiv;
-      const hitArea = child.hitArea || child.getBounds().rectangle;
-      if (child.hitArea) {
-        const wt = child.worldTransform;
-        const sx = this._renderer.resolution;
-        const sy = this._renderer.resolution;
-        div.style.left = `${(wt.tx + hitArea.x * wt.a) * sx}px`;
-        div.style.top = `${(wt.ty + hitArea.y * wt.d) * sy}px`;
-        div.style.width = `${hitArea.width * wt.a * sx}px`;
-        div.style.height = `${hitArea.height * wt.d * sy}px`;
-      } else {
-        this._capHitArea(hitArea);
-        const sx = this._renderer.resolution;
-        const sy = this._renderer.resolution;
-        div.style.left = `${hitArea.x * sx}px`;
-        div.style.top = `${hitArea.y * sy}px`;
-        div.style.width = `${hitArea.width * sx}px`;
-        div.style.height = `${hitArea.height * sy}px`;
-      }
-    }
-    this._renderId++;
-  }
-  /**
-   * private function that will visually add the information to the
-   * accessibility div
-   * @param {HTMLElement} div -
-   */
-  _updateDebugHTML(div) {
-    div.innerHTML = `type: ${div.type}</br> title : ${div.title}</br> tabIndex: ${div.tabIndex}`;
-  }
-  /**
-   * Adjust the hit area based on the bounds of a display object
-   * @param {Rectangle} hitArea - Bounds of the child
-   */
-  _capHitArea(hitArea) {
-    if (hitArea.x < 0) {
-      hitArea.width += hitArea.x;
-      hitArea.x = 0;
-    }
-    if (hitArea.y < 0) {
-      hitArea.height += hitArea.y;
-      hitArea.y = 0;
-    }
-    const { width: viewWidth, height: viewHeight } = this._renderer;
-    if (hitArea.x + hitArea.width > viewWidth) {
-      hitArea.width = viewWidth - hitArea.x;
-    }
-    if (hitArea.y + hitArea.height > viewHeight) {
-      hitArea.height = viewHeight - hitArea.y;
-    }
-  }
-  /**
-   * Creates or reuses a div element for a Container and adds it to the accessibility layer.
-   * Sets up ARIA attributes, event listeners, and positioning based on the container's properties.
-   * @private
-   * @param {Container} container - The child to make accessible.
-   */
-  _addChild(container) {
-    let div = this._pool.pop();
-    if (!div) {
-      if (container.accessibleType === "button") {
-        div = document.createElement("button");
-      } else {
-        div = document.createElement(container.accessibleType);
-        div.style.cssText = `
-                        color: transparent;
-                        pointer-events: none;
-                        padding: 0;
-                        margin: 0;
-                        border: 0;
-                        outline: 0;
-                        background: transparent;
-                        box-sizing: border-box;
-                        user-select: none;
-                        -webkit-user-select: none;
-                        -moz-user-select: none;
-                        -ms-user-select: none;
-                    `;
-        if (container.accessibleText) {
-          div.innerText = container.accessibleText;
-        }
-      }
-      div.style.width = `${DIV_TOUCH_SIZE}px`;
-      div.style.height = `${DIV_TOUCH_SIZE}px`;
-      div.style.backgroundColor = this.debug ? "rgba(255,255,255,0.5)" : "transparent";
-      div.style.position = "absolute";
-      div.style.zIndex = DIV_TOUCH_ZINDEX.toString();
-      div.style.borderStyle = "none";
-      if (navigator.userAgent.toLowerCase().includes("chrome")) {
-        div.setAttribute("aria-live", "off");
-      } else {
-        div.setAttribute("aria-live", "polite");
-      }
-      if (navigator.userAgent.match(/rv:.*Gecko\//)) {
-        div.setAttribute("aria-relevant", "additions");
-      } else {
-        div.setAttribute("aria-relevant", "text");
-      }
-      div.addEventListener("click", this._onClick.bind(this));
-      div.addEventListener("focus", this._onFocus.bind(this));
-      div.addEventListener("focusout", this._onFocusOut.bind(this));
-    }
-    div.style.pointerEvents = container.accessiblePointerEvents;
-    div.type = container.accessibleType;
-    if (container.accessibleTitle && container.accessibleTitle !== null) {
-      div.title = container.accessibleTitle;
-    } else if (!container.accessibleHint || container.accessibleHint === null) {
-      div.title = `container ${container.tabIndex}`;
-    }
-    if (container.accessibleHint && container.accessibleHint !== null) {
-      div.setAttribute("aria-label", container.accessibleHint);
-    }
-    if (this.debug) {
-      this._updateDebugHTML(div);
-    }
-    container._accessibleActive = true;
-    container._accessibleDiv = div;
-    div.container = container;
-    this._children.push(container);
-    this._div.appendChild(container._accessibleDiv);
-    if (container.interactive) {
-      container._accessibleDiv.tabIndex = container.tabIndex;
-    }
-  }
-  /**
-   * Dispatch events with the EventSystem.
-   * @param e
-   * @param type
-   * @private
-   */
-  _dispatchEvent(e, type) {
-    const { container: target } = e.target;
-    const boundary = this._renderer.events.rootBoundary;
-    const event = Object.assign(new FederatedEvent(boundary), { target });
-    boundary.rootTarget = this._renderer.lastObjectRendered;
-    type.forEach((type2) => boundary.dispatchEvent(event, type2));
-  }
-  /**
-   * Maps the div button press to pixi's EventSystem (click)
-   * @private
-   * @param {MouseEvent} e - The click event.
-   */
-  _onClick(e) {
-    this._dispatchEvent(e, ["click", "pointertap", "tap"]);
-  }
-  /**
-   * Maps the div focus events to pixi's EventSystem (mouseover)
-   * @private
-   * @param {FocusEvent} e - The focus event.
-   */
-  _onFocus(e) {
-    if (!e.target.getAttribute("aria-live")) {
-      e.target.setAttribute("aria-live", "assertive");
-    }
-    this._dispatchEvent(e, ["mouseover"]);
-  }
-  /**
-   * Maps the div focus events to pixi's EventSystem (mouseout)
-   * @private
-   * @param {FocusEvent} e - The focusout event.
-   */
-  _onFocusOut(e) {
-    if (!e.target.getAttribute("aria-live")) {
-      e.target.setAttribute("aria-live", "polite");
-    }
-    this._dispatchEvent(e, ["mouseout"]);
-  }
-  /**
-   * Is called when a key is pressed
-   * @private
-   * @param {KeyboardEvent} e - The keydown event.
-   */
-  _onKeyDown(e) {
-    if (e.keyCode !== KEY_CODE_TAB || !this._activateOnTab) {
-      return;
-    }
-    this._activate();
-  }
-  /**
-   * Is called when the mouse moves across the renderer element
-   * @private
-   * @param {MouseEvent} e - The mouse event.
-   */
-  _onMouseMove(e) {
-    if (e.movementX === 0 && e.movementY === 0) {
-      return;
-    }
-    this._deactivate();
-  }
-  /**
-   * Destroys the accessibility system. Removes all elements and listeners.
-   * > [!IMPORTANT] This is typically called automatically when the {@link Application} is destroyed.
-   * > A typically user should not need to call this method directly.
-   */
-  destroy() {
-    this._deactivate();
-    this._destroyTouchHook();
-    this._div = null;
-    this._pool = null;
-    this._children = null;
-    this._renderer = null;
-    if (this._activateOnTab) {
-      globalThis.removeEventListener("keydown", this._onKeyDown);
-    }
-  }
-  /**
-   * Enables or disables the accessibility system.
-   * @param enabled - Whether to enable or disable accessibility.
-   * @example
-   * ```js
-   * app.renderer.accessibility.setAccessibilityEnabled(true); // Enable accessibility
-   * app.renderer.accessibility.setAccessibilityEnabled(false); // Disable accessibility
-   * ```
-   */
-  setAccessibilityEnabled(enabled) {
-    if (enabled) {
-      this._activate();
-    } else {
-      this._deactivate();
-    }
-  }
-};
-/** @ignore */
-_AccessibilitySystem.extension = {
-  type: [
-    ExtensionType.WebGLSystem,
-    ExtensionType.WebGPUSystem
-  ],
-  name: "accessibility"
-};
-/**
- * The default options used by the system.
- * You can set these before initializing the {@link Application} to change the default behavior.
- * @example
- * ```js
- * import { AccessibilitySystem } from 'pixi.js';
- *
- * AccessibilitySystem.defaultOptions.enabledByDefault = true;
- *
- * const app = new Application()
- * app.init()
- * ```
- */
-_AccessibilitySystem.defaultOptions = {
-  /**
-   * Whether to enable accessibility features on initialization
-   * @default false
-   */
-  enabledByDefault: false,
-  /**
-   * Whether to visually show the accessibility divs for debugging
-   * @default false
-   */
-  debug: false,
-  /**
-   * Whether to activate accessibility when tab key is pressed
-   * @default true
-   */
-  activateOnTab: true,
-  /**
-   * Whether to deactivate accessibility when mouse moves
-   * @default true
-   */
-  deactivateOnMouseMove: true
-};
-let AccessibilitySystem = _AccessibilitySystem;
-
-"use strict";
-const accessibilityTarget = {
-  accessible: false,
-  accessibleTitle: null,
-  accessibleHint: null,
-  tabIndex: 0,
-  accessibleType: "button",
-  accessibleText: null,
-  accessiblePointerEvents: "auto",
-  accessibleChildren: true,
-  _accessibleActive: false,
-  _accessibleDiv: null,
-  _renderId: -1
-};
-
-"use strict";
-extensions.add(AccessibilitySystem);
-extensions.mixin(Container, accessibilityTarget);
-
-"use strict";
-class ResizePlugin {
-  /**
-   * Initialize the plugin with scope of application instance
-   * @private
-   * @param {object} [options] - See application options
-   */
-  static init(options) {
-    Object.defineProperty(
-      this,
-      "resizeTo",
-      {
-        set(dom) {
-          globalThis.removeEventListener("resize", this.queueResize);
-          this._resizeTo = dom;
-          if (dom) {
-            globalThis.addEventListener("resize", this.queueResize);
-            this.resize();
-          }
-        },
-        get() {
-          return this._resizeTo;
-        }
-      }
-    );
-    this.queueResize = () => {
-      if (!this._resizeTo) {
-        return;
-      }
-      this._cancelResize();
-      this._resizeId = requestAnimationFrame(() => this.resize());
-    };
-    this._cancelResize = () => {
-      if (this._resizeId) {
-        cancelAnimationFrame(this._resizeId);
-        this._resizeId = null;
-      }
-    };
-    this.resize = () => {
-      if (!this._resizeTo) {
-        return;
-      }
-      this._cancelResize();
-      let width;
-      let height;
-      if (this._resizeTo === globalThis.window) {
-        width = globalThis.innerWidth;
-        height = globalThis.innerHeight;
-      } else {
-        const { clientWidth, clientHeight } = this._resizeTo;
-        width = clientWidth;
-        height = clientHeight;
-      }
-      this.renderer.resize(width, height);
-      this.render();
-    };
-    this._resizeId = null;
-    this._resizeTo = null;
-    this.resizeTo = options.resizeTo || null;
-  }
-  /**
-   * Clean up the ticker, scoped to application
-   * @private
-   */
-  static destroy() {
-    globalThis.removeEventListener("resize", this.queueResize);
-    this._cancelResize();
-    this._cancelResize = null;
-    this.queueResize = null;
-    this.resizeTo = null;
-    this.resize = null;
-  }
-}
-/** @ignore */
-ResizePlugin.extension = ExtensionType.Application;
-
-"use strict";
 var UPDATE_PRIORITY = /* @__PURE__ */ ((UPDATE_PRIORITY2) => {
   UPDATE_PRIORITY2[UPDATE_PRIORITY2["INTERACTION"] = 50] = "INTERACTION";
   UPDATE_PRIORITY2[UPDATE_PRIORITY2["HIGH"] = 25] = "HIGH";
@@ -9071,15 +8271,16 @@ const _Ticker = class _Ticker {
      */
     this.autoStart = false;
     /**
-     * Scalar time value from last frame to this frame.
-     * Used for frame-based animations and updates.
+     * Scalar representing the delta time factor.
+     * This is a dimensionless value representing the fraction of a frame at the target framerate.
+     * At 60 FPS, this value is typically around 1.0.
      *
-     * This value is capped by setting {@link Ticker#minFPS|minFPS}
-     * and is scaled with {@link Ticker#speed|speed}.
-     * > [!NOTE] The cap may be exceeded by scaling.
+     * This is NOT in milliseconds - it's a scalar multiplier for frame-independent animations.
+     * For actual milliseconds, use {@link Ticker#deltaMS}.
+     * @member {number}
      * @example
      * ```ts
-     * // Basic animation
+     * // Frame-independent animation using deltaTime scalar
      * ticker.add((ticker) => {
      *     // Rotate sprite by 0.1 radians per frame, scaled by deltaTime
      *     sprite.rotation += 0.1 * ticker.deltaTime;
@@ -9088,20 +8289,17 @@ const _Ticker = class _Ticker {
      */
     this.deltaTime = 1;
     /**
-     * The last time {@link Ticker#update|update} was invoked.
-     * Used for calculating time deltas between frames.
+     * The last time update was invoked, in milliseconds since epoch.
+     * Similar to performance.now() timestamp format.
      *
-     * This value is also reset internally outside of invoking
-     * update, but only when a new animation frame is requested.
-     *
-     * If the platform supports DOMHighResTimeStamp,
-     * this value will have a precision of 1 µs.
+     * Used internally for calculating time deltas between frames.
+     * @member {number}
      * @example
      * ```ts
-     * // Basic timing check
-     * ticker.add(() => {
-     *     const timeSinceStart = performance.now() - ticker.lastTime;
-     *     console.log(`Time running: ${timeSinceStart}ms`);
+     * ticker.add((ticker) => {
+     *     const currentTime = performance.now();
+     *     const timeSinceLastFrame = currentTime - ticker.lastTime;
+     *     console.log(`Time since last frame: ${timeSinceLastFrame}ms`);
      * });
      * ```
      */
@@ -9211,40 +8409,24 @@ const _Ticker = class _Ticker {
     }
   }
   /**
-   * Register a handler for tick events. Calls continuously unless
-   * it is removed or the ticker is stopped.
+   * Register a handler for tick events.
+   * @param fn - The listener function to add. Receives the Ticker instance as parameter
+   * @param context - The context for the listener
+   * @param priority - The priority of the listener
    * @example
    * ```ts
-   * // Basic update handler
+   * // Access time properties through the ticker parameter
    * ticker.add((ticker) => {
-   *     // Update every frame
+   *     // Use deltaTime (dimensionless scalar) for frame-independent animations
    *     sprite.rotation += 0.1 * ticker.deltaTime;
+   *
+   *     // Use deltaMS (milliseconds) for time-based calculations
+   *     const progress = ticker.deltaMS / animationDuration;
+   *
+   *     // Use elapsedMS for raw timing measurements
+   *     console.log(`Raw frame time: ${ticker.elapsedMS}ms`);
    * });
-   *
-   * // With specific context
-   * const game = {
-   *     update(ticker) {
-   *         this.physics.update(ticker.deltaTime);
-   *     }
-   * };
-   * ticker.add(game.update, game);
-   *
-   * // With priority
-   * ticker.add(
-   *     (ticker) => {
-   *         // Runs before normal priority updates
-   *         physics.update(ticker.deltaTime);
-   *     },
-   *     undefined,
-   *     UPDATE_PRIORITY.HIGH
-   * );
    * ```
-   * @param fn - The listener function to be added for updates
-   * @param context - The listener context
-   * @param priority - The priority for emitting (default: UPDATE_PRIORITY.NORMAL)
-   * @returns This instance of a ticker
-   * @see {@link Ticker#addOnce} For one-time handlers
-   * @see {@link Ticker#remove} For removing handlers
    */
   add(fn, context, priority = UPDATE_PRIORITY.NORMAL) {
     return this._addListener(new TickerListener(fn, context, priority));
@@ -9699,6 +8881,1102 @@ _Ticker.targetFPMS = 0.06;
 let Ticker = _Ticker;
 
 "use strict";
+class CanvasObserver {
+  constructor(options) {
+    /** A cached value of the last transform applied to the DOM element. */
+    this._lastTransform = "";
+    /** A ResizeObserver instance to observe changes in the canvas size. */
+    this._observer = null;
+    /** A flag to indicate whether the observer is attached to the Ticker for continuous updates. */
+    this._tickerAttached = false;
+    /**
+     * Updates the transform of the DOM element based on the canvas size and position.
+     * This method calculates the scale and translation needed to keep the DOM element in sync with the canvas.
+     */
+    this.updateTranslation = () => {
+      if (!this._canvas)
+        return;
+      const rect = this._canvas.getBoundingClientRect();
+      const contentWidth = this._canvas.width;
+      const contentHeight = this._canvas.height;
+      const sx = rect.width / contentWidth * this._renderer.resolution;
+      const sy = rect.height / contentHeight * this._renderer.resolution;
+      const tx = rect.left;
+      const ty = rect.top;
+      const newTransform = `translate(${tx}px, ${ty}px) scale(${sx}, ${sy})`;
+      if (newTransform !== this._lastTransform) {
+        this._domElement.style.transform = newTransform;
+        this._lastTransform = newTransform;
+      }
+    };
+    this._domElement = options.domElement;
+    this._renderer = options.renderer;
+    if (globalThis.OffscreenCanvas && this._renderer.canvas instanceof OffscreenCanvas)
+      return;
+    this._canvas = this._renderer.canvas;
+    this._attachObserver();
+  }
+  /** The canvas element that this CanvasObserver is associated with. */
+  get canvas() {
+    return this._canvas;
+  }
+  /** Attaches the DOM element to the canvas parent if it is not already attached. */
+  ensureAttached() {
+    if (!this._domElement.parentNode && this._canvas.parentNode) {
+      this._canvas.parentNode.appendChild(this._domElement);
+      this.updateTranslation();
+    }
+  }
+  /** Sets up a ResizeObserver if available. This ensures that the DOM element is kept in sync with the canvas size . */
+  _attachObserver() {
+    if ("ResizeObserver" in globalThis) {
+      if (this._observer) {
+        this._observer.disconnect();
+        this._observer = null;
+      }
+      this._observer = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.target !== this._canvas) {
+            continue;
+          }
+          const contentWidth = this.canvas.width;
+          const contentHeight = this.canvas.height;
+          const sx = entry.contentRect.width / contentWidth * this._renderer.resolution;
+          const sy = entry.contentRect.height / contentHeight * this._renderer.resolution;
+          const needsUpdate = this._lastScaleX !== sx || this._lastScaleY !== sy;
+          if (needsUpdate) {
+            this.updateTranslation();
+            this._lastScaleX = sx;
+            this._lastScaleY = sy;
+          }
+        }
+      });
+      this._observer.observe(this._canvas);
+    } else if (!this._tickerAttached) {
+      Ticker.shared.add(this.updateTranslation, this, UPDATE_PRIORITY.HIGH);
+    }
+  }
+  /** Destroys the CanvasObserver instance, cleaning up observers and Ticker. */
+  destroy() {
+    if (this._observer) {
+      this._observer.disconnect();
+      this._observer = null;
+    } else if (this._tickerAttached) {
+      Ticker.shared.remove(this.updateTranslation);
+    }
+    this._domElement = null;
+    this._renderer = null;
+    this._canvas = null;
+    this._tickerAttached = false;
+    this._lastTransform = "";
+    this._lastScaleX = null;
+    this._lastScaleY = null;
+  }
+}
+
+"use strict";
+class FederatedEvent {
+  /**
+   * @param manager - The event boundary which manages this event. Propagation can only occur
+   *  within the boundary's jurisdiction.
+   */
+  constructor(manager) {
+    /** Flags whether this event bubbles. This will take effect only if it is set before propagation. */
+    this.bubbles = true;
+    /** @deprecated since 7.0.0 */
+    this.cancelBubble = true;
+    /**
+     * Flags whether this event can be canceled using {@link FederatedEvent.preventDefault}. This is always
+     * false (for now).
+     */
+    this.cancelable = false;
+    /**
+     * Flag added for compatibility with DOM `Event`. It is not used in the Federated Events
+     * API.
+     * @see https://dom.spec.whatwg.org/#dom-event-composed
+     * @ignore
+     */
+    this.composed = false;
+    /** Flags whether the default response of the user agent was prevent through this event. */
+    this.defaultPrevented = false;
+    /**
+     * The propagation phase.
+     * @default {@link FederatedEvent.NONE}
+     */
+    this.eventPhase = FederatedEvent.prototype.NONE;
+    /** Flags whether propagation was stopped. */
+    this.propagationStopped = false;
+    /** Flags whether propagation was immediately stopped. */
+    this.propagationImmediatelyStopped = false;
+    /** The coordinates of the event relative to the nearest DOM layer. This is a non-standard property. */
+    this.layer = new Point();
+    /** The coordinates of the event relative to the DOM document. This is a non-standard property. */
+    this.page = new Point();
+    /**
+     * The event propagation phase NONE that indicates that the event is not in any phase.
+     * @default 0
+     * @advanced
+     */
+    this.NONE = 0;
+    /**
+     * The event propagation phase CAPTURING_PHASE that indicates that the event is in the capturing phase.
+     * @default 1
+     * @advanced
+     */
+    this.CAPTURING_PHASE = 1;
+    /**
+     * The event propagation phase AT_TARGET that indicates that the event is at the target.
+     * @default 2
+     * @advanced
+     */
+    this.AT_TARGET = 2;
+    /**
+     * The event propagation phase BUBBLING_PHASE that indicates that the event is in the bubbling phase.
+     * @default 3
+     * @advanced
+     */
+    this.BUBBLING_PHASE = 3;
+    this.manager = manager;
+  }
+  /** @readonly */
+  get layerX() {
+    return this.layer.x;
+  }
+  /** @readonly */
+  get layerY() {
+    return this.layer.y;
+  }
+  /** @readonly */
+  get pageX() {
+    return this.page.x;
+  }
+  /** @readonly */
+  get pageY() {
+    return this.page.y;
+  }
+  /**
+   * Fallback for the deprecated `InteractionEvent.data`.
+   * @deprecated since 7.0.0
+   */
+  get data() {
+    return this;
+  }
+  /**
+   * The propagation path for this event. Alias for {@link EventBoundary.propagationPath}.
+   * @advanced
+   */
+  composedPath() {
+    if (this.manager && (!this.path || this.path[this.path.length - 1] !== this.target)) {
+      this.path = this.target ? this.manager.propagationPath(this.target) : [];
+    }
+    return this.path;
+  }
+  /**
+   * Unimplemented method included for implementing the DOM interface `Event`. It will throw an `Error`.
+   * @deprecated
+   * @ignore
+   * @param _type
+   * @param _bubbles
+   * @param _cancelable
+   */
+  initEvent(_type, _bubbles, _cancelable) {
+    throw new Error("initEvent() is a legacy DOM API. It is not implemented in the Federated Events API.");
+  }
+  /**
+   * Unimplemented method included for implementing the DOM interface `UIEvent`. It will throw an `Error`.
+   * @ignore
+   * @deprecated
+   * @param _typeArg
+   * @param _bubblesArg
+   * @param _cancelableArg
+   * @param _viewArg
+   * @param _detailArg
+   */
+  initUIEvent(_typeArg, _bubblesArg, _cancelableArg, _viewArg, _detailArg) {
+    throw new Error("initUIEvent() is a legacy DOM API. It is not implemented in the Federated Events API.");
+  }
+  /**
+   * Prevent default behavior of both PixiJS and the user agent.
+   * @example
+   * ```ts
+   * sprite.on('click', (event) => {
+   *     // Prevent both browser's default click behavior
+   *     // and PixiJS's default handling
+   *     event.preventDefault();
+   *
+   *     // Custom handling
+   *     customClickHandler();
+   * });
+   * ```
+   * @remarks
+   * - Only works if the native event is cancelable
+   * - Does not stop event propagation
+   */
+  preventDefault() {
+    if (this.nativeEvent instanceof Event && this.nativeEvent.cancelable) {
+      this.nativeEvent.preventDefault();
+    }
+    this.defaultPrevented = true;
+  }
+  /**
+   * Stop this event from propagating to any additional listeners, including those
+   * on the current target and any following targets in the propagation path.
+   * @example
+   * ```ts
+   * container.on('pointerdown', (event) => {
+   *     // Stop all further event handling
+   *     event.stopImmediatePropagation();
+   *
+   *     // These handlers won't be called:
+   *     // - Other pointerdown listeners on this container
+   *     // - Any pointerdown listeners on parent containers
+   * });
+   * ```
+   * @remarks
+   * - Immediately stops all event propagation
+   * - Prevents other listeners on same target from being called
+   * - More aggressive than stopPropagation()
+   */
+  stopImmediatePropagation() {
+    this.propagationImmediatelyStopped = true;
+  }
+  /**
+   * Stop this event from propagating to the next target in the propagation path.
+   * The rest of the listeners on the current target will still be notified.
+   * @example
+   * ```ts
+   * child.on('pointermove', (event) => {
+   *     // Handle event on child
+   *     updateChild();
+   *
+   *     // Prevent parent handlers from being called
+   *     event.stopPropagation();
+   * });
+   *
+   * // This won't be called if child handles the event
+   * parent.on('pointermove', (event) => {
+   *     updateParent();
+   * });
+   * ```
+   * @remarks
+   * - Stops event bubbling to parent containers
+   * - Does not prevent other listeners on same target
+   * - Less aggressive than stopImmediatePropagation()
+   */
+  stopPropagation() {
+    this.propagationStopped = true;
+  }
+}
+
+var appleIphone = /iPhone/i;
+var appleIpod = /iPod/i;
+var appleTablet = /iPad/i;
+var appleUniversal = /\biOS-universal(?:.+)Mac\b/i;
+var androidPhone = /\bAndroid(?:.+)Mobile\b/i;
+var androidTablet = /Android/i;
+var amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i;
+var amazonTablet = /Silk/i;
+var windowsPhone = /Windows Phone/i;
+var windowsTablet = /\bWindows(?:.+)ARM\b/i;
+var otherBlackBerry = /BlackBerry/i;
+var otherBlackBerry10 = /BB10/i;
+var otherOpera = /Opera Mini/i;
+var otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i;
+var otherFirefox = /Mobile(?:.+)Firefox\b/i;
+var isAppleTabletOnIos13 = function (navigator) {
+    return (typeof navigator !== 'undefined' &&
+        navigator.platform === 'MacIntel' &&
+        typeof navigator.maxTouchPoints === 'number' &&
+        navigator.maxTouchPoints > 1 &&
+        typeof MSStream === 'undefined');
+};
+function createMatch(userAgent) {
+    return function (regex) { return regex.test(userAgent); };
+}
+function isMobile$1(param) {
+    var nav = {
+        userAgent: '',
+        platform: '',
+        maxTouchPoints: 0
+    };
+    if (!param && typeof navigator !== 'undefined') {
+        nav = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            maxTouchPoints: navigator.maxTouchPoints || 0
+        };
+    }
+    else if (typeof param === 'string') {
+        nav.userAgent = param;
+    }
+    else if (param && param.userAgent) {
+        nav = {
+            userAgent: param.userAgent,
+            platform: param.platform,
+            maxTouchPoints: param.maxTouchPoints || 0
+        };
+    }
+    var userAgent = nav.userAgent;
+    var tmp = userAgent.split('[FBAN');
+    if (typeof tmp[1] !== 'undefined') {
+        userAgent = tmp[0];
+    }
+    tmp = userAgent.split('Twitter');
+    if (typeof tmp[1] !== 'undefined') {
+        userAgent = tmp[0];
+    }
+    var match = createMatch(userAgent);
+    var result = {
+        apple: {
+            phone: match(appleIphone) && !match(windowsPhone),
+            ipod: match(appleIpod),
+            tablet: !match(appleIphone) &&
+                (match(appleTablet) || isAppleTabletOnIos13(nav)) &&
+                !match(windowsPhone),
+            universal: match(appleUniversal),
+            device: (match(appleIphone) ||
+                match(appleIpod) ||
+                match(appleTablet) ||
+                match(appleUniversal) ||
+                isAppleTabletOnIos13(nav)) &&
+                !match(windowsPhone)
+        },
+        amazon: {
+            phone: match(amazonPhone),
+            tablet: !match(amazonPhone) && match(amazonTablet),
+            device: match(amazonPhone) || match(amazonTablet)
+        },
+        android: {
+            phone: (!match(windowsPhone) && match(amazonPhone)) ||
+                (!match(windowsPhone) && match(androidPhone)),
+            tablet: !match(windowsPhone) &&
+                !match(amazonPhone) &&
+                !match(androidPhone) &&
+                (match(amazonTablet) || match(androidTablet)),
+            device: (!match(windowsPhone) &&
+                (match(amazonPhone) ||
+                    match(amazonTablet) ||
+                    match(androidPhone) ||
+                    match(androidTablet))) ||
+                match(/\bokhttp\b/i)
+        },
+        windows: {
+            phone: match(windowsPhone),
+            tablet: match(windowsTablet),
+            device: match(windowsPhone) || match(windowsTablet)
+        },
+        other: {
+            blackberry: match(otherBlackBerry),
+            blackberry10: match(otherBlackBerry10),
+            opera: match(otherOpera),
+            firefox: match(otherFirefox),
+            chrome: match(otherChrome),
+            device: match(otherBlackBerry) ||
+                match(otherBlackBerry10) ||
+                match(otherOpera) ||
+                match(otherFirefox) ||
+                match(otherChrome)
+        },
+        any: false,
+        phone: false,
+        tablet: false
+    };
+    result.any =
+        result.apple.device ||
+            result.android.device ||
+            result.windows.device ||
+            result.other.device;
+    result.phone =
+        result.apple.phone || result.android.phone || result.windows.phone;
+    result.tablet =
+        result.apple.tablet || result.android.tablet || result.windows.tablet;
+    return result;
+}
+
+"use strict";
+var _a;
+const isMobileCall = (_a = isMobile$1.default) != null ? _a : isMobile$1;
+const isMobile = isMobileCall(globalThis.navigator);
+
+"use strict";
+var __defProp$19 = Object.defineProperty;
+var __getOwnPropSymbols$1a = Object.getOwnPropertySymbols;
+var __hasOwnProp$1a = Object.prototype.hasOwnProperty;
+var __propIsEnum$1a = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$19 = (obj, key, value) => key in obj ? __defProp$19(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$19 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$1a.call(b, prop))
+      __defNormalProp$19(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1a)
+    for (var prop of __getOwnPropSymbols$1a(b)) {
+      if (__propIsEnum$1a.call(b, prop))
+        __defNormalProp$19(a, prop, b[prop]);
+    }
+  return a;
+};
+const KEY_CODE_TAB = 9;
+const DIV_TOUCH_SIZE = 100;
+const DIV_TOUCH_POS_X = 0;
+const DIV_TOUCH_POS_Y = 0;
+const DIV_TOUCH_ZINDEX = 2;
+const DIV_HOOK_SIZE = 1;
+const DIV_HOOK_POS_X = -1e3;
+const DIV_HOOK_POS_Y = -1e3;
+const DIV_HOOK_ZINDEX = 2;
+const _AccessibilitySystem = class _AccessibilitySystem {
+  // eslint-disable-next-line jsdoc/require-param
+  /**
+   * @param {WebGLRenderer|WebGPURenderer} renderer - A reference to the current renderer
+   */
+  constructor(renderer, _mobileInfo = isMobile) {
+    this._mobileInfo = _mobileInfo;
+    /** Whether accessibility divs are visible for debugging */
+    this.debug = false;
+    /** Whether to activate on tab key press */
+    this._activateOnTab = true;
+    /** Whether to deactivate accessibility when mouse moves */
+    this._deactivateOnMouseMove = true;
+    /** Internal variable, see isActive getter. */
+    this._isActive = false;
+    /** Internal variable, see isMobileAccessibility getter. */
+    this._isMobileAccessibility = false;
+    /** This is the dom element that will sit over the PixiJS element. This is where the div overlays will go. */
+    this._div = null;
+    /** A simple pool for storing divs. */
+    this._pools = {};
+    /** This is a tick used to check if an object is no longer being rendered. */
+    this._renderId = 0;
+    /** The array of currently active accessible items. */
+    this._children = [];
+    /** Count to throttle div updates on android devices. */
+    this._androidUpdateCount = 0;
+    /**  The frequency to update the div elements. */
+    this._androidUpdateFrequency = 500;
+    // eslint-disable-next-line @typescript-eslint/prefer-readonly
+    this._isRunningTests = false;
+    /** Bound function references for proper event listener removal */
+    this._boundOnKeyDown = this._onKeyDown.bind(this);
+    this._boundOnMouseMove = this._onMouseMove.bind(this);
+    this._hookDiv = null;
+    if (_mobileInfo.tablet || _mobileInfo.phone) {
+      this._createTouchHook();
+    }
+    this._renderer = renderer;
+  }
+  /**
+   * Value of `true` if accessibility is currently active and accessibility layers are showing.
+   * @type {boolean}
+   * @readonly
+   */
+  get isActive() {
+    return this._isActive;
+  }
+  /**
+   * Value of `true` if accessibility is enabled for touch devices.
+   * @type {boolean}
+   * @readonly
+   */
+  get isMobileAccessibility() {
+    return this._isMobileAccessibility;
+  }
+  /**
+   * Button element for handling touch hooks.
+   * @readonly
+   */
+  get hookDiv() {
+    return this._hookDiv;
+  }
+  /**
+   * The DOM element that will sit over the PixiJS element. This is where the div overlays will go.
+   * @readonly
+   */
+  get div() {
+    return this._div;
+  }
+  /**
+   * Creates the touch hooks.
+   * @private
+   */
+  _createTouchHook() {
+    const hookDiv = document.createElement("button");
+    hookDiv.style.width = `${DIV_HOOK_SIZE}px`;
+    hookDiv.style.height = `${DIV_HOOK_SIZE}px`;
+    hookDiv.style.position = "absolute";
+    hookDiv.style.top = `${DIV_HOOK_POS_X}px`;
+    hookDiv.style.left = `${DIV_HOOK_POS_Y}px`;
+    hookDiv.style.zIndex = DIV_HOOK_ZINDEX.toString();
+    hookDiv.style.backgroundColor = "#FF0000";
+    hookDiv.title = "select to enable accessibility for this content";
+    hookDiv.addEventListener("focus", () => {
+      this._isMobileAccessibility = true;
+      this._activate();
+      this._destroyTouchHook();
+    });
+    document.body.appendChild(hookDiv);
+    this._hookDiv = hookDiv;
+  }
+  /**
+   * Destroys the touch hooks.
+   * @private
+   */
+  _destroyTouchHook() {
+    if (!this._hookDiv) {
+      return;
+    }
+    document.body.removeChild(this._hookDiv);
+    this._hookDiv = null;
+  }
+  /**
+   * Activating will cause the Accessibility layer to be shown.
+   * This is called when a user presses the tab key.
+   * @private
+   */
+  _activate() {
+    if (this._isActive) {
+      return;
+    }
+    this._isActive = true;
+    if (!this._div) {
+      this._div = document.createElement("div");
+      this._div.style.position = "absolute";
+      this._div.style.top = `${DIV_TOUCH_POS_X}px`;
+      this._div.style.left = `${DIV_TOUCH_POS_Y}px`;
+      this._div.style.pointerEvents = "none";
+      this._div.style.zIndex = DIV_TOUCH_ZINDEX.toString();
+      this._canvasObserver = new CanvasObserver({
+        domElement: this._div,
+        renderer: this._renderer
+      });
+    }
+    if (this._activateOnTab) {
+      globalThis.addEventListener("keydown", this._boundOnKeyDown, false);
+    }
+    if (this._deactivateOnMouseMove) {
+      globalThis.document.addEventListener("mousemove", this._boundOnMouseMove, true);
+    }
+    const canvas = this._renderer.view.canvas;
+    if (!canvas.parentNode) {
+      const observer = new MutationObserver(() => {
+        if (canvas.parentNode) {
+          observer.disconnect();
+          this._canvasObserver.ensureAttached();
+          this._initAccessibilitySetup();
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    } else {
+      this._canvasObserver.ensureAttached();
+      this._initAccessibilitySetup();
+    }
+  }
+  // New method to handle initialization after div is ready
+  _initAccessibilitySetup() {
+    this._renderer.runners.postrender.add(this);
+    if (this._renderer.lastObjectRendered) {
+      this._updateAccessibleObjects(this._renderer.lastObjectRendered);
+    }
+  }
+  /**
+   * Deactivates the accessibility system. Removes listeners and accessibility elements.
+   * @private
+   */
+  _deactivate() {
+    if (!this._isActive || this._isMobileAccessibility) {
+      return;
+    }
+    this._isActive = false;
+    globalThis.document.removeEventListener("mousemove", this._boundOnMouseMove, true);
+    if (this._activateOnTab) {
+      globalThis.addEventListener("keydown", this._boundOnKeyDown, false);
+    }
+    this._renderer.runners.postrender.remove(this);
+    for (const child of this._children) {
+      if (child._accessibleDiv && child._accessibleDiv.parentNode) {
+        child._accessibleDiv.parentNode.removeChild(child._accessibleDiv);
+        child._accessibleDiv = null;
+      }
+      child._accessibleActive = false;
+    }
+    for (const accessibleType in this._pools) {
+      const pool = this._pools[accessibleType];
+      pool.forEach((div) => {
+        if (div.parentNode) {
+          div.parentNode.removeChild(div);
+        }
+      });
+      delete this._pools[accessibleType];
+    }
+    if (this._div && this._div.parentNode) {
+      this._div.parentNode.removeChild(this._div);
+    }
+    this._pools = {};
+    this._children = [];
+  }
+  /**
+   * This recursive function will run through the scene graph and add any new accessible objects to the DOM layer.
+   * @private
+   * @param {Container} container - The Container to check.
+   */
+  _updateAccessibleObjects(container) {
+    if (!container.visible || !container.accessibleChildren) {
+      return;
+    }
+    if (container.accessible) {
+      if (!container._accessibleActive) {
+        this._addChild(container);
+      }
+      container._renderId = this._renderId;
+    }
+    const children = container.children;
+    if (children) {
+      for (let i = 0; i < children.length; i++) {
+        this._updateAccessibleObjects(children[i]);
+      }
+    }
+  }
+  /**
+   * Runner init called, view is available at this point.
+   * @ignore
+   */
+  init(options) {
+    const defaultOpts = _AccessibilitySystem.defaultOptions;
+    const mergedOptions = {
+      accessibilityOptions: __spreadValues$19(__spreadValues$19({}, defaultOpts), (options == null ? void 0 : options.accessibilityOptions) || {})
+    };
+    this.debug = mergedOptions.accessibilityOptions.debug;
+    this._activateOnTab = mergedOptions.accessibilityOptions.activateOnTab;
+    this._deactivateOnMouseMove = mergedOptions.accessibilityOptions.deactivateOnMouseMove;
+    if (mergedOptions.accessibilityOptions.enabledByDefault) {
+      this._activate();
+    }
+    this._renderer.runners.postrender.remove(this);
+  }
+  /**
+   * Updates the accessibility layer during rendering.
+   * - Removes divs for containers no longer in the scene
+   * - Updates the position and dimensions of the root div
+   * - Updates positions of active accessibility divs
+   * Only fires while the accessibility system is active.
+   * @ignore
+   */
+  postrender() {
+    const now = performance.now();
+    if (this._mobileInfo.android.device && now < this._androidUpdateCount) {
+      return;
+    }
+    this._androidUpdateCount = now + this._androidUpdateFrequency;
+    if ((!this._renderer.renderingToScreen || !this._renderer.view.canvas) && !this._isRunningTests) {
+      return;
+    }
+    const activeIds = /* @__PURE__ */ new Set();
+    if (this._renderer.lastObjectRendered) {
+      this._updateAccessibleObjects(this._renderer.lastObjectRendered);
+      for (const child of this._children) {
+        if (child._renderId === this._renderId) {
+          activeIds.add(this._children.indexOf(child));
+        }
+      }
+    }
+    for (let i = this._children.length - 1; i >= 0; i--) {
+      const child = this._children[i];
+      if (!activeIds.has(i)) {
+        if (child._accessibleDiv && child._accessibleDiv.parentNode) {
+          child._accessibleDiv.parentNode.removeChild(child._accessibleDiv);
+          const pool = this._getPool(child.accessibleType);
+          pool.push(child._accessibleDiv);
+          child._accessibleDiv = null;
+        }
+        child._accessibleActive = false;
+        removeItems(this._children, i, 1);
+      }
+    }
+    if (this._renderer.renderingToScreen) {
+      this._canvasObserver.ensureAttached();
+    }
+    for (let i = 0; i < this._children.length; i++) {
+      const child = this._children[i];
+      if (!child._accessibleActive || !child._accessibleDiv) {
+        continue;
+      }
+      const div = child._accessibleDiv;
+      const hitArea = child.hitArea || child.getBounds().rectangle;
+      if (child.hitArea) {
+        const wt = child.worldTransform;
+        div.style.left = `${wt.tx + hitArea.x * wt.a}px`;
+        div.style.top = `${wt.ty + hitArea.y * wt.d}px`;
+        div.style.width = `${hitArea.width * wt.a}px`;
+        div.style.height = `${hitArea.height * wt.d}px`;
+      } else {
+        this._capHitArea(hitArea);
+        div.style.left = `${hitArea.x}px`;
+        div.style.top = `${hitArea.y}px`;
+        div.style.width = `${hitArea.width}px`;
+        div.style.height = `${hitArea.height}px`;
+      }
+    }
+    this._renderId++;
+  }
+  /**
+   * private function that will visually add the information to the
+   * accessibility div
+   * @param {HTMLElement} div -
+   */
+  _updateDebugHTML(div) {
+    div.innerHTML = `type: ${div.type}</br> title : ${div.title}</br> tabIndex: ${div.tabIndex}`;
+  }
+  /**
+   * Adjust the hit area based on the bounds of a display object
+   * @param {Rectangle} hitArea - Bounds of the child
+   */
+  _capHitArea(hitArea) {
+    if (hitArea.x < 0) {
+      hitArea.width += hitArea.x;
+      hitArea.x = 0;
+    }
+    if (hitArea.y < 0) {
+      hitArea.height += hitArea.y;
+      hitArea.y = 0;
+    }
+    const { width: viewWidth, height: viewHeight } = this._renderer;
+    if (hitArea.x + hitArea.width > viewWidth) {
+      hitArea.width = viewWidth - hitArea.x;
+    }
+    if (hitArea.y + hitArea.height > viewHeight) {
+      hitArea.height = viewHeight - hitArea.y;
+    }
+  }
+  /**
+   * Creates or reuses a div element for a Container and adds it to the accessibility layer.
+   * Sets up ARIA attributes, event listeners, and positioning based on the container's properties.
+   * @private
+   * @param {Container} container - The child to make accessible.
+   */
+  _addChild(container) {
+    const pool = this._getPool(container.accessibleType);
+    let div = pool.pop();
+    if (div) {
+      div.innerHTML = "";
+      div.removeAttribute("title");
+      div.removeAttribute("aria-label");
+      div.tabIndex = 0;
+    } else {
+      if (container.accessibleType === "button") {
+        div = document.createElement("button");
+      } else {
+        div = document.createElement(container.accessibleType);
+        div.style.cssText = `
+                        color: transparent;
+                        pointer-events: none;
+                        padding: 0;
+                        margin: 0;
+                        border: 0;
+                        outline: 0;
+                        background: transparent;
+                        box-sizing: border-box;
+                        user-select: none;
+                        -webkit-user-select: none;
+                        -moz-user-select: none;
+                        -ms-user-select: none;
+                    `;
+        if (container.accessibleText) {
+          div.innerText = container.accessibleText;
+        }
+      }
+      div.style.width = `${DIV_TOUCH_SIZE}px`;
+      div.style.height = `${DIV_TOUCH_SIZE}px`;
+      div.style.backgroundColor = this.debug ? "rgba(255,255,255,0.5)" : "transparent";
+      div.style.position = "absolute";
+      div.style.zIndex = DIV_TOUCH_ZINDEX.toString();
+      div.style.borderStyle = "none";
+      if (navigator.userAgent.toLowerCase().includes("chrome")) {
+        div.setAttribute("aria-live", "off");
+      } else {
+        div.setAttribute("aria-live", "polite");
+      }
+      if (navigator.userAgent.match(/rv:.*Gecko\//)) {
+        div.setAttribute("aria-relevant", "additions");
+      } else {
+        div.setAttribute("aria-relevant", "text");
+      }
+      div.addEventListener("click", this._onClick.bind(this));
+      div.addEventListener("focus", this._onFocus.bind(this));
+      div.addEventListener("focusout", this._onFocusOut.bind(this));
+    }
+    div.style.pointerEvents = container.accessiblePointerEvents;
+    div.type = container.accessibleType;
+    if (container.accessibleTitle && container.accessibleTitle !== null) {
+      div.title = container.accessibleTitle;
+    } else if (!container.accessibleHint || container.accessibleHint === null) {
+      div.title = `container ${container.tabIndex}`;
+    }
+    if (container.accessibleHint && container.accessibleHint !== null) {
+      div.setAttribute("aria-label", container.accessibleHint);
+    }
+    if (container.interactive) {
+      div.tabIndex = container.tabIndex;
+    } else {
+      div.tabIndex = 0;
+    }
+    if (this.debug) {
+      this._updateDebugHTML(div);
+    }
+    container._accessibleActive = true;
+    container._accessibleDiv = div;
+    div.container = container;
+    this._children.push(container);
+    this._div.appendChild(container._accessibleDiv);
+  }
+  /**
+   * Dispatch events with the EventSystem.
+   * @param e
+   * @param type
+   * @private
+   */
+  _dispatchEvent(e, type) {
+    const { container: target } = e.target;
+    const boundary = this._renderer.events.rootBoundary;
+    const event = Object.assign(new FederatedEvent(boundary), { target });
+    boundary.rootTarget = this._renderer.lastObjectRendered;
+    type.forEach((type2) => boundary.dispatchEvent(event, type2));
+  }
+  /**
+   * Maps the div button press to pixi's EventSystem (click)
+   * @private
+   * @param {MouseEvent} e - The click event.
+   */
+  _onClick(e) {
+    this._dispatchEvent(e, ["click", "pointertap", "tap"]);
+  }
+  /**
+   * Maps the div focus events to pixi's EventSystem (mouseover)
+   * @private
+   * @param {FocusEvent} e - The focus event.
+   */
+  _onFocus(e) {
+    if (!e.target.getAttribute("aria-live")) {
+      e.target.setAttribute("aria-live", "assertive");
+    }
+    this._dispatchEvent(e, ["mouseover"]);
+  }
+  /**
+   * Maps the div focus events to pixi's EventSystem (mouseout)
+   * @private
+   * @param {FocusEvent} e - The focusout event.
+   */
+  _onFocusOut(e) {
+    if (!e.target.getAttribute("aria-live")) {
+      e.target.setAttribute("aria-live", "polite");
+    }
+    this._dispatchEvent(e, ["mouseout"]);
+  }
+  /**
+   * Is called when a key is pressed
+   * @private
+   * @param {KeyboardEvent} e - The keydown event.
+   */
+  _onKeyDown(e) {
+    if (e.keyCode !== KEY_CODE_TAB || !this._activateOnTab) {
+      return;
+    }
+    this._activate();
+  }
+  /**
+   * Is called when the mouse moves across the renderer element
+   * @private
+   * @param {MouseEvent} e - The mouse event.
+   */
+  _onMouseMove(e) {
+    if (e.movementX === 0 && e.movementY === 0) {
+      return;
+    }
+    this._deactivate();
+  }
+  /**
+   * Destroys the accessibility system. Removes all elements and listeners.
+   * > [!IMPORTANT] This is typically called automatically when the {@link Application} is destroyed.
+   * > A typically user should not need to call this method directly.
+   */
+  destroy() {
+    var _a;
+    this._deactivate();
+    this._destroyTouchHook();
+    (_a = this._canvasObserver) == null ? void 0 : _a.destroy();
+    this._canvasObserver = null;
+    this._div = null;
+    this._pools = null;
+    this._children = null;
+    this._renderer = null;
+    this._hookDiv = null;
+    globalThis.removeEventListener("keydown", this._boundOnKeyDown);
+    this._boundOnKeyDown = null;
+    globalThis.document.removeEventListener("mousemove", this._boundOnMouseMove, true);
+    this._boundOnMouseMove = null;
+  }
+  /**
+   * Enables or disables the accessibility system.
+   * @param enabled - Whether to enable or disable accessibility.
+   * @example
+   * ```js
+   * app.renderer.accessibility.setAccessibilityEnabled(true); // Enable accessibility
+   * app.renderer.accessibility.setAccessibilityEnabled(false); // Disable accessibility
+   * ```
+   */
+  setAccessibilityEnabled(enabled) {
+    if (enabled) {
+      this._activate();
+    } else {
+      this._deactivate();
+    }
+  }
+  _getPool(accessibleType) {
+    if (!this._pools[accessibleType]) {
+      this._pools[accessibleType] = [];
+    }
+    return this._pools[accessibleType];
+  }
+};
+/** @ignore */
+_AccessibilitySystem.extension = {
+  type: [
+    ExtensionType.WebGLSystem,
+    ExtensionType.WebGPUSystem
+  ],
+  name: "accessibility"
+};
+/**
+ * The default options used by the system.
+ * You can set these before initializing the {@link Application} to change the default behavior.
+ * @example
+ * ```js
+ * import { AccessibilitySystem } from 'pixi.js';
+ *
+ * AccessibilitySystem.defaultOptions.enabledByDefault = true;
+ *
+ * const app = new Application()
+ * app.init()
+ * ```
+ */
+_AccessibilitySystem.defaultOptions = {
+  /**
+   * Whether to enable accessibility features on initialization
+   * @default false
+   */
+  enabledByDefault: false,
+  /**
+   * Whether to visually show the accessibility divs for debugging
+   * @default false
+   */
+  debug: false,
+  /**
+   * Whether to activate accessibility when tab key is pressed
+   * @default true
+   */
+  activateOnTab: true,
+  /**
+   * Whether to deactivate accessibility when mouse moves
+   * @default true
+   */
+  deactivateOnMouseMove: true
+};
+let AccessibilitySystem = _AccessibilitySystem;
+
+"use strict";
+const accessibilityTarget = {
+  accessible: false,
+  accessibleTitle: null,
+  accessibleHint: null,
+  tabIndex: 0,
+  accessibleType: "button",
+  accessibleText: null,
+  accessiblePointerEvents: "auto",
+  accessibleChildren: true,
+  _accessibleActive: false,
+  _accessibleDiv: null,
+  _renderId: -1
+};
+
+"use strict";
+extensions.add(AccessibilitySystem);
+extensions.mixin(Container, accessibilityTarget);
+
+"use strict";
+class ResizePlugin {
+  /**
+   * Initialize the plugin with scope of application instance
+   * @private
+   * @param {object} [options] - See application options
+   */
+  static init(options) {
+    Object.defineProperty(
+      this,
+      "resizeTo",
+      {
+        set(dom) {
+          globalThis.removeEventListener("resize", this.queueResize);
+          this._resizeTo = dom;
+          if (dom) {
+            globalThis.addEventListener("resize", this.queueResize);
+            this.resize();
+          }
+        },
+        get() {
+          return this._resizeTo;
+        }
+      }
+    );
+    this.queueResize = () => {
+      if (!this._resizeTo) {
+        return;
+      }
+      this._cancelResize();
+      this._resizeId = requestAnimationFrame(() => this.resize());
+    };
+    this._cancelResize = () => {
+      if (this._resizeId) {
+        cancelAnimationFrame(this._resizeId);
+        this._resizeId = null;
+      }
+    };
+    this.resize = () => {
+      if (!this._resizeTo) {
+        return;
+      }
+      this._cancelResize();
+      let width;
+      let height;
+      if (this._resizeTo === globalThis.window) {
+        width = globalThis.innerWidth;
+        height = globalThis.innerHeight;
+      } else {
+        const { clientWidth, clientHeight } = this._resizeTo;
+        width = clientWidth;
+        height = clientHeight;
+      }
+      this.renderer.resize(width, height);
+      this.render();
+    };
+    this._resizeId = null;
+    this._resizeTo = null;
+    this.resizeTo = options.resizeTo || null;
+  }
+  /**
+   * Clean up the ticker, scoped to application
+   * @private
+   */
+  static destroy() {
+    globalThis.removeEventListener("resize", this.queueResize);
+    this._cancelResize();
+    this._cancelResize = null;
+    this.queueResize = null;
+    this.resizeTo = null;
+    this.resize = null;
+  }
+}
+/** @ignore */
+ResizePlugin.extension = ExtensionType.Application;
+
+"use strict";
 class TickerPlugin {
   /**
    * Initialize the plugin with scope of application instance
@@ -9846,6 +10124,16 @@ class EventsTickerClass {
     }
     this._deltaTime = 0;
     this._update();
+  }
+  /** Destroys the event ticker. */
+  destroy() {
+    this.removeTickerListener();
+    this.events = null;
+    this.domElement = null;
+    this._deltaTime = 0;
+    this._didMove = false;
+    this._tickerAdded = false;
+    this._pauseUpdate = true;
   }
 }
 const EventsTicker = new EventsTickerClass();
@@ -10961,6 +11249,7 @@ class EventBoundary {
    * This allocation is constructor-agnostic, as long as it only takes one argument - this event
    * boundary.
    * @param constructor - The event's constructor.
+   * @returns An event of the given type.
    */
   allocateEvent(constructor) {
     if (!this.eventPool.has(constructor)) {
@@ -11019,19 +11308,19 @@ class EventBoundary {
 }
 
 "use strict";
-var __defProp$17 = Object.defineProperty;
-var __getOwnPropSymbols$18 = Object.getOwnPropertySymbols;
-var __hasOwnProp$18 = Object.prototype.hasOwnProperty;
-var __propIsEnum$18 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$17 = (obj, key, value) => key in obj ? __defProp$17(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$17 = (a, b) => {
+var __defProp$18 = Object.defineProperty;
+var __getOwnPropSymbols$19 = Object.getOwnPropertySymbols;
+var __hasOwnProp$19 = Object.prototype.hasOwnProperty;
+var __propIsEnum$19 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$18 = (obj, key, value) => key in obj ? __defProp$18(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$18 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$18.call(b, prop))
-      __defNormalProp$17(a, prop, b[prop]);
-  if (__getOwnPropSymbols$18)
-    for (var prop of __getOwnPropSymbols$18(b)) {
-      if (__propIsEnum$18.call(b, prop))
-        __defNormalProp$17(a, prop, b[prop]);
+    if (__hasOwnProp$19.call(b, prop))
+      __defNormalProp$18(a, prop, b[prop]);
+  if (__getOwnPropSymbols$19)
+    for (var prop of __getOwnPropSymbols$19(b)) {
+      if (__propIsEnum$19.call(b, prop))
+        __defNormalProp$18(a, prop, b[prop]);
     }
   return a;
 };
@@ -11082,7 +11371,7 @@ const _EventSystem = class _EventSystem {
       default: "inherit",
       pointer: "pointer"
     };
-    this.features = new Proxy(__spreadValues$17({}, _EventSystem.defaultEventFeatures), {
+    this.features = new Proxy(__spreadValues$18({}, _EventSystem.defaultEventFeatures), {
       set: (target, key, value) => {
         if (key === "globalMove") {
           this.rootBoundary.enableGlobalMoveEvents = value;
@@ -11129,6 +11418,7 @@ const _EventSystem = class _EventSystem {
   }
   /** Destroys all event listeners and detaches the renderer. */
   destroy() {
+    EventsTicker.destroy();
     this.setTargetElement(null);
     this.renderer = null;
     this._currentCursor = null;
@@ -11761,12 +12051,20 @@ class DOMPipe {
     this._attachedDomElements = [];
     this._renderer = renderer;
     this._renderer.runners.postrender.add(this);
+    this._renderer.runners.init.add(this);
     this._domElement = document.createElement("div");
     this._domElement.style.position = "absolute";
     this._domElement.style.top = "0";
     this._domElement.style.left = "0";
     this._domElement.style.pointerEvents = "none";
     this._domElement.style.zIndex = "1000";
+  }
+  /** Initializes the DOMPipe, setting up the main DOM element and adding it to the document body. */
+  init() {
+    this._canvasObserver = new CanvasObserver({
+      domElement: this._domElement,
+      renderer: this._renderer
+    });
   }
   /**
    * Adds a renderable DOM container to the list of attached elements.
@@ -11794,19 +12092,12 @@ class DOMPipe {
   }
   /** Handles the post-rendering process, ensuring DOM elements are correctly positioned and visible. */
   postrender() {
-    var _a;
     const attachedDomElements = this._attachedDomElements;
     if (attachedDomElements.length === 0) {
       this._domElement.remove();
       return;
     }
-    const canvas = this._renderer.view.canvas;
-    if (this._domElement.parentNode !== canvas.parentNode) {
-      (_a = canvas.parentNode) == null ? void 0 : _a.appendChild(this._domElement);
-    }
-    const sx = parseFloat(canvas.style.width) / canvas.width * this._renderer.resolution;
-    const sy = parseFloat(canvas.style.height) / canvas.height * this._renderer.resolution;
-    this._domElement.style.transform = `translate(${canvas.offsetLeft}px, ${canvas.offsetTop}px) scale(${sx}, ${sy})`;
+    this._canvasObserver.ensureAttached();
     for (let i = 0; i < attachedDomElements.length; i++) {
       const domContainer = attachedDomElements[i];
       const element = domContainer.element;
@@ -11840,6 +12131,7 @@ class DOMPipe {
     }
     this._attachedDomElements.length = 0;
     this._domElement.remove();
+    this._canvasObserver.destroy();
     this._renderer = null;
   }
 }
@@ -11959,7 +12251,7 @@ class ViewContainer extends Container {
    */
   collectRenderablesSimple(instructionSet, renderer, currentLayer) {
     const { renderPipes } = renderer;
-    renderPipes.blendMode.setBlendMode(this, this.groupBlendMode, instructionSet);
+    renderPipes.blendMode.pushBlendMode(this, this.groupBlendMode, instructionSet);
     const rp = renderPipes;
     rp[this.renderPipeId].addRenderable(this, instructionSet);
     this.didViewUpdate = false;
@@ -11968,34 +12260,35 @@ class ViewContainer extends Container {
     for (let i = 0; i < length; i++) {
       children[i].collectRenderables(instructionSet, renderer, currentLayer);
     }
+    renderPipes.blendMode.popBlendMode(instructionSet);
   }
 }
 
 "use strict";
-var __defProp$16 = Object.defineProperty;
-var __getOwnPropSymbols$17 = Object.getOwnPropertySymbols;
-var __hasOwnProp$17 = Object.prototype.hasOwnProperty;
-var __propIsEnum$17 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$16 = (obj, key, value) => key in obj ? __defProp$16(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$16 = (a, b) => {
+var __defProp$17 = Object.defineProperty;
+var __getOwnPropSymbols$18 = Object.getOwnPropertySymbols;
+var __hasOwnProp$18 = Object.prototype.hasOwnProperty;
+var __propIsEnum$18 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$17 = (obj, key, value) => key in obj ? __defProp$17(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$17 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$17.call(b, prop))
-      __defNormalProp$16(a, prop, b[prop]);
-  if (__getOwnPropSymbols$17)
-    for (var prop of __getOwnPropSymbols$17(b)) {
-      if (__propIsEnum$17.call(b, prop))
-        __defNormalProp$16(a, prop, b[prop]);
+    if (__hasOwnProp$18.call(b, prop))
+      __defNormalProp$17(a, prop, b[prop]);
+  if (__getOwnPropSymbols$18)
+    for (var prop of __getOwnPropSymbols$18(b)) {
+      if (__propIsEnum$18.call(b, prop))
+        __defNormalProp$17(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$n = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$17.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$18.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$17)
-    for (var prop of __getOwnPropSymbols$17(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$17.call(source, prop))
+  if (source != null && __getOwnPropSymbols$18)
+    for (var prop of __getOwnPropSymbols$18(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$18.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -12006,7 +12299,7 @@ class DOMContainer extends ViewContainer {
    */
   constructor(options = {}) {
     const _a = options, { element, anchor } = _a, rest = __objRest$n(_a, ["element", "anchor"]);
-    super(__spreadValues$16({
+    super(__spreadValues$17({
       label: "DOMContainer"
     }, rest));
     /** @internal */
@@ -12135,6 +12428,7 @@ const BrowserAdapter = {
     canvas.height = height;
     return canvas;
   },
+  createImage: () => new Image(),
   getCanvasRenderingContext2D: () => CanvasRenderingContext2D,
   getWebGLRenderingContext: () => WebGLRenderingContext,
   getNavigator: () => navigator,
@@ -12814,19 +13108,19 @@ function createStringVariations(string) {
 const isSingleItem = (item) => !Array.isArray(item);
 
 "use strict";
-var __defProp$15 = Object.defineProperty;
-var __getOwnPropSymbols$16 = Object.getOwnPropertySymbols;
-var __hasOwnProp$16 = Object.prototype.hasOwnProperty;
-var __propIsEnum$16 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$15 = (obj, key, value) => key in obj ? __defProp$15(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$15 = (a, b) => {
+var __defProp$16 = Object.defineProperty;
+var __getOwnPropSymbols$17 = Object.getOwnPropertySymbols;
+var __hasOwnProp$17 = Object.prototype.hasOwnProperty;
+var __propIsEnum$17 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$16 = (obj, key, value) => key in obj ? __defProp$16(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$16 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$16.call(b, prop))
-      __defNormalProp$15(a, prop, b[prop]);
-  if (__getOwnPropSymbols$16)
-    for (var prop of __getOwnPropSymbols$16(b)) {
-      if (__propIsEnum$16.call(b, prop))
-        __defNormalProp$15(a, prop, b[prop]);
+    if (__hasOwnProp$17.call(b, prop))
+      __defNormalProp$16(a, prop, b[prop]);
+  if (__getOwnPropSymbols$17)
+    for (var prop of __getOwnPropSymbols$17(b)) {
+      if (__propIsEnum$17.call(b, prop))
+        __defNormalProp$16(a, prop, b[prop]);
     }
   return a;
 };
@@ -13059,7 +13353,7 @@ class Resolver {
         if (typeof src === "string" || Array.isArray(src)) {
           return { alias, src };
         }
-        return __spreadValues$15({ alias }, src);
+        return __spreadValues$16({ alias }, src);
       });
     }
     convertedAssets.forEach((asset) => {
@@ -13075,7 +13369,7 @@ class Resolver {
         assetNames.push(...bundleIds);
         ids = [...aliases, ...bundleIds];
       }
-      this.add(__spreadValues$15(__spreadValues$15({}, asset), {
+      this.add(__spreadValues$16(__spreadValues$16({}, asset), {
         alias: ids,
         src: srcs
       }));
@@ -13125,7 +13419,12 @@ class Resolver {
     const assetArray = convertToList(assets);
     assetArray.forEach((asset) => {
       const { src } = asset;
-      let { data, format, loadParser } = asset;
+      let {
+        data,
+        format,
+        loadParser: userDefinedLoadParser,
+        parser: userDefinedParser
+      } = asset;
       const srcsToUse = convertToList(src).map((src2) => {
         if (typeof src2 === "string") {
           return createStringVariations(src2);
@@ -13137,7 +13436,7 @@ class Resolver {
       const resolvedAssets = [];
       srcsToUse.forEach((srcs) => {
         srcs.forEach((src2) => {
-          var _a, _b, _c;
+          var _a, _b, _c, _d;
           let formattedAsset = {};
           if (typeof src2 !== "object") {
             formattedAsset.src = src2;
@@ -13151,8 +13450,11 @@ class Resolver {
           } else {
             data = (_a = src2.data) != null ? _a : data;
             format = (_b = src2.format) != null ? _b : format;
-            loadParser = (_c = src2.loadParser) != null ? _c : loadParser;
-            formattedAsset = __spreadValues$15(__spreadValues$15({}, formattedAsset), src2);
+            if (src2.loadParser || src2.parser) {
+              userDefinedLoadParser = (_c = src2.loadParser) != null ? _c : userDefinedLoadParser;
+              userDefinedParser = (_d = src2.parser) != null ? _d : userDefinedParser;
+            }
+            formattedAsset = __spreadValues$16(__spreadValues$16({}, formattedAsset), src2);
           }
           if (!aliasesToUse) {
             throw new Error(`[Resolver] alias is undefined for this asset: ${formattedAsset.src}`);
@@ -13161,7 +13463,9 @@ class Resolver {
             aliases: aliasesToUse,
             data,
             format,
-            loadParser
+            loadParser: userDefinedLoadParser,
+            parser: userDefinedParser,
+            progressSize: asset.progressSize
           });
           resolvedAssets.push(formattedAsset);
         });
@@ -13322,15 +13626,19 @@ class Resolver {
   }
   _buildResolvedAsset(formattedAsset, data) {
     var _a, _b;
-    const { aliases, data: assetData, loadParser, format } = data;
+    const { aliases, data: assetData, loadParser, parser, format, progressSize } = data;
     if (this._basePath || this._rootPath) {
       formattedAsset.src = path.toAbsolute(formattedAsset.src, this._basePath, this._rootPath);
     }
     formattedAsset.alias = (_a = aliases != null ? aliases : formattedAsset.alias) != null ? _a : [formattedAsset.src];
     formattedAsset.src = this._appendDefaultSearchParams(formattedAsset.src);
-    formattedAsset.data = __spreadValues$15(__spreadValues$15({}, assetData || {}), formattedAsset.data);
+    formattedAsset.data = __spreadValues$16(__spreadValues$16({}, assetData || {}), formattedAsset.data);
     formattedAsset.loadParser = loadParser != null ? loadParser : formattedAsset.loadParser;
+    formattedAsset.parser = parser != null ? parser : formattedAsset.parser;
     formattedAsset.format = (_b = format != null ? format : formattedAsset.format) != null ? _b : getUrlExtension(formattedAsset.src);
+    if (progressSize !== void 0) {
+      formattedAsset.progressSize = progressSize;
+    }
     return formattedAsset;
   }
 }
@@ -13355,7 +13663,6 @@ const copySearchParams = (targetUrl, sourceUrl) => {
 
 "use strict";
 const _Spritesheet = class _Spritesheet {
-  /** @ignore */
   constructor(optionsOrTexture, arg1) {
     /** For multi-packed spritesheets, this contains a reference to all the other spritesheets it depends on. */
     this.linkedSheets = [];
@@ -13593,7 +13900,9 @@ const spritesheetAsset = {
    * All textures in the sprite sheet are then added to the cache
    */
   loader: {
+    /** used for deprecation purposes */
     name: "spritesheetLoader",
+    id: "spritesheet",
     extension: {
       type: ExtensionType.LoadParser,
       priority: LoaderParserPriority.Normal,
@@ -13690,30 +13999,30 @@ function updateQuadBounds(bounds, anchor, texture) {
 }
 
 "use strict";
-var __defProp$14 = Object.defineProperty;
-var __getOwnPropSymbols$15 = Object.getOwnPropertySymbols;
-var __hasOwnProp$15 = Object.prototype.hasOwnProperty;
-var __propIsEnum$15 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$14 = (obj, key, value) => key in obj ? __defProp$14(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$14 = (a, b) => {
+var __defProp$15 = Object.defineProperty;
+var __getOwnPropSymbols$16 = Object.getOwnPropertySymbols;
+var __hasOwnProp$16 = Object.prototype.hasOwnProperty;
+var __propIsEnum$16 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$15 = (obj, key, value) => key in obj ? __defProp$15(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$15 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$15.call(b, prop))
-      __defNormalProp$14(a, prop, b[prop]);
-  if (__getOwnPropSymbols$15)
-    for (var prop of __getOwnPropSymbols$15(b)) {
-      if (__propIsEnum$15.call(b, prop))
-        __defNormalProp$14(a, prop, b[prop]);
+    if (__hasOwnProp$16.call(b, prop))
+      __defNormalProp$15(a, prop, b[prop]);
+  if (__getOwnPropSymbols$16)
+    for (var prop of __getOwnPropSymbols$16(b)) {
+      if (__propIsEnum$16.call(b, prop))
+        __defNormalProp$15(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$m = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$15.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$16.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$15)
-    for (var prop of __getOwnPropSymbols$15(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$15.call(source, prop))
+  if (source != null && __getOwnPropSymbols$16)
+    for (var prop of __getOwnPropSymbols$16(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$16.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -13727,7 +14036,7 @@ class Sprite extends ViewContainer {
       options = { texture: options };
     }
     const _a = options, { texture = Texture.EMPTY, anchor, roundPixels, width, height } = _a, rest = __objRest$m(_a, ["texture", "anchor", "roundPixels", "width", "height"]);
-    super(__spreadValues$14({
+    super(__spreadValues$15({
       label: "Sprite"
     }, rest));
     /** @internal */
@@ -14257,7 +14566,7 @@ let promise;
 async function detectVideoAlphaMode() {
   promise != null ? promise : promise = (async () => {
     var _a;
-    const canvas = document.createElement("canvas");
+    const canvas = DOMAdapter.get().createCanvas(1, 1);
     const gl = canvas.getContext("webgl");
     if (!gl) {
       return "premultiply-alpha-on-upload";
@@ -14300,21 +14609,21 @@ async function detectVideoAlphaMode() {
 }
 
 "use strict";
-var __defProp$13 = Object.defineProperty;
+var __defProp$14 = Object.defineProperty;
 var __defProps$q = Object.defineProperties;
 var __getOwnPropDescs$q = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$14 = Object.getOwnPropertySymbols;
-var __hasOwnProp$14 = Object.prototype.hasOwnProperty;
-var __propIsEnum$14 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$13 = (obj, key, value) => key in obj ? __defProp$13(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$13 = (a, b) => {
+var __getOwnPropSymbols$15 = Object.getOwnPropertySymbols;
+var __hasOwnProp$15 = Object.prototype.hasOwnProperty;
+var __propIsEnum$15 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$14 = (obj, key, value) => key in obj ? __defProp$14(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$14 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$14.call(b, prop))
-      __defNormalProp$13(a, prop, b[prop]);
-  if (__getOwnPropSymbols$14)
-    for (var prop of __getOwnPropSymbols$14(b)) {
-      if (__propIsEnum$14.call(b, prop))
-        __defNormalProp$13(a, prop, b[prop]);
+    if (__hasOwnProp$15.call(b, prop))
+      __defNormalProp$14(a, prop, b[prop]);
+  if (__getOwnPropSymbols$15)
+    for (var prop of __getOwnPropSymbols$15(b)) {
+      if (__propIsEnum$15.call(b, prop))
+        __defNormalProp$14(a, prop, b[prop]);
     }
   return a;
 };
@@ -14328,7 +14637,7 @@ const _VideoSource = class _VideoSource extends TextureSource {
     this.isReady = false;
     /** The upload method for this texture. */
     this.uploadMethodId = "video";
-    options = __spreadValues$13(__spreadValues$13({}, _VideoSource.defaultOptions), options);
+    options = __spreadValues$14(__spreadValues$14({}, _VideoSource.defaultOptions), options);
     this._autoUpdate = true;
     this._isConnectedToTicker = false;
     this._updateFPS = options.updateFPS || 0;
@@ -14604,7 +14913,7 @@ const _VideoSource = class _VideoSource extends TextureSource {
 };
 _VideoSource.extension = ExtensionType.TextureSource;
 /** The default options for video sources. */
-_VideoSource.defaultOptions = __spreadProps$q(__spreadValues$13({}, TextureSource.defaultOptions), {
+_VideoSource.defaultOptions = __spreadProps$q(__spreadValues$14({}, TextureSource.defaultOptions), {
   /** If true, the video will start loading immediately. */
   autoLoad: true,
   /** If true, the video will start playing as soon as it is loaded. */
@@ -14858,7 +15167,7 @@ class BindGroup {
     const resources = this.resources;
     for (const i in resources) {
       const resource = resources[i];
-      (_a = resource.off) == null ? void 0 : _a.call(resource, "change", this.onResourceChange, this);
+      (_a = resource == null ? void 0 : resource.off) == null ? void 0 : _a.call(resource, "change", this.onResourceChange, this);
     }
     this.resources = null;
   }
@@ -15128,19 +15437,19 @@ class BatchTextureArray {
 }
 
 "use strict";
-var __defProp$12 = Object.defineProperty;
-var __getOwnPropSymbols$13 = Object.getOwnPropertySymbols;
-var __hasOwnProp$13 = Object.prototype.hasOwnProperty;
-var __propIsEnum$13 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$12 = (obj, key, value) => key in obj ? __defProp$12(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$12 = (a, b) => {
+var __defProp$13 = Object.defineProperty;
+var __getOwnPropSymbols$14 = Object.getOwnPropertySymbols;
+var __hasOwnProp$14 = Object.prototype.hasOwnProperty;
+var __propIsEnum$14 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$13 = (obj, key, value) => key in obj ? __defProp$13(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$13 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$13.call(b, prop))
-      __defNormalProp$12(a, prop, b[prop]);
-  if (__getOwnPropSymbols$13)
-    for (var prop of __getOwnPropSymbols$13(b)) {
-      if (__propIsEnum$13.call(b, prop))
-        __defNormalProp$12(a, prop, b[prop]);
+    if (__hasOwnProp$14.call(b, prop))
+      __defNormalProp$13(a, prop, b[prop]);
+  if (__getOwnPropSymbols$14)
+    for (var prop of __getOwnPropSymbols$14(b)) {
+      if (__propIsEnum$14.call(b, prop))
+        __defNormalProp$13(a, prop, b[prop]);
     }
   return a;
 };
@@ -15168,6 +15477,18 @@ class Batch {
 }
 const batchPool = [];
 let batchPoolIndex = 0;
+GlobalResourceRegistry.register({
+  clear: () => {
+    if (batchPool.length > 0) {
+      for (const item of batchPool) {
+        if (item)
+          item.destroy();
+      }
+    }
+    batchPool.length = 0;
+    batchPoolIndex = 0;
+  }
+});
 function getBatchFromPool() {
   return batchPoolIndex > 0 ? batchPool[--batchPoolIndex] : new Batch();
 }
@@ -15186,7 +15507,7 @@ const _Batcher = class _Batcher {
     /** An array of all batches created during the current rendering process. */
     this.batches = [];
     this._elements = [];
-    options = __spreadValues$12(__spreadValues$12({}, _Batcher.defaultOptions), options);
+    options = __spreadValues$13(__spreadValues$13({}, _Batcher.defaultOptions), options);
     if (!options.maxTextures) {
       deprecation("v8.8.0", "maxTextures is a required option for Batcher now, please pass it in the options");
       options.maxTextures = getMaxTexturesPerBatch();
@@ -15461,12 +15782,15 @@ const _Batcher = class _Batcher {
     }
   }
   destroy() {
+    if (this.batches === null)
+      return;
     for (let i = 0; i < this.batches.length; i++) {
       returnBatchToPool(this.batches[i]);
     }
     this.batches = null;
     for (let i = 0; i < this._elements.length; i++) {
-      this._elements[i]._batch = null;
+      if (this._elements[i])
+        this._elements[i]._batch = null;
     }
     this._elements = null;
     this.indexBuffer = null;
@@ -15996,19 +16320,19 @@ function stripVersion(src, isES300) {
 }
 
 "use strict";
-var __defProp$11 = Object.defineProperty;
-var __getOwnPropSymbols$12 = Object.getOwnPropertySymbols;
-var __hasOwnProp$12 = Object.prototype.hasOwnProperty;
-var __propIsEnum$12 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$11 = (obj, key, value) => key in obj ? __defProp$11(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$11 = (a, b) => {
+var __defProp$12 = Object.defineProperty;
+var __getOwnPropSymbols$13 = Object.getOwnPropertySymbols;
+var __hasOwnProp$13 = Object.prototype.hasOwnProperty;
+var __propIsEnum$13 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$12 = (obj, key, value) => key in obj ? __defProp$12(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$12 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$12.call(b, prop))
-      __defNormalProp$11(a, prop, b[prop]);
-  if (__getOwnPropSymbols$12)
-    for (var prop of __getOwnPropSymbols$12(b)) {
-      if (__propIsEnum$12.call(b, prop))
-        __defNormalProp$11(a, prop, b[prop]);
+    if (__hasOwnProp$13.call(b, prop))
+      __defNormalProp$12(a, prop, b[prop]);
+  if (__getOwnPropSymbols$13)
+    for (var prop of __getOwnPropSymbols$13(b)) {
+      if (__propIsEnum$13.call(b, prop))
+        __defNormalProp$12(a, prop, b[prop]);
     }
   return a;
 };
@@ -16031,7 +16355,7 @@ const _GlProgram = class _GlProgram {
    * @param options - The options for the program.
    */
   constructor(options) {
-    options = __spreadValues$11(__spreadValues$11({}, _GlProgram.defaultOptions), options);
+    options = __spreadValues$12(__spreadValues$12({}, _GlProgram.defaultOptions), options);
     const isES300 = options.fragment.indexOf("#version 300 es") !== -1;
     const preprocessorOptions = {
       stripVersion: isES300,
@@ -16067,6 +16391,7 @@ const _GlProgram = class _GlProgram {
     this._uniformData = null;
     this._uniformBlockData = null;
     this.transformFeedbackVaryings = null;
+    programCache$1[this._cacheKey] = null;
   }
   /**
    * Helper function that creates a program for a given source.
@@ -16079,6 +16404,7 @@ const _GlProgram = class _GlProgram {
     const key = `${options.vertex}:${options.fragment}`;
     if (!programCache$1[key]) {
       programCache$1[key] = new _GlProgram(options);
+      programCache$1[key]._cacheKey = key;
     }
     return programCache$1[key];
   }
@@ -16349,6 +16675,7 @@ class GpuProgram {
     this.structsAndGroups = null;
     this.fragment = null;
     this.vertex = null;
+    programCache[this._cacheKey] = null;
   }
   /**
    * Helper function that creates a program for a given source.
@@ -16361,6 +16688,7 @@ class GpuProgram {
     const key = `${options.vertex.source}:${options.fragment.source}:${options.fragment.entryPoint}:${options.vertex.entryPoint}`;
     if (!programCache[key]) {
       programCache[key] = new GpuProgram(options);
+      programCache[key]._cacheKey = key;
     }
     return programCache[key];
   }
@@ -16743,19 +17071,19 @@ const globalUniformsBitGl = {
 };
 
 "use strict";
-var __defProp$10 = Object.defineProperty;
-var __getOwnPropSymbols$11 = Object.getOwnPropertySymbols;
-var __hasOwnProp$11 = Object.prototype.hasOwnProperty;
-var __propIsEnum$11 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$10 = (obj, key, value) => key in obj ? __defProp$10(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$10 = (a, b) => {
+var __defProp$11 = Object.defineProperty;
+var __getOwnPropSymbols$12 = Object.getOwnPropertySymbols;
+var __hasOwnProp$12 = Object.prototype.hasOwnProperty;
+var __propIsEnum$12 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$11 = (obj, key, value) => key in obj ? __defProp$11(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$11 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$11.call(b, prop))
-      __defNormalProp$10(a, prop, b[prop]);
-  if (__getOwnPropSymbols$11)
-    for (var prop of __getOwnPropSymbols$11(b)) {
-      if (__propIsEnum$11.call(b, prop))
-        __defNormalProp$10(a, prop, b[prop]);
+    if (__hasOwnProp$12.call(b, prop))
+      __defNormalProp$11(a, prop, b[prop]);
+  if (__getOwnPropSymbols$12)
+    for (var prop of __getOwnPropSymbols$12(b)) {
+      if (__propIsEnum$12.call(b, prop))
+        __defNormalProp$11(a, prop, b[prop]);
     }
   return a;
 };
@@ -16783,7 +17111,7 @@ function compileHighShaderGpuProgram({ bits, name }) {
   });
 }
 function compileHighShaderGlProgram({ bits, name }) {
-  return new GlProgram(__spreadValues$10({
+  return new GlProgram(__spreadValues$11({
     name
   }, compileHighShaderGl({
     template: {
@@ -17066,19 +17394,19 @@ function getDefaultUniformValue(type, size) {
 }
 
 "use strict";
-var __defProp$$ = Object.defineProperty;
-var __getOwnPropSymbols$10 = Object.getOwnPropertySymbols;
-var __hasOwnProp$10 = Object.prototype.hasOwnProperty;
-var __propIsEnum$10 = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$$ = (obj, key, value) => key in obj ? __defProp$$(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$$ = (a, b) => {
+var __defProp$10 = Object.defineProperty;
+var __getOwnPropSymbols$11 = Object.getOwnPropertySymbols;
+var __hasOwnProp$11 = Object.prototype.hasOwnProperty;
+var __propIsEnum$11 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$10 = (obj, key, value) => key in obj ? __defProp$10(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$10 = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$10.call(b, prop))
-      __defNormalProp$$(a, prop, b[prop]);
-  if (__getOwnPropSymbols$10)
-    for (var prop of __getOwnPropSymbols$10(b)) {
-      if (__propIsEnum$10.call(b, prop))
-        __defNormalProp$$(a, prop, b[prop]);
+    if (__hasOwnProp$11.call(b, prop))
+      __defNormalProp$10(a, prop, b[prop]);
+  if (__getOwnPropSymbols$11)
+    for (var prop of __getOwnPropSymbols$11(b)) {
+      if (__propIsEnum$11.call(b, prop))
+        __defNormalProp$10(a, prop, b[prop]);
     }
   return a;
 };
@@ -17116,7 +17444,7 @@ const _UniformGroup = class _UniformGroup {
     // implementing the interface - UniformGroup are not destroyed
     this.destroyed = false;
     var _a, _b;
-    options = __spreadValues$$(__spreadValues$$({}, _UniformGroup.defaultOptions), options);
+    options = __spreadValues$10(__spreadValues$10({}, _UniformGroup.defaultOptions), options);
     this.uniformStructures = uniformStructures;
     const uniforms = {};
     for (const i in uniformStructures) {
@@ -17124,6 +17452,13 @@ const _UniformGroup = class _UniformGroup {
       uniformData.name = i;
       uniformData.size = (_a = uniformData.size) != null ? _a : 1;
       if (!UNIFORM_TYPES_MAP[uniformData.type]) {
+        const arrayMatch = uniformData.type.match(/^array<(\w+(?:<\w+>)?),\s*(\d+)>$/);
+        if (arrayMatch) {
+          const [, innerType, size] = arrayMatch;
+          throw new Error(
+            `Uniform type ${uniformData.type} is not supported. Use type: '${innerType}', size: ${size} instead.`
+          );
+        }
         throw new Error(`Uniform type ${uniformData.type} is not supported. Supported uniform types are: ${UNIFORM_TYPES_VALUES.join(", ")}`);
       }
       (_b = uniformData.value) != null ? _b : uniformData.value = getDefaultUniformValue(uniformData.type, uniformData.size);
@@ -17176,30 +17511,30 @@ var RendererType = /* @__PURE__ */ ((RendererType2) => {
 })(RendererType || {});
 
 "use strict";
-var __defProp$_ = Object.defineProperty;
-var __getOwnPropSymbols$$ = Object.getOwnPropertySymbols;
-var __hasOwnProp$$ = Object.prototype.hasOwnProperty;
-var __propIsEnum$$ = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$_ = (obj, key, value) => key in obj ? __defProp$_(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$_ = (a, b) => {
+var __defProp$$ = Object.defineProperty;
+var __getOwnPropSymbols$10 = Object.getOwnPropertySymbols;
+var __hasOwnProp$10 = Object.prototype.hasOwnProperty;
+var __propIsEnum$10 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$$ = (obj, key, value) => key in obj ? __defProp$$(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$$ = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$$.call(b, prop))
-      __defNormalProp$_(a, prop, b[prop]);
-  if (__getOwnPropSymbols$$)
-    for (var prop of __getOwnPropSymbols$$(b)) {
-      if (__propIsEnum$$.call(b, prop))
-        __defNormalProp$_(a, prop, b[prop]);
+    if (__hasOwnProp$10.call(b, prop))
+      __defNormalProp$$(a, prop, b[prop]);
+  if (__getOwnPropSymbols$10)
+    for (var prop of __getOwnPropSymbols$10(b)) {
+      if (__propIsEnum$10.call(b, prop))
+        __defNormalProp$$(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$l = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$$.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$10.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$$)
-    for (var prop of __getOwnPropSymbols$$(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$$.call(source, prop))
+  if (source != null && __getOwnPropSymbols$10)
+    for (var prop of __getOwnPropSymbols$10(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$10.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -17370,7 +17705,7 @@ class Shader extends EventEmitter {
     if (gl) {
       glProgram = GlProgram.from(gl);
     }
-    return new Shader(__spreadValues$_({
+    return new Shader(__spreadValues$$({
       gpuProgram,
       glProgram
     }, rest));
@@ -17620,24 +17955,31 @@ class BatchableGraphics {
     this.renderable = null;
     this.topology = "triangle-list";
   }
+  destroy() {
+    this.renderable = null;
+    this.texture = null;
+    this.geometryData = null;
+    this._batcher = null;
+    this._batch = null;
+  }
 }
 
 "use strict";
-var __defProp$Z = Object.defineProperty;
+var __defProp$_ = Object.defineProperty;
 var __defProps$p = Object.defineProperties;
 var __getOwnPropDescs$p = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$_ = Object.getOwnPropertySymbols;
-var __hasOwnProp$_ = Object.prototype.hasOwnProperty;
-var __propIsEnum$_ = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$Z = (obj, key, value) => key in obj ? __defProp$Z(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$Z = (a, b) => {
+var __getOwnPropSymbols$$ = Object.getOwnPropertySymbols;
+var __hasOwnProp$$ = Object.prototype.hasOwnProperty;
+var __propIsEnum$$ = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$_ = (obj, key, value) => key in obj ? __defProp$_(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$_ = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$_.call(b, prop))
-      __defNormalProp$Z(a, prop, b[prop]);
-  if (__getOwnPropSymbols$_)
-    for (var prop of __getOwnPropSymbols$_(b)) {
-      if (__propIsEnum$_.call(b, prop))
-        __defNormalProp$Z(a, prop, b[prop]);
+    if (__hasOwnProp$$.call(b, prop))
+      __defNormalProp$_(a, prop, b[prop]);
+  if (__getOwnPropSymbols$$)
+    for (var prop of __getOwnPropSymbols$$(b)) {
+      if (__propIsEnum$$.call(b, prop))
+        __defNormalProp$_(a, prop, b[prop]);
     }
   return a;
 };
@@ -17784,8 +18126,8 @@ const buildCircle = {
     indices[indicesOffset++] = count - 1;
   }
 };
-const buildEllipse = __spreadProps$p(__spreadValues$Z({}, buildCircle), { extension: __spreadProps$p(__spreadValues$Z({}, buildCircle.extension), { name: "ellipse" }) });
-const buildRoundedRectangle = __spreadProps$p(__spreadValues$Z({}, buildCircle), { extension: __spreadProps$p(__spreadValues$Z({}, buildCircle.extension), { name: "roundedRectangle" }) });
+const buildEllipse = __spreadProps$p(__spreadValues$_({}, buildCircle), { extension: __spreadProps$p(__spreadValues$_({}, buildCircle.extension), { name: "ellipse" }) });
+const buildRoundedRectangle = __spreadProps$p(__spreadValues$_({}, buildCircle), { extension: __spreadProps$p(__spreadValues$_({}, buildCircle.extension), { name: "roundedRectangle" }) });
 
 "use strict";
 const closePointEps = 1e-4;
@@ -18209,10 +18551,10 @@ function earcut$1(data, holeIndices, dim = 2) {
 
     // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
     if (data.length > 80 * dim) {
-        minX = Infinity;
-        minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
+        minX = data[0];
+        minY = data[1];
+        let maxX = minX;
+        let maxY = minY;
 
         for (let i = dim; i < outerLen; i += dim) {
             const x = data[i];
@@ -18488,7 +18830,7 @@ function compareXYSlope(a, b) {
     return result;
 }
 
-// find a bridge between vertices that connects hole with an outer ring and and link it
+// find a bridge between vertices that connects hole with an outer ring and link it
 function eliminateHole(hole, outerNode) {
     const bridge = findHoleBridge(hole, outerNode);
     if (!bridge) {
@@ -18679,7 +19021,7 @@ function pointInTriangleExceptFirst(ax, ay, bx, by, cx, cy, px, py) {
 
 // check if a diagonal between two polygon nodes is valid (lies in polygon interior)
 function isValidDiagonal(a, b) {
-    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // dones't intersect other edges
+    return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // doesn't intersect other edges
            (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
             (area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
             equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0); // special zero-length case
@@ -19000,19 +19342,19 @@ const buildTriangle = {
 };
 
 "use strict";
-var __defProp$Y = Object.defineProperty;
-var __getOwnPropSymbols$Z = Object.getOwnPropertySymbols;
-var __hasOwnProp$Z = Object.prototype.hasOwnProperty;
-var __propIsEnum$Z = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$Y = (obj, key, value) => key in obj ? __defProp$Y(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$Y = (a, b) => {
+var __defProp$Z = Object.defineProperty;
+var __getOwnPropSymbols$_ = Object.getOwnPropertySymbols;
+var __hasOwnProp$_ = Object.prototype.hasOwnProperty;
+var __propIsEnum$_ = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$Z = (obj, key, value) => key in obj ? __defProp$Z(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$Z = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$Z.call(b, prop))
-      __defNormalProp$Y(a, prop, b[prop]);
-  if (__getOwnPropSymbols$Z)
-    for (var prop of __getOwnPropSymbols$Z(b)) {
-      if (__propIsEnum$Z.call(b, prop))
-        __defNormalProp$Y(a, prop, b[prop]);
+    if (__hasOwnProp$_.call(b, prop))
+      __defNormalProp$Z(a, prop, b[prop]);
+  if (__getOwnPropSymbols$_)
+    for (var prop of __getOwnPropSymbols$_(b)) {
+      if (__propIsEnum$_.call(b, prop))
+        __defNormalProp$Z(a, prop, b[prop]);
     }
   return a;
 };
@@ -19024,6 +19366,12 @@ const _FillGradient = class _FillGradient {
      * @internal
      */
     this.uid = uid$1("fillGradient");
+    /**
+     * Internal tick counter to track changes in the gradient.
+     * This is used to invalidate the gradient when the texture changes.
+     * @internal
+     */
+    this._tick = 0;
     /** Type of gradient - currently only supports 'linear' */
     this.type = "linear";
     /** Array of color stops defining the gradient */
@@ -19031,7 +19379,7 @@ const _FillGradient = class _FillGradient {
     var _a;
     let options = ensureGradientOptions(args);
     const defaults = options.type === "radial" ? _FillGradient.defaultRadialOptions : _FillGradient.defaultLinearOptions;
-    options = __spreadValues$Y(__spreadValues$Y({}, defaults), definedProps(options));
+    options = __spreadValues$Z(__spreadValues$Z({}, defaults), definedProps(options));
     this._textureSize = options.textureSize;
     this._wrapMode = options.wrapMode;
     if (options.type === "radial") {
@@ -19118,6 +19466,8 @@ const _FillGradient = class _FillGradient {
    * @internal
    */
   buildGradient() {
+    if (!this.texture)
+      this._tick++;
     if (this.type === "linear") {
       this.buildLinearGradient();
     } else {
@@ -19175,18 +19525,25 @@ const _FillGradient = class _FillGradient {
     }
     this.transform = m;
   }
-  /**
-   * Gets a unique key representing the current state of the gradient.
-   * Used internally for caching.
-   * @returns Unique string key
-   */
-  get styleKey() {
-    return this.uid;
-  }
+  /** Destroys the gradient, releasing resources. This will also destroy the internal texture. */
   destroy() {
     var _a;
     (_a = this.texture) == null ? void 0 : _a.destroy(true);
     this.texture = null;
+    this.transform = null;
+    this.colorStops = [];
+    this.start = null;
+    this.end = null;
+    this.center = null;
+    this.outerCenter = null;
+  }
+  /**
+   * Returns a unique key for this gradient instance.
+   * This key is used for caching and texture management.
+   * @returns {string} Unique key for the gradient
+   */
+  get styleKey() {
+    return `fill-gradient-${this.uid}-${this._tick}`;
   }
 };
 /** Default options for creating a gradient fill */
@@ -19453,6 +19810,12 @@ class GraphicsContextRenderData {
   get geometry() {
     deprecation(v8_3_4, "GraphicsContextRenderData#geometry is deprecated, please use batcher.geometry instead.");
     return this.batcher.geometry;
+  }
+  destroy() {
+    this.batcher.destroy();
+    this.instructions.destroy();
+    this.batcher = null;
+    this.instructions = null;
   }
 }
 const _GraphicsContextSystem = class _GraphicsContextSystem {
@@ -20035,9 +20398,14 @@ class MeshPipe {
     return false;
   }
   addRenderable(mesh, instructionSet) {
+    var _a, _b;
     const batcher = this.renderer.renderPipes.batch;
-    const { batched } = this._getMeshData(mesh);
-    if (batched) {
+    const meshData = this._getMeshData(mesh);
+    if (mesh.didViewUpdate) {
+      meshData.indexSize = (_a = mesh._geometry.indices) == null ? void 0 : _a.length;
+      meshData.vertexSize = (_b = mesh._geometry.positions) == null ? void 0 : _b.length;
+    }
+    if (meshData.batched) {
       const gpuBatchableMesh = this._getBatchableMesh(mesh);
       gpuBatchableMesh.setTexture(mesh._texture);
       gpuBatchableMesh.geometry = mesh._geometry;
@@ -20076,11 +20444,10 @@ class MeshPipe {
     return mesh._gpuData[this.renderer.uid].meshData || this._initMeshData(mesh);
   }
   _initMeshData(mesh) {
-    var _a, _b;
     mesh._gpuData[this.renderer.uid].meshData = {
       batched: mesh.batched,
-      indexSize: (_a = mesh._geometry.indices) == null ? void 0 : _a.length,
-      vertexSize: (_b = mesh._geometry.positions) == null ? void 0 : _b.length
+      indexSize: 0,
+      vertexSize: 0
     };
     return mesh._gpuData[this.renderer.uid].meshData;
   }
@@ -20321,18 +20688,18 @@ function getParticleSyncKey(properties) {
   return keyGen.join("_");
 }
 
-var fragment$5 = "varying vec2 vUV;\nvarying vec4 vColor;\n\nuniform sampler2D uTexture;\n\nvoid main(void){\n    vec4 color = texture2D(uTexture, vUV) * vColor;\n    gl_FragColor = color;\n}";
+var fragment$6 = "varying vec2 vUV;\nvarying vec4 vColor;\n\nuniform sampler2D uTexture;\n\nvoid main(void){\n    vec4 color = texture2D(uTexture, vUV) * vColor;\n    gl_FragColor = color;\n}";
 
 var vertex$3 = "attribute vec2 aVertex;\nattribute vec2 aUV;\nattribute vec4 aColor;\n\nattribute vec2 aPosition;\nattribute float aRotation;\n\nuniform mat3 uTranslationMatrix;\nuniform float uRound;\nuniform vec2 uResolution;\nuniform vec4 uColor;\n\nvarying vec2 vUV;\nvarying vec4 vColor;\n\nvec2 roundPixels(vec2 position, vec2 targetSize)\n{       \n    return (floor(((position * 0.5 + 0.5) * targetSize) + 0.5) / targetSize) * 2.0 - 1.0;\n}\n\nvoid main(void){\n    float cosRotation = cos(aRotation);\n    float sinRotation = sin(aRotation);\n    float x = aVertex.x * cosRotation - aVertex.y * sinRotation;\n    float y = aVertex.x * sinRotation + aVertex.y * cosRotation;\n\n    vec2 v = vec2(x, y);\n    v = v + aPosition;\n\n    gl_Position = vec4((uTranslationMatrix * vec3(v, 1.0)).xy, 0.0, 1.0);\n\n    if(uRound == 1.0)\n    {\n        gl_Position.xy = roundPixels(gl_Position.xy, uResolution);\n    }\n\n    vUV = aUV;\n    vColor = vec4(aColor.rgb * aColor.a, aColor.a) * uColor;\n}\n";
 
-var wgsl = "\nstruct ParticleUniforms {\n  uProjectionMatrix:mat3x3<f32>,\n  uColor:vec4<f32>,\n  uResolution:vec2<f32>,\n  uRoundPixels:f32,\n};\n\n@group(0) @binding(0) var<uniform> uniforms: ParticleUniforms;\n\n@group(1) @binding(0) var uTexture: texture_2d<f32>;\n@group(1) @binding(1) var uSampler : sampler;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) color : vec4<f32>,\n  };\n@vertex\nfn mainVertex(\n  @location(0) aVertex: vec2<f32>,\n  @location(1) aPosition: vec2<f32>,\n  @location(2) aUV: vec2<f32>,\n  @location(3) aColor: vec4<f32>,\n  @location(4) aRotation: f32,\n) -> VSOutput {\n  \n   let v = vec2(\n       aVertex.x * cos(aRotation) - aVertex.y * sin(aRotation),\n       aVertex.x * sin(aRotation) + aVertex.y * cos(aRotation)\n   ) + aPosition;\n\n   let position = vec4((uniforms.uProjectionMatrix * vec3(v, 1.0)).xy, 0.0, 1.0);\n\n    let vColor = vec4(aColor.rgb * aColor.a, aColor.a) * uniforms.uColor;\n\n  return VSOutput(\n   position,\n   aUV,\n   vColor,\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) color: vec4<f32>,\n  @builtin(position) position: vec4<f32>,\n) -> @location(0) vec4<f32> {\n\n    var sample = textureSample(uTexture, uSampler, uv) * color;\n   \n    return sample;\n}";
+var wgsl = "\nstruct ParticleUniforms {\n  uTranslationMatrix:mat3x3<f32>,\n  uColor:vec4<f32>,\n  uRound:f32,\n  uResolution:vec2<f32>,\n};\n\nfn roundPixels(position: vec2<f32>, targetSize: vec2<f32>) -> vec2<f32>\n{\n  return (floor(((position * 0.5 + 0.5) * targetSize) + 0.5) / targetSize) * 2.0 - 1.0;\n}\n\n@group(0) @binding(0) var<uniform> uniforms: ParticleUniforms;\n\n@group(1) @binding(0) var uTexture: texture_2d<f32>;\n@group(1) @binding(1) var uSampler : sampler;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) color : vec4<f32>,\n  };\n@vertex\nfn mainVertex(\n  @location(0) aVertex: vec2<f32>,\n  @location(1) aPosition: vec2<f32>,\n  @location(2) aUV: vec2<f32>,\n  @location(3) aColor: vec4<f32>,\n  @location(4) aRotation: f32,\n) -> VSOutput {\n  \n   let v = vec2(\n       aVertex.x * cos(aRotation) - aVertex.y * sin(aRotation),\n       aVertex.x * sin(aRotation) + aVertex.y * cos(aRotation)\n   ) + aPosition;\n\n   var position = vec4((uniforms.uTranslationMatrix * vec3(v, 1.0)).xy, 0.0, 1.0);\n\n   if(uniforms.uRound == 1.0) {\n       position = vec4(roundPixels(position.xy, uniforms.uResolution), position.zw);\n   }\n\n    let vColor = vec4(aColor.rgb * aColor.a, aColor.a) * uniforms.uColor;\n\n  return VSOutput(\n   position,\n   aUV,\n   vColor,\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) color: vec4<f32>,\n  @builtin(position) position: vec4<f32>,\n) -> @location(0) vec4<f32> {\n\n    var sample = textureSample(uTexture, uSampler, uv) * color;\n   \n    return sample;\n}";
 
 "use strict";
 class ParticleShader extends Shader {
   constructor() {
     const glProgram = GlProgram.from({
       vertex: vertex$3,
-      fragment: fragment$5
+      fragment: fragment$6
     });
     const gpuProgram = GpuProgram.from({
       fragment: {
@@ -20431,6 +20798,7 @@ class ParticleContainerPipe {
   }
   /** Destroys the ParticleRenderer. */
   destroy() {
+    this.renderer = null;
     if (this.defaultShader) {
       this.defaultShader.destroy();
       this.defaultShader = null;
@@ -20547,7 +20915,14 @@ class BatchableText extends BatchableSprite {
     }
   }
   destroy() {
-    this._renderer.canvasText.returnTexture(this.texture);
+    const { canvasText } = this._renderer;
+    const refCount = canvasText.getReferenceCount(this.currentKey);
+    if (refCount > 0) {
+      canvasText.decreaseReferenceCount(this.currentKey);
+    } else if (this.texture) {
+      canvasText.returnTexture(this.texture);
+    }
+    this._renderer.runners.resolutionChange.remove(this);
     this._renderer = null;
   }
 }
@@ -20558,13 +20933,21 @@ class CanvasTextPipe {
     this._renderer = renderer;
   }
   validateRenderable(text) {
+    const gpuText = this._getGpuText(text);
+    const newKey = text.styleKey;
+    if (gpuText.currentKey !== newKey)
+      return true;
     return text._didTextUpdate;
   }
   addRenderable(text, instructionSet) {
     const batchableText = this._getGpuText(text);
     if (text._didTextUpdate) {
-      this._updateGpuText(text);
+      const resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
+      if (batchableText.currentKey !== text.styleKey || text.resolution !== resolution) {
+        this._updateGpuText(text);
+      }
       text._didTextUpdate = false;
+      updateTextBounds(batchableText, text);
     }
     this._renderer.renderPipes.batch.addToBatch(batchableText, instructionSet);
   }
@@ -20575,17 +20958,18 @@ class CanvasTextPipe {
   _updateGpuText(text) {
     const batchableText = this._getGpuText(text);
     if (batchableText.texture) {
-      this._renderer.canvasText.returnTexture(batchableText.texture);
+      this._renderer.canvasText.decreaseReferenceCount(batchableText.currentKey);
     }
     text._resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
-    batchableText.texture = batchableText.texture = this._renderer.canvasText.getTexture(text);
-    updateTextBounds(batchableText, text);
+    batchableText.texture = this._renderer.canvasText.getManagedTexture(text);
+    batchableText.currentKey = text.styleKey;
   }
   _getGpuText(text) {
     return text._gpuData[this._renderer.uid] || this.initGpuText(text);
   }
   initGpuText(text) {
     const batchableText = new BatchableText(this._renderer);
+    batchableText.currentKey = "--";
     batchableText.renderable = text;
     batchableText.transform = text.groupTransform;
     batchableText.bounds = { minX: 0, maxX: 1, minY: 0, maxY: 0 };
@@ -20633,9 +21017,14 @@ class FillPattern {
      * @internal
      */
     this.uid = uid$1("fillPattern");
+    /**
+     * Internal tick counter to track changes in the pattern.
+     * This is used to invalidate the pattern when the texture or transform changes.
+     * @internal
+     */
+    this._tick = 0;
     /** The transform matrix applied to the pattern */
     this.transform = new Matrix();
-    this._styleKey = null;
     this.texture = texture;
     this.transform.scale(
       1 / texture.frame.width,
@@ -20659,18 +21048,30 @@ class FillPattern {
       1 / texture.frame.width,
       1 / texture.frame.height
     );
-    this._styleKey = null;
+    this._tick++;
+  }
+  /** Internal texture used to render the gradient */
+  get texture() {
+    return this._texture;
+  }
+  set texture(value) {
+    if (this._texture === value)
+      return;
+    this._texture = value;
+    this._tick++;
   }
   /**
-   * Gets a unique key representing the current state of the pattern.
-   * Used internally for caching.
-   * @returns Unique string key
+   * Returns a unique key for this instance.
+   * This key is used for caching.
+   * @returns {string} Unique key for the instance
    */
   get styleKey() {
-    if (this._styleKey)
-      return this._styleKey;
-    this._styleKey = `fill-pattern-${this.uid}-${this.texture.uid}-${this.transform.toArray().join("-")}`;
-    return this._styleKey;
+    return `fill-pattern-${this.uid}-${this._tick}`;
+  }
+  /** Destroys the fill pattern, releasing resources. This will also destroy the internal texture. */
+  destroy() {
+    this.texture.destroy(true);
+    this.texture = null;
   }
 }
 
@@ -23674,19 +24075,77 @@ function parseAttribute(session, result, id, value) {
 }
 
 "use strict";
-var __defProp$X = Object.defineProperty;
-var __getOwnPropSymbols$Y = Object.getOwnPropertySymbols;
-var __hasOwnProp$Y = Object.prototype.hasOwnProperty;
-var __propIsEnum$Y = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$X = (obj, key, value) => key in obj ? __defProp$X(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$X = (a, b) => {
+function checkForNestedPattern(subpathsWithArea) {
+  if (subpathsWithArea.length <= 2) {
+    return true;
+  }
+  const areas = subpathsWithArea.map((s) => s.area).sort((a, b) => b - a);
+  const [largestArea, secondArea] = areas;
+  const smallestArea = areas[areas.length - 1];
+  const largestToSecondRatio = largestArea / secondArea;
+  const secondToSmallestRatio = secondArea / smallestArea;
+  if (largestToSecondRatio > 3 && secondToSmallestRatio < 2) {
+    return false;
+  }
+  return true;
+}
+function getFillInstructionData(context, index = 0) {
+  const instruction = context.instructions[index];
+  if (!instruction || instruction.action !== "fill") {
+    throw new Error(`Expected fill instruction at index ${index}, got ${(instruction == null ? void 0 : instruction.action) || "undefined"}`);
+  }
+  return instruction.data;
+}
+
+"use strict";
+function extractSubpaths(pathData) {
+  const parts = pathData.split(/(?=[Mm])/);
+  const subpaths = parts.filter((part) => part.trim().length > 0);
+  return subpaths;
+}
+function calculatePathArea(pathData) {
+  const coords = pathData.match(/[-+]?[0-9]*\.?[0-9]+/g);
+  if (!coords || coords.length < 4)
+    return 0;
+  const numbers = coords.map(Number);
+  const xs = [];
+  const ys = [];
+  for (let i = 0; i < numbers.length; i += 2) {
+    if (i + 1 < numbers.length) {
+      xs.push(numbers[i]);
+      ys.push(numbers[i + 1]);
+    }
+  }
+  if (xs.length === 0 || ys.length === 0)
+    return 0;
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const area = (maxX - minX) * (maxY - minY);
+  return area;
+}
+function appendSVGPath(pathData, graphicsPath) {
+  const tempPath = new GraphicsPath(pathData, false);
+  for (const instruction of tempPath.instructions) {
+    graphicsPath.instructions.push(instruction);
+  }
+}
+
+"use strict";
+var __defProp$Y = Object.defineProperty;
+var __getOwnPropSymbols$Z = Object.getOwnPropertySymbols;
+var __hasOwnProp$Z = Object.prototype.hasOwnProperty;
+var __propIsEnum$Z = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$Y = (obj, key, value) => key in obj ? __defProp$Y(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$Y = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$Y.call(b, prop))
-      __defNormalProp$X(a, prop, b[prop]);
-  if (__getOwnPropSymbols$Y)
-    for (var prop of __getOwnPropSymbols$Y(b)) {
-      if (__propIsEnum$Y.call(b, prop))
-        __defNormalProp$X(a, prop, b[prop]);
+    if (__hasOwnProp$Z.call(b, prop))
+      __defNormalProp$Y(a, prop, b[prop]);
+  if (__getOwnPropSymbols$Z)
+    for (var prop of __getOwnPropSymbols$Z(b)) {
+      if (__propIsEnum$Z.call(b, prop))
+        __defNormalProp$Y(a, prop, b[prop]);
     }
   return a;
 };
@@ -23716,12 +24175,12 @@ function renderChildren(svg, session, fillStyle, strokeStyle) {
   const children = svg.children;
   const { fillStyle: f1, strokeStyle: s1 } = parseSVGStyle(svg, session);
   if (f1 && fillStyle) {
-    fillStyle = __spreadValues$X(__spreadValues$X({}, fillStyle), f1);
+    fillStyle = __spreadValues$Y(__spreadValues$Y({}, fillStyle), f1);
   } else if (f1) {
     fillStyle = f1;
   }
   if (s1 && strokeStyle) {
-    strokeStyle = __spreadValues$X(__spreadValues$X({}, strokeStyle), s1);
+    strokeStyle = __spreadValues$Y(__spreadValues$Y({}, strokeStyle), s1);
   } else if (s1) {
     strokeStyle = s1;
   }
@@ -23747,18 +24206,66 @@ function renderChildren(svg, session, fillStyle, strokeStyle) {
   let width;
   let height;
   switch (svg.nodeName.toLowerCase()) {
-    case "path":
+    case "path": {
       d = svg.getAttribute("d");
-      if (svg.getAttribute("fill-rule") === "evenodd") {
-        warn("SVG Evenodd fill rule not supported, your svg may render incorrectly");
+      const fillRule = svg.getAttribute("fill-rule");
+      const subpaths = extractSubpaths(d);
+      const hasExplicitEvenodd = fillRule === "evenodd";
+      const hasMultipleSubpaths = subpaths.length > 1;
+      const shouldProcessHoles = hasExplicitEvenodd && hasMultipleSubpaths;
+      if (shouldProcessHoles) {
+        const subpathsWithArea = subpaths.map((subpath) => ({
+          path: subpath,
+          area: calculatePathArea(subpath)
+        }));
+        subpathsWithArea.sort((a, b) => b.area - a.area);
+        const useMultipleHolesApproach = subpaths.length > 3 || !checkForNestedPattern(subpathsWithArea);
+        if (useMultipleHolesApproach) {
+          for (let i = 0; i < subpathsWithArea.length; i++) {
+            const subpath = subpathsWithArea[i];
+            const isMainShape = i === 0;
+            session.context.beginPath();
+            const newPath = new GraphicsPath(void 0, true);
+            appendSVGPath(subpath.path, newPath);
+            session.context.path(newPath);
+            if (isMainShape) {
+              if (fillStyle)
+                session.context.fill(fillStyle);
+              if (strokeStyle)
+                session.context.stroke(strokeStyle);
+            } else {
+              session.context.cut();
+            }
+          }
+        } else {
+          for (let i = 0; i < subpathsWithArea.length; i++) {
+            const subpath = subpathsWithArea[i];
+            const isHole = i % 2 === 1;
+            session.context.beginPath();
+            const newPath = new GraphicsPath(void 0, true);
+            appendSVGPath(subpath.path, newPath);
+            session.context.path(newPath);
+            if (isHole) {
+              session.context.cut();
+            } else {
+              if (fillStyle)
+                session.context.fill(fillStyle);
+              if (strokeStyle)
+                session.context.stroke(strokeStyle);
+            }
+          }
+        }
+      } else {
+        const useEvenoddForGraphicsPath = fillRule ? fillRule === "evenodd" : true;
+        graphicsPath = new GraphicsPath(d, useEvenoddForGraphicsPath);
+        session.context.path(graphicsPath);
+        if (fillStyle)
+          session.context.fill(fillStyle);
+        if (strokeStyle)
+          session.context.stroke(strokeStyle);
       }
-      graphicsPath = new GraphicsPath(d, true);
-      session.context.path(graphicsPath);
-      if (fillStyle)
-        session.context.fill(fillStyle);
-      if (strokeStyle)
-        session.context.stroke(strokeStyle);
       break;
+    }
     case "circle":
       cx = parseSVGFloatAttribute(svg, "cx", 0);
       cy = parseSVGFloatAttribute(svg, "cy", 0);
@@ -23842,30 +24349,30 @@ function renderChildren(svg, session, fillStyle, strokeStyle) {
 }
 
 "use strict";
-var __defProp$W = Object.defineProperty;
-var __getOwnPropSymbols$X = Object.getOwnPropertySymbols;
-var __hasOwnProp$X = Object.prototype.hasOwnProperty;
-var __propIsEnum$X = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$W = (obj, key, value) => key in obj ? __defProp$W(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$W = (a, b) => {
+var __defProp$X = Object.defineProperty;
+var __getOwnPropSymbols$Y = Object.getOwnPropertySymbols;
+var __hasOwnProp$Y = Object.prototype.hasOwnProperty;
+var __propIsEnum$Y = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$X = (obj, key, value) => key in obj ? __defProp$X(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$X = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$X.call(b, prop))
-      __defNormalProp$W(a, prop, b[prop]);
-  if (__getOwnPropSymbols$X)
-    for (var prop of __getOwnPropSymbols$X(b)) {
-      if (__propIsEnum$X.call(b, prop))
-        __defNormalProp$W(a, prop, b[prop]);
+    if (__hasOwnProp$Y.call(b, prop))
+      __defNormalProp$X(a, prop, b[prop]);
+  if (__getOwnPropSymbols$Y)
+    for (var prop of __getOwnPropSymbols$Y(b)) {
+      if (__propIsEnum$Y.call(b, prop))
+        __defNormalProp$X(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$k = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$X.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$Y.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$X)
-    for (var prop of __getOwnPropSymbols$X(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$X.call(source, prop))
+  if (source != null && __getOwnPropSymbols$Y)
+    for (var prop of __getOwnPropSymbols$Y(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$Y.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -23887,18 +24394,18 @@ function handleColorLike(fill, value, defaultStyle) {
   fill.color = temp.toNumber();
   fill.alpha = temp.alpha === 1 ? defaultStyle.alpha : temp.alpha;
   fill.texture = Texture.WHITE;
-  return __spreadValues$W(__spreadValues$W({}, defaultStyle), fill);
+  return __spreadValues$X(__spreadValues$X({}, defaultStyle), fill);
 }
 function handleTexture(fill, value, defaultStyle) {
   fill.texture = value;
-  return __spreadValues$W(__spreadValues$W({}, defaultStyle), fill);
+  return __spreadValues$X(__spreadValues$X({}, defaultStyle), fill);
 }
 function handleFillPattern(fill, value, defaultStyle) {
   fill.fill = value;
   fill.color = 16777215;
   fill.texture = value.texture;
   fill.matrix = value.transform;
-  return __spreadValues$W(__spreadValues$W({}, defaultStyle), fill);
+  return __spreadValues$X(__spreadValues$X({}, defaultStyle), fill);
 }
 function handleFillGradient(fill, value, defaultStyle) {
   value.buildGradient();
@@ -23907,10 +24414,10 @@ function handleFillGradient(fill, value, defaultStyle) {
   fill.texture = value.texture;
   fill.matrix = value.transform;
   fill.textureSpace = value.textureSpace;
-  return __spreadValues$W(__spreadValues$W({}, defaultStyle), fill);
+  return __spreadValues$X(__spreadValues$X({}, defaultStyle), fill);
 }
 function handleFillObject(value, defaultStyle) {
-  const style = __spreadValues$W(__spreadValues$W({}, defaultStyle), value);
+  const style = __spreadValues$X(__spreadValues$X({}, defaultStyle), value);
   const color = Color.shared.setValue(style.color);
   style.alpha *= color.alpha;
   style.color = color.toNumber();
@@ -23943,7 +24450,7 @@ function toStrokeStyle(value, defaultStyle) {
   if (!fill) {
     return null;
   }
-  return __spreadValues$W({
+  return __spreadValues$X({
     width,
     alignment,
     miterLimit,
@@ -23954,19 +24461,19 @@ function toStrokeStyle(value, defaultStyle) {
 }
 
 "use strict";
-var __defProp$V = Object.defineProperty;
-var __getOwnPropSymbols$W = Object.getOwnPropertySymbols;
-var __hasOwnProp$W = Object.prototype.hasOwnProperty;
-var __propIsEnum$W = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$V = (obj, key, value) => key in obj ? __defProp$V(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$V = (a, b) => {
+var __defProp$W = Object.defineProperty;
+var __getOwnPropSymbols$X = Object.getOwnPropertySymbols;
+var __hasOwnProp$X = Object.prototype.hasOwnProperty;
+var __propIsEnum$X = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$W = (obj, key, value) => key in obj ? __defProp$W(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$W = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$W.call(b, prop))
-      __defNormalProp$V(a, prop, b[prop]);
-  if (__getOwnPropSymbols$W)
-    for (var prop of __getOwnPropSymbols$W(b)) {
-      if (__propIsEnum$W.call(b, prop))
-        __defNormalProp$V(a, prop, b[prop]);
+    if (__hasOwnProp$X.call(b, prop))
+      __defNormalProp$W(a, prop, b[prop]);
+  if (__getOwnPropSymbols$X)
+    for (var prop of __getOwnPropSymbols$X(b)) {
+      if (__propIsEnum$X.call(b, prop))
+        __defNormalProp$W(a, prop, b[prop]);
     }
   return a;
 };
@@ -23980,7 +24487,10 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
      * @internal
      */
     this.uid = uid$1("graphicsContext");
-    /** @internal */
+    /**
+     * Indicates whether content is updated and have to be re-rendered.
+     * @internal
+     */
     this.dirty = true;
     /** The batch mode for this graphics context. It can be 'auto', 'batch', or 'no-batch'. */
     this.batchMode = "auto";
@@ -23988,8 +24498,8 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
     this.instructions = [];
     this._activePath = new GraphicsPath();
     this._transform = new Matrix();
-    this._fillStyle = __spreadValues$V({}, _GraphicsContext.defaultFillStyle);
-    this._strokeStyle = __spreadValues$V({}, _GraphicsContext.defaultStrokeStyle);
+    this._fillStyle = __spreadValues$W({}, _GraphicsContext.defaultFillStyle);
+    this._strokeStyle = __spreadValues$W({}, _GraphicsContext.defaultStrokeStyle);
     this._stateStack = [];
     this._tick = 0;
     this._bounds = new Bounds();
@@ -24006,8 +24516,8 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
     clone.instructions = this.instructions.slice();
     clone._activePath = this._activePath.clone();
     clone._transform = this._transform.clone();
-    clone._fillStyle = __spreadValues$V({}, this._fillStyle);
-    clone._strokeStyle = __spreadValues$V({}, this._strokeStyle);
+    clone._fillStyle = __spreadValues$W({}, this._fillStyle);
+    clone._strokeStyle = __spreadValues$W({}, this._strokeStyle);
     clone._stateStack = this._stateStack.slice();
     clone._bounds = this._bounds.clone();
     clone._boundsDirty = true;
@@ -24538,8 +25048,8 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
   save() {
     this._stateStack.push({
       transform: this._transform.clone(),
-      fillStyle: __spreadValues$V({}, this._fillStyle),
-      strokeStyle: __spreadValues$V({}, this._strokeStyle)
+      fillStyle: __spreadValues$W({}, this._fillStyle),
+      strokeStyle: __spreadValues$W({}, this._strokeStyle)
     });
     return this;
   }
@@ -24617,16 +25127,17 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
     return this;
   }
   onUpdate() {
+    this._boundsDirty = true;
     if (this.dirty)
       return;
     this.emit("update", this, 16);
     this.dirty = true;
-    this._boundsDirty = true;
   }
   /** The bounds of the graphic shape. */
   get bounds() {
     if (!this._boundsDirty)
       return this._bounds;
+    this._boundsDirty = false;
     const bounds = this._bounds;
     bounds.clear();
     for (let i = 0; i < this.instructions.length; i++) {
@@ -24721,10 +25232,10 @@ const _GraphicsContext = class _GraphicsContext extends EventEmitter {
     if (destroyTexture) {
       const destroyTextureSource = typeof options === "boolean" ? options : options == null ? void 0 : options.textureSource;
       if (this._fillStyle.texture) {
-        this._fillStyle.texture.destroy(destroyTextureSource);
+        this._fillStyle.fill && "uid" in this._fillStyle.fill ? this._fillStyle.fill.destroy() : this._fillStyle.texture.destroy(destroyTextureSource);
       }
       if (this._strokeStyle.texture) {
-        this._strokeStyle.texture.destroy(destroyTextureSource);
+        this._strokeStyle.fill && "uid" in this._strokeStyle.fill ? this._strokeStyle.fill.destroy() : this._strokeStyle.texture.destroy(destroyTextureSource);
       }
     }
     this._fillStyle = null;
@@ -24782,93 +25293,21 @@ _GraphicsContext.defaultStrokeStyle = {
 let GraphicsContext = _GraphicsContext;
 
 "use strict";
-const valuesToIterateForKeys = [
-  "align",
-  "breakWords",
-  "cssOverrides",
-  "fontVariant",
-  "fontWeight",
-  "leading",
-  "letterSpacing",
-  "lineHeight",
-  "padding",
-  "textBaseline",
-  "trim",
-  "whiteSpace",
-  "wordWrap",
-  "wordWrapWidth",
-  "fontFamily",
-  "fontStyle",
-  "fontSize"
-];
-function generateTextStyleKey(style) {
-  const key = [];
-  let index = 0;
-  for (let i = 0; i < valuesToIterateForKeys.length; i++) {
-    const prop = `_${valuesToIterateForKeys[i]}`;
-    key[index++] = style[prop];
-  }
-  index = addFillStyleKey(style._fill, key, index);
-  index = addStokeStyleKey(style._stroke, key, index);
-  index = addDropShadowKey(style.dropShadow, key, index);
-  index = addFiltersKey(style.filters, key, index);
-  return key.join("-");
-}
-function addFiltersKey(filters, key, index) {
-  if (!filters)
-    return index;
-  for (const filter of filters) {
-    key[index++] = filter.uid;
-  }
-  return index;
-}
-function addFillStyleKey(fillStyle, key, index) {
-  var _a;
-  if (!fillStyle)
-    return index;
-  key[index++] = fillStyle.color;
-  key[index++] = fillStyle.alpha;
-  key[index++] = (_a = fillStyle.fill) == null ? void 0 : _a.styleKey;
-  return index;
-}
-function addStokeStyleKey(strokeStyle, key, index) {
-  if (!strokeStyle)
-    return index;
-  index = addFillStyleKey(strokeStyle, key, index);
-  key[index++] = strokeStyle.width;
-  key[index++] = strokeStyle.alignment;
-  key[index++] = strokeStyle.cap;
-  key[index++] = strokeStyle.join;
-  key[index++] = strokeStyle.miterLimit;
-  return index;
-}
-function addDropShadowKey(dropShadow, key, index) {
-  if (!dropShadow)
-    return index;
-  key[index++] = dropShadow.alpha;
-  key[index++] = dropShadow.angle;
-  key[index++] = dropShadow.blur;
-  key[index++] = dropShadow.distance;
-  key[index++] = Color.shared.setValue(dropShadow.color).toNumber();
-  return index;
-}
-
-"use strict";
-var __defProp$U = Object.defineProperty;
+var __defProp$V = Object.defineProperty;
 var __defProps$o = Object.defineProperties;
 var __getOwnPropDescs$o = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$V = Object.getOwnPropertySymbols;
-var __hasOwnProp$V = Object.prototype.hasOwnProperty;
-var __propIsEnum$V = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$U = (obj, key, value) => key in obj ? __defProp$U(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$U = (a, b) => {
+var __getOwnPropSymbols$W = Object.getOwnPropertySymbols;
+var __hasOwnProp$W = Object.prototype.hasOwnProperty;
+var __propIsEnum$W = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$V = (obj, key, value) => key in obj ? __defProp$V(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$V = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$V.call(b, prop))
-      __defNormalProp$U(a, prop, b[prop]);
-  if (__getOwnPropSymbols$V)
-    for (var prop of __getOwnPropSymbols$V(b)) {
-      if (__propIsEnum$V.call(b, prop))
-        __defNormalProp$U(a, prop, b[prop]);
+    if (__hasOwnProp$W.call(b, prop))
+      __defNormalProp$V(a, prop, b[prop]);
+  if (__getOwnPropSymbols$W)
+    for (var prop of __getOwnPropSymbols$W(b)) {
+      if (__propIsEnum$W.call(b, prop))
+        __defNormalProp$V(a, prop, b[prop]);
     }
   return a;
 };
@@ -24876,13 +25315,26 @@ var __spreadProps$o = (a, b) => __defProps$o(a, __getOwnPropDescs$o(b));
 const _TextStyle = class _TextStyle extends EventEmitter {
   constructor(style = {}) {
     super();
+    /**
+     * Unique identifier for the TextStyle class.
+     * This is used to track instances and ensure uniqueness.
+     * @internal
+     */
+    this.uid = uid$1("textStyle");
+    /**
+     * Internal tick counter used to track updates and changes.
+     * This is incremented whenever the style is modified, allowing for efficient change detection.
+     * @internal
+     */
+    this._tick = 0;
     convertV7Tov8Style(style);
-    const fullStyle = __spreadValues$U(__spreadValues$U({}, _TextStyle.defaultTextStyle), style);
+    const fullStyle = __spreadValues$V(__spreadValues$V({}, _TextStyle.defaultTextStyle), style);
     for (const key in fullStyle) {
       const thisKey = key;
       this[thisKey] = fullStyle[key];
     }
     this.update();
+    this._tick = 0;
   }
   /**
    * Alignment for multiline text, does not affect single line text.
@@ -24892,6 +25344,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._align;
   }
   set align(value) {
+    if (this._align === value)
+      return;
     this._align = value;
     this.update();
   }
@@ -24900,6 +25354,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._breakWords;
   }
   set breakWords(value) {
+    if (this._breakWords === value)
+      return;
     this._breakWords = value;
     this.update();
   }
@@ -24908,10 +25364,12 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._dropShadow;
   }
   set dropShadow(value) {
+    if (this._dropShadow === value)
+      return;
     if (value !== null && typeof value === "object") {
-      this._dropShadow = this._createProxy(__spreadValues$U(__spreadValues$U({}, _TextStyle.defaultDropShadow), value));
+      this._dropShadow = this._createProxy(__spreadValues$V(__spreadValues$V({}, _TextStyle.defaultDropShadow), value));
     } else {
-      this._dropShadow = value ? this._createProxy(__spreadValues$U({}, _TextStyle.defaultDropShadow)) : null;
+      this._dropShadow = value ? this._createProxy(__spreadValues$V({}, _TextStyle.defaultDropShadow)) : null;
     }
     this.update();
   }
@@ -24920,6 +25378,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._fontFamily;
   }
   set fontFamily(value) {
+    if (this._fontFamily === value)
+      return;
     this._fontFamily = value;
     this.update();
   }
@@ -24928,6 +25388,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._fontSize;
   }
   set fontSize(value) {
+    if (this._fontSize === value)
+      return;
     if (typeof value === "string") {
       this._fontSize = parseInt(value, 10);
     } else {
@@ -24943,6 +25405,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._fontStyle;
   }
   set fontStyle(value) {
+    if (this._fontStyle === value)
+      return;
     this._fontStyle = value.toLowerCase();
     this.update();
   }
@@ -24954,6 +25418,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._fontVariant;
   }
   set fontVariant(value) {
+    if (this._fontVariant === value)
+      return;
     this._fontVariant = value;
     this.update();
   }
@@ -24965,6 +25431,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._fontWeight;
   }
   set fontWeight(value) {
+    if (this._fontWeight === value)
+      return;
     this._fontWeight = value;
     this.update();
   }
@@ -24973,6 +25441,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._leading;
   }
   set leading(value) {
+    if (this._leading === value)
+      return;
     this._leading = value;
     this.update();
   }
@@ -24981,6 +25451,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._letterSpacing;
   }
   set letterSpacing(value) {
+    if (this._letterSpacing === value)
+      return;
     this._letterSpacing = value;
     this.update();
   }
@@ -24989,6 +25461,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._lineHeight;
   }
   set lineHeight(value) {
+    if (this._lineHeight === value)
+      return;
     this._lineHeight = value;
     this.update();
   }
@@ -25001,6 +25475,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._padding;
   }
   set padding(value) {
+    if (this._padding === value)
+      return;
     this._padding = value;
     this.update();
   }
@@ -25014,7 +25490,9 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._filters;
   }
   set filters(value) {
-    this._filters = value;
+    if (this._filters === value)
+      return;
+    this._filters = Object.freeze(value);
     this.update();
   }
   /**
@@ -25027,6 +25505,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._trim;
   }
   set trim(value) {
+    if (this._trim === value)
+      return;
     this._trim = value;
     this.update();
   }
@@ -25038,6 +25518,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._textBaseline;
   }
   set textBaseline(value) {
+    if (this._textBaseline === value)
+      return;
     this._textBaseline = value;
     this.update();
   }
@@ -25056,6 +25538,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._whiteSpace;
   }
   set whiteSpace(value) {
+    if (this._whiteSpace === value)
+      return;
     this._whiteSpace = value;
     this.update();
   }
@@ -25064,6 +25548,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._wordWrap;
   }
   set wordWrap(value) {
+    if (this._wordWrap === value)
+      return;
     this._wordWrap = value;
     this.update();
   }
@@ -25072,6 +25558,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return this._wordWrapWidth;
   }
   set wordWrapWidth(value) {
+    if (this._wordWrapWidth === value)
+      return;
     this._wordWrapWidth = value;
     this.update();
   }
@@ -25108,9 +25596,9 @@ const _TextStyle = class _TextStyle extends EventEmitter {
       return;
     this._originalFill = value;
     if (this._isFillStyle(value)) {
-      this._originalFill = this._createProxy(__spreadValues$U(__spreadValues$U({}, GraphicsContext.defaultFillStyle), value), () => {
+      this._originalFill = this._createProxy(__spreadValues$V(__spreadValues$V({}, GraphicsContext.defaultFillStyle), value), () => {
         this._fill = toFillStyle(
-          __spreadValues$U({}, this._originalFill),
+          __spreadValues$V({}, this._originalFill),
           GraphicsContext.defaultFillStyle
         );
       });
@@ -25130,9 +25618,9 @@ const _TextStyle = class _TextStyle extends EventEmitter {
       return;
     this._originalStroke = value;
     if (this._isFillStyle(value)) {
-      this._originalStroke = this._createProxy(__spreadValues$U(__spreadValues$U({}, GraphicsContext.defaultStrokeStyle), value), () => {
+      this._originalStroke = this._createProxy(__spreadValues$V(__spreadValues$V({}, GraphicsContext.defaultStrokeStyle), value), () => {
         this._stroke = toStrokeStyle(
-          __spreadValues$U({}, this._originalStroke),
+          __spreadValues$V({}, this._originalStroke),
           GraphicsContext.defaultStrokeStyle
         );
       });
@@ -25140,12 +25628,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     this._stroke = toStrokeStyle(value, GraphicsContext.defaultStrokeStyle);
     this.update();
   }
-  _generateKey() {
-    this._styleKey = generateTextStyleKey(this);
-    return this._styleKey;
-  }
   update() {
-    this._styleKey = null;
+    this._tick++;
     this.emit("update", this);
   }
   /** Resets all properties to the default values */
@@ -25155,9 +25639,13 @@ const _TextStyle = class _TextStyle extends EventEmitter {
       this[key] = defaultStyle[key];
     }
   }
-  /** @internal */
+  /**
+   * Returns a unique key for this instance.
+   * This key is used for caching.
+   * @returns {string} Unique key for the instance
+   */
   get styleKey() {
-    return this._styleKey || this._generateKey();
+    return `${this.uid}-${this._tick}`;
   }
   /**
    * Creates a new TextStyle object with the same values as this one.
@@ -25167,7 +25655,7 @@ const _TextStyle = class _TextStyle extends EventEmitter {
     return new _TextStyle({
       align: this.align,
       breakWords: this.breakWords,
-      dropShadow: this._dropShadow ? __spreadValues$U({}, this._dropShadow) : null,
+      dropShadow: this._dropShadow ? __spreadValues$V({}, this._dropShadow) : null,
       fill: this._fill,
       fontFamily: this.fontFamily,
       fontSize: this.fontSize,
@@ -25238,6 +25726,8 @@ const _TextStyle = class _TextStyle extends EventEmitter {
   _createProxy(value, cb) {
     return new Proxy(value, {
       set: (target, property, newValue) => {
+        if (target[property] === newValue)
+          return true;
         target[property] = newValue;
         cb == null ? void 0 : cb(property, newValue);
         this.update();
@@ -25326,28 +25816,27 @@ function convertV7Tov8Style(style) {
     } else {
       throw new Error("Invalid stroke value.");
     }
-    style.stroke = __spreadProps$o(__spreadValues$U({}, obj), {
+    style.stroke = __spreadProps$o(__spreadValues$V({}, obj), {
       width: oldStyle.strokeThickness
     });
   }
   if (Array.isArray(oldStyle.fillGradientStops)) {
     deprecation(v8_0_0, "gradient fill is now a fill pattern: `new FillGradient(...)`");
-    let fontSize;
-    if (style.fontSize == null) {
-      style.fontSize = TextStyle.defaultTextStyle.fontSize;
-    } else if (typeof style.fontSize === "string") {
-      fontSize = parseInt(style.fontSize, 10);
-    } else {
-      fontSize = style.fontSize;
+    if (!Array.isArray(oldStyle.fill) || oldStyle.fill.length === 0) {
+      throw new Error("Invalid fill value. Expected an array of colors for gradient fill.");
+    }
+    if (oldStyle.fill.length !== oldStyle.fillGradientStops.length) {
+      warn("The number of fill colors must match the number of fill gradient stops.");
     }
     const gradientFill = new FillGradient({
       start: { x: 0, y: 0 },
-      end: { x: 0, y: (fontSize || 0) * 1.7 }
+      end: { x: 0, y: 1 },
+      textureSpace: "local"
     });
-    const fills = oldStyle.fillGradientStops.map((color) => Color.shared.setValue(color).toNumber());
-    fills.forEach((number, index) => {
-      const ratio = index / (fills.length - 1);
-      gradientFill.addColorStop(ratio, number);
+    const fillGradientStops = oldStyle.fillGradientStops.slice();
+    const fills = oldStyle.fill.map((color) => Color.shared.setValue(color).toNumber());
+    fillGradientStops.forEach((stop, index) => {
+      gradientFill.addColorStop(stop, fills[index]);
     });
     style.fill = {
       fill: gradientFill
@@ -25437,6 +25926,7 @@ class CanvasPoolClass {
   }
 }
 const CanvasPool = new CanvasPoolClass();
+GlobalResourceRegistry.register(CanvasPool);
 
 "use strict";
 let _internalCanvas = null;
@@ -25520,6 +26010,488 @@ function getCanvasBoundingBox(...args) {
   return output;
 }
 
+/**
+ * tiny-lru
+ *
+ * @copyright 2025 Jason Mulligan <jason.mulligan@avoidwork.com>
+ * @license BSD-3-Clause
+ * @version 11.4.5
+ */
+/**
+ * A high-performance Least Recently Used (LRU) cache implementation with optional TTL support.
+ * Items are automatically evicted when the cache reaches its maximum size,
+ * removing the least recently used items first. All core operations (get, set, delete) are O(1).
+ *
+ * @class LRU
+ * @example
+ * // Create a cache with max 100 items
+ * const cache = new LRU(100);
+ * cache.set('key1', 'value1');
+ * console.log(cache.get('key1')); // 'value1'
+ *
+ * @example
+ * // Create a cache with TTL
+ * const cache = new LRU(100, 5000); // 5 second TTL
+ * cache.set('key1', 'value1');
+ * // After 5 seconds, key1 will be expired
+ */
+class LRU {
+	/**
+	 * Creates a new LRU cache instance.
+	 * Note: Constructor does not validate parameters. Use lru() factory function for parameter validation.
+	 *
+	 * @constructor
+	 * @param {number} [max=0] - Maximum number of items to store. 0 means unlimited.
+	 * @param {number} [ttl=0] - Time to live in milliseconds. 0 means no expiration.
+	 * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
+	 * @example
+	 * const cache = new LRU(1000, 60000, true); // 1000 items, 1 minute TTL, reset on access
+	 * @see {@link lru} For parameter validation
+	 * @since 1.0.0
+	 */
+	constructor (max = 0, ttl = 0, resetTtl = false) {
+		this.first = null;
+		this.items = Object.create(null);
+		this.last = null;
+		this.max = max;
+		this.resetTtl = resetTtl;
+		this.size = 0;
+		this.ttl = ttl;
+	}
+
+	/**
+	 * Removes all items from the cache.
+	 *
+	 * @method clear
+	 * @memberof LRU
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.clear();
+	 * console.log(cache.size); // 0
+	 * @since 1.0.0
+	 */
+	clear () {
+		this.first = null;
+		this.items = Object.create(null);
+		this.last = null;
+		this.size = 0;
+
+		return this;
+	}
+
+	/**
+	 * Removes an item from the cache by key.
+	 *
+	 * @method delete
+	 * @memberof LRU
+	 * @param {string} key - The key of the item to delete.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * cache.delete('key1');
+	 * console.log(cache.has('key1')); // false
+	 * @see {@link LRU#has}
+	 * @see {@link LRU#clear}
+	 * @since 1.0.0
+	 */
+	delete (key) {
+		if (this.has(key)) {
+			const item = this.items[key];
+
+			delete this.items[key];
+			this.size--;
+
+			if (item.prev !== null) {
+				item.prev.next = item.next;
+			}
+
+			if (item.next !== null) {
+				item.next.prev = item.prev;
+			}
+
+			if (this.first === item) {
+				this.first = item.next;
+			}
+
+			if (this.last === item) {
+				this.last = item.prev;
+			}
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns an array of [key, value] pairs for the specified keys.
+	 * Order follows LRU order (least to most recently used).
+	 *
+	 * @method entries
+	 * @memberof LRU
+	 * @param {string[]} [keys=this.keys()] - Array of keys to get entries for. Defaults to all keys.
+	 * @returns {Array<Array<*>>} Array of [key, value] pairs in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * console.log(cache.entries()); // [['a', 1], ['b', 2]]
+	 * console.log(cache.entries(['a'])); // [['a', 1]]
+	 * @see {@link LRU#keys}
+	 * @see {@link LRU#values}
+	 * @since 11.1.0
+	 */
+	entries (keys = this.keys()) {
+		return keys.map(key => [key, this.get(key)]);
+	}
+
+	/**
+	 * Removes the least recently used item from the cache.
+	 *
+	 * @method evict
+	 * @memberof LRU
+	 * @param {boolean} [bypass=false] - Whether to force eviction even when cache is empty.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('old', 'value').set('new', 'value');
+	 * cache.evict(); // Removes 'old' item
+	 * @see {@link LRU#setWithEvicted}
+	 * @since 1.0.0
+	 */
+	evict (bypass = false) {
+		if (bypass || this.size > 0) {
+			const item = this.first;
+
+			delete this.items[item.key];
+
+			if (--this.size === 0) {
+				this.first = null;
+				this.last = null;
+			} else {
+				this.first = item.next;
+				this.first.prev = null;
+			}
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns the expiration timestamp for a given key.
+	 *
+	 * @method expiresAt
+	 * @memberof LRU
+	 * @param {string} key - The key to check expiration for.
+	 * @returns {number|undefined} The expiration timestamp in milliseconds, or undefined if key doesn't exist.
+	 * @example
+	 * const cache = new LRU(100, 5000); // 5 second TTL
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.expiresAt('key1')); // timestamp 5 seconds from now
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#has}
+	 * @since 1.0.0
+	 */
+	expiresAt (key) {
+		let result;
+
+		if (this.has(key)) {
+			result = this.items[key].expiry;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Retrieves a value from the cache by key. Updates the item's position to most recently used.
+	 *
+	 * @method get
+	 * @memberof LRU
+	 * @param {string} key - The key to retrieve.
+	 * @returns {*} The value associated with the key, or undefined if not found or expired.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.get('key1')); // 'value1'
+	 * console.log(cache.get('nonexistent')); // undefined
+	 * @see {@link LRU#set}
+	 * @see {@link LRU#has}
+	 * @since 1.0.0
+	 */
+	get (key) {
+		const item = this.items[key];
+
+		if (item !== undefined) {
+			// Check TTL only if enabled to avoid unnecessary Date.now() calls
+			if (this.ttl > 0) {
+				if (item.expiry <= Date.now()) {
+					this.delete(key);
+
+					return undefined;
+				}
+			}
+
+			// Fast LRU update without full set() overhead
+			this.moveToEnd(item);
+
+			return item.value;
+		}
+
+		return undefined;
+	}
+
+	/**
+	 * Checks if a key exists in the cache.
+	 *
+	 * @method has
+	 * @memberof LRU
+	 * @param {string} key - The key to check for.
+	 * @returns {boolean} True if the key exists, false otherwise.
+	 * @example
+	 * cache.set('key1', 'value1');
+	 * console.log(cache.has('key1')); // true
+	 * console.log(cache.has('nonexistent')); // false
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#delete}
+	 * @since 9.0.0
+	 */
+	has (key) {
+		return key in this.items;
+	}
+
+	/**
+	 * Efficiently moves an item to the end of the LRU list (most recently used position).
+	 * This is an internal optimization method that avoids the overhead of the full set() operation
+	 * when only LRU position needs to be updated.
+	 *
+	 * @method moveToEnd
+	 * @memberof LRU
+	 * @param {Object} item - The cache item with prev/next pointers to reposition.
+	 * @private
+	 * @since 11.3.5
+	 */
+	moveToEnd (item) {
+		// If already at the end, nothing to do
+		if (this.last === item) {
+			return;
+		}
+
+		// Remove item from current position in the list
+		if (item.prev !== null) {
+			item.prev.next = item.next;
+		}
+
+		if (item.next !== null) {
+			item.next.prev = item.prev;
+		}
+
+		// Update first pointer if this was the first item
+		if (this.first === item) {
+			this.first = item.next;
+		}
+
+		// Add item to the end
+		item.prev = this.last;
+		item.next = null;
+
+		if (this.last !== null) {
+			this.last.next = item;
+		}
+
+		this.last = item;
+
+		// Handle edge case: if this was the only item, it's also first
+		if (this.first === null) {
+			this.first = item;
+		}
+	}
+
+	/**
+	 * Returns an array of all keys in the cache, ordered from least to most recently used.
+	 *
+	 * @method keys
+	 * @memberof LRU
+	 * @returns {string[]} Array of keys in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * cache.get('a'); // Move 'a' to most recent
+	 * console.log(cache.keys()); // ['b', 'a']
+	 * @see {@link LRU#values}
+	 * @see {@link LRU#entries}
+	 * @since 9.0.0
+	 */
+	keys () {
+		const result = [];
+		let x = this.first;
+
+		while (x !== null) {
+			result.push(x.key);
+			x = x.next;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Sets a value in the cache and returns any evicted item.
+	 *
+	 * @method setWithEvicted
+	 * @memberof LRU
+	 * @param {string} key - The key to set.
+	 * @param {*} value - The value to store.
+	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
+	 * @returns {Object|null} The evicted item (if any) with shape {key, value, expiry, prev, next}, or null.
+	 * @example
+	 * const cache = new LRU(2);
+	 * cache.set('a', 1).set('b', 2);
+	 * const evicted = cache.setWithEvicted('c', 3); // evicted = {key: 'a', value: 1, ...}
+	 * @see {@link LRU#set}
+	 * @see {@link LRU#evict}
+	 * @since 11.3.0
+	 */
+	setWithEvicted (key, value, resetTtl = this.resetTtl) {
+		let evicted = null;
+
+		if (this.has(key)) {
+			this.set(key, value, true, resetTtl);
+		} else {
+			if (this.max > 0 && this.size === this.max) {
+				evicted = {...this.first};
+				this.evict(true);
+			}
+
+			let item = this.items[key] = {
+				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
+				key: key,
+				prev: this.last,
+				next: null,
+				value
+			};
+
+			if (++this.size === 1) {
+				this.first = item;
+			} else {
+				this.last.next = item;
+			}
+
+			this.last = item;
+		}
+
+		return evicted;
+	}
+
+	/**
+	 * Sets a value in the cache. Updates the item's position to most recently used.
+	 *
+	 * @method set
+	 * @memberof LRU
+	 * @param {string} key - The key to set.
+	 * @param {*} value - The value to store.
+	 * @param {boolean} [bypass=false] - Internal parameter for setWithEvicted method.
+	 * @param {boolean} [resetTtl=this.resetTtl] - Whether to reset the TTL for this operation.
+	 * @returns {LRU} The LRU instance for method chaining.
+	 * @example
+	 * cache.set('key1', 'value1')
+	 *      .set('key2', 'value2')
+	 *      .set('key3', 'value3');
+	 * @see {@link LRU#get}
+	 * @see {@link LRU#setWithEvicted}
+	 * @since 1.0.0
+	 */
+	set (key, value, bypass = false, resetTtl = this.resetTtl) {
+		let item = this.items[key];
+
+		if (bypass || item !== undefined) {
+			// Existing item: update value and position
+			item.value = value;
+
+			if (bypass === false && resetTtl) {
+				item.expiry = this.ttl > 0 ? Date.now() + this.ttl : this.ttl;
+			}
+
+			// Always move to end, but the bypass parameter affects TTL reset behavior
+			this.moveToEnd(item);
+		} else {
+			// New item: check for eviction and create
+			if (this.max > 0 && this.size === this.max) {
+				this.evict(true);
+			}
+
+			item = this.items[key] = {
+				expiry: this.ttl > 0 ? Date.now() + this.ttl : this.ttl,
+				key: key,
+				prev: this.last,
+				next: null,
+				value
+			};
+
+			if (++this.size === 1) {
+				this.first = item;
+			} else {
+				this.last.next = item;
+			}
+
+			this.last = item;
+		}
+
+		return this;
+	}
+
+	/**
+	 * Returns an array of all values in the cache for the specified keys.
+	 * Order follows LRU order (least to most recently used).
+	 *
+	 * @method values
+	 * @memberof LRU
+	 * @param {string[]} [keys=this.keys()] - Array of keys to get values for. Defaults to all keys.
+	 * @returns {Array<*>} Array of values corresponding to the keys in LRU order.
+	 * @example
+	 * cache.set('a', 1).set('b', 2);
+	 * console.log(cache.values()); // [1, 2]
+	 * console.log(cache.values(['a'])); // [1]
+	 * @see {@link LRU#keys}
+	 * @see {@link LRU#entries}
+	 * @since 11.1.0
+	 */
+	values (keys = this.keys()) {
+		return keys.map(key => this.get(key));
+	}
+}
+
+/**
+ * Factory function to create a new LRU cache instance with parameter validation.
+ *
+ * @function lru
+ * @param {number} [max=1000] - Maximum number of items to store. Must be >= 0. Use 0 for unlimited size.
+ * @param {number} [ttl=0] - Time to live in milliseconds. Must be >= 0. Use 0 for no expiration.
+ * @param {boolean} [resetTtl=false] - Whether to reset TTL when accessing existing items via get().
+ * @returns {LRU} A new LRU cache instance.
+ * @throws {TypeError} When parameters are invalid (negative numbers or wrong types).
+ * @example
+ * // Create cache with factory function
+ * const cache = lru(100, 5000, true);
+ * cache.set('key', 'value');
+ *
+ * @example
+ * // Error handling
+ * try {
+ *   const cache = lru(-1); // Invalid max
+ * } catch (error) {
+ *   console.error(error.message); // "Invalid max value"
+ * }
+ * @see {@link LRU}
+ * @since 1.0.0
+ */
+function lru (max = 1000, ttl = 0, resetTtl = false) {
+	if (isNaN(max) || max < 0) {
+		throw new TypeError("Invalid max value");
+	}
+
+	if (isNaN(ttl) || ttl < 0) {
+		throw new TypeError("Invalid ttl value");
+	}
+
+	if (typeof resetTtl !== "boolean") {
+		throw new TypeError("Invalid resetTtl value");
+	}
+
+	return new LRU(max, ttl, resetTtl);
+}
+
 "use strict";
 const genericFontFamilies = [
   "serif",
@@ -25599,6 +26571,10 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
    */
   static measureText(text = " ", style, canvas = _CanvasTextMetrics._canvas, wordWrap = style.wordWrap) {
     var _a;
+    const textKey = `${text}-${style.styleKey}-wordWrap-${wordWrap}`;
+    if (_CanvasTextMetrics._measurementCache.has(textKey)) {
+      return _CanvasTextMetrics._measurementCache.get(textKey);
+    }
     const font = fontStringFromTextStyle(style);
     const fontProperties = _CanvasTextMetrics.measureFont(font);
     if (fontProperties.fontSize === 0) {
@@ -25637,6 +26613,7 @@ const _CanvasTextMetrics = class _CanvasTextMetrics {
       maxLineWidth,
       fontProperties
     );
+    _CanvasTextMetrics._measurementCache.set(textKey, measurements);
     return measurements;
   }
   static _measureText(text, letterSpacing, context) {
@@ -26085,6 +27062,8 @@ _CanvasTextMetrics._breakingSpaces = [
   12288
   // ideographic space
 ];
+/** Cache for measured text metrics */
+_CanvasTextMetrics._measurementCache = lru(1e3);
 let CanvasTextMetrics = _CanvasTextMetrics;
 
 "use strict";
@@ -26257,10 +27236,10 @@ class CanvasTextGeneratorClass {
         context.shadowOffsetX = Math.cos(shadowOptions.angle) * dropShadowDistance;
         context.shadowOffsetY = Math.sin(shadowOptions.angle) * dropShadowDistance + dsOffsetShadow;
       } else {
-        context.fillStyle = style._fill ? getCanvasFillStyle(style._fill, context, measured) : null;
+        context.fillStyle = style._fill ? getCanvasFillStyle(style._fill, context, measured, padding * 2) : null;
         if ((_b = style._stroke) == null ? void 0 : _b.width) {
-          const padding2 = style._stroke.width * style._stroke.alignment;
-          context.strokeStyle = getCanvasFillStyle(style._stroke, context, measured, padding2);
+          const strokePadding = style._stroke.width * 0.5 + padding * 2;
+          context.strokeStyle = getCanvasFillStyle(style._stroke, context, measured, strokePadding);
         }
         context.shadowColor = "black";
       }
@@ -26364,6 +27343,7 @@ const CanvasTextGenerator = new CanvasTextGeneratorClass();
 "use strict";
 class CanvasTextSystem {
   constructor(_renderer) {
+    this._activeTextures = {};
     this._renderer = _renderer;
   }
   getTexture(options, _resolution, _style, _textKey) {
@@ -26398,6 +27378,7 @@ class CanvasTextSystem {
     if (style.trim) {
       frame.pad(style.padding);
       texture.frame.copyFrom(frame);
+      texture.frame.scale(1 / resolution);
       texture.updateUvs();
     }
     if (style.filters) {
@@ -26433,6 +27414,64 @@ class CanvasTextSystem {
     );
   }
   /**
+   * Gets or creates a managed texture for a Text object. This method handles texture reuse and reference counting.
+   * @param text - The Text object that needs a texture
+   * @returns A Texture instance that represents the rendered text
+   * @remarks
+   * This method performs the following:
+   * 1. Sets the appropriate resolution based on auto-resolution settings
+   * 2. Checks if a texture already exists for the text's style
+   * 3. Creates a new texture if needed or returns an existing one
+   * 4. Manages reference counting for texture reuse
+   */
+  getManagedTexture(text) {
+    text._resolution = text._autoResolution ? this._renderer.resolution : text.resolution;
+    const textKey = text.styleKey;
+    if (this._activeTextures[textKey]) {
+      this._increaseReferenceCount(textKey);
+      return this._activeTextures[textKey].texture;
+    }
+    const texture = this.getTexture({
+      text: text.text,
+      style: text.style,
+      resolution: text._resolution,
+      textureStyle: text.textureStyle
+    });
+    this._activeTextures[textKey] = {
+      texture,
+      usageCount: 1
+    };
+    return texture;
+  }
+  /**
+   * Decreases the reference count for a texture associated with a text key.
+   * When the reference count reaches zero, the texture is returned to the pool.
+   * @param textKey - The unique key identifying the text style configuration
+   * @remarks
+   * This method is crucial for memory management, ensuring textures are properly
+   * cleaned up when they are no longer needed by any Text instances.
+   */
+  decreaseReferenceCount(textKey) {
+    const activeTexture = this._activeTextures[textKey];
+    activeTexture.usageCount--;
+    if (activeTexture.usageCount === 0) {
+      this.returnTexture(activeTexture.texture);
+      this._activeTextures[textKey] = null;
+    }
+  }
+  /**
+   * Gets the current reference count for a texture associated with a text key.
+   * @param textKey - The unique key identifying the text style configuration
+   * @returns The number of Text instances currently using this texture
+   */
+  getReferenceCount(textKey) {
+    var _a, _b;
+    return (_b = (_a = this._activeTextures[textKey]) == null ? void 0 : _a.usageCount) != null ? _b : 0;
+  }
+  _increaseReferenceCount(textKey) {
+    this._activeTextures[textKey].usageCount++;
+  }
+  /**
    * Applies the specified filters to the given texture.
    *
    * This method takes a texture and a list of filters, applies the filters to the texture,
@@ -26453,6 +27492,11 @@ class CanvasTextSystem {
   }
   destroy() {
     this._renderer = null;
+    for (const key in this._activeTextures) {
+      if (this._activeTextures[key])
+        this.returnTexture(this._activeTextures[key].texture);
+    }
+    this._activeTextures = null;
   }
 }
 /** @ignore */
@@ -26470,30 +27514,30 @@ extensions.add(CanvasTextSystem);
 extensions.add(CanvasTextPipe);
 
 "use strict";
-var __defProp$T = Object.defineProperty;
-var __getOwnPropSymbols$U = Object.getOwnPropertySymbols;
-var __hasOwnProp$U = Object.prototype.hasOwnProperty;
-var __propIsEnum$U = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$T = (obj, key, value) => key in obj ? __defProp$T(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$T = (a, b) => {
+var __defProp$U = Object.defineProperty;
+var __getOwnPropSymbols$V = Object.getOwnPropertySymbols;
+var __hasOwnProp$V = Object.prototype.hasOwnProperty;
+var __propIsEnum$V = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$U = (obj, key, value) => key in obj ? __defProp$U(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$U = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$U.call(b, prop))
-      __defNormalProp$T(a, prop, b[prop]);
-  if (__getOwnPropSymbols$U)
-    for (var prop of __getOwnPropSymbols$U(b)) {
-      if (__propIsEnum$U.call(b, prop))
-        __defNormalProp$T(a, prop, b[prop]);
+    if (__hasOwnProp$V.call(b, prop))
+      __defNormalProp$U(a, prop, b[prop]);
+  if (__getOwnPropSymbols$V)
+    for (var prop of __getOwnPropSymbols$V(b)) {
+      if (__propIsEnum$V.call(b, prop))
+        __defNormalProp$U(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$j = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$U.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$V.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$U)
-    for (var prop of __getOwnPropSymbols$U(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$U.call(source, prop))
+  if (source != null && __getOwnPropSymbols$V)
+    for (var prop of __getOwnPropSymbols$V(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$V.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -26508,7 +27552,7 @@ class Graphics extends ViewContainer {
       options = { context: options };
     }
     const _a = options || {}, { context, roundPixels } = _a, rest = __objRest$j(_a, ["context", "roundPixels"]);
-    super(__spreadValues$T({
+    super(__spreadValues$U({
       label: "Graphics"
     }, rest));
     /** @internal */
@@ -27615,19 +28659,19 @@ class AbstractBitmapFont extends EventEmitter {
 }
 
 "use strict";
-var __defProp$S = Object.defineProperty;
-var __getOwnPropSymbols$T = Object.getOwnPropertySymbols;
-var __hasOwnProp$T = Object.prototype.hasOwnProperty;
-var __propIsEnum$T = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$S = (obj, key, value) => key in obj ? __defProp$S(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$S = (a, b) => {
+var __defProp$T = Object.defineProperty;
+var __getOwnPropSymbols$U = Object.getOwnPropertySymbols;
+var __hasOwnProp$U = Object.prototype.hasOwnProperty;
+var __propIsEnum$U = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$T = (obj, key, value) => key in obj ? __defProp$T(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$T = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$T.call(b, prop))
-      __defNormalProp$S(a, prop, b[prop]);
-  if (__getOwnPropSymbols$T)
-    for (var prop of __getOwnPropSymbols$T(b)) {
-      if (__propIsEnum$T.call(b, prop))
-        __defNormalProp$S(a, prop, b[prop]);
+    if (__hasOwnProp$U.call(b, prop))
+      __defNormalProp$T(a, prop, b[prop]);
+  if (__getOwnPropSymbols$U)
+    for (var prop of __getOwnPropSymbols$U(b)) {
+      if (__propIsEnum$U.call(b, prop))
+        __defNormalProp$T(a, prop, b[prop]);
     }
   return a;
 };
@@ -27653,7 +28697,7 @@ const _DynamicBitmapFont = class _DynamicBitmapFont extends AbstractBitmapFont {
     this._currentMaxCharHeight = 0;
     this._currentPageIndex = -1;
     this._skipKerning = false;
-    const dynamicOptions = __spreadValues$S(__spreadValues$S({}, _DynamicBitmapFont.defaultOptions), options);
+    const dynamicOptions = __spreadValues$T(__spreadValues$T({}, _DynamicBitmapFont.defaultOptions), options);
     this._textureSize = dynamicOptions.textureSize;
     this._mipmap = dynamicOptions.mipmap;
     const style = dynamicOptions.style.clone();
@@ -27945,6 +28989,11 @@ function getBitmapTextLayout(chars, style, font, trimEnd) {
     positions: [],
     chars: []
   };
+  const scale = font.baseMeasurementFontSize / style.fontSize;
+  const adjustedLetterSpacing = style.letterSpacing * scale;
+  const adjustedWordWrapWidth = style.wordWrapWidth * scale;
+  const adjustedLineHeight = style.lineHeight ? style.lineHeight * scale : font.lineHeight;
+  const breakWords = style.wordWrap && style.breakWords;
   const nextWord = (word) => {
     const start = currentLine.width;
     for (let j = 0; j < currentWord.index; j++) {
@@ -27977,12 +29026,8 @@ function getBitmapTextLayout(chars, style, font, trimEnd) {
     };
     firstWord = true;
     layoutData.lines.push(currentLine);
-    layoutData.height += font.lineHeight;
+    layoutData.height += adjustedLineHeight;
   };
-  const scale = font.baseMeasurementFontSize / style.fontSize;
-  const adjustedLetterSpacing = style.letterSpacing * scale;
-  const adjustedWordWrapWidth = style.wordWrapWidth * scale;
-  const breakWords = style.wordWrap && style.breakWords;
   const checkIsOverflow = (lineWidth) => lineWidth - adjustedLetterSpacing > adjustedWordWrapWidth;
   for (let i = 0; i < chars.length + 1; i++) {
     let char;
@@ -28009,9 +29054,7 @@ function getBitmapTextLayout(chars, style, font, trimEnd) {
         }
       }
       if (char === "\r" || char === "\n") {
-        if (currentLine.width !== 0) {
-          nextLine();
-        }
+        nextLine();
       } else if (!isEnd) {
         const spaceWidth = charData.xAdvance + (charData.kerning[previousChar] || 0) + adjustedLetterSpacing;
         currentLine.width += spaceWidth;
@@ -28118,19 +29161,19 @@ function resolveCharacters(chars) {
 }
 
 "use strict";
-var __defProp$R = Object.defineProperty;
-var __getOwnPropSymbols$S = Object.getOwnPropertySymbols;
-var __hasOwnProp$S = Object.prototype.hasOwnProperty;
-var __propIsEnum$S = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$R = (obj, key, value) => key in obj ? __defProp$R(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$R = (a, b) => {
+var __defProp$S = Object.defineProperty;
+var __getOwnPropSymbols$T = Object.getOwnPropertySymbols;
+var __hasOwnProp$T = Object.prototype.hasOwnProperty;
+var __propIsEnum$T = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$S = (obj, key, value) => key in obj ? __defProp$S(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$S = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$S.call(b, prop))
-      __defNormalProp$R(a, prop, b[prop]);
-  if (__getOwnPropSymbols$S)
-    for (var prop of __getOwnPropSymbols$S(b)) {
-      if (__propIsEnum$S.call(b, prop))
-        __defNormalProp$R(a, prop, b[prop]);
+    if (__hasOwnProp$T.call(b, prop))
+      __defNormalProp$S(a, prop, b[prop]);
+  if (__getOwnPropSymbols$T)
+    for (var prop of __getOwnPropSymbols$T(b)) {
+      if (__propIsEnum$T.call(b, prop))
+        __defNormalProp$S(a, prop, b[prop]);
     }
   return a;
 };
@@ -28170,6 +29213,8 @@ class BitmapFontManagerClass {
       skipKerning: false,
       textureStyle: null
     };
+    /** Cache for measured text layouts to avoid recalculating them multiple times. */
+    this.measureCache = lru(1e3);
   }
   /**
    * Get a font for the specified text and style.
@@ -28184,14 +29229,14 @@ class BitmapFontManagerClass {
       fontFamilyKey += style._fill.fill.styleKey;
       overrideFill = false;
     } else if (style._stroke || style.dropShadow) {
-      let key = style.styleKey;
-      key = key.substring(0, key.lastIndexOf("-"));
-      fontFamilyKey = `${key}-bitmap`;
+      fontFamilyKey = `${style.styleKey}-bitmap`;
       overrideFill = false;
     }
     if (!Cache.has(fontFamilyKey)) {
-      const fnt = new DynamicBitmapFont(__spreadValues$R({
-        style,
+      const styleCopy = Object.create(style);
+      styleCopy.lineHeight = 0;
+      const fnt = new DynamicBitmapFont(__spreadValues$S({
+        style: styleCopy,
         overrideFill,
         overrideSize: true
       }, this.defaultOptions));
@@ -28220,8 +29265,14 @@ class BitmapFontManagerClass {
    */
   getLayout(text, style, trimEnd = true) {
     const bitmapFont = this.getFont(text, style);
+    const id = `${text}-${style.styleKey}-${trimEnd}`;
+    if (this.measureCache.has(id)) {
+      return this.measureCache.get(id);
+    }
     const segments = CanvasTextMetrics.graphemeSegmenter(text);
-    return getBitmapTextLayout(segments, style, bitmapFont, trimEnd);
+    const layoutData = getBitmapTextLayout(segments, style, bitmapFont, trimEnd);
+    this.measureCache.set(id, layoutData);
+    return layoutData;
   }
   /**
    * Measure the text using the specified style.
@@ -28234,7 +29285,7 @@ class BitmapFontManagerClass {
   }
   // eslint-disable-next-line max-len
   install(...args) {
-    var _a, _b, _c, _d;
+    var _a, _b, _c, _d, _e;
     let options = args[0];
     if (typeof options === "string") {
       options = {
@@ -28251,10 +29302,10 @@ class BitmapFontManagerClass {
     if (!name) {
       throw new Error("[BitmapFontManager] Property `name` is required.");
     }
-    options = __spreadValues$R(__spreadValues$R({}, this.defaultOptions), options);
+    options = __spreadValues$S(__spreadValues$S({}, this.defaultOptions), options);
     const textStyle = options.style;
     const style = textStyle instanceof TextStyle ? textStyle : new TextStyle(textStyle);
-    const overrideFill = style._fill.fill !== null && style._fill.fill !== void 0;
+    const overrideFill = (_e = options.dynamicFill) != null ? _e : this._canUseTintForStyle(style);
     const font = new DynamicBitmapFont({
       style,
       overrideFill,
@@ -28281,6 +29332,16 @@ class BitmapFontManagerClass {
       font.destroy();
     }
   }
+  /**
+   * Determines if a style can use tinting instead of baking colors into the bitmap.
+   * Tinting is more efficient as it allows reusing the same bitmap with different colors.
+   * @param style - The text style to evaluate
+   * @returns true if the style can use tinting, false if colors must be baked in
+   * @private
+   */
+  _canUseTintForStyle(style) {
+    return !style._stroke && (!style.dropShadow || style.dropShadow.color === 0) && !style._fill.fill && style._fill.color === 16777215;
+  }
 }
 const BitmapFontManager = new BitmapFontManagerClass();
 
@@ -28296,14 +29357,9 @@ class BitmapTextGraphics extends Graphics {
 class BitmapTextPipe {
   constructor(renderer) {
     this._renderer = renderer;
-    this._renderer.renderableGC.addManagedHash(this, "_gpuBitmapText");
   }
   validateRenderable(bitmapText) {
     const graphicsRenderable = this._getGpuBitmapText(bitmapText);
-    if (bitmapText._didTextUpdate) {
-      bitmapText._didTextUpdate = false;
-      this._updateContext(bitmapText, graphicsRenderable);
-    }
     return this._renderer.renderPipes.graphics.validateRenderable(graphicsRenderable);
   }
   addRenderable(bitmapText, instructionSet) {
@@ -28349,21 +29405,34 @@ class BitmapTextPipe {
     }
     context.translate(-bitmapText._anchor._x * tx - padding, -bitmapText._anchor._y * ty - padding).scale(scale, scale);
     const tint = bitmapFont.applyFillAsTint ? style._fill.color : 16777215;
+    let fontSize = bitmapFont.fontMetrics.fontSize;
+    let lineHeight = bitmapFont.lineHeight;
+    if (style.lineHeight) {
+      fontSize = style.fontSize / scale;
+      lineHeight = style.lineHeight / scale;
+    }
+    let linePositionYShift = (lineHeight - fontSize) / 2;
+    if (linePositionYShift - bitmapFont.baseLineOffset < 0) {
+      linePositionYShift = 0;
+    }
     for (let i = 0; i < bitmapTextLayout.lines.length; i++) {
       const line = bitmapTextLayout.lines[i];
       for (let j = 0; j < line.charPositions.length; j++) {
         const char = line.chars[j];
         const charData = bitmapFont.chars[char];
         if (charData == null ? void 0 : charData.texture) {
+          const texture = charData.texture;
           context.texture(
-            charData.texture,
+            texture,
             tint ? tint : "black",
             Math.round(line.charPositions[j] + charData.xOffset),
-            Math.round(currentY + charData.yOffset)
+            Math.round(currentY + charData.yOffset + linePositionYShift),
+            texture.orig.width,
+            texture.orig.height
           );
         }
       }
-      currentY += bitmapFont.lineHeight;
+      currentY += lineHeight;
     }
   }
   _getGpuBitmapText(bitmapText) {
@@ -28424,6 +29493,7 @@ class BatchableHTMLText extends BatchableSprite {
   constructor(renderer) {
     super();
     this.generatingTexture = false;
+    this.currentKey = "--";
     this._renderer = renderer;
     renderer.runners.resolutionChange.add(this);
   }
@@ -28436,7 +29506,9 @@ class BatchableHTMLText extends BatchableSprite {
   }
   /** Destroys the BatchableHTMLText instance. Returns the texture promise to the renderer and cleans up references. */
   destroy() {
-    this._renderer.htmlText.returnTexturePromise(this.texturePromise);
+    const { htmlText } = this._renderer;
+    htmlText.getReferenceCount(this.currentKey) === null ? htmlText.returnTexturePromise(this.texturePromise) : htmlText.decreaseReferenceCount(this.currentKey);
+    this._renderer.runners.resolutionChange.remove(this);
     this.texturePromise = null;
     this._renderer = null;
   }
@@ -28448,14 +29520,22 @@ class HTMLTextPipe {
     this._renderer = renderer;
   }
   validateRenderable(htmlText) {
-    return htmlText._didTextUpdate;
+    const gpuText = this._getGpuText(htmlText);
+    const newKey = htmlText.styleKey;
+    if (gpuText.currentKey !== newKey) {
+      return true;
+    }
+    return false;
   }
   addRenderable(htmlText, instructionSet) {
     const batchableHTMLText = this._getGpuText(htmlText);
     if (htmlText._didTextUpdate) {
-      this._updateGpuText(htmlText).catch((e) => {
-        console.error(e);
-      });
+      const resolution = htmlText._autoResolution ? this._renderer.resolution : htmlText.resolution;
+      if (batchableHTMLText.currentKey !== htmlText.styleKey || htmlText.resolution !== resolution) {
+        this._updateGpuText(htmlText).catch((e) => {
+          console.error(e);
+        });
+      }
       htmlText._didTextUpdate = false;
       updateTextBounds(batchableHTMLText, htmlText);
     }
@@ -28470,14 +29550,19 @@ class HTMLTextPipe {
     const batchableHTMLText = this._getGpuText(htmlText);
     if (batchableHTMLText.generatingTexture)
       return;
-    if (batchableHTMLText.texturePromise) {
-      this._renderer.htmlText.returnTexturePromise(batchableHTMLText.texturePromise);
-      batchableHTMLText.texturePromise = null;
-    }
+    const oldTexturePromise = batchableHTMLText.texturePromise;
+    batchableHTMLText.texturePromise = null;
     batchableHTMLText.generatingTexture = true;
     htmlText._resolution = htmlText._autoResolution ? this._renderer.resolution : htmlText.resolution;
-    const texturePromise = this._renderer.htmlText.getTexturePromise(htmlText);
+    let texturePromise = this._renderer.htmlText.getTexturePromise(htmlText);
+    if (oldTexturePromise) {
+      texturePromise = texturePromise.finally(() => {
+        this._renderer.htmlText.decreaseReferenceCount(batchableHTMLText.currentKey);
+        this._renderer.htmlText.returnTexturePromise(oldTexturePromise);
+      });
+    }
     batchableHTMLText.texturePromise = texturePromise;
+    batchableHTMLText.currentKey = htmlText.styleKey;
     batchableHTMLText.texture = await texturePromise;
     const renderGroup = htmlText.renderGroup || htmlText.parentRenderGroup;
     if (renderGroup) {
@@ -28529,7 +29614,6 @@ class HTMLTextRenderData {
     this.foreignObject = document.createElementNS(nssvg, "foreignObject");
     this.domElement = document.createElementNS(nsxhtml, "div");
     this.styleElement = document.createElementNS(nsxhtml, "style");
-    this.image = new Image();
     const { foreignObject, svgRoot, styleElement, domElement } = this;
     foreignObject.setAttribute("width", "10000");
     foreignObject.setAttribute("height", "10000");
@@ -28537,337 +29621,21 @@ class HTMLTextRenderData {
     svgRoot.appendChild(foreignObject);
     foreignObject.appendChild(styleElement);
     foreignObject.appendChild(domElement);
+    this.image = DOMAdapter.get().createImage();
   }
-}
-
-"use strict";
-function textStyleToCSS(style) {
-  const stroke = style._stroke;
-  const fill = style._fill;
-  const cssStyleString = [
-    `color: ${Color.shared.setValue(fill.color).toHex()}`,
-    `font-size: ${style.fontSize}px`,
-    `font-family: ${style.fontFamily}`,
-    `font-weight: ${style.fontWeight}`,
-    `font-style: ${style.fontStyle}`,
-    `font-variant: ${style.fontVariant}`,
-    `letter-spacing: ${style.letterSpacing}px`,
-    `text-align: ${style.align}`,
-    `padding: ${style.padding}px`,
-    `white-space: ${style.whiteSpace === "pre" && style.wordWrap ? "pre-wrap" : style.whiteSpace}`,
-    ...style.lineHeight ? [`line-height: ${style.lineHeight}px`] : [],
-    ...style.wordWrap ? [
-      `word-wrap: ${style.breakWords ? "break-all" : "break-word"}`,
-      `max-width: ${style.wordWrapWidth}px`
-    ] : [],
-    ...stroke ? [strokeToCSS(stroke)] : [],
-    ...style.dropShadow ? [dropShadowToCSS(style.dropShadow)] : [],
-    ...style.cssOverrides
-  ].join(";");
-  const cssStyles = [`div { ${cssStyleString} }`];
-  tagStyleToCSS(style.tagStyles, cssStyles);
-  return cssStyles.join(" ");
-}
-function dropShadowToCSS(dropShadowStyle) {
-  const color = Color.shared.setValue(dropShadowStyle.color).setAlpha(dropShadowStyle.alpha).toHexa();
-  const x = Math.round(Math.cos(dropShadowStyle.angle) * dropShadowStyle.distance);
-  const y = Math.round(Math.sin(dropShadowStyle.angle) * dropShadowStyle.distance);
-  const position = `${x}px ${y}px`;
-  if (dropShadowStyle.blur > 0) {
-    return `text-shadow: ${position} ${dropShadowStyle.blur}px ${color}`;
-  }
-  return `text-shadow: ${position} ${color}`;
-}
-function strokeToCSS(stroke) {
-  return [
-    `-webkit-text-stroke-width: ${stroke.width}px`,
-    `-webkit-text-stroke-color: ${Color.shared.setValue(stroke.color).toHex()}`,
-    `text-stroke-width: ${stroke.width}px`,
-    `text-stroke-color: ${Color.shared.setValue(stroke.color).toHex()}`,
-    "paint-order: stroke"
-  ].join(";");
-}
-const templates = {
-  fontSize: `font-size: {{VALUE}}px`,
-  fontFamily: `font-family: {{VALUE}}`,
-  fontWeight: `font-weight: {{VALUE}}`,
-  fontStyle: `font-style: {{VALUE}}`,
-  fontVariant: `font-variant: {{VALUE}}`,
-  letterSpacing: `letter-spacing: {{VALUE}}px`,
-  align: `text-align: {{VALUE}}`,
-  padding: `padding: {{VALUE}}px`,
-  whiteSpace: `white-space: {{VALUE}}`,
-  lineHeight: `line-height: {{VALUE}}px`,
-  wordWrapWidth: `max-width: {{VALUE}}px`
-};
-const transform = {
-  fill: (value) => `color: ${Color.shared.setValue(value).toHex()}`,
-  breakWords: (value) => `word-wrap: ${value ? "break-all" : "break-word"}`,
-  stroke: strokeToCSS,
-  dropShadow: dropShadowToCSS
-};
-function tagStyleToCSS(tagStyles, out) {
-  for (const i in tagStyles) {
-    const tagStyle = tagStyles[i];
-    const cssTagStyle = [];
-    for (const j in tagStyle) {
-      if (transform[j]) {
-        cssTagStyle.push(transform[j](tagStyle[j]));
-      } else if (templates[j]) {
-        cssTagStyle.push(templates[j].replace("{{VALUE}}", tagStyle[j]));
-      }
-    }
-    out.push(`${i} { ${cssTagStyle.join(";")} }`);
-  }
-}
-
-"use strict";
-var __defProp$Q = Object.defineProperty;
-var __getOwnPropSymbols$R = Object.getOwnPropertySymbols;
-var __hasOwnProp$R = Object.prototype.hasOwnProperty;
-var __propIsEnum$R = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$Q = (obj, key, value) => key in obj ? __defProp$Q(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$Q = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp$R.call(b, prop))
-      __defNormalProp$Q(a, prop, b[prop]);
-  if (__getOwnPropSymbols$R)
-    for (var prop of __getOwnPropSymbols$R(b)) {
-      if (__propIsEnum$R.call(b, prop))
-        __defNormalProp$Q(a, prop, b[prop]);
-    }
-  return a;
-};
-class HTMLTextStyle extends TextStyle {
-  constructor(options = {}) {
-    var _a, _b;
-    super(options);
-    this._cssOverrides = [];
-    this.cssOverrides = (_a = options.cssOverrides) != null ? _a : [];
-    this.tagStyles = (_b = options.tagStyles) != null ? _b : {};
-  }
-  /**
-   * List of CSS style overrides to apply to the HTML text.
-   * These styles are added after the built-in styles and can override any default styling.
-   * @advanced
-   */
-  set cssOverrides(value) {
-    this._cssOverrides = value instanceof Array ? value : [value];
-    this.update();
-  }
-  /** @advanced */
-  get cssOverrides() {
-    return this._cssOverrides;
-  }
-  /**
-   * Updates the text style and triggers a refresh of the CSS style cache.
-   * This method is called automatically when style properties are changed.
-   * @example
-   * ```ts
-   * // Update after multiple changes
-   * const text = new HTMLText({
-   *     text: 'Hello World',
-   *     style
-   * });
-   *
-   * style.fontSize = 32;
-   * style.fill = '#00ff00';
-   * style.fontFamily = 'Arial';
-   * style.update(); // Apply all changes at once
-   * ```
-   * @advanced
-   * @see {@link HTMLTextStyle#cssStyle} For accessing the generated CSS
-   * @see {@link HTMLTextStyle#cssOverrides} For managing CSS overrides
-   */
-  update() {
-    this._cssStyle = null;
-    super.update();
-  }
-  /**
-   * Creates a new HTMLTextStyle object with the same values as this one.
-   * This creates a deep copy of all style properties, including dropShadow and tag styles.
-   * @example
-   * ```ts
-   * // Create original style
-   * const originalStyle = new HTMLTextStyle({
-   *     fontSize: 24,
-   *     fill: '#ff0000',
-   *     tagStyles: {
-   *         header: { fontSize: 32, fill: '#00ff00' }
-   *     }
-   * });
-   *
-   * // Clone the style
-   * const clonedStyle = originalStyle.clone();
-   *
-   * // Modify cloned style independently
-   * clonedStyle.fontSize = 36;
-   * clonedStyle.fill = '#0000ff';
-   *
-   * // Original style remains unchanged
-   * console.log(originalStyle.fontSize); // Still 24
-   * console.log(originalStyle.fill); // Still '#ff0000'
-   * ```
-   *
-   * Properties that are cloned:
-   * - Basic text properties (fontSize, fontFamily, etc.)
-   * - Fill and stroke styles
-   * - Drop shadow configuration
-   * - CSS overrides
-   * - Tag styles (deep copied)
-   * - Word wrap settings
-   * - Alignment and spacing
-   * @returns {HTMLTextStyle} A new HTMLTextStyle instance with the same properties
-   * @see {@link HTMLTextStyle} For available style properties
-   * @see {@link HTMLTextStyle#cssOverrides} For CSS override handling
-   * @see {@link HTMLTextStyle#tagStyles} For tag style configuration
-   * @standard
-   */
-  clone() {
-    return new HTMLTextStyle({
-      align: this.align,
-      breakWords: this.breakWords,
-      dropShadow: this.dropShadow ? __spreadValues$Q({}, this.dropShadow) : null,
-      fill: this._fill,
-      fontFamily: this.fontFamily,
-      fontSize: this.fontSize,
-      fontStyle: this.fontStyle,
-      fontVariant: this.fontVariant,
-      fontWeight: this.fontWeight,
-      letterSpacing: this.letterSpacing,
-      lineHeight: this.lineHeight,
-      padding: this.padding,
-      stroke: this._stroke,
-      whiteSpace: this.whiteSpace,
-      wordWrap: this.wordWrap,
-      wordWrapWidth: this.wordWrapWidth,
-      cssOverrides: this.cssOverrides,
-      tagStyles: __spreadValues$Q({}, this.tagStyles)
-    });
-  }
-  /**
-   * The CSS style string that will be applied to the HTML text.
-   * @advanced
-   */
-  get cssStyle() {
-    if (!this._cssStyle) {
-      this._cssStyle = textStyleToCSS(this);
-    }
-    return this._cssStyle;
-  }
-  /**
-   * Add a style override, this can be any CSS property
-   * it will override any built-in style. This is the
-   * property and the value as a string (e.g., `color: red`).
-   * This will override any other internal style.
-   * @param {string} value - CSS style(s) to add.
-   * @example
-   * style.addOverride('background-color: red');
-   * @advanced
-   */
-  addOverride(...value) {
-    const toAdd = value.filter((v) => !this.cssOverrides.includes(v));
-    if (toAdd.length > 0) {
-      this.cssOverrides.push(...toAdd);
-      this.update();
-    }
-  }
-  /**
-   * Remove any overrides that match the value.
-   * @param {string} value - CSS style to remove.
-   * @example
-   * style.removeOverride('background-color: red');
-   * @advanced
-   */
-  removeOverride(...value) {
-    const toRemove = value.filter((v) => this.cssOverrides.includes(v));
-    if (toRemove.length > 0) {
-      this.cssOverrides = this.cssOverrides.filter((v) => !toRemove.includes(v));
-      this.update();
-    }
-  }
-  /**
-   * Sets the fill style for the text. HTML text only supports color fills (string or number values).
-   * Texture fills are not supported and will trigger a warning in debug mode.
-   * @example
-   * ```ts
-   * // Using hex colors
-   * const text = new HTMLText({
-   *     text: 'Colored Text',
-   *     style: {
-   *         fill: 0xff0000 // Red color
-   *     }
-   * });
-   *
-   * // Using CSS color strings
-   * text.style.fill = '#00ff00';     // Hex string (Green)
-   * text.style.fill = 'blue';        // Named color
-   * text.style.fill = 'rgb(255,0,0)' // RGB
-   * text.style.fill = '#f0f';        // Short hex
-   *
-   * // Invalid usage (will trigger warning in debug)
-   * text.style.fill = {
-   *     type: 'pattern',
-   *     texture: Texture.from('pattern.png')
-   * }; // Not supported, falls back to default
-   * ```
-   * @param value - The fill color to use. Must be a string or number.
-   * @throws {Warning} In debug mode when attempting to use unsupported fill types
-   * @see {@link TextStyle#fill} For full fill options in canvas text
-   * @standard
-   */
-  set fill(value) {
-    if (typeof value !== "string" && typeof value !== "number") {
-      warn("[HTMLTextStyle] only color fill is not supported by HTMLText");
-    }
-    super.fill = value;
-  }
-  /**
-   * Sets the stroke style for the text. HTML text only supports color strokes (string or number values).
-   * Texture strokes are not supported and will trigger a warning in debug mode.
-   * @example
-   * ```ts
-   * // Using hex colors
-   * const text = new HTMLText({
-   *     text: 'Outlined Text',
-   *     style: {
-   *         stroke: 0xff0000 // Red outline
-   *     }
-   * });
-   *
-   * // Using CSS color strings
-   * text.style.stroke = '#00ff00';     // Hex string (Green)
-   * text.style.stroke = 'blue';        // Named color
-   * text.style.stroke = 'rgb(255,0,0)' // RGB
-   * text.style.stroke = '#f0f';        // Short hex
-   *
-   * // Using stroke width
-   * text.style = {
-   *     stroke: {
-   *         color: '#ff0000',
-   *         width: 2
-   *     }
-   * };
-   *
-   * // Remove stroke
-   * text.style.stroke = null;
-   *
-   * // Invalid usage (will trigger warning in debug)
-   * text.style.stroke = {
-   *     type: 'pattern',
-   *     texture: Texture.from('pattern.png')
-   * }; // Not supported, falls back to default
-   * ```
-   * @param value - The stroke style to use. Must be a string, number, or stroke configuration object
-   * @throws {Warning} In debug mode when attempting to use unsupported stroke types
-   * @see {@link TextStyle#stroke} For full stroke options in canvas text
-   * @standard
-   */
-  set stroke(value) {
-    if (value && typeof value !== "string" && typeof value !== "number") {
-      warn("[HTMLTextStyle] only color stroke is not supported by HTMLText");
-    }
-    super.stroke = value;
+  destroy() {
+    this.svgRoot.remove();
+    this.foreignObject.remove();
+    this.styleElement.remove();
+    this.domElement.remove();
+    this.image.src = "";
+    this.image.remove();
+    this.svgRoot = null;
+    this.foreignObject = null;
+    this.styleElement = null;
+    this.domElement = null;
+    this.image = null;
+    this.canvasAndContext = null;
   }
 }
 
@@ -28922,31 +29690,40 @@ async function loadFontCSS(style, url) {
   const dataSrc = await loadFontAsBase64(url);
   return `@font-face {
         font-family: "${style.fontFamily}";
-        src: url('${dataSrc}');
         font-weight: ${style.fontWeight};
         font-style: ${style.fontStyle};
+        src: url('${dataSrc}');
     }`;
 }
 
 "use strict";
 const FontStylePromiseCache = /* @__PURE__ */ new Map();
-async function getFontCss(fontFamilies, style, defaultOptions) {
-  const fontPromises = fontFamilies.filter((fontFamily) => Cache.has(`${fontFamily}-and-url`)).map((fontFamily, i) => {
+async function getFontCss(fontFamilies) {
+  const fontPromises = fontFamilies.filter((fontFamily) => Cache.has(`${fontFamily}-and-url`)).map((fontFamily) => {
     if (!FontStylePromiseCache.has(fontFamily)) {
-      const { url } = Cache.get(`${fontFamily}-and-url`);
-      if (i === 0) {
-        FontStylePromiseCache.set(fontFamily, loadFontCSS({
-          fontWeight: style.fontWeight,
-          fontStyle: style.fontStyle,
-          fontFamily
-        }, url));
-      } else {
-        FontStylePromiseCache.set(fontFamily, loadFontCSS({
-          fontWeight: defaultOptions.fontWeight,
-          fontStyle: defaultOptions.fontStyle,
-          fontFamily
-        }, url));
-      }
+      const { entries } = Cache.get(`${fontFamily}-and-url`);
+      const promises = [];
+      entries.forEach((entry) => {
+        const url = entry.url;
+        const faces = entry.faces;
+        const out = faces.map((face) => ({ weight: face.weight, style: face.style }));
+        promises.push(
+          ...out.map(
+            (style) => loadFontCSS(
+              {
+                fontWeight: style.weight,
+                fontStyle: style.style,
+                fontFamily
+              },
+              url
+            )
+          )
+        );
+      });
+      FontStylePromiseCache.set(
+        fontFamily,
+        Promise.all(promises).then((css) => css.join("\n"))
+      );
     }
     return FontStylePromiseCache.get(fontFamily);
   });
@@ -29015,6 +29792,7 @@ function measureHtmlText(text, style, fontStyleCSS, htmlTextRenderData) {
 "use strict";
 class HTMLTextSystem {
   constructor(renderer) {
+    this._activeTextures = {};
     this._renderer = renderer;
     this._createCanvas = renderer.type === RendererType.WEBGPU;
   }
@@ -29025,6 +29803,68 @@ class HTMLTextSystem {
   getTexture(options) {
     return this.getTexturePromise(options);
   }
+  /**
+   * Increases the reference count for a texture.
+   * @param text - The HTMLText instance associated with the texture.
+   */
+  getManagedTexture(text) {
+    const textKey = text.styleKey;
+    if (this._activeTextures[textKey]) {
+      this._increaseReferenceCount(textKey);
+      return this._activeTextures[textKey].promise;
+    }
+    const promise = this._buildTexturePromise(text).then((texture) => {
+      this._activeTextures[textKey].texture = texture;
+      return texture;
+    });
+    this._activeTextures[textKey] = {
+      texture: null,
+      promise,
+      usageCount: 1
+    };
+    return promise;
+  }
+  /**
+   * Gets the current reference count for a texture associated with a text key.
+   * @param textKey - The unique key identifying the text style configuration
+   * @returns The number of Text instances currently using this texture
+   */
+  getReferenceCount(textKey) {
+    var _a, _b;
+    return (_b = (_a = this._activeTextures[textKey]) == null ? void 0 : _a.usageCount) != null ? _b : null;
+  }
+  _increaseReferenceCount(textKey) {
+    this._activeTextures[textKey].usageCount++;
+  }
+  /**
+   * Decreases the reference count for a texture.
+   * If the count reaches zero, the texture is cleaned up.
+   * @param textKey - The key associated with the HTMLText instance.
+   */
+  decreaseReferenceCount(textKey) {
+    const activeTexture = this._activeTextures[textKey];
+    if (!activeTexture)
+      return;
+    activeTexture.usageCount--;
+    if (activeTexture.usageCount === 0) {
+      if (activeTexture.texture) {
+        this._cleanUp(activeTexture.texture);
+      } else {
+        activeTexture.promise.then((texture) => {
+          activeTexture.texture = texture;
+          this._cleanUp(activeTexture.texture);
+        }).catch(() => {
+          warn("HTMLTextSystem: Failed to clean texture");
+        });
+      }
+      this._activeTextures[textKey] = null;
+    }
+  }
+  /**
+   * Returns a promise that resolves to a texture for the given HTMLText options.
+   * @param options - The options for the HTMLText.
+   * @returns A promise that resolves to a Texture.
+   */
   getTexturePromise(options) {
     return this._buildTexturePromise(options);
   }
@@ -29032,11 +29872,7 @@ class HTMLTextSystem {
     const { text, style, resolution, textureStyle } = options;
     const htmlTextData = BigPool.get(HTMLTextRenderData);
     const fontFamilies = extractFontFamilies(text, style);
-    const fontCSS = await getFontCss(
-      fontFamilies,
-      style,
-      HTMLTextStyle.defaultTextStyle
-    );
+    const fontCSS = await getFontCss(fontFamilies);
     const measured = measureHtmlText(text, style, fontCSS, htmlTextData);
     const width = Math.ceil(Math.ceil(Math.max(1, measured.width) + style.padding * 2) * resolution);
     const height = Math.ceil(Math.ceil(Math.max(1, measured.height) + style.padding * 2) * resolution);
@@ -29080,6 +29916,11 @@ class HTMLTextSystem {
   }
   destroy() {
     this._renderer = null;
+    for (const key in this._activeTextures) {
+      if (this._activeTextures[key])
+        this.returnTexturePromise(this._activeTextures[key].promise);
+    }
+    this._activeTextures = null;
   }
 }
 /** @ignore */
@@ -29097,19 +29938,19 @@ extensions.add(HTMLTextSystem);
 extensions.add(HTMLTextPipe);
 
 "use strict";
-var __defProp$P = Object.defineProperty;
-var __getOwnPropSymbols$Q = Object.getOwnPropertySymbols;
-var __hasOwnProp$Q = Object.prototype.hasOwnProperty;
-var __propIsEnum$Q = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$P = (obj, key, value) => key in obj ? __defProp$P(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$P = (a, b) => {
+var __defProp$R = Object.defineProperty;
+var __getOwnPropSymbols$S = Object.getOwnPropertySymbols;
+var __hasOwnProp$S = Object.prototype.hasOwnProperty;
+var __propIsEnum$S = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$R = (obj, key, value) => key in obj ? __defProp$R(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$R = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$Q.call(b, prop))
-      __defNormalProp$P(a, prop, b[prop]);
-  if (__getOwnPropSymbols$Q)
-    for (var prop of __getOwnPropSymbols$Q(b)) {
-      if (__propIsEnum$Q.call(b, prop))
-        __defNormalProp$P(a, prop, b[prop]);
+    if (__hasOwnProp$S.call(b, prop))
+      __defNormalProp$R(a, prop, b[prop]);
+  if (__getOwnPropSymbols$S)
+    for (var prop of __getOwnPropSymbols$S(b)) {
+      if (__propIsEnum$S.call(b, prop))
+        __defNormalProp$R(a, prop, b[prop]);
     }
   return a;
 };
@@ -29125,7 +29966,7 @@ const _MeshGeometry = class _MeshGeometry extends Geometry {
         indices: args[2]
       };
     }
-    options = __spreadValues$P(__spreadValues$P({}, _MeshGeometry.defaultOptions), options);
+    options = __spreadValues$R(__spreadValues$R({}, _MeshGeometry.defaultOptions), options);
     const positions = options.positions || new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
     let uvs = options.uvs;
     if (!uvs) {
@@ -29216,21 +30057,21 @@ _MeshGeometry.defaultOptions = {
 let MeshGeometry = _MeshGeometry;
 
 "use strict";
-var __defProp$O = Object.defineProperty;
+var __defProp$Q = Object.defineProperty;
 var __defProps$n = Object.defineProperties;
 var __getOwnPropDescs$n = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$P = Object.getOwnPropertySymbols;
-var __hasOwnProp$P = Object.prototype.hasOwnProperty;
-var __propIsEnum$P = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$O = (obj, key, value) => key in obj ? __defProp$O(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$O = (a, b) => {
+var __getOwnPropSymbols$R = Object.getOwnPropertySymbols;
+var __hasOwnProp$R = Object.prototype.hasOwnProperty;
+var __propIsEnum$R = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$Q = (obj, key, value) => key in obj ? __defProp$Q(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$Q = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$P.call(b, prop))
-      __defNormalProp$O(a, prop, b[prop]);
-  if (__getOwnPropSymbols$P)
-    for (var prop of __getOwnPropSymbols$P(b)) {
-      if (__propIsEnum$P.call(b, prop))
-        __defNormalProp$O(a, prop, b[prop]);
+    if (__hasOwnProp$R.call(b, prop))
+      __defNormalProp$Q(a, prop, b[prop]);
+  if (__getOwnPropSymbols$R)
+    for (var prop of __getOwnPropSymbols$R(b)) {
+      if (__propIsEnum$R.call(b, prop))
+        __defNormalProp$Q(a, prop, b[prop]);
     }
   return a;
 };
@@ -29269,8 +30110,8 @@ const localUniformBit = {
     )
   }
 };
-const localUniformBitGroup2 = __spreadProps$n(__spreadValues$O({}, localUniformBit), {
-  vertex: __spreadProps$n(__spreadValues$O({}, localUniformBit.vertex), {
+const localUniformBitGroup2 = __spreadProps$n(__spreadValues$Q({}, localUniformBit), {
+  vertex: __spreadProps$n(__spreadValues$Q({}, localUniformBit.vertex), {
     // replace the group!
     header: localUniformBit.vertex.header.replace("group(1)", "group(2)")
   })
@@ -29708,19 +30549,19 @@ TilingSpritePipe.extension = {
 extensions.add(TilingSpritePipe);
 
 "use strict";
-var __defProp$N = Object.defineProperty;
-var __getOwnPropSymbols$O = Object.getOwnPropertySymbols;
-var __hasOwnProp$O = Object.prototype.hasOwnProperty;
-var __propIsEnum$O = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$N = (obj, key, value) => key in obj ? __defProp$N(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$N = (a, b) => {
+var __defProp$P = Object.defineProperty;
+var __getOwnPropSymbols$Q = Object.getOwnPropertySymbols;
+var __hasOwnProp$Q = Object.prototype.hasOwnProperty;
+var __propIsEnum$Q = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$P = (obj, key, value) => key in obj ? __defProp$P(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$P = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$O.call(b, prop))
-      __defNormalProp$N(a, prop, b[prop]);
-  if (__getOwnPropSymbols$O)
-    for (var prop of __getOwnPropSymbols$O(b)) {
-      if (__propIsEnum$O.call(b, prop))
-        __defNormalProp$N(a, prop, b[prop]);
+    if (__hasOwnProp$Q.call(b, prop))
+      __defNormalProp$P(a, prop, b[prop]);
+  if (__getOwnPropSymbols$Q)
+    for (var prop of __getOwnPropSymbols$Q(b)) {
+      if (__propIsEnum$Q.call(b, prop))
+        __defNormalProp$P(a, prop, b[prop]);
     }
   return a;
 };
@@ -29746,7 +30587,7 @@ const _PlaneGeometry = class _PlaneGeometry extends MeshGeometry {
    */
   build(options) {
     var _a, _b, _c, _d;
-    options = __spreadValues$N(__spreadValues$N({}, _PlaneGeometry.defaultOptions), options);
+    options = __spreadValues$P(__spreadValues$P({}, _PlaneGeometry.defaultOptions), options);
     this.verticesX = (_a = this.verticesX) != null ? _a : options.verticesX;
     this.verticesY = (_b = this.verticesY) != null ? _b : options.verticesY;
     this.width = (_c = this.width) != null ? _c : options.width;
@@ -29799,25 +30640,25 @@ _PlaneGeometry.defaultOptions = {
 let PlaneGeometry = _PlaneGeometry;
 
 "use strict";
-var __defProp$M = Object.defineProperty;
-var __getOwnPropSymbols$N = Object.getOwnPropertySymbols;
-var __hasOwnProp$N = Object.prototype.hasOwnProperty;
-var __propIsEnum$N = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$M = (obj, key, value) => key in obj ? __defProp$M(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$M = (a, b) => {
+var __defProp$O = Object.defineProperty;
+var __getOwnPropSymbols$P = Object.getOwnPropertySymbols;
+var __hasOwnProp$P = Object.prototype.hasOwnProperty;
+var __propIsEnum$P = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$O = (obj, key, value) => key in obj ? __defProp$O(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$O = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$N.call(b, prop))
-      __defNormalProp$M(a, prop, b[prop]);
-  if (__getOwnPropSymbols$N)
-    for (var prop of __getOwnPropSymbols$N(b)) {
-      if (__propIsEnum$N.call(b, prop))
-        __defNormalProp$M(a, prop, b[prop]);
+    if (__hasOwnProp$P.call(b, prop))
+      __defNormalProp$O(a, prop, b[prop]);
+  if (__getOwnPropSymbols$P)
+    for (var prop of __getOwnPropSymbols$P(b)) {
+      if (__propIsEnum$P.call(b, prop))
+        __defNormalProp$O(a, prop, b[prop]);
     }
   return a;
 };
 const _NineSliceGeometry = class _NineSliceGeometry extends PlaneGeometry {
   constructor(options = {}) {
-    options = __spreadValues$M(__spreadValues$M({}, _NineSliceGeometry.defaultOptions), options);
+    options = __spreadValues$O(__spreadValues$O({}, _NineSliceGeometry.defaultOptions), options);
     super({
       width: options.width,
       height: options.height,
@@ -30026,18 +30867,402 @@ FilterPipe.extension = {
 };
 
 "use strict";
+var __defProp$N = Object.defineProperty;
+var __getOwnPropSymbols$O = Object.getOwnPropertySymbols;
+var __hasOwnProp$O = Object.prototype.hasOwnProperty;
+var __propIsEnum$O = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$N = (obj, key, value) => key in obj ? __defProp$N(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$N = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$O.call(b, prop))
+      __defNormalProp$N(a, prop, b[prop]);
+  if (__getOwnPropSymbols$O)
+    for (var prop of __getOwnPropSymbols$O(b)) {
+      if (__propIsEnum$O.call(b, prop))
+        __defNormalProp$N(a, prop, b[prop]);
+    }
+  return a;
+};
+var __objRest$i = (source, exclude) => {
+  var target = {};
+  for (var prop in source)
+    if (__hasOwnProp$O.call(source, prop) && exclude.indexOf(prop) < 0)
+      target[prop] = source[prop];
+  if (source != null && __getOwnPropSymbols$O)
+    for (var prop of __getOwnPropSymbols$O(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$O.call(source, prop))
+        target[prop] = source[prop];
+    }
+  return target;
+};
+const _Filter = class _Filter extends Shader {
+  /**
+   * @param options - The optional parameters of this filter.
+   */
+  constructor(options) {
+    options = __spreadValues$N(__spreadValues$N({}, _Filter.defaultOptions), options);
+    super(options);
+    /** If enabled is true the filter is applied, if false it will not. */
+    this.enabled = true;
+    /**
+     * The gpu state the filter requires to render.
+     * @internal
+     */
+    this._state = State.for2d();
+    this.blendMode = options.blendMode;
+    this.padding = options.padding;
+    if (typeof options.antialias === "boolean") {
+      this.antialias = options.antialias ? "on" : "off";
+    } else {
+      this.antialias = options.antialias;
+    }
+    this.resolution = options.resolution;
+    this.blendRequired = options.blendRequired;
+    this.clipToViewport = options.clipToViewport;
+    this.addResource("uTexture", 0, 1);
+  }
+  /**
+   * Applies the filter
+   * @param filterManager - The renderer to retrieve the filter from
+   * @param input - The input render target.
+   * @param output - The target to output to.
+   * @param clearMode - Should the output be cleared before rendering to it
+   */
+  apply(filterManager, input, output, clearMode) {
+    filterManager.applyFilter(this, input, output, clearMode);
+  }
+  /**
+   * Get the blend mode of the filter.
+   * @default "normal"
+   */
+  get blendMode() {
+    return this._state.blendMode;
+  }
+  /** Sets the blend mode of the filter. */
+  set blendMode(value) {
+    this._state.blendMode = value;
+  }
+  /**
+   * A short hand function to create a filter based of a vertex and fragment shader src.
+   * @param options
+   * @returns A shiny new PixiJS filter!
+   */
+  static from(options) {
+    const _a = options, { gpu, gl } = _a, rest = __objRest$i(_a, ["gpu", "gl"]);
+    let gpuProgram;
+    let glProgram;
+    if (gpu) {
+      gpuProgram = GpuProgram.from(gpu);
+    }
+    if (gl) {
+      glProgram = GlProgram.from(gl);
+    }
+    return new _Filter(__spreadValues$N({
+      gpuProgram,
+      glProgram
+    }, rest));
+  }
+};
+/** The default filter settings */
+_Filter.defaultOptions = {
+  blendMode: "normal",
+  resolution: 1,
+  padding: 0,
+  antialias: "off",
+  blendRequired: false,
+  clipToViewport: true
+};
+let Filter = _Filter;
+
+var vertex$2 = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
+
+var fragment$5 = "in vec2 vTextureCoord;\nout vec4 finalColor;\nuniform sampler2D uTexture;\nvoid main() {\n    finalColor = texture(uTexture, vTextureCoord);\n}\n";
+
+var source$6 = "struct GlobalFilterUniforms {\n  uInputSize: vec4<f32>,\n  uInputPixel: vec4<f32>,\n  uInputClamp: vec4<f32>,\n  uOutputFrame: vec4<f32>,\n  uGlobalFrame: vec4<f32>,\n  uOutputTexture: vec4<f32>,\n};\n\n@group(0) @binding(0) var <uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler: sampler;\n\nstruct VSOutput {\n  @builtin(position) position: vec4<f32>,\n  @location(0) uv: vec2<f32>\n};\n\nfn filterVertexPosition(aPosition: vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0 * gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord(aPosition: vec2<f32>) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition: vec2<f32>,\n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n) -> @location(0) vec4<f32> {\n    return textureSample(uTexture, uSampler, uv);\n}\n";
+
+"use strict";
+class PassthroughFilter extends Filter {
+  constructor() {
+    const gpuProgram = GpuProgram.from({
+      vertex: { source: source$6, entryPoint: "mainVertex" },
+      fragment: { source: source$6, entryPoint: "mainFragment" },
+      name: "passthrough-filter"
+    });
+    const glProgram = GlProgram.from({
+      vertex: vertex$2,
+      fragment: fragment$5,
+      name: "passthrough-filter"
+    });
+    super({
+      gpuProgram,
+      glProgram
+    });
+  }
+}
+
+"use strict";
+
+"use strict";
+
+"use strict";
+function pointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
+  const v2x = x3 - x1;
+  const v2y = y3 - y1;
+  const v1x = x2 - x1;
+  const v1y = y2 - y1;
+  const v0x = px - x1;
+  const v0y = py - y1;
+  const dot00 = v2x * v2x + v2y * v2y;
+  const dot01 = v2x * v1x + v2y * v1y;
+  const dot02 = v2x * v0x + v2y * v0y;
+  const dot11 = v1x * v1x + v1y * v1y;
+  const dot12 = v1x * v0x + v1y * v0y;
+  const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+  const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+  const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+  return u >= 0 && v >= 0 && u + v < 1;
+}
+
+"use strict";
+
+"use strict";
+
+"use strict";
+class Triangle {
+  /**
+   * @param x - The X coord of the first point.
+   * @param y - The Y coord of the first point.
+   * @param x2 - The X coord of the second point.
+   * @param y2 - The Y coord of the second point.
+   * @param x3 - The X coord of the third point.
+   * @param y3 - The Y coord of the third point.
+   */
+  constructor(x = 0, y = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0) {
+    /**
+     * The type of the object, mainly used to avoid `instanceof` checks
+     * @example
+     * ```ts
+     * // Check shape type
+     * const shape = new Triangle(0, 0, 100, 0, 50, 100);
+     * console.log(shape.type); // 'triangle'
+     *
+     * // Use in type guards
+     * if (shape.type === 'triangle') {
+     *     console.log(shape.x2, shape.y2);
+     * }
+     * ```
+     * @readonly
+     * @default 'triangle'
+     * @see {@link SHAPE_PRIMITIVE} For all shape types
+     */
+    this.type = "triangle";
+    this.x = x;
+    this.y = y;
+    this.x2 = x2;
+    this.y2 = y2;
+    this.x3 = x3;
+    this.y3 = y3;
+  }
+  /**
+   * Checks whether the x and y coordinates given are contained within this triangle
+   * @example
+   * ```ts
+   * // Basic containment check
+   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
+   * const isInside = triangle.contains(25, 25); // true
+   * ```
+   * @remarks
+   * - Uses barycentric coordinate system
+   * - Works with any triangle shape
+   * @param x - The X coordinate of the point to test
+   * @param y - The Y coordinate of the point to test
+   * @returns Whether the x/y coordinates are within this Triangle
+   * @see {@link Triangle.strokeContains} For checking stroke intersection
+   * @see {@link Triangle.getBounds} For getting containing rectangle
+   */
+  contains(x, y) {
+    const s = (this.x - this.x3) * (y - this.y3) - (this.y - this.y3) * (x - this.x3);
+    const t = (this.x2 - this.x) * (y - this.y) - (this.y2 - this.y) * (x - this.x);
+    if (s < 0 !== t < 0 && s !== 0 && t !== 0) {
+      return false;
+    }
+    const d = (this.x3 - this.x2) * (y - this.y2) - (this.y3 - this.y2) * (x - this.x2);
+    return d === 0 || d < 0 === s + t <= 0;
+  }
+  /**
+   * Checks whether the x and y coordinates given are contained within this triangle including the stroke.
+   * @example
+   * ```ts
+   * // Basic stroke check
+   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
+   * const isOnStroke = triangle.strokeContains(25, 25, 4); // 4px line width
+   *
+   * // Check with different alignments
+   * const innerStroke = triangle.strokeContains(25, 25, 4, 1);   // Inside
+   * const centerStroke = triangle.strokeContains(25, 25, 4, 0.5); // Centered
+   * const outerStroke = triangle.strokeContains(25, 25, 4, 0);   // Outside
+   * ```
+   * @param pointX - The X coordinate of the point to test
+   * @param pointY - The Y coordinate of the point to test
+   * @param strokeWidth - The width of the line to check
+   * @param _alignment - The alignment of the stroke (1 = inner, 0.5 = centered, 0 = outer)
+   * @returns Whether the x/y coordinates are within this triangle's stroke
+   * @see {@link Triangle.contains} For checking fill containment
+   * @see {@link Triangle.getBounds} For getting stroke bounds
+   */
+  strokeContains(pointX, pointY, strokeWidth, _alignment = 0.5) {
+    const halfStrokeWidth = strokeWidth / 2;
+    const halfStrokeWidthSquared = halfStrokeWidth * halfStrokeWidth;
+    const { x, x2, x3, y, y2, y3 } = this;
+    if (squaredDistanceToLineSegment(pointX, pointY, x, y, x2, y3) <= halfStrokeWidthSquared || squaredDistanceToLineSegment(pointX, pointY, x2, y2, x3, y3) <= halfStrokeWidthSquared || squaredDistanceToLineSegment(pointX, pointY, x3, y3, x, y) <= halfStrokeWidthSquared) {
+      return true;
+    }
+    return false;
+  }
+  /**
+   * Creates a clone of this Triangle
+   * @example
+   * ```ts
+   * // Basic cloning
+   * const original = new Triangle(0, 0, 100, 0, 50, 100);
+   * const copy = original.clone();
+   *
+   * // Clone and modify
+   * const modified = original.clone();
+   * modified.x3 = 75;
+   * modified.y3 = 150;
+   *
+   * // Verify independence
+   * console.log(original.y3);  // 100
+   * console.log(modified.y3);  // 150
+   * ```
+   * @returns A copy of the triangle
+   * @see {@link Triangle.copyFrom} For copying into existing triangle
+   * @see {@link Triangle.copyTo} For copying to another triangle
+   */
+  clone() {
+    const triangle = new Triangle(
+      this.x,
+      this.y,
+      this.x2,
+      this.y2,
+      this.x3,
+      this.y3
+    );
+    return triangle;
+  }
+  /**
+   * Copies another triangle to this one.
+   * @example
+   * ```ts
+   * // Basic copying
+   * const source = new Triangle(0, 0, 100, 0, 50, 100);
+   * const target = new Triangle();
+   * target.copyFrom(source);
+   *
+   * // Chain with other operations
+   * const triangle = new Triangle()
+   *     .copyFrom(source)
+   *     .getBounds(rect);
+   * ```
+   * @param triangle - The triangle to copy from
+   * @returns Returns itself
+   * @see {@link Triangle.copyTo} For copying to another triangle
+   * @see {@link Triangle.clone} For creating new triangle copy
+   */
+  copyFrom(triangle) {
+    this.x = triangle.x;
+    this.y = triangle.y;
+    this.x2 = triangle.x2;
+    this.y2 = triangle.y2;
+    this.x3 = triangle.x3;
+    this.y3 = triangle.y3;
+    return this;
+  }
+  /**
+   * Copies this triangle to another one.
+   * @example
+   * ```ts
+   * // Basic copying
+   * const source = new Triangle(0, 0, 100, 0, 50, 100);
+   * const target = new Triangle();
+   * source.copyTo(target);
+   *
+   * // Chain with other operations
+   * const result = source
+   *     .copyTo(new Triangle())
+   *     .getBounds();
+   * ```
+   * @remarks
+   * - Updates target triangle values
+   * - Copies all point coordinates
+   * - Returns target for chaining
+   * - More efficient than clone()
+   * @param triangle - The triangle to copy to
+   * @returns Returns given parameter
+   * @see {@link Triangle.copyFrom} For copying from another triangle
+   * @see {@link Triangle.clone} For creating new triangle copy
+   */
+  copyTo(triangle) {
+    triangle.copyFrom(this);
+    return triangle;
+  }
+  /**
+   * Returns the framing rectangle of the triangle as a Rectangle object
+   * @example
+   * ```ts
+   * // Basic bounds calculation
+   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
+   * const bounds = triangle.getBounds();
+   * // bounds: x=0, y=0, width=100, height=100
+   *
+   * // Reuse existing rectangle
+   * const rect = new Rectangle();
+   * triangle.getBounds(rect);
+   * ```
+   * @param out - Optional rectangle to store the result
+   * @returns The framing rectangle
+   * @see {@link Rectangle} For rectangle properties
+   * @see {@link Triangle.contains} For checking if a point is inside
+   */
+  getBounds(out) {
+    out || (out = new Rectangle());
+    const minX = Math.min(this.x, this.x2, this.x3);
+    const maxX = Math.max(this.x, this.x2, this.x3);
+    const minY = Math.min(this.y, this.y2, this.y3);
+    const maxY = Math.max(this.y, this.y2, this.y3);
+    out.x = minX;
+    out.y = minY;
+    out.width = maxX - minX;
+    out.height = maxY - minY;
+    return out;
+  }
+}
+
+"use strict";
+
+"use strict";
+const tempProjectionMatrix = new Matrix();
 function getGlobalRenderableBounds(renderables, bounds) {
+  var _a;
   bounds.clear();
-  const tempMatrix = bounds.matrix;
+  const actualMatrix = bounds.matrix;
   for (let i = 0; i < renderables.length; i++) {
     const renderable = renderables[i];
     if (renderable.globalDisplayStatus < 7) {
       continue;
     }
-    bounds.matrix = renderable.worldTransform;
+    const renderGroup = (_a = renderable.renderGroup) != null ? _a : renderable.parentRenderGroup;
+    if (renderGroup == null ? void 0 : renderGroup.isCachedAsTexture) {
+      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup.textureOffsetInverseTransform).append(renderable.worldTransform);
+    } else if (renderGroup == null ? void 0 : renderGroup._parentCacheAsTextureRenderGroup) {
+      bounds.matrix = tempProjectionMatrix.copyFrom(renderGroup._parentCacheAsTextureRenderGroup.inverseWorldTransform).append(renderable.groupTransform);
+    } else {
+      bounds.matrix = renderable.worldTransform;
+    }
     bounds.addBounds(renderable.bounds);
   }
-  bounds.matrix = tempMatrix;
+  bounds.matrix = actualMatrix;
   return bounds;
 }
 
@@ -30100,6 +31325,10 @@ class FilterData {
      * @type {{ x: number, y: number, width: number, height: number }}
      */
     this.globalFrame = { x: 0, y: 0, width: 0, height: 0 };
+    /** The first enabled filter index in the current filter list. */
+    this.firstEnabledIndex = -1;
+    /** The last enabled filter index in the current filter list. */
+    this.lastEnabledIndex = -1;
   }
 }
 class FilterSystem {
@@ -30141,7 +31370,7 @@ class FilterSystem {
     const colorTextureSource = renderer.renderTarget.renderTarget.colorTexture.source;
     const rootResolution = colorTextureSource.resolution;
     const rootAntialias = colorTextureSource.antialias;
-    if (filters.length === 0) {
+    if (filters.every((filter) => !filter.enabled)) {
       filterData.skip = true;
       return;
     }
@@ -30204,7 +31433,7 @@ class FilterSystem {
     const colorTextureSource = texture.source;
     const rootResolution = colorTextureSource.resolution;
     const rootAntialias = colorTextureSource.antialias;
-    if (filters.length === 0) {
+    if (filters.every((filter) => !filter.enabled)) {
       filterData.skip = true;
       return texture;
     }
@@ -30311,7 +31540,8 @@ class FilterSystem {
       offsetY = offset.y;
     }
     this._updateFilterUniforms(input, output, filterData, offsetX, offsetY, resolution, isFinalTarget, clear);
-    this._setupBindGroupsAndRender(filter, input, renderer);
+    const filterToApply = filter.enabled ? filter : this._getPassthroughFilter();
+    this._setupBindGroupsAndRender(filterToApply, input, renderer);
   }
   /**
    * Multiply _input normalized coordinates_ to this matrix to get _sprite texture normalized coordinates_.
@@ -30339,13 +31569,21 @@ class FilterSystem {
     worldTransform.invert();
     mappedMatrix.prepend(worldTransform);
     mappedMatrix.scale(
-      1 / sprite.texture.frame.width,
-      1 / sprite.texture.frame.height
+      1 / sprite.texture.orig.width,
+      1 / sprite.texture.orig.height
     );
     mappedMatrix.translate(sprite.anchor.x, sprite.anchor.y);
     return mappedMatrix;
   }
   destroy() {
+    var _a;
+    (_a = this._passthroughFilter) == null ? void 0 : _a.destroy(true);
+    this._passthroughFilter = null;
+  }
+  _getPassthroughFilter() {
+    var _a;
+    (_a = this._passthroughFilter) != null ? _a : this._passthroughFilter = new PassthroughFilter();
+    return this._passthroughFilter;
   }
   /**
    * Sets up the bind groups and renders the filter.
@@ -30382,17 +31620,17 @@ class FilterSystem {
    */
   _setupFilterTextures(filterData, bounds, renderer, previousFilterData) {
     filterData.backTexture = Texture.EMPTY;
-    if (filterData.blendRequired) {
-      renderer.renderTarget.finishRenderPass();
-      const renderTarget = renderer.renderTarget.getRenderTarget(filterData.outputRenderSurface);
-      filterData.backTexture = this.getBackTexture(renderTarget, bounds, previousFilterData == null ? void 0 : previousFilterData.bounds);
-    }
     filterData.inputTexture = TexturePool.getOptimalTexture(
       bounds.width,
       bounds.height,
       filterData.resolution,
       filterData.antialias
     );
+    if (filterData.blendRequired) {
+      renderer.renderTarget.finishRenderPass();
+      const renderTarget = renderer.renderTarget.getRenderTarget(filterData.outputRenderSurface);
+      filterData.backTexture = this.getBackTexture(renderTarget, bounds, previousFilterData == null ? void 0 : previousFilterData.bounds);
+    }
     renderer.renderTarget.bind(filterData.inputTexture, true);
     renderer.globalUniforms.push({
       offset: bounds
@@ -30531,10 +31769,12 @@ class FilterSystem {
     const inputTexture = filterData.inputTexture;
     const bounds = filterData.bounds;
     const filters = filterData.filters;
+    const firstEnabled = filterData.firstEnabledIndex;
+    const lastEnabled = filterData.lastEnabledIndex;
     this._globalFilterBindGroup.setResource(inputTexture.source.style, 2);
     this._globalFilterBindGroup.setResource(filterData.backTexture.source, 3);
-    if (filters.length === 1) {
-      filters[0].apply(this, inputTexture, filterData.outputRenderSurface, clear);
+    if (firstEnabled === lastEnabled) {
+      filters[firstEnabled].apply(this, inputTexture, filterData.outputRenderSurface, clear);
     } else {
       let flip = filterData.inputTexture;
       const tempTexture = TexturePool.getOptimalTexture(
@@ -30544,15 +31784,16 @@ class FilterSystem {
         false
       );
       let flop = tempTexture;
-      let i = 0;
-      for (i = 0; i < filters.length - 1; ++i) {
+      for (let i = firstEnabled; i < lastEnabled; i++) {
         const filter = filters[i];
+        if (!filter.enabled)
+          continue;
         filter.apply(this, flip, flop, true);
         const t = flip;
         flip = flop;
         flop = t;
       }
-      filters[i].apply(this, flip, filterData.outputRenderSurface, clear);
+      filters[lastEnabled].apply(this, flip, filterData.outputRenderSurface, clear);
       TexturePool.returnTexture(tempTexture);
     }
   }
@@ -30567,8 +31808,15 @@ class FilterSystem {
     let blendRequired = false;
     let enabled = false;
     let clipToViewport = true;
+    let firstEnabledIndex = -1;
+    let lastEnabledIndex = -1;
     for (let i = 0; i < filters.length; i++) {
       const filter = filters[i];
+      if (!filter.enabled)
+        continue;
+      if (firstEnabledIndex === -1)
+        firstEnabledIndex = i;
+      lastEnabledIndex = i;
       resolution = Math.min(resolution, filter.resolution === "inherit" ? rootResolution : filter.resolution);
       padding += filter.padding;
       if (filter.antialias === "off") {
@@ -30589,7 +31837,7 @@ class FilterSystem {
         enabled = false;
         break;
       }
-      enabled = filter.enabled || enabled;
+      enabled = true;
       blendRequired || (blendRequired = filter.blendRequired);
     }
     if (!enabled) {
@@ -30607,6 +31855,8 @@ class FilterSystem {
     filterData.antialias = antialias;
     filterData.resolution = resolution;
     filterData.blendRequired = blendRequired;
+    filterData.firstEnabledIndex = firstEnabledIndex;
+    filterData.lastEnabledIndex = lastEnabledIndex;
   }
   _popFilterData() {
     this._filterStackIndex--;
@@ -30615,7 +31865,7 @@ class FilterSystem {
   _getPreviousFilterData() {
     let previousFilterData;
     let index = this._filterStackIndex - 1;
-    while (index > 1) {
+    while (index > 0) {
       index--;
       previousFilterData = this._filterStack[index];
       if (!previousFilterData.skip) {
@@ -30793,19 +32043,19 @@ class SystemRunner {
 }
 
 "use strict";
-var __defProp$L = Object.defineProperty;
-var __getOwnPropSymbols$M = Object.getOwnPropertySymbols;
-var __hasOwnProp$M = Object.prototype.hasOwnProperty;
-var __propIsEnum$M = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$L = (obj, key, value) => key in obj ? __defProp$L(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$L = (a, b) => {
+var __defProp$M = Object.defineProperty;
+var __getOwnPropSymbols$N = Object.getOwnPropertySymbols;
+var __hasOwnProp$N = Object.prototype.hasOwnProperty;
+var __propIsEnum$N = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$M = (obj, key, value) => key in obj ? __defProp$M(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$M = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$M.call(b, prop))
-      __defNormalProp$L(a, prop, b[prop]);
-  if (__getOwnPropSymbols$M)
-    for (var prop of __getOwnPropSymbols$M(b)) {
-      if (__propIsEnum$M.call(b, prop))
-        __defNormalProp$L(a, prop, b[prop]);
+    if (__hasOwnProp$N.call(b, prop))
+      __defNormalProp$M(a, prop, b[prop]);
+  if (__getOwnPropSymbols$N)
+    for (var prop of __getOwnPropSymbols$N(b)) {
+      if (__propIsEnum$N.call(b, prop))
+        __defNormalProp$M(a, prop, b[prop]);
     }
   return a;
 };
@@ -30858,9 +32108,9 @@ const _AbstractRenderer = class _AbstractRenderer extends EventEmitter {
     for (const systemName in this._systemsHash) {
       const system = this._systemsHash[systemName];
       const defaultSystemOptions = system.constructor.defaultOptions;
-      options = __spreadValues$L(__spreadValues$L({}, defaultSystemOptions), options);
+      options = __spreadValues$M(__spreadValues$M({}, defaultSystemOptions), options);
     }
-    options = __spreadValues$L(__spreadValues$L({}, _AbstractRenderer.defaultOptions), options);
+    options = __spreadValues$M(__spreadValues$M({}, _AbstractRenderer.defaultOptions), options);
     this._roundPixels = options.roundPixels ? 1 : 0;
     for (let i = 0; i < this.runners.init.items.length; i++) {
       await this.runners.init.items[i].init(options);
@@ -30890,6 +32140,9 @@ const _AbstractRenderer = class _AbstractRenderer extends EventEmitter {
     if (!options.transform) {
       options.container.updateLocalTransform();
       options.transform = options.container.localTransform;
+    }
+    if (!options.container.visible) {
+      return;
     }
     options.container.enableRenderGroup();
     this.runners.prerender.emit(options);
@@ -31036,6 +32289,7 @@ const _AbstractRenderer = class _AbstractRenderer extends EventEmitter {
         this,
         Adaptor ? new Adaptor() : null
       );
+      this.runners.destroy.add(this.renderPipes[name]);
     });
   }
   destroy(options = false) {
@@ -31044,6 +32298,9 @@ const _AbstractRenderer = class _AbstractRenderer extends EventEmitter {
     Object.values(this.runners).forEach((runner) => {
       runner.destroy();
     });
+    if (options === true || typeof options === "object" && options.releaseGlobalResources) {
+      GlobalResourceRegistry.release();
+    }
     this._systemsHash = null;
     this.renderPipes = null;
   }
@@ -31192,19 +32449,19 @@ async function isWebGPUSupported(options = {}) {
 }
 
 "use strict";
-var __defProp$K = Object.defineProperty;
-var __getOwnPropSymbols$L = Object.getOwnPropertySymbols;
-var __hasOwnProp$L = Object.prototype.hasOwnProperty;
-var __propIsEnum$L = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$K = (obj, key, value) => key in obj ? __defProp$K(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$K = (a, b) => {
+var __defProp$L = Object.defineProperty;
+var __getOwnPropSymbols$M = Object.getOwnPropertySymbols;
+var __hasOwnProp$M = Object.prototype.hasOwnProperty;
+var __propIsEnum$M = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$L = (obj, key, value) => key in obj ? __defProp$L(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$L = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$L.call(b, prop))
-      __defNormalProp$K(a, prop, b[prop]);
-  if (__getOwnPropSymbols$L)
-    for (var prop of __getOwnPropSymbols$L(b)) {
-      if (__propIsEnum$L.call(b, prop))
-        __defNormalProp$K(a, prop, b[prop]);
+    if (__hasOwnProp$M.call(b, prop))
+      __defNormalProp$L(a, prop, b[prop]);
+  if (__getOwnPropSymbols$M)
+    for (var prop of __getOwnPropSymbols$M(b)) {
+      if (__propIsEnum$M.call(b, prop))
+        __defNormalProp$L(a, prop, b[prop]);
     }
   return a;
 };
@@ -31229,17 +32486,17 @@ async function autoDetectRenderer(options) {
     if (rendererType === "webgpu" && await isWebGPUSupported()) {
       const { WebGPURenderer } = await Promise.resolve().then(function () { return WebGPURenderer$1; });
       RendererClass = WebGPURenderer;
-      finalOptions = __spreadValues$K(__spreadValues$K({}, options), options.webgpu);
+      finalOptions = __spreadValues$L(__spreadValues$L({}, options), options.webgpu);
       break;
     } else if (rendererType === "webgl" && isWebGLSupported(
       (_a = options.failIfMajorPerformanceCaveat) != null ? _a : AbstractRenderer.defaultOptions.failIfMajorPerformanceCaveat
     )) {
       const { WebGLRenderer } = await Promise.resolve().then(function () { return WebGLRenderer$1; });
       RendererClass = WebGLRenderer;
-      finalOptions = __spreadValues$K(__spreadValues$K({}, options), options.webgl);
+      finalOptions = __spreadValues$L(__spreadValues$L({}, options), options.webgl);
       break;
     } else if (rendererType === "canvas") {
-      finalOptions = __spreadValues$K({}, options);
+      finalOptions = __spreadValues$L({}, options);
       throw new Error("CanvasRenderer is not yet implemented");
     }
   }
@@ -31255,7 +32512,7 @@ async function autoDetectRenderer(options) {
 
 "use strict";
 const DATA_URI = /^\s*data:(?:([\w-]+)\/([\w+.-]+))?(?:;charset=([\w-]+))?(?:;(base64))?,(.*)/i;
-const VERSION = "8.11.0";
+const VERSION = "8.14.0";
 
 "use strict";
 class ApplicationInitHook {
@@ -31291,24 +32548,23 @@ RendererInitHook.extension = {
 };
 
 "use strict";
-var __defProp$J = Object.defineProperty;
-var __getOwnPropSymbols$K = Object.getOwnPropertySymbols;
-var __hasOwnProp$K = Object.prototype.hasOwnProperty;
-var __propIsEnum$K = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$J = (obj, key, value) => key in obj ? __defProp$J(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$J = (a, b) => {
+var __defProp$K = Object.defineProperty;
+var __getOwnPropSymbols$L = Object.getOwnPropertySymbols;
+var __hasOwnProp$L = Object.prototype.hasOwnProperty;
+var __propIsEnum$L = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$K = (obj, key, value) => key in obj ? __defProp$K(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$K = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$K.call(b, prop))
-      __defNormalProp$J(a, prop, b[prop]);
-  if (__getOwnPropSymbols$K)
-    for (var prop of __getOwnPropSymbols$K(b)) {
-      if (__propIsEnum$K.call(b, prop))
-        __defNormalProp$J(a, prop, b[prop]);
+    if (__hasOwnProp$L.call(b, prop))
+      __defNormalProp$K(a, prop, b[prop]);
+  if (__getOwnPropSymbols$L)
+    for (var prop of __getOwnPropSymbols$L(b)) {
+      if (__propIsEnum$L.call(b, prop))
+        __defNormalProp$K(a, prop, b[prop]);
     }
   return a;
 };
 const _Application = class _Application {
-  /** @ignore */
   constructor(...args) {
     /**
      * The root display container for your application.
@@ -31349,7 +32605,7 @@ const _Application = class _Application {
    * ```
    */
   async init(options) {
-    options = __spreadValues$J({}, options);
+    options = __spreadValues$K({}, options);
     this.renderer = await autoDetectRenderer(options);
     _Application._plugins.forEach((plugin) => {
       plugin.init.call(this, options);
@@ -31524,17 +32780,20 @@ class BitmapFont extends AbstractBitmapFont {
       const charData = data.chars[key];
       const {
         frame: textureFrame,
-        source: textureSource
+        source: textureSource,
+        rotate: textureRotate
       } = textures[charData.page];
-      const frameReal = new Rectangle(
-        charData.x + textureFrame.x,
-        charData.y + textureFrame.y,
-        charData.width,
-        charData.height
+      const frame = groupD8.transformRectCoords(
+        charData,
+        textureFrame,
+        textureRotate,
+        new Rectangle()
       );
       const texture = new Texture({
+        frame,
+        orig: new Rectangle(0, 0, charData.width, charData.height),
         source: textureSource,
-        frame: frameReal
+        rotate: textureRotate
       });
       this.chars[key] = {
         id: key.codePointAt(0),
@@ -31830,7 +33089,9 @@ const loadBitmapFont = {
     type: ExtensionType.LoadParser,
     priority: LoaderParserPriority.Normal
   },
+  /** used for deprecation purposes */
   name: "loadBitmapFont",
+  id: "bitmap-font",
   test(url) {
     return validExtensions.includes(path.extname(url).toLowerCase());
   },
@@ -32106,27 +33367,45 @@ const detectWebp = {
 };
 
 "use strict";
-var __defProp$I = Object.defineProperty;
+var __defProp$J = Object.defineProperty;
 var __defProps$m = Object.defineProperties;
 var __getOwnPropDescs$m = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$J = Object.getOwnPropertySymbols;
-var __hasOwnProp$J = Object.prototype.hasOwnProperty;
-var __propIsEnum$J = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$I = (obj, key, value) => key in obj ? __defProp$I(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$I = (a, b) => {
+var __getOwnPropSymbols$K = Object.getOwnPropertySymbols;
+var __hasOwnProp$K = Object.prototype.hasOwnProperty;
+var __propIsEnum$K = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$J = (obj, key, value) => key in obj ? __defProp$J(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$J = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$J.call(b, prop))
-      __defNormalProp$I(a, prop, b[prop]);
-  if (__getOwnPropSymbols$J)
-    for (var prop of __getOwnPropSymbols$J(b)) {
-      if (__propIsEnum$J.call(b, prop))
-        __defNormalProp$I(a, prop, b[prop]);
+    if (__hasOwnProp$K.call(b, prop))
+      __defNormalProp$J(a, prop, b[prop]);
+  if (__getOwnPropSymbols$K)
+    for (var prop of __getOwnPropSymbols$K(b)) {
+      if (__propIsEnum$K.call(b, prop))
+        __defNormalProp$J(a, prop, b[prop]);
     }
   return a;
 };
 var __spreadProps$m = (a, b) => __defProps$m(a, __getOwnPropDescs$m(b));
-class Loader {
+const _Loader = class _Loader {
   constructor() {
+    /**
+     * Options for loading assets with the loader.
+     * These options will be used as defaults for all load calls made with this loader instance.
+     * They can be overridden by passing options directly to the load method.
+     * @example
+     * ```ts
+     * // Create a loader with custom default options
+     * const loader = new Loader();
+     * loader.loadOptions = {
+     *   strategy: 'skip', // Default strategy to 'skip'
+     *   retryCount: 5,   // Default retry count to 5
+     *   retryDelay: 500, // Default retry delay to 500ms
+     * };
+     *
+     * // This load call will use the loader's default options
+     * await loader.load('image1.png');
+     */
+    this.loadOptions = __spreadValues$J({}, _Loader.defaultOptions);
     this._parsers = [];
     this._parsersValidated = false;
     /**
@@ -32163,10 +33442,17 @@ class Loader {
       var _a, _b;
       let asset = null;
       let parser = null;
-      if (data.loadParser) {
-        parser = this._parserHash[data.loadParser];
+      if (data.parser || data.loadParser) {
+        parser = this._parserHash[data.parser || data.loadParser];
+        if (data.loadParser) {
+          warn(
+            `[Assets] "loadParser" is deprecated, use "parser" instead for ${url}`
+          );
+        }
         if (!parser) {
-          warn(`[Assets] specified load parser "${data.loadParser}" not found while loading ${url}`);
+          warn(
+            `[Assets] specified load parser "${data.parser || data.loadParser}" not found while loading ${url}`
+          );
         }
       }
       if (!parser) {
@@ -32197,10 +33483,12 @@ class Loader {
     })();
     return result;
   }
-  async load(assetsToLoadIn, onProgress) {
+  async load(assetsToLoadIn, onProgressOrOptions) {
     if (!this._parsersValidated) {
       this._validateParsers();
     }
+    const options = typeof onProgressOrOptions === "function" ? __spreadProps$m(__spreadValues$J(__spreadValues$J({}, _Loader.defaultOptions), this.loadOptions), { onProgress: onProgressOrOptions }) : __spreadValues$J(__spreadValues$J(__spreadValues$J({}, _Loader.defaultOptions), this.loadOptions), onProgressOrOptions || {});
+    const { onProgress, onError, strategy, retryCount, retryDelay } = options;
     let count = 0;
     const assets = {};
     const singleAsset = isSingleItem(assetsToLoadIn);
@@ -32209,24 +33497,15 @@ class Loader {
       src: item,
       data: {}
     }));
-    const total = assetsToLoad.length;
+    const total = assetsToLoad.reduce((sum, asset) => sum + (asset.progressSize || 1), 0);
     const promises = assetsToLoad.map(async (asset) => {
       const url = path.toAbsolute(asset.src);
-      if (!assets[asset.src]) {
-        try {
-          if (!this.promiseCache[url]) {
-            this.promiseCache[url] = this._getLoadPromiseAndParser(url, asset);
-          }
-          assets[asset.src] = await this.promiseCache[url].promise;
-          if (onProgress)
-            onProgress(++count / total);
-        } catch (e) {
-          delete this.promiseCache[url];
-          delete assets[asset.src];
-          throw new Error(`[Loader.load] Failed to load ${url}.
-${e}`);
-        }
-      }
+      if (assets[asset.src])
+        return;
+      await this._loadAssetWithRetry(url, asset, { onProgress, onError, strategy, retryCount, retryDelay }, assets);
+      count += asset.progressSize || 1;
+      if (onProgress)
+        onProgress(count / total);
     });
     await Promise.all(promises);
     return singleAsset ? assets[assetsToLoad[0].src] : assets;
@@ -32263,16 +33542,73 @@ ${e}`);
   /** validates our parsers, right now it only checks for name conflicts but we can add more here as required! */
   _validateParsers() {
     this._parsersValidated = true;
-    this._parserHash = this._parsers.filter((parser) => parser.name).reduce((hash, parser) => {
-      if (!parser.name) {
-        warn(`[Assets] loadParser should have a name`);
-      } else if (hash[parser.name]) {
-        warn(`[Assets] loadParser name conflict "${parser.name}"`);
+    this._parserHash = this._parsers.filter((parser) => parser.name || parser.id).reduce((hash, parser) => {
+      if (!parser.name && !parser.id) {
+        warn(`[Assets] parser should have an id`);
+      } else if (hash[parser.name] || hash[parser.id]) {
+        warn(`[Assets] parser id conflict "${parser.id}"`);
       }
-      return __spreadProps$m(__spreadValues$I({}, hash), { [parser.name]: parser });
+      hash[parser.name] = parser;
+      if (parser.id)
+        hash[parser.id] = parser;
+      return hash;
     }, {});
   }
-}
+  async _loadAssetWithRetry(url, asset, options, assets) {
+    let attempt = 0;
+    const { onError, strategy, retryCount, retryDelay } = options;
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    while (true) {
+      try {
+        if (!this.promiseCache[url]) {
+          this.promiseCache[url] = this._getLoadPromiseAndParser(url, asset);
+        }
+        assets[asset.src] = await this.promiseCache[url].promise;
+        return;
+      } catch (e) {
+        delete this.promiseCache[url];
+        delete assets[asset.src];
+        attempt++;
+        const isLast = strategy !== "retry" || attempt > retryCount;
+        if (strategy === "retry" && !isLast) {
+          if (onError)
+            onError(e, asset);
+          await wait(retryDelay);
+          continue;
+        }
+        if (strategy === "skip") {
+          if (onError)
+            onError(e, asset);
+          return;
+        }
+        if (onError)
+          onError(e, asset);
+        throw new Error(`[Loader.load] Failed to load ${url}.
+${e}`);
+      }
+    }
+  }
+};
+/**
+ * Default options for loading assets
+ * @example
+ * ```ts
+ * // Change default load options globally
+ * Loader.defaultOptions = {
+ *   strategy: 'skip', // Change default strategy to 'skip'
+ *   retryCount: 5,   // Change default retry count to 5
+ *   retryDelay: 500, // Change default retry delay to 500ms
+ * };
+ * ```
+ */
+_Loader.defaultOptions = {
+  onProgress: void 0,
+  onError: void 0,
+  strategy: "throw",
+  retryCount: 3,
+  retryDelay: 250
+};
+let Loader = _Loader;
 
 "use strict";
 function checkDataUrl(url, mimes) {
@@ -32304,7 +33640,9 @@ const loadJson = {
     type: ExtensionType.LoadParser,
     priority: LoaderParserPriority.Low
   },
+  /** used for deprecation purposes */
   name: "loadJson",
+  id: "json",
   test(url) {
     return checkDataUrl(url, validJSONMIME) || checkExtension(url, validJSONExtension);
   },
@@ -32319,7 +33657,9 @@ const loadJson = {
 const validTXTExtension = ".txt";
 const validTXTMIME = "text/plain";
 const loadTxt = {
+  /** used for deprecation purposes */
   name: "loadTxt",
+  id: "text",
   extension: {
     type: ExtensionType.LoadParser,
     priority: LoaderParserPriority.Low,
@@ -32336,21 +33676,21 @@ const loadTxt = {
 };
 
 "use strict";
-var __defProp$H = Object.defineProperty;
+var __defProp$I = Object.defineProperty;
 var __defProps$l = Object.defineProperties;
 var __getOwnPropDescs$l = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$I = Object.getOwnPropertySymbols;
-var __hasOwnProp$I = Object.prototype.hasOwnProperty;
-var __propIsEnum$I = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$H = (obj, key, value) => key in obj ? __defProp$H(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$H = (a, b) => {
+var __getOwnPropSymbols$J = Object.getOwnPropertySymbols;
+var __hasOwnProp$J = Object.prototype.hasOwnProperty;
+var __propIsEnum$J = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$I = (obj, key, value) => key in obj ? __defProp$I(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$I = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$I.call(b, prop))
-      __defNormalProp$H(a, prop, b[prop]);
-  if (__getOwnPropSymbols$I)
-    for (var prop of __getOwnPropSymbols$I(b)) {
-      if (__propIsEnum$I.call(b, prop))
-        __defNormalProp$H(a, prop, b[prop]);
+    if (__hasOwnProp$J.call(b, prop))
+      __defNormalProp$I(a, prop, b[prop]);
+  if (__getOwnPropSymbols$J)
+    for (var prop of __getOwnPropSymbols$J(b)) {
+      if (__propIsEnum$J.call(b, prop))
+        __defNormalProp$I(a, prop, b[prop]);
     }
   return a;
 };
@@ -32406,7 +33746,9 @@ const loadWebFont = {
     type: ExtensionType.LoadParser,
     priority: LoaderParserPriority.Low
   },
+  /** used for deprecation purposes */
   name: "loadWebFont",
+  id: "web-font",
   test(url) {
     return checkDataUrl(url, validFontMIMEs) || checkExtension(url, validFontExtensions);
   },
@@ -32420,27 +33762,41 @@ const loadWebFont = {
       const data = (_f = options.data) != null ? _f : {};
       for (let i = 0; i < weights.length; i++) {
         const weight = weights[i];
-        const font = new FontFace(name, `url(${encodeURIWhenNeeded(url)})`, __spreadProps$l(__spreadValues$H({}, data), {
+        const font = new FontFace(name, `url(${encodeURIWhenNeeded(url)})`, __spreadProps$l(__spreadValues$I({}, data), {
           weight
         }));
         await font.load();
         fonts.add(font);
         fontFaces.push(font);
       }
-      Cache.set(`${name}-and-url`, {
-        url,
-        fontFaces
-      });
+      if (Cache.has(`${name}-and-url`)) {
+        const cached = Cache.get(`${name}-and-url`);
+        cached.entries.push({ url, faces: fontFaces });
+      } else {
+        Cache.set(`${name}-and-url`, {
+          entries: [{ url, faces: fontFaces }]
+        });
+      }
       return fontFaces.length === 1 ? fontFaces[0] : fontFaces;
     }
     warn("[loadWebFont] FontFace API is not supported. Skipping loading font");
     return null;
   },
   unload(font) {
-    (Array.isArray(font) ? font : [font]).forEach((t) => {
-      Cache.remove(`${t.family}-and-url`);
+    const fonts = Array.isArray(font) ? font : [font];
+    const fontFamily = fonts[0].family;
+    const cached = Cache.get(`${fontFamily}-and-url`);
+    const entry = cached.entries.find((f) => f.faces.some((t) => fonts.indexOf(t) !== -1));
+    entry.faces = entry.faces.filter((f) => fonts.indexOf(f) === -1);
+    if (entry.faces.length === 0) {
+      cached.entries = cached.entries.filter((f) => f !== entry);
+    }
+    fonts.forEach((t) => {
       DOMAdapter.get().getFontFaceSet().delete(t);
     });
+    if (cached.entries.length === 0) {
+      Cache.remove(`${fontFamily}-and-url`);
+    }
   }
 };
 
@@ -32484,30 +33840,30 @@ function createTexture(source, loader, url) {
 }
 
 "use strict";
-var __defProp$G = Object.defineProperty;
-var __getOwnPropSymbols$H = Object.getOwnPropertySymbols;
-var __hasOwnProp$H = Object.prototype.hasOwnProperty;
-var __propIsEnum$H = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$G = (obj, key, value) => key in obj ? __defProp$G(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$G = (a, b) => {
+var __defProp$H = Object.defineProperty;
+var __getOwnPropSymbols$I = Object.getOwnPropertySymbols;
+var __hasOwnProp$I = Object.prototype.hasOwnProperty;
+var __propIsEnum$I = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$H = (obj, key, value) => key in obj ? __defProp$H(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$H = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$H.call(b, prop))
-      __defNormalProp$G(a, prop, b[prop]);
-  if (__getOwnPropSymbols$H)
-    for (var prop of __getOwnPropSymbols$H(b)) {
-      if (__propIsEnum$H.call(b, prop))
-        __defNormalProp$G(a, prop, b[prop]);
+    if (__hasOwnProp$I.call(b, prop))
+      __defNormalProp$H(a, prop, b[prop]);
+  if (__getOwnPropSymbols$I)
+    for (var prop of __getOwnPropSymbols$I(b)) {
+      if (__propIsEnum$I.call(b, prop))
+        __defNormalProp$H(a, prop, b[prop]);
     }
   return a;
 };
-var __objRest$i = (source, exclude) => {
+var __objRest$h = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$H.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$I.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$H)
-    for (var prop of __getOwnPropSymbols$H(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$H.call(source, prop))
+  if (source != null && __getOwnPropSymbols$I)
+    for (var prop of __getOwnPropSymbols$I(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$I.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -32520,7 +33876,9 @@ const loadSvg = {
     priority: LoaderParserPriority.Low,
     name: "loadSVG"
   },
+  /** used for deprecation purposes */
   name: "loadSVG",
+  id: "svg",
   config: {
     crossOrigin: "anonymous",
     parseAsGraphicsContext: false
@@ -32542,23 +33900,22 @@ const loadSvg = {
 async function loadAsTexture(url, asset, loader, crossOrigin) {
   var _a, _b, _c, _d, _e, _f;
   const response = await DOMAdapter.get().fetch(url);
-  const blob = await response.blob();
-  const blobUrl = URL.createObjectURL(blob);
-  const image = new Image();
-  image.src = blobUrl;
+  const image = DOMAdapter.get().createImage();
+  image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(await response.text())}`;
   image.crossOrigin = crossOrigin;
   await image.decode();
-  URL.revokeObjectURL(blobUrl);
-  const canvas = document.createElement("canvas");
+  const width = (_b = (_a = asset.data) == null ? void 0 : _a.width) != null ? _b : image.width;
+  const height = (_d = (_c = asset.data) == null ? void 0 : _c.height) != null ? _d : image.height;
+  const resolution = ((_e = asset.data) == null ? void 0 : _e.resolution) || getResolutionOfUrl(url);
+  const canvasWidth = Math.ceil(width * resolution);
+  const canvasHeight = Math.ceil(height * resolution);
+  const canvas = DOMAdapter.get().createCanvas(canvasWidth, canvasHeight);
   const context = canvas.getContext("2d");
-  const resolution = ((_a = asset.data) == null ? void 0 : _a.resolution) || getResolutionOfUrl(url);
-  const width = (_c = (_b = asset.data) == null ? void 0 : _b.width) != null ? _c : image.width;
-  const height = (_e = (_d = asset.data) == null ? void 0 : _d.height) != null ? _e : image.height;
-  canvas.width = width * resolution;
-  canvas.height = height * resolution;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   context.drawImage(image, 0, 0, width * resolution, height * resolution);
-  const _g = (_f = asset.data) != null ? _f : {}, { parseAsGraphicsContext: _p } = _g, rest = __objRest$i(_g, ["parseAsGraphicsContext"]);
-  const base = new ImageSource(__spreadValues$G({
+  const _g = (_f = asset.data) != null ? _f : {}, { parseAsGraphicsContext: _p } = _g, rest = __objRest$h(_g, ["parseAsGraphicsContext"]);
+  const base = new ImageSource(__spreadValues$H({
     resource: canvas,
     alphaMode: "premultiply-alpha-on-upload",
     resolution
@@ -32622,12 +33979,21 @@ let UUID = 0;
 let MAX_WORKERS;
 class WorkerManagerClass {
   constructor() {
+    /** Whether the worker manager has been initialized */
     this._initialized = false;
+    /** Current number of created workers (used to enforce MAX_WORKERS limit) */
     this._createdWorkers = 0;
     this._workerPool = [];
     this._queue = [];
     this._resolveHash = {};
   }
+  /**
+   * Checks if ImageBitmap is supported in the current environment.
+   *
+   * This method uses a dedicated worker to test ImageBitmap support
+   * and caches the result for subsequent calls.
+   * @returns Promise that resolves to true if ImageBitmap is supported, false otherwise
+   */
   isImageBitmapSupported() {
     if (this._isImageBitmapSupported !== void 0)
       return this._isImageBitmapSupported;
@@ -32641,15 +34007,37 @@ class WorkerManagerClass {
     });
     return this._isImageBitmapSupported;
   }
+  /**
+   * Loads an image as an ImageBitmap using a web worker.
+   * @param src - The source URL or path of the image to load
+   * @param asset - Optional resolved asset containing additional texture source options
+   * @returns Promise that resolves to the loaded ImageBitmap
+   * @example
+   * ```typescript
+   * const bitmap = await WorkerManager.loadImageBitmap('image.png');
+   * const bitmapWithOptions = await WorkerManager.loadImageBitmap('image.png', asset);
+   * ```
+   */
   loadImageBitmap(src, asset) {
     var _a;
     return this._run("loadImageBitmap", [src, (_a = asset == null ? void 0 : asset.data) == null ? void 0 : _a.alphaMode]);
   }
+  /**
+   * Initializes the worker pool if not already initialized.
+   * Currently a no-op but reserved for future initialization logic.
+   */
   async _initWorkers() {
     if (this._initialized)
       return;
     this._initialized = true;
   }
+  /**
+   * Gets an available worker from the pool or creates a new one if needed.
+   *
+   * Workers are created up to the MAX_WORKERS limit (based on navigator.hardwareConcurrency).
+   * Each worker is configured with a message handler for processing results.
+   * @returns Available worker or undefined if pool is at capacity and no workers are free
+   */
   _getWorker() {
     if (MAX_WORKERS === void 0) {
       MAX_WORKERS = navigator.hardwareConcurrency || 4;
@@ -32666,9 +34054,17 @@ class WorkerManagerClass {
     }
     return worker;
   }
+  /**
+   * Returns a worker to the pool after completing a task.
+   * @param worker - The worker to return to the pool
+   */
   _returnWorker(worker) {
     this._workerPool.push(worker);
   }
+  /**
+   * Handles completion of a worker task by resolving or rejecting the corresponding promise.
+   * @param data - Result data from the worker containing uuid, data, and optional error
+   */
   _complete(data) {
     if (data.error !== void 0) {
       this._resolveHash[data.uuid].reject(data.error);
@@ -32677,6 +34073,14 @@ class WorkerManagerClass {
     }
     this._resolveHash[data.uuid] = null;
   }
+  /**
+   * Executes a task using the worker pool system.
+   *
+   * Queues the task and processes it when a worker becomes available.
+   * @param id - Identifier for the type of task to run
+   * @param args - Arguments to pass to the worker
+   * @returns Promise that resolves with the worker's result
+   */
   async _run(id, args) {
     await this._initWorkers();
     const promise = new Promise((resolve, reject) => {
@@ -32685,6 +34089,12 @@ class WorkerManagerClass {
     this._next();
     return promise;
   }
+  /**
+   * Processes the next item in the queue if workers are available.
+   *
+   * This method is called after worker initialization and when workers
+   * complete tasks to continue processing the queue.
+   */
   _next() {
     if (!this._queue.length)
       return;
@@ -32701,23 +34111,51 @@ class WorkerManagerClass {
       id
     });
   }
+  /**
+   * Resets the worker manager, terminating all workers and clearing the queue.
+   *
+   * This method:
+   * - Terminates all active workers
+   * - Rejects all pending promises with an error
+   * - Clears all internal state
+   * - Resets initialization flags
+   *
+   * This should be called when the worker manager is no longer needed
+   * to prevent memory leaks and ensure proper cleanup.
+   * @example
+   * ```typescript
+   * // Clean up when shutting down
+   * WorkerManager.reset();
+   * ```
+   */
+  reset() {
+    this._workerPool.forEach((worker) => worker.terminate());
+    this._workerPool.length = 0;
+    Object.values(this._resolveHash).forEach(({ reject }) => {
+      reject == null ? void 0 : reject(new Error("WorkerManager destroyed"));
+    });
+    this._resolveHash = {};
+    this._queue.length = 0;
+    this._initialized = false;
+    this._createdWorkers = 0;
+  }
 }
 const WorkerManager = new WorkerManagerClass();
 
 "use strict";
-var __defProp$F = Object.defineProperty;
-var __getOwnPropSymbols$G = Object.getOwnPropertySymbols;
-var __hasOwnProp$G = Object.prototype.hasOwnProperty;
-var __propIsEnum$G = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$F = (obj, key, value) => key in obj ? __defProp$F(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$F = (a, b) => {
+var __defProp$G = Object.defineProperty;
+var __getOwnPropSymbols$H = Object.getOwnPropertySymbols;
+var __hasOwnProp$H = Object.prototype.hasOwnProperty;
+var __propIsEnum$H = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$G = (obj, key, value) => key in obj ? __defProp$G(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$G = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$G.call(b, prop))
-      __defNormalProp$F(a, prop, b[prop]);
-  if (__getOwnPropSymbols$G)
-    for (var prop of __getOwnPropSymbols$G(b)) {
-      if (__propIsEnum$G.call(b, prop))
-        __defNormalProp$F(a, prop, b[prop]);
+    if (__hasOwnProp$H.call(b, prop))
+      __defNormalProp$G(a, prop, b[prop]);
+  if (__getOwnPropSymbols$H)
+    for (var prop of __getOwnPropSymbols$H(b)) {
+      if (__propIsEnum$H.call(b, prop))
+        __defNormalProp$G(a, prop, b[prop]);
     }
   return a;
 };
@@ -32738,7 +34176,9 @@ async function loadImageBitmap(url, asset) {
   return ((_a = asset == null ? void 0 : asset.data) == null ? void 0 : _a.alphaMode) === "premultiplied-alpha" ? createImageBitmap(imageBlob, { premultiplyAlpha: "none" }) : createImageBitmap(imageBlob);
 }
 const loadTextures = {
+  /** used for deprecation purposes */
   name: "loadTextures",
+  id: "texture",
   extension: {
     type: ExtensionType.LoadParser,
     priority: LoaderParserPriority.High,
@@ -32763,7 +34203,7 @@ const loadTextures = {
       }
     } else {
       src = await new Promise((resolve, reject) => {
-        src = new Image();
+        src = DOMAdapter.get().createImage();
         src.crossOrigin = this.config.crossOrigin;
         src.src = url;
         if (src.complete) {
@@ -32776,7 +34216,7 @@ const loadTextures = {
         }
       });
     }
-    const base = new ImageSource(__spreadValues$F({
+    const base = new ImageSource(__spreadValues$G({
       resource: src,
       alphaMode: "premultiply-alpha-on-upload",
       resolution: ((_a = asset.data) == null ? void 0 : _a.resolution) || getResolutionOfUrl(url)
@@ -32789,27 +34229,28 @@ const loadTextures = {
 };
 
 "use strict";
-var __defProp$E = Object.defineProperty;
+var __defProp$F = Object.defineProperty;
 var __defProps$k = Object.defineProperties;
 var __getOwnPropDescs$k = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$F = Object.getOwnPropertySymbols;
-var __hasOwnProp$F = Object.prototype.hasOwnProperty;
-var __propIsEnum$F = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$E = (obj, key, value) => key in obj ? __defProp$E(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$E = (a, b) => {
+var __getOwnPropSymbols$G = Object.getOwnPropertySymbols;
+var __hasOwnProp$G = Object.prototype.hasOwnProperty;
+var __propIsEnum$G = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$F = (obj, key, value) => key in obj ? __defProp$F(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$F = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$F.call(b, prop))
-      __defNormalProp$E(a, prop, b[prop]);
-  if (__getOwnPropSymbols$F)
-    for (var prop of __getOwnPropSymbols$F(b)) {
-      if (__propIsEnum$F.call(b, prop))
-        __defNormalProp$E(a, prop, b[prop]);
+    if (__hasOwnProp$G.call(b, prop))
+      __defNormalProp$F(a, prop, b[prop]);
+  if (__getOwnPropSymbols$G)
+    for (var prop of __getOwnPropSymbols$G(b)) {
+      if (__propIsEnum$G.call(b, prop))
+        __defNormalProp$F(a, prop, b[prop]);
     }
   return a;
 };
 var __spreadProps$k = (a, b) => __defProps$k(a, __getOwnPropDescs$k(b));
-const validVideoExtensions = [".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".h264", ".avi", ".mov"];
-const validVideoMIMEs = validVideoExtensions.map((ext) => `video/${ext.substring(1)}`);
+const potentialVideoExtensions = [".mp4", ".m4v", ".webm", ".ogg", ".ogv", ".h264", ".avi", ".mov"];
+let validVideoExtensions;
+let validVideoMIMEs;
 function crossOrigin(element, url, crossorigin) {
   if (crossorigin === void 0 && !url.startsWith("data:")) {
     element.crossOrigin = determineCrossOrigin(url);
@@ -32847,20 +34288,44 @@ function determineCrossOrigin(url, loc = globalThis.location) {
   }
   return "";
 }
+function getBrowserSupportedVideoExtensions() {
+  const supportedExtensions = [];
+  const supportedMimes = [];
+  for (const ext of potentialVideoExtensions) {
+    const mimeType = VideoSource.MIME_TYPES[ext.substring(1)] || `video/${ext.substring(1)}`;
+    if (testVideoFormat(mimeType)) {
+      supportedExtensions.push(ext);
+      if (!supportedMimes.includes(mimeType)) {
+        supportedMimes.push(mimeType);
+      }
+    }
+  }
+  return {
+    validVideoExtensions: supportedExtensions,
+    validVideoMime: supportedMimes
+  };
+}
 const loadVideoTextures = {
+  /** used for deprecation purposes */
   name: "loadVideo",
+  id: "video",
   extension: {
     type: ExtensionType.LoadParser,
     name: "loadVideo"
   },
   test(url) {
+    if (!validVideoExtensions || !validVideoMIMEs) {
+      const { validVideoExtensions: ve, validVideoMime: vm } = getBrowserSupportedVideoExtensions();
+      validVideoExtensions = ve;
+      validVideoMIMEs = vm;
+    }
     const isValidDataUrl = checkDataUrl(url, validVideoMIMEs);
     const isValidExtension = checkExtension(url, validVideoExtensions);
     return isValidDataUrl || isValidExtension;
   },
   async load(url, asset, loader) {
     var _a, _b;
-    const options = __spreadValues$E(__spreadProps$k(__spreadValues$E({}, VideoSource.defaultOptions), {
+    const options = __spreadValues$F(__spreadProps$k(__spreadValues$F({}, VideoSource.defaultOptions), {
       resolution: ((_a = asset.data) == null ? void 0 : _a.resolution) || getResolutionOfUrl(url),
       alphaMode: ((_b = asset.data) == null ? void 0 : _b.alphaMode) || await detectVideoAlphaMode()
     }), asset.data);
@@ -32884,7 +34349,9 @@ const loadVideoTextures = {
     crossOrigin(videoElement, url, options.crossorigin);
     const sourceElement = document.createElement("source");
     let mime;
-    if (url.startsWith("data:")) {
+    if (options.mime) {
+      mime = options.mime;
+    } else if (url.startsWith("data:")) {
       mime = url.slice(5, url.indexOf(";"));
     } else if (!url.startsWith("blob:")) {
       const ext = url.split("?")[0].slice(url.lastIndexOf(".") + 1).toLowerCase();
@@ -32896,7 +34363,7 @@ const loadVideoTextures = {
     }
     return new Promise((resolve) => {
       const onCanPlay = async () => {
-        const base = new VideoSource(__spreadProps$k(__spreadValues$E({}, options), { resource: videoElement }));
+        const base = new VideoSource(__spreadProps$k(__spreadValues$F({}, options), { resource: videoElement }));
         videoElement.removeEventListener("canplay", onCanPlay);
         if (asset.data.preload) {
           await preloadVideo(videoElement);
@@ -32944,6 +34411,22 @@ const resolveJsonUrl = {
 };
 
 "use strict";
+var __defProp$E = Object.defineProperty;
+var __getOwnPropSymbols$F = Object.getOwnPropertySymbols;
+var __hasOwnProp$F = Object.prototype.hasOwnProperty;
+var __propIsEnum$F = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$E = (obj, key, value) => key in obj ? __defProp$E(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$E = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$F.call(b, prop))
+      __defNormalProp$E(a, prop, b[prop]);
+  if (__getOwnPropSymbols$F)
+    for (var prop of __getOwnPropSymbols$F(b)) {
+      if (__propIsEnum$F.call(b, prop))
+        __defNormalProp$E(a, prop, b[prop]);
+    }
+  return a;
+};
 class AssetsClass {
   constructor() {
     this._detections = [];
@@ -33047,6 +34530,9 @@ class AssetsClass {
     });
     if (options.preferences) {
       this.setPreferences(options.preferences);
+    }
+    if (options.loadOptions) {
+      this.loader.loadOptions = __spreadValues$E(__spreadValues$E({}, this.loader.loadOptions), options.loadOptions);
     }
   }
   /**
@@ -33267,15 +34753,22 @@ class AssetsClass {
     const resolveResults = this.resolver.resolveBundle(bundleIds);
     const out = {};
     const keys = Object.keys(resolveResults);
-    let count = 0;
     let total = 0;
+    const counts = [];
     const _onProgress = () => {
-      onProgress == null ? void 0 : onProgress(++count / total);
+      onProgress == null ? void 0 : onProgress(counts.reduce((a, b) => a + b, 0) / total);
     };
-    const promises = keys.map((bundleId) => {
+    const promises = keys.map((bundleId, i) => {
       const resolveResult = resolveResults[bundleId];
-      total += Object.keys(resolveResult).length;
-      return this._mapLoadToResolve(resolveResult, _onProgress).then((resolveResult2) => {
+      const values = Object.values(resolveResult);
+      const totalAssetsToLoad = [...new Set(values.flat())];
+      const progressSize = totalAssetsToLoad.reduce((sum, asset) => sum + (asset.progressSize || 1), 0);
+      counts.push(0);
+      total += progressSize;
+      return this._mapLoadToResolve(resolveResult, (e) => {
+        counts[i] = e * progressSize;
+        _onProgress();
+      }).then((resolveResult2) => {
         out[bundleId] = resolveResult2;
       });
     });
@@ -33427,12 +34920,12 @@ class AssetsClass {
   /**
    * helper function to map resolved assets back to loaded assets
    * @param resolveResults - the resolve results from the resolver
-   * @param onProgress - the progress callback
+   * @param progressOrLoadOptions - the progress callback or load options
    */
-  async _mapLoadToResolve(resolveResults, onProgress) {
+  async _mapLoadToResolve(resolveResults, progressOrLoadOptions) {
     const resolveArray = [...new Set(Object.values(resolveResults))];
     this._backgroundLoader.active = false;
-    const loadedAssets = await this.loader.load(resolveArray, onProgress);
+    const loadedAssets = await this.loader.load(resolveArray, progressOrLoadOptions);
     this._backgroundLoader.active = true;
     const out = {};
     resolveArray.forEach((resolveResult) => {
@@ -33692,7 +35185,7 @@ let supportedGLCompressedTextureFormats;
 function getSupportedGlCompressedTextureFormats() {
   if (supportedGLCompressedTextureFormats)
     return supportedGLCompressedTextureFormats;
-  const canvas = document.createElement("canvas");
+  const canvas = DOMAdapter.get().createCanvas(1, 1);
   const gl = canvas.getContext("webgl");
   if (!gl) {
     return [];
@@ -34014,7 +35507,9 @@ const loadBasis = {
     priority: LoaderParserPriority.High,
     name: "loadBasis"
   },
+  /** used for deprecation purposes */
   name: "loadBasis",
+  id: "basis",
   test(url) {
     return checkExtension(url, [".basis"]);
   },
@@ -34574,7 +36069,9 @@ const loadDDS = {
     priority: LoaderParserPriority.High,
     name: "loadDDS"
   },
+  /** used for deprecation purposes */
   name: "loadDDS",
+  id: "dds",
   test(url) {
     return checkExtension(url, [".dds"]);
   },
@@ -35000,7 +36497,9 @@ const loadKTX = {
     priority: LoaderParserPriority.High,
     name: "loadKTX"
   },
+  /** used for deprecation purposes */
   name: "loadKTX",
+  id: "ktx",
   test(url) {
     return checkExtension(url, ".ktx");
   },
@@ -35089,7 +36588,9 @@ const loadKTX2 = {
     priority: LoaderParserPriority.High,
     name: "loadKTX2"
   },
+  /** used for deprecation purposes */
   name: "loadKTX2",
+  id: "ktx2",
   test(url) {
     return checkExtension(url, ".ktx2");
   },
@@ -35400,11 +36901,17 @@ let Culler = _Culler;
 
 "use strict";
 class CullerPlugin {
-  /** @internal */
-  static init() {
+  /**
+   * Initialize the plugin with scope of application instance
+   * @private
+   * @param {object} [options] - See application options
+   */
+  static init(options) {
     this._renderRef = this.render.bind(this);
     this.render = () => {
-      Culler.shared.cull(this.stage, this.renderer.screen);
+      var _a;
+      const updateTransform = ((_a = options == null ? void 0 : options.culler) == null ? void 0 : _a.updateTransform) !== true;
+      Culler.shared.cull(this.stage, this.renderer.screen, updateTransform);
       this.renderer.render({ container: this.stage });
     };
   }
@@ -35419,6 +36926,8 @@ CullerPlugin.extension = {
   type: ExtensionType.Application,
   name: "culler"
 };
+
+"use strict";
 
 "use strict";
 
@@ -35453,6 +36962,12 @@ const browserExt = {
 
 "use strict";
 
+var blendTemplateFrag = "\nin vec2 vTextureCoord;\nin vec4 vColor;\n\nout vec4 finalColor;\n\nuniform float uBlend;\n\nuniform sampler2D uTexture;\nuniform sampler2D uBackTexture;\n\n{FUNCTIONS}\n\nvoid main()\n{ \n    vec4 back = texture(uBackTexture, vTextureCoord);\n    vec4 front = texture(uTexture, vTextureCoord);\n    float blendedAlpha = front.a + back.a * (1.0 - front.a);\n    \n    {MAIN}\n}\n";
+
+var blendTemplateVert = "in vec2 aPosition;\nout vec2 vTextureCoord;\nout vec2 backgroundUv;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
+
+var blendTemplate = "\nstruct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct BlendUniforms {\n  uBlend:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n@group(0) @binding(3) var uBackTexture: texture_2d<f32>;\n\n@group(1) @binding(0) var<uniform> blendUniforms : BlendUniforms;\n\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\n{FUNCTIONS}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>\n) -> @location(0) vec4<f32> {\n\n\n   var back =  textureSample(uBackTexture, uSampler, uv);\n   var front = textureSample(uTexture, uSampler, uv);\n   var blendedAlpha = front.a + back.a * (1.0 - front.a);\n   \n   var out = vec4<f32>(0.0,0.0,0.0,0.0);\n\n   {MAIN}\n\n   return out;\n}";
+
 "use strict";
 var __defProp$D = Object.defineProperty;
 var __getOwnPropSymbols$E = Object.getOwnPropertySymbols;
@@ -35470,124 +36985,10 @@ var __spreadValues$D = (a, b) => {
     }
   return a;
 };
-var __objRest$h = (source, exclude) => {
-  var target = {};
-  for (var prop in source)
-    if (__hasOwnProp$E.call(source, prop) && exclude.indexOf(prop) < 0)
-      target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$E)
-    for (var prop of __getOwnPropSymbols$E(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$E.call(source, prop))
-        target[prop] = source[prop];
-    }
-  return target;
-};
-const _Filter = class _Filter extends Shader {
-  /**
-   * @param options - The optional parameters of this filter.
-   */
-  constructor(options) {
-    options = __spreadValues$D(__spreadValues$D({}, _Filter.defaultOptions), options);
-    super(options);
-    /** If enabled is true the filter is applied, if false it will not. */
-    this.enabled = true;
-    /**
-     * The gpu state the filter requires to render.
-     * @internal
-     */
-    this._state = State.for2d();
-    this.blendMode = options.blendMode;
-    this.padding = options.padding;
-    if (typeof options.antialias === "boolean") {
-      this.antialias = options.antialias ? "on" : "off";
-    } else {
-      this.antialias = options.antialias;
-    }
-    this.resolution = options.resolution;
-    this.blendRequired = options.blendRequired;
-    this.clipToViewport = options.clipToViewport;
-    this.addResource("uTexture", 0, 1);
-  }
-  /**
-   * Applies the filter
-   * @param filterManager - The renderer to retrieve the filter from
-   * @param input - The input render target.
-   * @param output - The target to output to.
-   * @param clearMode - Should the output be cleared before rendering to it
-   */
-  apply(filterManager, input, output, clearMode) {
-    filterManager.applyFilter(this, input, output, clearMode);
-  }
-  /**
-   * Get the blend mode of the filter.
-   * @default "normal"
-   */
-  get blendMode() {
-    return this._state.blendMode;
-  }
-  /** Sets the blend mode of the filter. */
-  set blendMode(value) {
-    this._state.blendMode = value;
-  }
-  /**
-   * A short hand function to create a filter based of a vertex and fragment shader src.
-   * @param options
-   * @returns A shiny new PixiJS filter!
-   */
-  static from(options) {
-    const _a = options, { gpu, gl } = _a, rest = __objRest$h(_a, ["gpu", "gl"]);
-    let gpuProgram;
-    let glProgram;
-    if (gpu) {
-      gpuProgram = GpuProgram.from(gpu);
-    }
-    if (gl) {
-      glProgram = GlProgram.from(gl);
-    }
-    return new _Filter(__spreadValues$D({
-      gpuProgram,
-      glProgram
-    }, rest));
-  }
-};
-/** The default filter settings */
-_Filter.defaultOptions = {
-  blendMode: "normal",
-  resolution: 1,
-  padding: 0,
-  antialias: "off",
-  blendRequired: false,
-  clipToViewport: true
-};
-let Filter = _Filter;
-
-var blendTemplateFrag = "\nin vec2 vTextureCoord;\nin vec4 vColor;\n\nout vec4 finalColor;\n\nuniform float uBlend;\n\nuniform sampler2D uTexture;\nuniform sampler2D uBackTexture;\n\n{FUNCTIONS}\n\nvoid main()\n{ \n    vec4 back = texture(uBackTexture, vTextureCoord);\n    vec4 front = texture(uTexture, vTextureCoord);\n    float blendedAlpha = front.a + back.a * (1.0 - front.a);\n    \n    {MAIN}\n}\n";
-
-var blendTemplateVert = "in vec2 aPosition;\nout vec2 vTextureCoord;\nout vec2 backgroundUv;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
-
-var blendTemplate = "\nstruct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct BlendUniforms {\n  uBlend:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n@group(0) @binding(3) var uBackTexture: texture_2d<f32>;\n\n@group(1) @binding(0) var<uniform> blendUniforms : BlendUniforms;\n\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\n{FUNCTIONS}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>\n) -> @location(0) vec4<f32> {\n\n\n   var back =  textureSample(uBackTexture, uSampler, uv);\n   var front = textureSample(uTexture, uSampler, uv);\n   var blendedAlpha = front.a + back.a * (1.0 - front.a);\n   \n   var out = vec4<f32>(0.0,0.0,0.0,0.0);\n\n   {MAIN}\n\n   return out;\n}";
-
-"use strict";
-var __defProp$C = Object.defineProperty;
-var __getOwnPropSymbols$D = Object.getOwnPropertySymbols;
-var __hasOwnProp$D = Object.prototype.hasOwnProperty;
-var __propIsEnum$D = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$C = (obj, key, value) => key in obj ? __defProp$C(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$C = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp$D.call(b, prop))
-      __defNormalProp$C(a, prop, b[prop]);
-  if (__getOwnPropSymbols$D)
-    for (var prop of __getOwnPropSymbols$D(b)) {
-      if (__propIsEnum$D.call(b, prop))
-        __defNormalProp$C(a, prop, b[prop]);
-    }
-  return a;
-};
 class BlendModeFilter extends Filter {
   constructor(options) {
     const gpuOptions = options.gpu;
-    const gpuSource = compileBlendModeShader(__spreadValues$C({ source: blendTemplate }, gpuOptions));
+    const gpuSource = compileBlendModeShader(__spreadValues$D({ source: blendTemplate }, gpuOptions));
     const gpuProgram = GpuProgram.from({
       vertex: {
         source: gpuSource,
@@ -35599,7 +37000,7 @@ class BlendModeFilter extends Filter {
       }
     });
     const glOptions = options.gl;
-    const glSource = compileBlendModeShader(__spreadValues$C({ source: blendTemplateFrag }, glOptions));
+    const glSource = compileBlendModeShader(__spreadValues$D({ source: blendTemplateFrag }, glOptions));
     const glProgram = GlProgram.from({
       vertex: blendTemplateVert,
       fragment: glSource
@@ -35808,28 +37209,26 @@ const hslgpu = `
 	}
 	`;
 
-var vertex$2 = "in vec2 aPosition;\nout vec2 vTextureCoord;\n\nuniform vec4 uInputSize;\nuniform vec4 uOutputFrame;\nuniform vec4 uOutputTexture;\n\nvec4 filterVertexPosition( void )\n{\n    vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;\n    \n    position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nvec2 filterTextureCoord( void )\n{\n    return aPosition * (uOutputFrame.zw * uInputSize.zw);\n}\n\nvoid main(void)\n{\n    gl_Position = filterVertexPosition();\n    vTextureCoord = filterTextureCoord();\n}\n";
-
 var fragment$4 = "\nin vec2 vTextureCoord;\n\nout vec4 finalColor;\n\nuniform float uAlpha;\nuniform sampler2D uTexture;\n\nvoid main()\n{\n    finalColor =  texture(uTexture, vTextureCoord) * uAlpha;\n}\n";
 
 var source$5 = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct AlphaUniforms {\n  uAlpha:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> alphaUniforms : AlphaUniforms;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n \n    var sample = textureSample(uTexture, uSampler, uv);\n    \n    return sample * alphaUniforms.uAlpha;\n}";
 
 "use strict";
-var __defProp$B = Object.defineProperty;
+var __defProp$C = Object.defineProperty;
 var __defProps$j = Object.defineProperties;
 var __getOwnPropDescs$j = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$C = Object.getOwnPropertySymbols;
-var __hasOwnProp$C = Object.prototype.hasOwnProperty;
-var __propIsEnum$C = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$B = (obj, key, value) => key in obj ? __defProp$B(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$B = (a, b) => {
+var __getOwnPropSymbols$D = Object.getOwnPropertySymbols;
+var __hasOwnProp$D = Object.prototype.hasOwnProperty;
+var __propIsEnum$D = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$C = (obj, key, value) => key in obj ? __defProp$C(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$C = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$C.call(b, prop))
-      __defNormalProp$B(a, prop, b[prop]);
-  if (__getOwnPropSymbols$C)
-    for (var prop of __getOwnPropSymbols$C(b)) {
-      if (__propIsEnum$C.call(b, prop))
-        __defNormalProp$B(a, prop, b[prop]);
+    if (__hasOwnProp$D.call(b, prop))
+      __defNormalProp$C(a, prop, b[prop]);
+  if (__getOwnPropSymbols$D)
+    for (var prop of __getOwnPropSymbols$D(b)) {
+      if (__propIsEnum$D.call(b, prop))
+        __defNormalProp$C(a, prop, b[prop]);
     }
   return a;
 };
@@ -35837,18 +37236,18 @@ var __spreadProps$j = (a, b) => __defProps$j(a, __getOwnPropDescs$j(b));
 var __objRest$g = (source2, exclude) => {
   var target = {};
   for (var prop in source2)
-    if (__hasOwnProp$C.call(source2, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$D.call(source2, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source2[prop];
-  if (source2 != null && __getOwnPropSymbols$C)
-    for (var prop of __getOwnPropSymbols$C(source2)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$C.call(source2, prop))
+  if (source2 != null && __getOwnPropSymbols$D)
+    for (var prop of __getOwnPropSymbols$D(source2)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$D.call(source2, prop))
         target[prop] = source2[prop];
     }
   return target;
 };
 const _AlphaFilter = class _AlphaFilter extends Filter {
   constructor(options) {
-    options = __spreadValues$B(__spreadValues$B({}, _AlphaFilter.defaultOptions), options);
+    options = __spreadValues$C(__spreadValues$C({}, _AlphaFilter.defaultOptions), options);
     const gpuProgram = GpuProgram.from({
       vertex: {
         source: source$5,
@@ -35868,7 +37267,7 @@ const _AlphaFilter = class _AlphaFilter extends Filter {
     const alphaUniforms = new UniformGroup({
       uAlpha: { value: alpha, type: "f32" }
     });
-    super(__spreadProps$j(__spreadValues$B({}, rest), {
+    super(__spreadProps$j(__spreadValues$C({}, rest), {
       gpuProgram,
       glProgram,
       resources: {
@@ -36071,19 +37470,19 @@ function generateBlurProgram(horizontal, kernelSize) {
 }
 
 "use strict";
-var __defProp$A = Object.defineProperty;
-var __getOwnPropSymbols$B = Object.getOwnPropertySymbols;
-var __hasOwnProp$B = Object.prototype.hasOwnProperty;
-var __propIsEnum$B = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$A = (obj, key, value) => key in obj ? __defProp$A(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$A = (a, b) => {
+var __defProp$B = Object.defineProperty;
+var __getOwnPropSymbols$C = Object.getOwnPropertySymbols;
+var __hasOwnProp$C = Object.prototype.hasOwnProperty;
+var __propIsEnum$C = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$B = (obj, key, value) => key in obj ? __defProp$B(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$B = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$B.call(b, prop))
-      __defNormalProp$A(a, prop, b[prop]);
-  if (__getOwnPropSymbols$B)
-    for (var prop of __getOwnPropSymbols$B(b)) {
-      if (__propIsEnum$B.call(b, prop))
-        __defNormalProp$A(a, prop, b[prop]);
+    if (__hasOwnProp$C.call(b, prop))
+      __defNormalProp$B(a, prop, b[prop]);
+  if (__getOwnPropSymbols$C)
+    for (var prop of __getOwnPropSymbols$C(b)) {
+      if (__propIsEnum$C.call(b, prop))
+        __defNormalProp$B(a, prop, b[prop]);
     }
   return a;
 };
@@ -36096,10 +37495,10 @@ const _BlurFilterPass = class _BlurFilterPass extends Filter {
    * @param options.kernelSize - The kernelSize of the blur filter.Options: 5, 7, 9, 11, 13, 15.
    */
   constructor(options) {
-    options = __spreadValues$A(__spreadValues$A({}, _BlurFilterPass.defaultOptions), options);
+    options = __spreadValues$B(__spreadValues$B({}, _BlurFilterPass.defaultOptions), options);
     const glProgram = generateBlurGlProgram(options.horizontal, options.kernelSize);
     const gpuProgram = generateBlurProgram(options.horizontal, options.kernelSize);
-    super(__spreadValues$A({
+    super(__spreadValues$B({
       glProgram,
       gpuProgram,
       resources: {
@@ -36178,21 +37577,21 @@ _BlurFilterPass.defaultOptions = {
 let BlurFilterPass = _BlurFilterPass;
 
 "use strict";
-var __defProp$z = Object.defineProperty;
+var __defProp$A = Object.defineProperty;
 var __defProps$i = Object.defineProperties;
 var __getOwnPropDescs$i = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$A = Object.getOwnPropertySymbols;
-var __hasOwnProp$A = Object.prototype.hasOwnProperty;
-var __propIsEnum$A = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$z = (obj, key, value) => key in obj ? __defProp$z(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$z = (a, b) => {
+var __getOwnPropSymbols$B = Object.getOwnPropertySymbols;
+var __hasOwnProp$B = Object.prototype.hasOwnProperty;
+var __propIsEnum$B = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$A = (obj, key, value) => key in obj ? __defProp$A(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$A = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$A.call(b, prop))
-      __defNormalProp$z(a, prop, b[prop]);
-  if (__getOwnPropSymbols$A)
-    for (var prop of __getOwnPropSymbols$A(b)) {
-      if (__propIsEnum$A.call(b, prop))
-        __defNormalProp$z(a, prop, b[prop]);
+    if (__hasOwnProp$B.call(b, prop))
+      __defNormalProp$A(a, prop, b[prop]);
+  if (__getOwnPropSymbols$B)
+    for (var prop of __getOwnPropSymbols$B(b)) {
+      if (__propIsEnum$B.call(b, prop))
+        __defNormalProp$A(a, prop, b[prop]);
     }
   return a;
 };
@@ -36200,11 +37599,11 @@ var __spreadProps$i = (a, b) => __defProps$i(a, __getOwnPropDescs$i(b));
 var __objRest$f = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$A.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$B.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$A)
-    for (var prop of __getOwnPropSymbols$A(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$A.call(source, prop))
+  if (source != null && __getOwnPropSymbols$B)
+    for (var prop of __getOwnPropSymbols$B(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$B.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -36223,15 +37622,15 @@ class BlurFilter extends Filter {
       if (args[3] !== void 0)
         options.kernelSize = args[3];
     }
-    options = __spreadValues$z(__spreadValues$z({}, BlurFilterPass.defaultOptions), options);
+    options = __spreadValues$A(__spreadValues$A({}, BlurFilterPass.defaultOptions), options);
     const _b = options, { strength, strengthX, strengthY, quality } = _b, rest = __objRest$f(_b, ["strength", "strengthX", "strengthY", "quality"]);
-    super(__spreadProps$i(__spreadValues$z({}, rest), {
+    super(__spreadProps$i(__spreadValues$A({}, rest), {
       compatibleRenderers: RendererType.BOTH,
       resources: {}
     }));
     this._repeatEdgePixels = false;
-    this.blurXFilter = new BlurFilterPass(__spreadValues$z({ horizontal: true }, options));
-    this.blurYFilter = new BlurFilterPass(__spreadValues$z({ horizontal: false }, options));
+    this.blurXFilter = new BlurFilterPass(__spreadValues$A({ horizontal: true }, options));
+    this.blurYFilter = new BlurFilterPass(__spreadValues$A({ horizontal: false }, options));
     this.quality = quality;
     this.strengthX = strengthX != null ? strengthX : strength;
     this.strengthY = strengthY != null ? strengthY : strength;
@@ -36448,21 +37847,21 @@ var fragment$3 = "\nin vec2 vTextureCoord;\nin vec4 vColor;\n\nout vec4 finalCol
 var source$3 = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct ColorMatrixUniforms {\n  uColorMatrix:array<vec4<f32>, 5>,\n  uAlpha:f32,\n};\n\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n@group(1) @binding(0) var<uniform> colorMatrixUniforms : ColorMatrixUniforms;\n\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n  };\n  \nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition),\n  );\n}\n\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n) -> @location(0) vec4<f32> {\n\n\n  var c = textureSample(uTexture, uSampler, uv);\n  \n  if (colorMatrixUniforms.uAlpha == 0.0) {\n    return c;\n  }\n\n \n    // Un-premultiply alpha before applying the color matrix. See issue #3539.\n    if (c.a > 0.0) {\n      c.r /= c.a;\n      c.g /= c.a;\n      c.b /= c.a;\n    }\n\n    var cm = colorMatrixUniforms.uColorMatrix;\n\n\n    var result = vec4<f32>(0.);\n\n    result.r = (cm[0][0] * c.r);\n    result.r += (cm[0][1] * c.g);\n    result.r += (cm[0][2] * c.b);\n    result.r += (cm[0][3] * c.a);\n    result.r += cm[1][0];\n\n    result.g = (cm[1][1] * c.r);\n    result.g += (cm[1][2] * c.g);\n    result.g += (cm[1][3] * c.b);\n    result.g += (cm[2][0] * c.a);\n    result.g += cm[2][1];\n\n    result.b = (cm[2][2] * c.r);\n    result.b += (cm[2][3] * c.g);\n    result.b += (cm[3][0] * c.b);\n    result.b += (cm[3][1] * c.a);\n    result.b += cm[3][2];\n\n    result.a = (cm[3][3] * c.r);\n    result.a += (cm[4][0] * c.g);\n    result.a += (cm[4][1] * c.b);\n    result.a += (cm[4][2] * c.a);\n    result.a += cm[4][3];\n\n    var rgb = mix(c.rgb, result.rgb, colorMatrixUniforms.uAlpha);\n\n    rgb.r *= result.a;\n    rgb.g *= result.a;\n    rgb.b *= result.a;\n\n    return vec4(rgb, result.a);\n}";
 
 "use strict";
-var __defProp$y = Object.defineProperty;
+var __defProp$z = Object.defineProperty;
 var __defProps$h = Object.defineProperties;
 var __getOwnPropDescs$h = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$z = Object.getOwnPropertySymbols;
-var __hasOwnProp$z = Object.prototype.hasOwnProperty;
-var __propIsEnum$z = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$y = (obj, key, value) => key in obj ? __defProp$y(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$y = (a, b) => {
+var __getOwnPropSymbols$A = Object.getOwnPropertySymbols;
+var __hasOwnProp$A = Object.prototype.hasOwnProperty;
+var __propIsEnum$A = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$z = (obj, key, value) => key in obj ? __defProp$z(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$z = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$z.call(b, prop))
-      __defNormalProp$y(a, prop, b[prop]);
-  if (__getOwnPropSymbols$z)
-    for (var prop of __getOwnPropSymbols$z(b)) {
-      if (__propIsEnum$z.call(b, prop))
-        __defNormalProp$y(a, prop, b[prop]);
+    if (__hasOwnProp$A.call(b, prop))
+      __defNormalProp$z(a, prop, b[prop]);
+  if (__getOwnPropSymbols$A)
+    for (var prop of __getOwnPropSymbols$A(b)) {
+      if (__propIsEnum$A.call(b, prop))
+        __defNormalProp$z(a, prop, b[prop]);
     }
   return a;
 };
@@ -36516,7 +37915,7 @@ class ColorMatrixFilter extends Filter {
       fragment: fragment$3,
       name: "color-matrix-filter"
     });
-    super(__spreadProps$h(__spreadValues$y({}, options), {
+    super(__spreadProps$h(__spreadValues$z({}, options), {
       gpuProgram,
       glProgram,
       resources: {
@@ -37690,21 +39089,21 @@ var vertex$1 = "in vec2 aPosition;\nout vec2 vTextureCoord;\nout vec2 vFilterUv;
 var source$2 = "\nstruct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct DisplacementUniforms {\n  uFilterMatrix:mat3x3<f32>,\n  uScale:vec2<f32>,\n  uRotation:mat2x2<f32>\n};\n\n\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> filterUniforms : DisplacementUniforms;\n@group(1) @binding(1) var uMapTexture: texture_2d<f32>;\n@group(1) @binding(2) var uMapSampler : sampler;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) filterUv : vec2<f32>,\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n\nfn getFilterCoord(aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return ( filterUniforms.uFilterMatrix * vec3( filterTextureCoord(aPosition), 1.0)  ).xy;\n}\n\nfn getSize() -> vec2<f32>\n{\n\n  \n  return gfu.uGlobalFrame.zw;\n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition),\n   getFilterCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) filterUv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n\n    var map = textureSample(uMapTexture, uMapSampler, filterUv);\n\n    var offset =  gfu.uInputSize.zw * (filterUniforms.uRotation * (map.xy - 0.5)) * filterUniforms.uScale; \n   \n    return textureSample(uTexture, uSampler, clamp(uv + offset, gfu.uInputClamp.xy, gfu.uInputClamp.zw));\n}";
 
 "use strict";
-var __defProp$x = Object.defineProperty;
+var __defProp$y = Object.defineProperty;
 var __defProps$g = Object.defineProperties;
 var __getOwnPropDescs$g = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$y = Object.getOwnPropertySymbols;
-var __hasOwnProp$y = Object.prototype.hasOwnProperty;
-var __propIsEnum$y = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$x = (obj, key, value) => key in obj ? __defProp$x(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$x = (a, b) => {
+var __getOwnPropSymbols$z = Object.getOwnPropertySymbols;
+var __hasOwnProp$z = Object.prototype.hasOwnProperty;
+var __propIsEnum$z = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$y = (obj, key, value) => key in obj ? __defProp$y(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$y = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$y.call(b, prop))
-      __defNormalProp$x(a, prop, b[prop]);
-  if (__getOwnPropSymbols$y)
-    for (var prop of __getOwnPropSymbols$y(b)) {
-      if (__propIsEnum$y.call(b, prop))
-        __defNormalProp$x(a, prop, b[prop]);
+    if (__hasOwnProp$z.call(b, prop))
+      __defNormalProp$y(a, prop, b[prop]);
+  if (__getOwnPropSymbols$z)
+    for (var prop of __getOwnPropSymbols$z(b)) {
+      if (__propIsEnum$z.call(b, prop))
+        __defNormalProp$y(a, prop, b[prop]);
     }
   return a;
 };
@@ -37712,11 +39111,11 @@ var __spreadProps$g = (a, b) => __defProps$g(a, __getOwnPropDescs$g(b));
 var __objRest$e = (source2, exclude) => {
   var target = {};
   for (var prop in source2)
-    if (__hasOwnProp$y.call(source2, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$z.call(source2, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source2[prop];
-  if (source2 != null && __getOwnPropSymbols$y)
-    for (var prop of __getOwnPropSymbols$y(source2)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$y.call(source2, prop))
+  if (source2 != null && __getOwnPropSymbols$z)
+    for (var prop of __getOwnPropSymbols$z(source2)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$z.call(source2, prop))
         target[prop] = source2[prop];
     }
   return target;
@@ -37756,7 +39155,7 @@ class DisplacementFilter extends Filter {
       }
     });
     const textureSource = sprite.texture.source;
-    super(__spreadProps$g(__spreadValues$x({}, rest), {
+    super(__spreadProps$g(__spreadValues$y({}, rest), {
       gpuProgram,
       glProgram,
       resources: {
@@ -37823,21 +39222,21 @@ var fragment$1 = "\nin vec2 vTextureCoord;\nin vec4 vColor;\n\nout vec4 finalCol
 var source$1 = "\n\nstruct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct NoiseUniforms {\n  uNoise:f32,\n  uSeed:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> noiseUniforms : NoiseUniforms;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>\n  };\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);  \n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n  \n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>, \n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition)\n  );\n}\n\nfn rand(co:vec2<f32>) -> f32\n{\n  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);\n}\n\n\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n\n    var pixelPosition =  globalTextureCoord(position.xy);// / (getSize());//-  gfu.uOutputFrame.xy);\n  \n    \n    var sample = textureSample(uTexture, uSampler, uv);\n    var randomValue =  rand(pixelPosition.xy * noiseUniforms.uSeed);\n    var diff = (randomValue - 0.5) * noiseUniforms.uNoise;\n  \n    // Un-premultiply alpha before applying the color matrix. See issue #3539.\n    if (sample.a > 0.0) {\n      sample.r /= sample.a;\n      sample.g /= sample.a;\n      sample.b /= sample.a;\n    }\n\n    sample.r += diff;\n    sample.g += diff;\n    sample.b += diff;\n\n    // Premultiply alpha again.\n    sample.r *= sample.a;\n    sample.g *= sample.a;\n    sample.b *= sample.a;\n    \n    return sample;\n}";
 
 "use strict";
-var __defProp$w = Object.defineProperty;
+var __defProp$x = Object.defineProperty;
 var __defProps$f = Object.defineProperties;
 var __getOwnPropDescs$f = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$x = Object.getOwnPropertySymbols;
-var __hasOwnProp$x = Object.prototype.hasOwnProperty;
-var __propIsEnum$x = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$w = (obj, key, value) => key in obj ? __defProp$w(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$w = (a, b) => {
+var __getOwnPropSymbols$y = Object.getOwnPropertySymbols;
+var __hasOwnProp$y = Object.prototype.hasOwnProperty;
+var __propIsEnum$y = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$x = (obj, key, value) => key in obj ? __defProp$x(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$x = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$x.call(b, prop))
-      __defNormalProp$w(a, prop, b[prop]);
-  if (__getOwnPropSymbols$x)
-    for (var prop of __getOwnPropSymbols$x(b)) {
-      if (__propIsEnum$x.call(b, prop))
-        __defNormalProp$w(a, prop, b[prop]);
+    if (__hasOwnProp$y.call(b, prop))
+      __defNormalProp$x(a, prop, b[prop]);
+  if (__getOwnPropSymbols$y)
+    for (var prop of __getOwnPropSymbols$y(b)) {
+      if (__propIsEnum$y.call(b, prop))
+        __defNormalProp$x(a, prop, b[prop]);
     }
   return a;
 };
@@ -37845,11 +39244,11 @@ var __spreadProps$f = (a, b) => __defProps$f(a, __getOwnPropDescs$f(b));
 var __objRest$d = (source2, exclude) => {
   var target = {};
   for (var prop in source2)
-    if (__hasOwnProp$x.call(source2, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$y.call(source2, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source2[prop];
-  if (source2 != null && __getOwnPropSymbols$x)
-    for (var prop of __getOwnPropSymbols$x(source2)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$x.call(source2, prop))
+  if (source2 != null && __getOwnPropSymbols$y)
+    for (var prop of __getOwnPropSymbols$y(source2)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$y.call(source2, prop))
         target[prop] = source2[prop];
     }
   return target;
@@ -37859,7 +39258,7 @@ const _NoiseFilter = class _NoiseFilter extends Filter {
    * @param options - The options of the noise filter.
    */
   constructor(options = {}) {
-    options = __spreadValues$w(__spreadValues$w({}, _NoiseFilter.defaultOptions), options);
+    options = __spreadValues$x(__spreadValues$x({}, _NoiseFilter.defaultOptions), options);
     const gpuProgram = GpuProgram.from({
       vertex: {
         source: source$1,
@@ -37876,7 +39275,7 @@ const _NoiseFilter = class _NoiseFilter extends Filter {
       name: "noise-filter"
     });
     const _a = options, { noise, seed } = _a, rest = __objRest$d(_a, ["noise", "seed"]);
-    super(__spreadProps$f(__spreadValues$w({}, rest), {
+    super(__spreadProps$f(__spreadValues$x({}, rest), {
       gpuProgram,
       glProgram,
       resources: {
@@ -37963,21 +39362,21 @@ var vertex = "in vec2 aPosition;\n\nout vec2 vTextureCoord;\nout vec2 vMaskCoord
 var source = "struct GlobalFilterUniforms {\n  uInputSize:vec4<f32>,\n  uInputPixel:vec4<f32>,\n  uInputClamp:vec4<f32>,\n  uOutputFrame:vec4<f32>,\n  uGlobalFrame:vec4<f32>,\n  uOutputTexture:vec4<f32>,\n};\n\nstruct MaskUniforms {\n  uFilterMatrix:mat3x3<f32>,\n  uMaskClamp:vec4<f32>,\n  uAlpha:f32,\n  uInverse:f32,\n};\n\n@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;\n@group(0) @binding(1) var uTexture: texture_2d<f32>;\n@group(0) @binding(2) var uSampler : sampler;\n\n@group(1) @binding(0) var<uniform> filterUniforms : MaskUniforms;\n@group(1) @binding(1) var uMaskTexture: texture_2d<f32>;\n\nstruct VSOutput {\n    @builtin(position) position: vec4<f32>,\n    @location(0) uv : vec2<f32>,\n    @location(1) filterUv : vec2<f32>,\n};\n\nfn filterVertexPosition(aPosition:vec2<f32>) -> vec4<f32>\n{\n    var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;\n\n    position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;\n    position.y = position.y * (2.0*gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;\n\n    return vec4(position, 0.0, 1.0);\n}\n\nfn filterTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n    return aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw);\n}\n\nfn globalTextureCoord( aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return  (aPosition.xy / gfu.uGlobalFrame.zw) + (gfu.uGlobalFrame.xy / gfu.uGlobalFrame.zw);\n}\n\nfn getFilterCoord(aPosition:vec2<f32> ) -> vec2<f32>\n{\n  return ( filterUniforms.uFilterMatrix * vec3( filterTextureCoord(aPosition), 1.0)  ).xy;\n}\n\nfn getSize() -> vec2<f32>\n{\n  return gfu.uGlobalFrame.zw;\n}\n\n@vertex\nfn mainVertex(\n  @location(0) aPosition : vec2<f32>,\n) -> VSOutput {\n  return VSOutput(\n   filterVertexPosition(aPosition),\n   filterTextureCoord(aPosition),\n   getFilterCoord(aPosition)\n  );\n}\n\n@fragment\nfn mainFragment(\n  @location(0) uv: vec2<f32>,\n  @location(1) filterUv: vec2<f32>,\n  @builtin(position) position: vec4<f32>\n) -> @location(0) vec4<f32> {\n\n    var maskClamp = filterUniforms.uMaskClamp;\n    var uAlpha = filterUniforms.uAlpha;\n\n    var clip = step(3.5,\n      step(maskClamp.x, filterUv.x) +\n      step(maskClamp.y, filterUv.y) +\n      step(filterUv.x, maskClamp.z) +\n      step(filterUv.y, maskClamp.w));\n\n    var mask = textureSample(uMaskTexture, uSampler, filterUv);\n    var source = textureSample(uTexture, uSampler, uv);\n    var alphaMul = 1.0 - uAlpha * (1.0 - mask.a);\n\n    var a: f32 = alphaMul * mask.r * uAlpha * clip;\n\n    if (filterUniforms.uInverse == 1.0) {\n        a = 1.0 - a;\n    }\n\n    return source * a;\n}\n";
 
 "use strict";
-var __defProp$v = Object.defineProperty;
+var __defProp$w = Object.defineProperty;
 var __defProps$e = Object.defineProperties;
 var __getOwnPropDescs$e = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$w = Object.getOwnPropertySymbols;
-var __hasOwnProp$w = Object.prototype.hasOwnProperty;
-var __propIsEnum$w = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$v = (obj, key, value) => key in obj ? __defProp$v(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$v = (a, b) => {
+var __getOwnPropSymbols$x = Object.getOwnPropertySymbols;
+var __hasOwnProp$x = Object.prototype.hasOwnProperty;
+var __propIsEnum$x = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$w = (obj, key, value) => key in obj ? __defProp$w(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$w = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$w.call(b, prop))
-      __defNormalProp$v(a, prop, b[prop]);
-  if (__getOwnPropSymbols$w)
-    for (var prop of __getOwnPropSymbols$w(b)) {
-      if (__propIsEnum$w.call(b, prop))
-        __defNormalProp$v(a, prop, b[prop]);
+    if (__hasOwnProp$x.call(b, prop))
+      __defNormalProp$w(a, prop, b[prop]);
+  if (__getOwnPropSymbols$x)
+    for (var prop of __getOwnPropSymbols$x(b)) {
+      if (__propIsEnum$x.call(b, prop))
+        __defNormalProp$w(a, prop, b[prop]);
     }
   return a;
 };
@@ -37985,11 +39384,11 @@ var __spreadProps$e = (a, b) => __defProps$e(a, __getOwnPropDescs$e(b));
 var __objRest$c = (source2, exclude) => {
   var target = {};
   for (var prop in source2)
-    if (__hasOwnProp$w.call(source2, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$x.call(source2, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source2[prop];
-  if (source2 != null && __getOwnPropSymbols$w)
-    for (var prop of __getOwnPropSymbols$w(source2)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$w.call(source2, prop))
+  if (source2 != null && __getOwnPropSymbols$x)
+    for (var prop of __getOwnPropSymbols$x(source2)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$x.call(source2, prop))
         target[prop] = source2[prop];
     }
   return target;
@@ -38019,9 +39418,10 @@ class MaskFilter extends Filter {
       fragment,
       name: "mask-filter"
     });
-    super(__spreadProps$e(__spreadValues$v({}, rest), {
+    super(__spreadProps$e(__spreadValues$w({}, rest), {
       gpuProgram,
       glProgram,
+      clipToViewport: false,
       resources: {
         filterUniforms,
         uMaskTexture: sprite.texture.source
@@ -38052,247 +39452,6 @@ var hsl = "fn getLuminosity(c: vec3<f32>) -> f32 {\n  return 0.3 * c.r + 0.59 * 
 "use strict";
 
 "use strict";
-
-"use strict";
-
-"use strict";
-function pointInTriangle(px, py, x1, y1, x2, y2, x3, y3) {
-  const v2x = x3 - x1;
-  const v2y = y3 - y1;
-  const v1x = x2 - x1;
-  const v1y = y2 - y1;
-  const v0x = px - x1;
-  const v0y = py - y1;
-  const dot00 = v2x * v2x + v2y * v2y;
-  const dot01 = v2x * v1x + v2y * v1y;
-  const dot02 = v2x * v0x + v2y * v0y;
-  const dot11 = v1x * v1x + v1y * v1y;
-  const dot12 = v1x * v0x + v1y * v0y;
-  const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-  const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-  const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-  return u >= 0 && v >= 0 && u + v < 1;
-}
-
-"use strict";
-
-"use strict";
-
-"use strict";
-class Triangle {
-  /**
-   * @param x - The X coord of the first point.
-   * @param y - The Y coord of the first point.
-   * @param x2 - The X coord of the second point.
-   * @param y2 - The Y coord of the second point.
-   * @param x3 - The X coord of the third point.
-   * @param y3 - The Y coord of the third point.
-   */
-  constructor(x = 0, y = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0) {
-    /**
-     * The type of the object, mainly used to avoid `instanceof` checks
-     * @example
-     * ```ts
-     * // Check shape type
-     * const shape = new Triangle(0, 0, 100, 0, 50, 100);
-     * console.log(shape.type); // 'triangle'
-     *
-     * // Use in type guards
-     * if (shape.type === 'triangle') {
-     *     console.log(shape.x2, shape.y2);
-     * }
-     * ```
-     * @readonly
-     * @default 'triangle'
-     * @see {@link SHAPE_PRIMITIVE} For all shape types
-     */
-    this.type = "triangle";
-    this.x = x;
-    this.y = y;
-    this.x2 = x2;
-    this.y2 = y2;
-    this.x3 = x3;
-    this.y3 = y3;
-  }
-  /**
-   * Checks whether the x and y coordinates given are contained within this triangle
-   * @example
-   * ```ts
-   * // Basic containment check
-   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
-   * const isInside = triangle.contains(25, 25); // true
-   * ```
-   * @remarks
-   * - Uses barycentric coordinate system
-   * - Works with any triangle shape
-   * @param x - The X coordinate of the point to test
-   * @param y - The Y coordinate of the point to test
-   * @returns Whether the x/y coordinates are within this Triangle
-   * @see {@link Triangle.strokeContains} For checking stroke intersection
-   * @see {@link Triangle.getBounds} For getting containing rectangle
-   */
-  contains(x, y) {
-    const s = (this.x - this.x3) * (y - this.y3) - (this.y - this.y3) * (x - this.x3);
-    const t = (this.x2 - this.x) * (y - this.y) - (this.y2 - this.y) * (x - this.x);
-    if (s < 0 !== t < 0 && s !== 0 && t !== 0) {
-      return false;
-    }
-    const d = (this.x3 - this.x2) * (y - this.y2) - (this.y3 - this.y2) * (x - this.x2);
-    return d === 0 || d < 0 === s + t <= 0;
-  }
-  /**
-   * Checks whether the x and y coordinates given are contained within this triangle including the stroke.
-   * @example
-   * ```ts
-   * // Basic stroke check
-   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
-   * const isOnStroke = triangle.strokeContains(25, 25, 4); // 4px line width
-   *
-   * // Check with different alignments
-   * const innerStroke = triangle.strokeContains(25, 25, 4, 1);   // Inside
-   * const centerStroke = triangle.strokeContains(25, 25, 4, 0.5); // Centered
-   * const outerStroke = triangle.strokeContains(25, 25, 4, 0);   // Outside
-   * ```
-   * @param pointX - The X coordinate of the point to test
-   * @param pointY - The Y coordinate of the point to test
-   * @param strokeWidth - The width of the line to check
-   * @param _alignment - The alignment of the stroke (1 = inner, 0.5 = centered, 0 = outer)
-   * @returns Whether the x/y coordinates are within this triangle's stroke
-   * @see {@link Triangle.contains} For checking fill containment
-   * @see {@link Triangle.getBounds} For getting stroke bounds
-   */
-  strokeContains(pointX, pointY, strokeWidth, _alignment = 0.5) {
-    const halfStrokeWidth = strokeWidth / 2;
-    const halfStrokeWidthSquared = halfStrokeWidth * halfStrokeWidth;
-    const { x, x2, x3, y, y2, y3 } = this;
-    if (squaredDistanceToLineSegment(pointX, pointY, x, y, x2, y3) <= halfStrokeWidthSquared || squaredDistanceToLineSegment(pointX, pointY, x2, y2, x3, y3) <= halfStrokeWidthSquared || squaredDistanceToLineSegment(pointX, pointY, x3, y3, x, y) <= halfStrokeWidthSquared) {
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Creates a clone of this Triangle
-   * @example
-   * ```ts
-   * // Basic cloning
-   * const original = new Triangle(0, 0, 100, 0, 50, 100);
-   * const copy = original.clone();
-   *
-   * // Clone and modify
-   * const modified = original.clone();
-   * modified.x3 = 75;
-   * modified.y3 = 150;
-   *
-   * // Verify independence
-   * console.log(original.y3);  // 100
-   * console.log(modified.y3);  // 150
-   * ```
-   * @returns A copy of the triangle
-   * @see {@link Triangle.copyFrom} For copying into existing triangle
-   * @see {@link Triangle.copyTo} For copying to another triangle
-   */
-  clone() {
-    const triangle = new Triangle(
-      this.x,
-      this.y,
-      this.x2,
-      this.y2,
-      this.x3,
-      this.y3
-    );
-    return triangle;
-  }
-  /**
-   * Copies another triangle to this one.
-   * @example
-   * ```ts
-   * // Basic copying
-   * const source = new Triangle(0, 0, 100, 0, 50, 100);
-   * const target = new Triangle();
-   * target.copyFrom(source);
-   *
-   * // Chain with other operations
-   * const triangle = new Triangle()
-   *     .copyFrom(source)
-   *     .getBounds(rect);
-   * ```
-   * @param triangle - The triangle to copy from
-   * @returns Returns itself
-   * @see {@link Triangle.copyTo} For copying to another triangle
-   * @see {@link Triangle.clone} For creating new triangle copy
-   */
-  copyFrom(triangle) {
-    this.x = triangle.x;
-    this.y = triangle.y;
-    this.x2 = triangle.x2;
-    this.y2 = triangle.y2;
-    this.x3 = triangle.x3;
-    this.y3 = triangle.y3;
-    return this;
-  }
-  /**
-   * Copies this triangle to another one.
-   * @example
-   * ```ts
-   * // Basic copying
-   * const source = new Triangle(0, 0, 100, 0, 50, 100);
-   * const target = new Triangle();
-   * source.copyTo(target);
-   *
-   * // Chain with other operations
-   * const result = source
-   *     .copyTo(new Triangle())
-   *     .getBounds();
-   * ```
-   * @remarks
-   * - Updates target triangle values
-   * - Copies all point coordinates
-   * - Returns target for chaining
-   * - More efficient than clone()
-   * @param triangle - The triangle to copy to
-   * @returns Returns given parameter
-   * @see {@link Triangle.copyFrom} For copying from another triangle
-   * @see {@link Triangle.clone} For creating new triangle copy
-   */
-  copyTo(triangle) {
-    triangle.copyFrom(this);
-    return triangle;
-  }
-  /**
-   * Returns the framing rectangle of the triangle as a Rectangle object
-   * @example
-   * ```ts
-   * // Basic bounds calculation
-   * const triangle = new Triangle(0, 0, 100, 0, 50, 100);
-   * const bounds = triangle.getBounds();
-   * // bounds: x=0, y=0, width=100, height=100
-   *
-   * // Reuse existing rectangle
-   * const rect = new Rectangle();
-   * triangle.getBounds(rect);
-   * ```
-   * @param out - Optional rectangle to store the result
-   * @returns The framing rectangle
-   * @see {@link Rectangle} For rectangle properties
-   * @see {@link Triangle.contains} For checking if a point is inside
-   */
-  getBounds(out) {
-    out || (out = new Rectangle());
-    const minX = Math.min(this.x, this.x2, this.x3);
-    const maxX = Math.max(this.x, this.x2, this.x3);
-    const minY = Math.min(this.y, this.y2, this.y3);
-    const maxY = Math.max(this.y, this.y2, this.y3);
-    out.x = minX;
-    out.y = minY;
-    out.width = maxX - minX;
-    out.height = maxY - minY;
-    return out;
-  }
-}
-
-"use strict";
-
-"use strict";
 const _PrepareBase = class _PrepareBase {
   /**
    * @param {Renderer} renderer - A reference to the current renderer
@@ -38300,10 +39459,14 @@ const _PrepareBase = class _PrepareBase {
   constructor(renderer) {
     /** called per frame by the ticker, defer processing to next tick */
     this._tick = () => {
+      if (this._destroyed)
+        return;
       this.timeout = setTimeout(this._processQueue, 0);
     };
     /** process the queue up to max item limit per frame */
     this._processQueue = () => {
+      if (this._destroyed)
+        return;
       const { queue } = this;
       let itemsProcessed = 0;
       while (queue.length && itemsProcessed < _PrepareBase.uploadsPerFrame) {
@@ -38384,6 +39547,10 @@ const _PrepareBase = class _PrepareBase {
     }
     this.queue.length = nextUnique;
   }
+  destroy() {
+    this._destroyed = true;
+    clearTimeout(this.timeout);
+  }
   /** Call all the resolve callbacks */
   _resolve() {
     const { resolves } = this;
@@ -38399,30 +39566,30 @@ _PrepareBase.uploadsPerFrame = 4;
 let PrepareBase = _PrepareBase;
 
 "use strict";
-var __defProp$u = Object.defineProperty;
-var __getOwnPropSymbols$v = Object.getOwnPropertySymbols;
-var __hasOwnProp$v = Object.prototype.hasOwnProperty;
-var __propIsEnum$v = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$u = (obj, key, value) => key in obj ? __defProp$u(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$u = (a, b) => {
+var __defProp$v = Object.defineProperty;
+var __getOwnPropSymbols$w = Object.getOwnPropertySymbols;
+var __hasOwnProp$w = Object.prototype.hasOwnProperty;
+var __propIsEnum$w = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$v = (obj, key, value) => key in obj ? __defProp$v(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$v = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$v.call(b, prop))
-      __defNormalProp$u(a, prop, b[prop]);
-  if (__getOwnPropSymbols$v)
-    for (var prop of __getOwnPropSymbols$v(b)) {
-      if (__propIsEnum$v.call(b, prop))
-        __defNormalProp$u(a, prop, b[prop]);
+    if (__hasOwnProp$w.call(b, prop))
+      __defNormalProp$v(a, prop, b[prop]);
+  if (__getOwnPropSymbols$w)
+    for (var prop of __getOwnPropSymbols$w(b)) {
+      if (__propIsEnum$w.call(b, prop))
+        __defNormalProp$v(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$b = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$v.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$w.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$v)
-    for (var prop of __getOwnPropSymbols$v(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$v.call(source, prop))
+  if (source != null && __getOwnPropSymbols$w)
+    for (var prop of __getOwnPropSymbols$w(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$w.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -38443,7 +39610,7 @@ class Mesh extends ViewContainer {
       }
     }
     const _a = options, { geometry, shader, texture, roundPixels, state } = _a, rest = __objRest$b(_a, ["geometry", "shader", "texture", "roundPixels", "state"]);
-    super(__spreadValues$u({
+    super(__spreadValues$v({
       label: "Mesh"
     }, rest));
     /** @internal */
@@ -38617,21 +39784,21 @@ class Mesh extends ViewContainer {
 }
 
 "use strict";
-var __defProp$t = Object.defineProperty;
+var __defProp$u = Object.defineProperty;
 var __defProps$d = Object.defineProperties;
 var __getOwnPropDescs$d = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols$u = Object.getOwnPropertySymbols;
-var __hasOwnProp$u = Object.prototype.hasOwnProperty;
-var __propIsEnum$u = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$t = (obj, key, value) => key in obj ? __defProp$t(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$t = (a, b) => {
+var __getOwnPropSymbols$v = Object.getOwnPropertySymbols;
+var __hasOwnProp$v = Object.prototype.hasOwnProperty;
+var __propIsEnum$v = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$u = (obj, key, value) => key in obj ? __defProp$u(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$u = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$u.call(b, prop))
-      __defNormalProp$t(a, prop, b[prop]);
-  if (__getOwnPropSymbols$u)
-    for (var prop of __getOwnPropSymbols$u(b)) {
-      if (__propIsEnum$u.call(b, prop))
-        __defNormalProp$t(a, prop, b[prop]);
+    if (__hasOwnProp$v.call(b, prop))
+      __defNormalProp$u(a, prop, b[prop]);
+  if (__getOwnPropSymbols$v)
+    for (var prop of __getOwnPropSymbols$v(b)) {
+      if (__propIsEnum$v.call(b, prop))
+        __defNormalProp$u(a, prop, b[prop]);
     }
   return a;
 };
@@ -38639,17 +39806,16 @@ var __spreadProps$d = (a, b) => __defProps$d(a, __getOwnPropDescs$d(b));
 var __objRest$a = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$u.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$v.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$u)
-    for (var prop of __getOwnPropSymbols$u(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$u.call(source, prop))
+  if (source != null && __getOwnPropSymbols$v)
+    for (var prop of __getOwnPropSymbols$v(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$v.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
 };
 class AnimatedSprite extends Sprite {
-  /** @ignore */
   constructor(...args) {
     let options = args[0];
     if (Array.isArray(args[0])) {
@@ -38680,7 +39846,7 @@ class AnimatedSprite extends Sprite {
       "updateAnchor"
     ]);
     const [firstFrame] = textures;
-    super(__spreadProps$d(__spreadValues$t({}, rest), {
+    super(__spreadProps$d(__spreadValues$u({}, rest), {
       texture: firstFrame instanceof Texture ? firstFrame : firstFrame.texture
     }));
     this._textures = null;
@@ -38920,15 +40086,31 @@ class AnimatedSprite extends Sprite {
   }
   /**
    * Stops the AnimatedSprite and destroys it.
+   * This method stops the animation playback, removes it from the ticker,
+   * and cleans up any resources associated with the sprite.
+   * @param options - Options for destroying the sprite, such as whether to remove from parent
    * @example
    * ```ts
    * // Destroy the sprite when done
    * sprite.destroy();
+   * // Or with options
+   * sprite.destroy({ children: true, texture: true, textureSource: true });
    * ```
    */
-  destroy() {
+  destroy(options = false) {
+    const destroyTexture = typeof options === "boolean" ? options : options == null ? void 0 : options.texture;
+    if (destroyTexture) {
+      const destroyTextureSource = typeof options === "boolean" ? options : options == null ? void 0 : options.textureSource;
+      this._textures.forEach((texture) => {
+        if (this.texture !== texture) {
+          texture.destroy(destroyTextureSource);
+        }
+      });
+    }
+    this._textures = [];
+    this._durations = null;
     this.stop();
-    super.destroy();
+    super.destroy(options);
     this.onComplete = null;
     this.onFrameChange = null;
     this.onLoop = null;
@@ -39296,30 +40478,30 @@ class Transform {
 }
 
 "use strict";
-var __defProp$s = Object.defineProperty;
-var __getOwnPropSymbols$t = Object.getOwnPropertySymbols;
-var __hasOwnProp$t = Object.prototype.hasOwnProperty;
-var __propIsEnum$t = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$s = (obj, key, value) => key in obj ? __defProp$s(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$s = (a, b) => {
+var __defProp$t = Object.defineProperty;
+var __getOwnPropSymbols$u = Object.getOwnPropertySymbols;
+var __hasOwnProp$u = Object.prototype.hasOwnProperty;
+var __propIsEnum$u = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$t = (obj, key, value) => key in obj ? __defProp$t(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$t = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$t.call(b, prop))
-      __defNormalProp$s(a, prop, b[prop]);
-  if (__getOwnPropSymbols$t)
-    for (var prop of __getOwnPropSymbols$t(b)) {
-      if (__propIsEnum$t.call(b, prop))
-        __defNormalProp$s(a, prop, b[prop]);
+    if (__hasOwnProp$u.call(b, prop))
+      __defNormalProp$t(a, prop, b[prop]);
+  if (__getOwnPropSymbols$u)
+    for (var prop of __getOwnPropSymbols$u(b)) {
+      if (__propIsEnum$u.call(b, prop))
+        __defNormalProp$t(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$9 = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$t.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$u.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$t)
-    for (var prop of __getOwnPropSymbols$t(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$t.call(source, prop))
+  if (source != null && __getOwnPropSymbols$u)
+    for (var prop of __getOwnPropSymbols$u(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$u.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -39335,7 +40517,7 @@ const _TilingSprite = class _TilingSprite extends ViewContainer {
       options.width = args[1];
       options.height = args[2];
     }
-    options = __spreadValues$s(__spreadValues$s({}, _TilingSprite.defaultOptions), options);
+    options = __spreadValues$t(__spreadValues$t({}, _TilingSprite.defaultOptions), options);
     const _a = options != null ? options : {}, {
       texture,
       anchor,
@@ -39357,7 +40539,7 @@ const _TilingSprite = class _TilingSprite extends ViewContainer {
       "applyAnchorToTexture",
       "roundPixels"
     ]);
-    super(__spreadValues$s({
+    super(__spreadValues$t({
       label: "TilingSprite"
     }, rest));
     /** @internal */
@@ -39414,11 +40596,11 @@ const _TilingSprite = class _TilingSprite extends ViewContainer {
    */
   static from(source, options = {}) {
     if (typeof source === "string") {
-      return new _TilingSprite(__spreadValues$s({
+      return new _TilingSprite(__spreadValues$t({
         texture: Cache.get(source)
       }, options));
     }
-    return new _TilingSprite(__spreadValues$s({
+    return new _TilingSprite(__spreadValues$t({
       texture: source
     }, options));
   }
@@ -39428,12 +40610,12 @@ const _TilingSprite = class _TilingSprite extends ViewContainer {
    * @advanced
    */
   get uvRespectAnchor() {
-    warn("uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
+    deprecation(v8_0_0, "uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
     return this.applyAnchorToTexture;
   }
   /** @advanced */
   set uvRespectAnchor(value) {
-    warn("uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
+    deprecation(v8_0_0, "uvRespectAnchor is deprecated, please use applyAnchorToTexture instead");
     this.applyAnchorToTexture = value;
   }
   /**
@@ -39821,30 +41003,30 @@ _TilingSprite.defaultOptions = {
 let TilingSprite = _TilingSprite;
 
 "use strict";
-var __defProp$r = Object.defineProperty;
-var __getOwnPropSymbols$s = Object.getOwnPropertySymbols;
-var __hasOwnProp$s = Object.prototype.hasOwnProperty;
-var __propIsEnum$s = Object.prototype.propertyIsEnumerable;
-var __defNormalProp$r = (obj, key, value) => key in obj ? __defProp$r(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues$r = (a, b) => {
+var __defProp$s = Object.defineProperty;
+var __getOwnPropSymbols$t = Object.getOwnPropertySymbols;
+var __hasOwnProp$t = Object.prototype.hasOwnProperty;
+var __propIsEnum$t = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$s = (obj, key, value) => key in obj ? __defProp$s(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$s = (a, b) => {
   for (var prop in b || (b = {}))
-    if (__hasOwnProp$s.call(b, prop))
-      __defNormalProp$r(a, prop, b[prop]);
-  if (__getOwnPropSymbols$s)
-    for (var prop of __getOwnPropSymbols$s(b)) {
-      if (__propIsEnum$s.call(b, prop))
-        __defNormalProp$r(a, prop, b[prop]);
+    if (__hasOwnProp$t.call(b, prop))
+      __defNormalProp$s(a, prop, b[prop]);
+  if (__getOwnPropSymbols$t)
+    for (var prop of __getOwnPropSymbols$t(b)) {
+      if (__propIsEnum$t.call(b, prop))
+        __defNormalProp$s(a, prop, b[prop]);
     }
   return a;
 };
 var __objRest$8 = (source, exclude) => {
   var target = {};
   for (var prop in source)
-    if (__hasOwnProp$s.call(source, prop) && exclude.indexOf(prop) < 0)
+    if (__hasOwnProp$t.call(source, prop) && exclude.indexOf(prop) < 0)
       target[prop] = source[prop];
-  if (source != null && __getOwnPropSymbols$s)
-    for (var prop of __getOwnPropSymbols$s(source)) {
-      if (exclude.indexOf(prop) < 0 && __propIsEnum$s.call(source, prop))
+  if (source != null && __getOwnPropSymbols$t)
+    for (var prop of __getOwnPropSymbols$t(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum$t.call(source, prop))
         target[prop] = source[prop];
     }
   return target;
@@ -39852,7 +41034,7 @@ var __objRest$8 = (source, exclude) => {
 class AbstractText extends ViewContainer {
   constructor(options, styleClass) {
     const _a = options, { text, resolution, style, anchor, width, height, roundPixels } = _a, rest = __objRest$8(_a, ["text", "resolution", "style", "anchor", "width", "height", "roundPixels"]);
-    super(__spreadValues$r({}, rest));
+    super(__spreadValues$s({}, rest));
     /** @internal */
     this.batched = true;
     /** @internal */
@@ -40189,6 +41371,14 @@ class AbstractText extends ViewContainer {
     this._style = null;
     this._text = null;
   }
+  /**
+   * Returns a unique key for this instance.
+   * This key is used for caching.
+   * @returns {string} Unique key for the instance
+   */
+  get styleKey() {
+    return `${this._text}:${this._style.styleKey}:${this._resolution}`;
+  }
 }
 function ensureTextOptions(args, name) {
   var _a;
@@ -40380,6 +41570,337 @@ class BitmapText extends AbstractText {
 }
 
 "use strict";
+function textStyleToCSS(style) {
+  const stroke = style._stroke;
+  const fill = style._fill;
+  const cssStyleString = [
+    `color: ${Color.shared.setValue(fill.color).toHex()}`,
+    `font-size: ${style.fontSize}px`,
+    `font-family: ${style.fontFamily}`,
+    `font-weight: ${style.fontWeight}`,
+    `font-style: ${style.fontStyle}`,
+    `font-variant: ${style.fontVariant}`,
+    `letter-spacing: ${style.letterSpacing}px`,
+    `text-align: ${style.align}`,
+    `padding: ${style.padding}px`,
+    `white-space: ${style.whiteSpace === "pre" && style.wordWrap ? "pre-wrap" : style.whiteSpace}`,
+    ...style.lineHeight ? [`line-height: ${style.lineHeight}px`] : [],
+    ...style.wordWrap ? [
+      `word-wrap: ${style.breakWords ? "break-all" : "break-word"}`,
+      `max-width: ${style.wordWrapWidth}px`
+    ] : [],
+    ...stroke ? [strokeToCSS(stroke)] : [],
+    ...style.dropShadow ? [dropShadowToCSS(style.dropShadow)] : [],
+    ...style.cssOverrides
+  ].join(";");
+  const cssStyles = [`div { ${cssStyleString} }`];
+  tagStyleToCSS(style.tagStyles, cssStyles);
+  return cssStyles.join(" ");
+}
+function dropShadowToCSS(dropShadowStyle) {
+  const color = Color.shared.setValue(dropShadowStyle.color).setAlpha(dropShadowStyle.alpha).toHexa();
+  const x = Math.round(Math.cos(dropShadowStyle.angle) * dropShadowStyle.distance);
+  const y = Math.round(Math.sin(dropShadowStyle.angle) * dropShadowStyle.distance);
+  const position = `${x}px ${y}px`;
+  if (dropShadowStyle.blur > 0) {
+    return `text-shadow: ${position} ${dropShadowStyle.blur}px ${color}`;
+  }
+  return `text-shadow: ${position} ${color}`;
+}
+function strokeToCSS(stroke) {
+  return [
+    `-webkit-text-stroke-width: ${stroke.width}px`,
+    `-webkit-text-stroke-color: ${Color.shared.setValue(stroke.color).toHex()}`,
+    `text-stroke-width: ${stroke.width}px`,
+    `text-stroke-color: ${Color.shared.setValue(stroke.color).toHex()}`,
+    "paint-order: stroke"
+  ].join(";");
+}
+const templates = {
+  fontSize: `font-size: {{VALUE}}px`,
+  fontFamily: `font-family: {{VALUE}}`,
+  fontWeight: `font-weight: {{VALUE}}`,
+  fontStyle: `font-style: {{VALUE}}`,
+  fontVariant: `font-variant: {{VALUE}}`,
+  letterSpacing: `letter-spacing: {{VALUE}}px`,
+  align: `text-align: {{VALUE}}`,
+  padding: `padding: {{VALUE}}px`,
+  whiteSpace: `white-space: {{VALUE}}`,
+  lineHeight: `line-height: {{VALUE}}px`,
+  wordWrapWidth: `max-width: {{VALUE}}px`
+};
+const transform = {
+  fill: (value) => `color: ${Color.shared.setValue(value).toHex()}`,
+  breakWords: (value) => `word-wrap: ${value ? "break-all" : "break-word"}`,
+  stroke: strokeToCSS,
+  dropShadow: dropShadowToCSS
+};
+function tagStyleToCSS(tagStyles, out) {
+  for (const i in tagStyles) {
+    const tagStyle = tagStyles[i];
+    const cssTagStyle = [];
+    for (const j in tagStyle) {
+      if (transform[j]) {
+        cssTagStyle.push(transform[j](tagStyle[j]));
+      } else if (templates[j]) {
+        cssTagStyle.push(templates[j].replace("{{VALUE}}", tagStyle[j]));
+      }
+    }
+    out.push(`${i} { ${cssTagStyle.join(";")} }`);
+  }
+}
+
+"use strict";
+var __defProp$r = Object.defineProperty;
+var __getOwnPropSymbols$s = Object.getOwnPropertySymbols;
+var __hasOwnProp$s = Object.prototype.hasOwnProperty;
+var __propIsEnum$s = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$r = (obj, key, value) => key in obj ? __defProp$r(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$r = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$s.call(b, prop))
+      __defNormalProp$r(a, prop, b[prop]);
+  if (__getOwnPropSymbols$s)
+    for (var prop of __getOwnPropSymbols$s(b)) {
+      if (__propIsEnum$s.call(b, prop))
+        __defNormalProp$r(a, prop, b[prop]);
+    }
+  return a;
+};
+class HTMLTextStyle extends TextStyle {
+  constructor(options = {}) {
+    var _a, _b;
+    super(options);
+    this._cssOverrides = [];
+    this.cssOverrides = (_a = options.cssOverrides) != null ? _a : [];
+    this.tagStyles = (_b = options.tagStyles) != null ? _b : {};
+  }
+  /**
+   * List of CSS style overrides to apply to the HTML text.
+   * These styles are added after the built-in styles and can override any default styling.
+   * @advanced
+   */
+  set cssOverrides(value) {
+    this._cssOverrides = value instanceof Array ? value : [value];
+    this.update();
+  }
+  /** @advanced */
+  get cssOverrides() {
+    return this._cssOverrides;
+  }
+  /**
+   * Updates the text style and triggers a refresh of the CSS style cache.
+   * This method is called automatically when style properties are changed.
+   * @example
+   * ```ts
+   * // Update after multiple changes
+   * const text = new HTMLText({
+   *     text: 'Hello World',
+   *     style
+   * });
+   *
+   * style.fontSize = 32;
+   * style.fill = '#00ff00';
+   * style.fontFamily = 'Arial';
+   * style.update(); // Apply all changes at once
+   * ```
+   * @advanced
+   * @see {@link HTMLTextStyle#cssStyle} For accessing the generated CSS
+   * @see {@link HTMLTextStyle#cssOverrides} For managing CSS overrides
+   */
+  update() {
+    this._cssStyle = null;
+    super.update();
+  }
+  /**
+   * Creates a new HTMLTextStyle object with the same values as this one.
+   * This creates a deep copy of all style properties, including dropShadow and tag styles.
+   * @example
+   * ```ts
+   * // Create original style
+   * const originalStyle = new HTMLTextStyle({
+   *     fontSize: 24,
+   *     fill: '#ff0000',
+   *     tagStyles: {
+   *         header: { fontSize: 32, fill: '#00ff00' }
+   *     }
+   * });
+   *
+   * // Clone the style
+   * const clonedStyle = originalStyle.clone();
+   *
+   * // Modify cloned style independently
+   * clonedStyle.fontSize = 36;
+   * clonedStyle.fill = '#0000ff';
+   *
+   * // Original style remains unchanged
+   * console.log(originalStyle.fontSize); // Still 24
+   * console.log(originalStyle.fill); // Still '#ff0000'
+   * ```
+   *
+   * Properties that are cloned:
+   * - Basic text properties (fontSize, fontFamily, etc.)
+   * - Fill and stroke styles
+   * - Drop shadow configuration
+   * - CSS overrides
+   * - Tag styles (deep copied)
+   * - Word wrap settings
+   * - Alignment and spacing
+   * @returns {HTMLTextStyle} A new HTMLTextStyle instance with the same properties
+   * @see {@link HTMLTextStyle} For available style properties
+   * @see {@link HTMLTextStyle#cssOverrides} For CSS override handling
+   * @see {@link HTMLTextStyle#tagStyles} For tag style configuration
+   * @standard
+   */
+  clone() {
+    return new HTMLTextStyle({
+      align: this.align,
+      breakWords: this.breakWords,
+      dropShadow: this.dropShadow ? __spreadValues$r({}, this.dropShadow) : null,
+      fill: this._fill,
+      fontFamily: this.fontFamily,
+      fontSize: this.fontSize,
+      fontStyle: this.fontStyle,
+      fontVariant: this.fontVariant,
+      fontWeight: this.fontWeight,
+      letterSpacing: this.letterSpacing,
+      lineHeight: this.lineHeight,
+      padding: this.padding,
+      stroke: this._stroke,
+      whiteSpace: this.whiteSpace,
+      wordWrap: this.wordWrap,
+      wordWrapWidth: this.wordWrapWidth,
+      cssOverrides: this.cssOverrides,
+      tagStyles: __spreadValues$r({}, this.tagStyles)
+    });
+  }
+  /**
+   * The CSS style string that will be applied to the HTML text.
+   * @advanced
+   */
+  get cssStyle() {
+    if (!this._cssStyle) {
+      this._cssStyle = textStyleToCSS(this);
+    }
+    return this._cssStyle;
+  }
+  /**
+   * Add a style override, this can be any CSS property
+   * it will override any built-in style. This is the
+   * property and the value as a string (e.g., `color: red`).
+   * This will override any other internal style.
+   * @param {string} value - CSS style(s) to add.
+   * @example
+   * style.addOverride('background-color: red');
+   * @advanced
+   */
+  addOverride(...value) {
+    const toAdd = value.filter((v) => !this.cssOverrides.includes(v));
+    if (toAdd.length > 0) {
+      this.cssOverrides.push(...toAdd);
+      this.update();
+    }
+  }
+  /**
+   * Remove any overrides that match the value.
+   * @param {string} value - CSS style to remove.
+   * @example
+   * style.removeOverride('background-color: red');
+   * @advanced
+   */
+  removeOverride(...value) {
+    const toRemove = value.filter((v) => this.cssOverrides.includes(v));
+    if (toRemove.length > 0) {
+      this.cssOverrides = this.cssOverrides.filter((v) => !toRemove.includes(v));
+      this.update();
+    }
+  }
+  /**
+   * Sets the fill style for the text. HTML text only supports color fills (string or number values).
+   * Texture fills are not supported and will trigger a warning in debug mode.
+   * @example
+   * ```ts
+   * // Using hex colors
+   * const text = new HTMLText({
+   *     text: 'Colored Text',
+   *     style: {
+   *         fill: 0xff0000 // Red color
+   *     }
+   * });
+   *
+   * // Using CSS color strings
+   * text.style.fill = '#00ff00';     // Hex string (Green)
+   * text.style.fill = 'blue';        // Named color
+   * text.style.fill = 'rgb(255,0,0)' // RGB
+   * text.style.fill = '#f0f';        // Short hex
+   *
+   * // Invalid usage (will trigger warning in debug)
+   * text.style.fill = {
+   *     type: 'pattern',
+   *     texture: Texture.from('pattern.png')
+   * }; // Not supported, falls back to default
+   * ```
+   * @param value - The fill color to use. Must be a string or number.
+   * @throws {Warning} In debug mode when attempting to use unsupported fill types
+   * @see {@link TextStyle#fill} For full fill options in canvas text
+   * @standard
+   */
+  set fill(value) {
+    if (typeof value !== "string" && typeof value !== "number") {
+      warn("[HTMLTextStyle] only color fill is not supported by HTMLText");
+    }
+    super.fill = value;
+  }
+  /**
+   * Sets the stroke style for the text. HTML text only supports color strokes (string or number values).
+   * Texture strokes are not supported and will trigger a warning in debug mode.
+   * @example
+   * ```ts
+   * // Using hex colors
+   * const text = new HTMLText({
+   *     text: 'Outlined Text',
+   *     style: {
+   *         stroke: 0xff0000 // Red outline
+   *     }
+   * });
+   *
+   * // Using CSS color strings
+   * text.style.stroke = '#00ff00';     // Hex string (Green)
+   * text.style.stroke = 'blue';        // Named color
+   * text.style.stroke = 'rgb(255,0,0)' // RGB
+   * text.style.stroke = '#f0f';        // Short hex
+   *
+   * // Using stroke width
+   * text.style = {
+   *     stroke: {
+   *         color: '#ff0000',
+   *         width: 2
+   *     }
+   * };
+   *
+   * // Remove stroke
+   * text.style.stroke = null;
+   *
+   * // Invalid usage (will trigger warning in debug)
+   * text.style.stroke = {
+   *     type: 'pattern',
+   *     texture: Texture.from('pattern.png')
+   * }; // Not supported, falls back to default
+   * ```
+   * @param value - The stroke style to use. Must be a string, number, or stroke configuration object
+   * @throws {Warning} In debug mode when attempting to use unsupported stroke types
+   * @see {@link TextStyle#stroke} For full stroke options in canvas text
+   * @standard
+   */
+  set stroke(value) {
+    if (value && typeof value !== "string" && typeof value !== "number") {
+      warn("[HTMLTextStyle] only color stroke is not supported by HTMLText");
+    }
+    super.stroke = value;
+  }
+}
+
+"use strict";
 class HTMLText extends AbstractText {
   constructor(...args) {
     const options = ensureTextOptions(args, "HtmlText");
@@ -40400,6 +41921,52 @@ class HTMLText extends AbstractText {
     bounds.maxX = bounds.minX + width;
     bounds.minY = -anchor._y * height;
     bounds.maxY = bounds.minY + height;
+  }
+  get text() {
+    return this._text;
+  }
+  /**
+   * The text content to display. Use '\n' for line breaks.
+   * Accepts strings, numbers, or objects with toString() method.
+   * @example
+   * ```ts
+   * const text = new HTMLText({
+   *     text: 'Hello Pixi!',
+   * });
+   * const multilineText = new HTMLText({
+   *     text: 'Line 1\nLine 2\nLine 3',
+   * });
+   * const numberText = new HTMLText({
+   *     text: 12345, // Will be converted to '12345'
+   * });
+   * const objectText = new HTMLText({
+   *     text: { toString: () => 'Object Text' }, // Custom toString
+   * });
+   *
+   * // Update text dynamically
+   * text.text = 'Updated Text'; // Re-renders with new text
+   * text.text = 67890; // Updates to '67890'
+   * text.text = { toString: () => 'Dynamic Text' }; // Uses custom toString method
+   * // Clear text
+   * text.text = ''; // Clears the text
+   * ```
+   * @default ''
+   */
+  set text(text) {
+    const sanitisedText = this._sanitiseText(text.toString());
+    super.text = sanitisedText;
+  }
+  /**
+   * Sanitise text - replace `<br>` with `<br/>`, `&nbsp;` with `&#160;`
+   * @param text
+   * @see https://www.sitepoint.com/community/t/xhtml-1-0-transitional-xml-parsing-error-entity-nbsp-not-defined/3392/3
+   */
+  _sanitiseText(text) {
+    return this._removeInvalidHtmlTags(text.replace(/<br>/gi, "<br/>").replace(/<hr>/gi, "<hr/>").replace(/&nbsp;/gi, "&#160;"));
+  }
+  _removeInvalidHtmlTags(input) {
+    const brokenTagPattern = /<[^>]*?(?=<|$)/g;
+    return input.replace(brokenTagPattern, "");
   }
 }
 
@@ -40458,6 +42025,7 @@ class PrepareUpload extends PrepareQueue {
 class PrepareSystem extends PrepareUpload {
   /** Destroys the plugin, don't use after this. */
   destroy() {
+    super.destroy();
     clearTimeout(this.timeout);
     this.renderer = null;
     this.queue = null;
@@ -41010,6 +42578,7 @@ class ColorMaskPipe {
     renderer.colorMask.setMask(instruction.colorMask);
   }
   destroy() {
+    this._renderer = null;
     this._colorStack = null;
   }
 }
@@ -42067,6 +43636,7 @@ class GlGeometrySystem {
    *  drawing will start from the first vertex.
    * @param instanceCount - The number of instances of the set of elements to execute. If not specified,
    *  all instances will be drawn.
+   * @returns This instance of the geometry system.
    */
   draw(topology, size, start, instanceCount) {
     const { gl } = this._renderer;
@@ -42076,12 +43646,12 @@ class GlGeometrySystem {
     if (geometry.indexBuffer) {
       const byteSize = geometry.indexBuffer.data.BYTES_PER_ELEMENT;
       const glType = byteSize === 2 ? gl.UNSIGNED_SHORT : gl.UNSIGNED_INT;
-      if (instanceCount > 1) {
+      if (instanceCount !== 1) {
         gl.drawElementsInstanced(glTopology, size || geometry.indexBuffer.data.length, glType, (start || 0) * byteSize, instanceCount);
       } else {
         gl.drawElements(glTopology, size || geometry.indexBuffer.data.length, glType, (start || 0) * byteSize);
       }
-    } else if (instanceCount > 1) {
+    } else if (instanceCount !== 1) {
       gl.drawArraysInstanced(glTopology, start || 0, size || geometry.getSize(), instanceCount);
     } else {
       gl.drawArrays(glTopology, start || 0, size || geometry.getSize());
@@ -42099,6 +43669,7 @@ class GlGeometrySystem {
     this.gl = null;
     this._activeVao = null;
     this._activeGeometry = null;
+    this._geometryVaoHash = null;
   }
 }
 /** @ignore */
@@ -42325,7 +43896,8 @@ class GlLimitsSystem {
     const gl = this._renderer.gl;
     this.maxTextures = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
     this.maxBatchableTextures = checkMaxIfStatementsInShader(this.maxTextures, gl);
-    this.maxUniformBindings = gl.getParameter(gl.MAX_UNIFORM_BUFFER_BINDINGS);
+    const isWebGl2 = this._renderer.context.webGLVersion === 2;
+    this.maxUniformBindings = isWebGl2 ? gl.getParameter(gl.MAX_UNIFORM_BUFFER_BINDINGS) : 0;
   }
   destroy() {
   }
@@ -43260,6 +44832,7 @@ var __spreadValues$n = (a, b) => {
   return a;
 };
 const canvasCache = /* @__PURE__ */ new Map();
+GlobalResourceRegistry.register(canvasCache);
 function getCanvasTexture(canvas, options) {
   if (!canvasCache.has(canvas)) {
     const texture = new Texture({
@@ -44337,6 +45910,10 @@ class GlShaderSystem {
       this._programDataHash[key] = null;
     }
     this._programDataHash = null;
+    this._shaderSyncFunctions = null;
+    this._activeProgram = null;
+    this._renderer = null;
+    this._gl = null;
   }
   /**
    * Creates a function that can be executed that will sync the shader as efficiently as possible.
@@ -45530,6 +47107,11 @@ class GlTextureSystem {
       this.bind(Texture.EMPTY, i);
     }
   }
+  /**
+   * Initializes a texture source, if it has already been initialized nothing will happen.
+   * @param source - The texture source to initialize.
+   * @returns The initialized texture source.
+   */
   initSource(source) {
     this.bind(source);
   }
@@ -45740,6 +47322,14 @@ class GlTextureSystem {
   destroy() {
     this.managedTextures.slice().forEach((source) => this.onSourceDestroy(source));
     this.managedTextures = null;
+    this._glTextures = null;
+    this._glSamplers = null;
+    this._boundTextures = null;
+    this._boundSamplers = null;
+    this._mapFormatToInternalFormat = null;
+    this._mapFormatToType = null;
+    this._mapFormatToFormat = null;
+    this._uploads = null;
     this._renderer = null;
   }
   resetState() {
@@ -45964,7 +47554,9 @@ class RenderGroupPipe {
     batchableRenderGroup.texture = renderGroup.texture;
     batchableRenderGroup.bounds = renderGroup._textureBounds;
     instructionSet.add(renderGroup);
+    this._renderer.renderPipes.blendMode.pushBlendMode(renderGroup, renderGroup.root.groupBlendMode, instructionSet);
     this._renderer.renderPipes.batch.addToBatch(batchableRenderGroup, instructionSet);
+    this._renderer.renderPipes.blendMode.popBlendMode(instructionSet);
   }
   _executeCacheAsTexture(renderGroup) {
     if (renderGroup.textureNeedsUpdate) {
@@ -45976,7 +47568,8 @@ class RenderGroupPipe {
       this._renderer.renderTarget.push(renderGroup.texture, true, null, renderGroup.texture.frame);
       this._renderer.globalUniforms.push({
         worldTransformMatrix,
-        worldColor: 4294967295
+        worldColor: 4294967295,
+        offset: { x: 0, y: 0 }
       });
       executeInstructions(renderGroup, this._renderer.renderPipes);
       this._renderer.renderTarget.finishRenderPass();
@@ -46125,9 +47718,9 @@ function updateColorBlendVisibility(container, parent, updateFlags) {
 
 "use strict";
 function validateRenderables(renderGroup, renderPipes) {
-  const { list, index } = renderGroup.childrenRenderablesToUpdate;
+  const { list } = renderGroup.childrenRenderablesToUpdate;
   let rebuildRequired = false;
-  for (let i = 0; i < index; i++) {
+  for (let i = 0; i < renderGroup.childrenRenderablesToUpdate.index; i++) {
     const container = list[i];
     const renderable = container;
     const pipe = renderPipes[renderable.renderPipeId];
@@ -46152,9 +47745,9 @@ class RenderGroupSystem {
     container.parent = null;
     container.renderGroup.renderGroupParent = null;
     const renderer = this._renderer;
-    let originalLocalTransform = tempMatrix$1;
+    const originalLocalTransform = tempMatrix$1;
     if (transform) {
-      originalLocalTransform = originalLocalTransform.copyFrom(container.renderGroup.localTransform);
+      originalLocalTransform.copyFrom(container.renderGroup.localTransform);
       container.renderGroup.localTransform.copyFrom(transform);
     }
     const renderPipes = renderer.renderPipes;
@@ -46178,13 +47771,13 @@ class RenderGroupSystem {
     this._renderer = null;
   }
   _updateCachedRenderGroups(renderGroup, closestCacheAsTexture) {
-    var _a;
+    var _a, _b;
+    renderGroup._parentCacheAsTextureRenderGroup = closestCacheAsTexture;
     if (renderGroup.isCachedAsTexture) {
-      if (!renderGroup.updateCacheTexture)
+      if (!renderGroup.textureNeedsUpdate)
         return;
       closestCacheAsTexture = renderGroup;
     }
-    renderGroup._parentCacheAsTextureRenderGroup = closestCacheAsTexture;
     for (let i = renderGroup.renderGroupChildren.length - 1; i >= 0; i--) {
       this._updateCachedRenderGroups(renderGroup.renderGroupChildren[i], closestCacheAsTexture);
     }
@@ -46195,17 +47788,20 @@ class RenderGroupSystem {
         bounds.ceil();
         const lastTexture = renderGroup.texture;
         if (renderGroup.texture) {
-          TexturePool.returnTexture(renderGroup.texture);
+          TexturePool.returnTexture(renderGroup.texture, true);
         }
         const renderer = this._renderer;
         const resolution = renderGroup.textureOptions.resolution || renderer.view.resolution;
         const antialias = (_a = renderGroup.textureOptions.antialias) != null ? _a : renderer.view.antialias;
-        renderGroup.texture = TexturePool.getOptimalTexture(
+        const scaleMode = (_b = renderGroup.textureOptions.scaleMode) != null ? _b : "linear";
+        const texture = TexturePool.getOptimalTexture(
           bounds.width,
           bounds.height,
           resolution,
           antialias
         );
+        texture._source.style = new TextureStyle({ scaleMode });
+        renderGroup.texture = texture;
         renderGroup._textureBounds || (renderGroup._textureBounds = new Bounds());
         renderGroup._textureBounds.copyFrom(bounds);
         if (lastTexture !== renderGroup.texture) {
@@ -46215,7 +47811,7 @@ class RenderGroupSystem {
         }
       }
     } else if (renderGroup.texture) {
-      TexturePool.returnTexture(renderGroup.texture);
+      TexturePool.returnTexture(renderGroup.texture, true);
       renderGroup.texture = null;
     }
   }
@@ -46444,6 +48040,7 @@ extensions.handle(ExtensionType.BlendMode, (value) => {
 });
 class BlendModePipe {
   constructor(renderer) {
+    this._blendModeStack = [];
     this._isAdvanced = false;
     this._filterHash = /* @__PURE__ */ Object.create(null);
     this._renderer = renderer;
@@ -46454,50 +48051,81 @@ class BlendModePipe {
     this._isAdvanced = false;
   }
   /**
-   * This ensures that a blendMode switch is added to the instruction set if the blend mode has changed.
-   * @param renderable - The renderable we are adding to the instruction set
-   * @param blendMode - The blend mode of the renderable
-   * @param instructionSet - The instruction set we are adding to
+   * Push a blend mode onto the internal stack and apply it to the instruction set if needed.
+   * @param renderable - The renderable or {@link RenderGroup} associated with the change.
+   * @param blendMode - The blend mode to activate.
+   * @param instructionSet - The instruction set being built.
+   */
+  pushBlendMode(renderable, blendMode, instructionSet) {
+    this._blendModeStack.push(blendMode);
+    this.setBlendMode(renderable, blendMode, instructionSet);
+  }
+  /**
+   * Pop the last blend mode from the stack and apply the new top-of-stack mode.
+   * @param instructionSet - The instruction set being built.
+   */
+  popBlendMode(instructionSet) {
+    var _a;
+    this._blendModeStack.pop();
+    const blendMode = (_a = this._blendModeStack[this._activeBlendMode.length - 1]) != null ? _a : "normal";
+    this.setBlendMode(null, blendMode, instructionSet);
+  }
+  /**
+   * Ensure a blend mode switch is added to the instruction set when the mode changes.
+   * If an advanced blend mode is active, subsequent renderables will be collected so they can be
+   * rendered within a single filter pass.
+   * @param renderable - The renderable or {@link RenderGroup} to associate with the change, or null when unwinding.
+   * @param blendMode - The target blend mode.
+   * @param instructionSet - The instruction set being built.
    */
   setBlendMode(renderable, blendMode, instructionSet) {
+    var _a;
+    const isRenderGroup = renderable instanceof RenderGroup;
     if (this._activeBlendMode === blendMode) {
-      if (this._isAdvanced)
-        this._renderableList.push(renderable);
+      if (this._isAdvanced && renderable && !isRenderGroup) {
+        (_a = this._renderableList) == null ? void 0 : _a.push(renderable);
+      }
       return;
     }
-    this._activeBlendMode = blendMode;
-    if (this._isAdvanced) {
+    if (this._isAdvanced)
       this._endAdvancedBlendMode(instructionSet);
-    }
+    this._activeBlendMode = blendMode;
+    if (!renderable)
+      return;
     this._isAdvanced = !!BLEND_MODE_FILTERS[blendMode];
-    if (this._isAdvanced) {
-      this._beginAdvancedBlendMode(instructionSet);
-      this._renderableList.push(renderable);
-    }
+    if (this._isAdvanced)
+      this._beginAdvancedBlendMode(renderable, instructionSet);
   }
-  _beginAdvancedBlendMode(instructionSet) {
+  _beginAdvancedBlendMode(renderable, instructionSet) {
     this._renderer.renderPipes.batch.break(instructionSet);
     const blendMode = this._activeBlendMode;
     if (!BLEND_MODE_FILTERS[blendMode]) {
       warn(`Unable to assign BlendMode: '${blendMode}'. You may want to include: import 'pixi.js/advanced-blend-modes'`);
       return;
     }
-    let filterEffect = this._filterHash[blendMode];
-    if (!filterEffect) {
-      filterEffect = this._filterHash[blendMode] = new FilterEffect();
-      filterEffect.filters = [new BLEND_MODE_FILTERS[blendMode]()];
-    }
+    const filterEffect = this._ensureFilterEffect(blendMode);
+    const isRenderGroup = renderable instanceof RenderGroup;
     const instruction = {
       renderPipeId: "filter",
       action: "pushFilter",
-      renderables: [],
       filterEffect,
+      renderables: isRenderGroup ? null : [renderable],
+      container: isRenderGroup ? renderable.root : null,
       canBundle: false
     };
     this._renderableList = instruction.renderables;
     instructionSet.add(instruction);
   }
+  _ensureFilterEffect(blendMode) {
+    let filterEffect = this._filterHash[blendMode];
+    if (!filterEffect) {
+      filterEffect = this._filterHash[blendMode] = new FilterEffect();
+      filterEffect.filters = [new BLEND_MODE_FILTERS[blendMode]()];
+    }
+    return filterEffect;
+  }
   _endAdvancedBlendMode(instructionSet) {
+    this._isAdvanced = false;
     this._renderableList = null;
     this._renderer.renderPipes.batch.break(instructionSet);
     instructionSet.add({
@@ -46520,9 +48148,9 @@ class BlendModePipe {
    * @internal
    */
   buildEnd(instructionSet) {
-    if (this._isAdvanced) {
-      this._endAdvancedBlendMode(instructionSet);
-    }
+    if (!this._isAdvanced)
+      return;
+    this._endAdvancedBlendMode(instructionSet);
   }
   /** @internal */
   destroy() {
@@ -46580,9 +48208,9 @@ const _ExtractSystem = class _ExtractSystem {
     return __spreadValues$j(__spreadValues$j({}, defaults), options);
   }
   /**
-   * Creates an HTMLImageElement from a display object or texture.
+   * Creates an IImage from a display object or texture.
    * @param options - Options for creating the image, or the target to extract
-   * @returns Promise that resolves with the generated HTMLImageElement
+   * @returns Promise that resolves with the generated IImage
    * @example
    * ```ts
    * // Basic usage with a sprite
@@ -46608,10 +48236,11 @@ const _ExtractSystem = class _ExtractSystem {
    * @see {@link ExtractImageOptions} For detailed options
    * @see {@link ExtractSystem.base64} For base64 string output
    * @see {@link ExtractSystem.canvas} For canvas output
+   * @see {@link ImageLike} For the image interface
    * @category rendering
    */
   async image(options) {
-    const image = new Image();
+    const image = DOMAdapter.get().createImage();
     image.src = await this.base64(options);
     return image;
   }
@@ -47181,6 +48810,12 @@ class GlobalUniformSystem {
   }
   destroy() {
     this._renderer = null;
+    this._globalUniformDataStack.length = 0;
+    this._uniformsPool.length = 0;
+    this._activeUniforms.length = 0;
+    this._bindGroupPool.length = 0;
+    this._activeBindGroups.length = 0;
+    this._currentGlobalUniformData = null;
   }
 }
 /** @ignore */
@@ -47775,6 +49410,7 @@ const _ViewSystem = class _ViewSystem {
     if (removeView && this.canvas.parentNode) {
       this.canvas.parentNode.removeChild(this.canvas);
     }
+    this.texture.destroy();
   }
 };
 /** @ignore */
@@ -48125,7 +49761,7 @@ class GpuDeviceSystem {
   async init(options) {
     if (this._initPromise)
       return this._initPromise;
-    this._initPromise = this._createDeviceAndAdaptor(options).then((gpu) => {
+    this._initPromise = (options.gpu ? Promise.resolve(options.gpu) : this._createDeviceAndAdaptor(options)).then((gpu) => {
       this.gpu = gpu;
       this._renderer.runners.contextChange.emit(this.gpu);
     });
@@ -48266,7 +49902,7 @@ class GpuEncoderSystem {
   setGeometry(geometry, program) {
     const buffersToBind = this._renderer.pipeline.getBufferNamesToBind(geometry, program);
     for (const i in buffersToBind) {
-      this._setVertexBuffer(i, geometry.attributes[buffersToBind[i]].buffer);
+      this._setVertexBuffer(parseInt(i, 10), geometry.attributes[buffersToBind[i]].buffer);
     }
     if (geometry.indexBuffer) {
       this._setIndexBuffer(geometry.indexBuffer);
@@ -48641,8 +50277,9 @@ class GpuUniformBatchPipe {
     this._renderer.gpu.device.queue.submit([commandEncoder.finish()]);
   }
   destroy() {
+    var _a;
     for (let i = 0; i < this._bindGroups.length; i++) {
-      this._bindGroups[i].destroy();
+      (_a = this._bindGroups[i]) == null ? void 0 : _a.destroy();
     }
     this._bindGroups = null;
     this._bindGroupHash = null;
@@ -49652,7 +51289,18 @@ class GpuTextureSystem {
   contextChange(gpu) {
     this._gpu = gpu;
   }
+  /**
+   * Initializes a texture source, if it has already been initialized nothing will happen.
+   * @param source - The texture source to initialize.
+   * @returns The initialized texture source.
+   */
   initSource(source) {
+    if (this._gpuSources[source.uid]) {
+      return this._gpuSources[source.uid];
+    }
+    return this._initSource(source);
+  }
+  _initSource(source) {
     if (source.autoGenerateMipmaps) {
       const biggestDimension = Math.max(source.pixelWidth, source.pixelHeight);
       source.mipLevelCount = Math.floor(Math.log2(biggestDimension)) + 1;
@@ -49674,8 +51322,7 @@ class GpuTextureSystem {
       dimension: source.dimension,
       usage
     };
-    const gpuTexture = this._gpu.device.createTexture(textureDescriptor);
-    this._gpuSources[source.uid] = gpuTexture;
+    const gpuTexture = this._gpuSources[source.uid] = this._gpu.device.createTexture(textureDescriptor);
     if (!this.managedTextures.includes(source)) {
       source.on("update", this.onSourceUpdate, this);
       source.on("resize", this.onSourceResize, this);
@@ -50288,6 +51935,55 @@ function updateWorldTransform(local, parent, world) {
 "use strict";
 
 "use strict";
+function buildGeometryFromPath(options) {
+  if (options instanceof GraphicsPath) {
+    options = {
+      path: options,
+      textureMatrix: null,
+      out: null
+    };
+  }
+  const vertices = [];
+  const uvs = [];
+  const indices = [];
+  const shapePath = options.path.shapePath;
+  const textureMatrix = options.textureMatrix;
+  shapePath.shapePrimitives.forEach(({ shape, transform: matrix }) => {
+    const indexOffset = indices.length;
+    const vertOffset = vertices.length / 2;
+    const points = [];
+    const build = shapeBuilders[shape.type];
+    build.build(shape, points);
+    if (matrix) {
+      transformVertices(points, matrix);
+    }
+    build.triangulate(points, vertices, 2, vertOffset, indices, indexOffset);
+    const uvsOffset = uvs.length / 2;
+    if (textureMatrix) {
+      if (matrix) {
+        textureMatrix.append(matrix.clone().invert());
+      }
+      buildUvs(vertices, 2, vertOffset, uvs, uvsOffset, 2, vertices.length / 2 - vertOffset, textureMatrix);
+    } else {
+      buildSimpleUvs(uvs, uvsOffset, 2, vertices.length / 2 - vertOffset);
+    }
+  });
+  const out = options.out;
+  if (out) {
+    out.positions = new Float32Array(vertices);
+    out.uvs = new Float32Array(uvs);
+    out.indices = new Uint32Array(indices);
+    return out;
+  }
+  const geometry = new MeshGeometry({
+    positions: new Float32Array(vertices),
+    uvs: new Float32Array(uvs),
+    indices: new Uint32Array(indices)
+  });
+  return geometry;
+}
+
+"use strict";
 var __defProp$b = Object.defineProperty;
 var __getOwnPropSymbols$c = Object.getOwnPropertySymbols;
 var __hasOwnProp$c = Object.prototype.hasOwnProperty;
@@ -50304,7 +52000,7 @@ var __spreadValues$b = (a, b) => {
     }
   return a;
 };
-const _RenderLayerClass = class _RenderLayerClass extends Container {
+const _RenderLayer = class _RenderLayer extends Container {
   /**
    * Creates a new RenderLayer instance
    * @param options - Configuration options for the RenderLayer
@@ -50312,7 +52008,7 @@ const _RenderLayerClass = class _RenderLayerClass extends Container {
    * @param {Function} [options.sortFunction] - Custom function to sort layer children. Default sorts by zIndex
    */
   constructor(options = {}) {
-    options = __spreadValues$b(__spreadValues$b({}, _RenderLayerClass.defaultOptions), options);
+    options = __spreadValues$b(__spreadValues$b({}, _RenderLayer.defaultOptions), options);
     super();
     /**
      * The list of objects that this layer is responsible for rendering. Objects in this list maintain
@@ -50557,6 +52253,155 @@ const _RenderLayerClass = class _RenderLayerClass extends Container {
       children[i]._getGlobalBoundsRecursive(true, bounds, this);
     }
   }
+  /**
+   * @inheritdoc
+   * @internal
+   */
+  getFastGlobalBounds(factorRenderLayers, bounds) {
+    return super.getFastGlobalBounds(factorRenderLayers, bounds);
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error. Please use `RenderLayer.attach()` instead.
+   * @param {...any} _children
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  addChild(..._children) {
+    throw new Error(
+      "RenderLayer.addChild() is not available. Please use RenderLayer.attach()"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   * Calling this method will throw an error. Please use `RenderLayer.detach()` instead.
+   * @param {...any} _children
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  removeChild(..._children) {
+    throw new Error(
+      "RenderLayer.removeChild() is not available. Please use RenderLayer.detach()"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error. Please use `RenderLayer.detach()` instead.
+   * @param {number} [_beginIndex]
+   * @param {number} [_endIndex]
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  removeChildren(_beginIndex, _endIndex) {
+    throw new Error(
+      "RenderLayer.removeChildren() is not available. Please use RenderLayer.detach()"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {number} _index
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  removeChildAt(_index) {
+    throw new Error(
+      "RenderLayer.removeChildAt() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {number} _index
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  getChildAt(_index) {
+    throw new Error(
+      "RenderLayer.getChildAt() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {Container} _child
+   * @param {number} _index
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  setChildIndex(_child, _index) {
+    throw new Error(
+      "RenderLayer.setChildIndex() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {Container} _child
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  getChildIndex(_child) {
+    throw new Error(
+      "RenderLayer.getChildIndex() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {Container} _child
+   * @param {number} _index
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  addChildAt(_child, _index) {
+    throw new Error(
+      "RenderLayer.addChildAt() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param {Container} _child
+   * @param {Container} _child2
+   * @ignore
+   */
+  swapChildren(_child, _child2) {
+    throw new Error(
+      "RenderLayer.swapChildren() is not available"
+    );
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param _child - The child to reparent
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  reparentChild(..._child) {
+    throw new Error("RenderLayer.reparentChild() is not available with the render layer");
+  }
+  /**
+   * This method is not available in RenderLayer.
+   *
+   * Calling this method will throw an error.
+   * @param _child - The child to reparent
+   * @param _index - The index to reparent the child to
+   * @throws {Error} Always throws an error as this method is not available.
+   * @ignore
+   */
+  reparentChildAt(_child, _index) {
+    throw new Error("RenderLayer.reparentChildAt() is not available with the render layer");
+  }
 };
 /**
  * Default options for RenderLayer instances. These options control the sorting behavior
@@ -50579,7 +52424,7 @@ const _RenderLayerClass = class _RenderLayerClass extends Container {
  * @see {@link Container#zIndex} For the default sort property
  * @see {@link RenderLayer#sortRenderLayerChildren} For manual sorting
  */
-_RenderLayerClass.defaultOptions = {
+_RenderLayer.defaultOptions = {
   /** If true, layer children will be automatically sorted each render. Default is false. */
   sortableChildren: false,
   /**
@@ -50592,8 +52437,7 @@ _RenderLayerClass.defaultOptions = {
    */
   sortFunction: (a, b) => a.zIndex - b.zIndex
 };
-let RenderLayerClass = _RenderLayerClass;
-const RenderLayer = RenderLayerClass;
+let RenderLayer = _RenderLayer;
 
 "use strict";
 function applyProjectiveTransformationToPlane(width, height, geometry, transformationMatrix) {
@@ -52629,6 +54473,7 @@ function bitmapTextSplit(options) {
   const chars = [];
   const words = [];
   const lines = [];
+  const lineHeight = style.lineHeight ? style.lineHeight : font.lineHeight * scale;
   let yOffset = 0;
   for (const line of layout.lines) {
     if (line.chars.length === 0)
@@ -52676,7 +54521,7 @@ function bitmapTextSplit(options) {
         }
       }
     }
-    yOffset += font.lineHeight * scale;
+    yOffset += lineHeight;
   }
   return { chars, lines, words };
 }
@@ -53250,6 +55095,78 @@ let SplitText = _SplitText;
 "use strict";
 
 "use strict";
+const valuesToIterateForKeys = [
+  "align",
+  "breakWords",
+  "cssOverrides",
+  "fontVariant",
+  "fontWeight",
+  "leading",
+  "letterSpacing",
+  "lineHeight",
+  "padding",
+  "textBaseline",
+  "trim",
+  "whiteSpace",
+  "wordWrap",
+  "wordWrapWidth",
+  "fontFamily",
+  "fontStyle",
+  "fontSize"
+];
+function generateTextStyleKey(style) {
+  const key = [];
+  let index = 0;
+  for (let i = 0; i < valuesToIterateForKeys.length; i++) {
+    const prop = `_${valuesToIterateForKeys[i]}`;
+    key[index++] = style[prop];
+  }
+  index = addFillStyleKey(style._fill, key, index);
+  index = addStokeStyleKey(style._stroke, key, index);
+  index = addDropShadowKey(style.dropShadow, key, index);
+  index = addFiltersKey(style.filters, key, index);
+  return key.join("-");
+}
+function addFiltersKey(filters, key, index) {
+  if (!filters)
+    return index;
+  for (const filter of filters) {
+    key[index++] = filter.uid;
+  }
+  return index;
+}
+function addFillStyleKey(fillStyle, key, index) {
+  var _a;
+  if (!fillStyle)
+    return index;
+  key[index++] = fillStyle.color;
+  key[index++] = fillStyle.alpha;
+  key[index++] = (_a = fillStyle.fill) == null ? void 0 : _a.styleKey;
+  return index;
+}
+function addStokeStyleKey(strokeStyle, key, index) {
+  if (!strokeStyle)
+    return index;
+  index = addFillStyleKey(strokeStyle, key, index);
+  key[index++] = strokeStyle.width;
+  key[index++] = strokeStyle.alignment;
+  key[index++] = strokeStyle.cap;
+  key[index++] = strokeStyle.join;
+  key[index++] = strokeStyle.miterLimit;
+  return index;
+}
+function addDropShadowKey(dropShadow, key, index) {
+  if (!dropShadow)
+    return index;
+  key[index++] = dropShadow.alpha;
+  key[index++] = dropShadow.angle;
+  key[index++] = dropShadow.blur;
+  key[index++] = dropShadow.distance;
+  key[index++] = Color.shared.setValue(dropShadow.color).toNumber();
+  return index;
+}
+
+"use strict";
 
 "use strict";
 
@@ -53359,5 +55276,5 @@ function logRenderGroupScene(renderGroup, depth = 0, data = { index: 0, color: "
 
 "use strict";
 
-export { AbstractBitmapFont, AbstractRenderer, AbstractSplitText, AbstractText, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, AnimatedSprite, Application, ApplicationInitHook, Assets, AssetsClass, BLEND_TO_NPM, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, Cache, CanvasPool, CanvasPoolClass, CanvasSource, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, Circle, Color, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, Container, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMAdapter, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DefaultBatcher, DefaultShader, DisplacementFilter, DynamicBitmapFont, Ellipse, EventBoundary, EventEmitter, EventSystem, EventsTicker, ExtensionType, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, Filter, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgram, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuProgram, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, Graphics, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, Loader, LoaderParserPriority, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Matrix, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NOOP, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PerspectiveMesh, PerspectivePlaneGeometry, PipelineSystem, PlaneGeometry, Point, Polygon, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderTexture, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGParser, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SplitBitmapText, SplitText, Sprite, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, Texture, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, Ticker, TickerListener, TickerPlugin, TilingSprite, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, fragment$4 as alphaFrag, source$5 as alphaWgsl, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplate as blendTemplateWgsl, blockDataMap, source$4 as blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculateProjection, canvasTextSplit, checkChildrenDidChange, checkDataUrl, checkExtension, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, fragment$3 as colorMatrixFilterFrag, source$3 as colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, vertex$2 as defaultFilterVert, defaultValue, definedProps, deprecation, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, fragment$2 as displacementFrag, vertex$1 as displacementVert, source$2 as displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extensions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxTexturesPerBatch, getOrientationOfPoints, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, groupD8, hasCachedCanvasTexture, hsl as hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isMobile, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapWebGLBlendModesToPixi, fragment as maskFrag, vertex as maskVert, source as maskWgsl, matrixPool, measureHtmlText, measureMixin, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, fragment$1 as noiseFrag, source$1 as noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, particleData, fragment$5 as particlesFrag, vertex$3 as particlesVert, wgsl as particlesWgsl, path, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, transformVertices, triangulateWithHoles, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid$1 as uid, uniformParsers, unpremultiplyAlpha$1 as unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, wrapModeToGlAddress };
+export { AbstractBitmapFont, AbstractRenderer, AbstractSplitText, AbstractText, AccessibilitySystem, AlphaFilter, AlphaMask, AlphaMaskPipe, AnimatedSprite, Application, ApplicationInitHook, Assets, AssetsClass, BLEND_TO_NPM, BUFFER_TYPE, BackgroundLoader, BackgroundSystem, Batch, BatchGeometry, BatchTextureArray, BatchableGraphics, BatchableHTMLText, BatchableMesh, BatchableSprite, BatchableText, Batcher, BatcherPipe, BigPool, BindGroup, BindGroupSystem, BitmapFont, BitmapFontManager, BitmapText, BitmapTextGraphics, BitmapTextPipe, BlendModeFilter, BlendModePipe, BlurFilter, BlurFilterPass, Bounds, BrowserAdapter, Buffer, BufferImageSource, BufferResource, BufferUsage, CLEAR, Cache, CanvasObserver, CanvasPool, CanvasPoolClass, CanvasSource, CanvasTextGenerator, CanvasTextMetrics, CanvasTextPipe, CanvasTextSystem, Circle, Color, ColorMask, ColorMaskPipe, ColorMatrixFilter, CompressedSource, Container, Culler, CullerPlugin, CustomRenderPipe, D3D10_RESOURCE_DIMENSION, D3DFMT, DATA_URI, DDS, DEG_TO_RAD, DEPRECATED_SCALE_MODES, DEPRECATED_WRAP_MODES, DOMAdapter, DOMContainer, DOMPipe, DRAW_MODES, DXGI_FORMAT, DXGI_TO_TEXTURE_FORMAT, DefaultBatcher, DefaultShader, DisplacementFilter, DynamicBitmapFont, Ellipse, EventBoundary, EventEmitter, EventSystem, EventsTicker, ExtensionType, ExtractSystem, FOURCC_TO_TEXTURE_FORMAT, FederatedContainer, FederatedEvent, FederatedMouseEvent, FederatedPointerEvent, FederatedWheelEvent, FillGradient, FillPattern, Filter, FilterEffect, FilterPipe, FilterSystem, FontStylePromiseCache, GAUSSIAN_VALUES, GL_FORMATS, GL_INTERNAL_FORMAT, GL_TARGETS, GL_TYPES, GL_WRAP_MODES, GenerateTextureSystem, Geometry, GlBackBufferSystem, GlBatchAdaptor, GlBuffer, GlBufferSystem, GlColorMaskSystem, GlContextSystem, GlEncoderSystem, GlGeometrySystem, GlGraphicsAdaptor, GlLimitsSystem, GlMeshAdaptor, GlParticleContainerAdaptor, GlParticleContainerPipe, GlProgram, GlProgramData, GlRenderTarget, GlRenderTargetAdaptor, GlRenderTargetSystem, GlShaderSystem, GlStateSystem, GlStencilSystem, GlTexture, GlTextureSystem, GlUboSystem, GlUniformGroupSystem, GlobalResourceRegistry, GlobalUniformSystem, GpuBatchAdaptor, GpuBlendModesToPixi, GpuBufferSystem, GpuColorMaskSystem, GpuDeviceSystem, GpuEncoderSystem, GpuGraphicsAdaptor, GpuGraphicsContext, GpuLimitsSystem, GpuMeshAdapter, GpuMipmapGenerator, GpuParticleContainerAdaptor, GpuParticleContainerPipe, GpuProgram, GpuRenderTarget, GpuRenderTargetAdaptor, GpuRenderTargetSystem, GpuShaderSystem, GpuStateSystem, GpuStencilModesToPixi, GpuStencilSystem, GpuTextureSystem, GpuUboSystem, GpuUniformBatchPipe, Graphics, GraphicsContext, GraphicsContextRenderData, GraphicsContextSystem, GraphicsGpuData, GraphicsPath, GraphicsPipe, HTMLText, HTMLTextPipe, HTMLTextRenderData, HTMLTextStyle, HTMLTextSystem, HelloSystem, IGLUniformData, ImageSource, InstructionSet, KTX, Loader, LoaderParserPriority, MaskEffectManager, MaskEffectManagerClass, MaskFilter, Matrix, Mesh, MeshGeometry, MeshGpuData, MeshPipe, MeshPlane, MeshRope, MeshSimple, NOOP, NineSliceGeometry, NineSlicePlane, NineSliceSprite, NineSliceSpriteGpuData, NineSliceSpritePipe, NoiseFilter, ObservablePoint, PI_2, Particle, ParticleBuffer, ParticleContainer, ParticleContainerPipe, ParticleShader, PassthroughFilter, PerspectiveMesh, PerspectivePlaneGeometry, PipelineSystem, PlaneGeometry, Point, Polygon, Pool, PoolGroupClass, PrepareBase, PrepareQueue, PrepareSystem, PrepareUpload, QuadGeometry, RAD_TO_DEG, Rectangle, RenderContainer, RenderGroup, RenderGroupPipe, RenderGroupSystem, RenderLayer, RenderTarget, RenderTargetSystem, RenderTexture, RenderableGCSystem, RendererInitHook, RendererType, ResizePlugin, Resolver, RopeGeometry, RoundedRectangle, SCALE_MODES, STENCIL_MODES, SVGParser, SchedulerSystem, ScissorMask, SdfShader, Shader, ShaderStage, ShapePath, SharedRenderPipes, SharedSystems, SplitBitmapText, SplitText, Sprite, SpritePipe, Spritesheet, State, StencilMask, StencilMaskPipe, SystemRunner, TEXTURE_FORMAT_BLOCK_SIZE, Text, TextStyle, Texture, TextureGCSystem, TextureMatrix, TexturePool, TexturePoolClass, TextureSource, TextureStyle, TextureUvs, Ticker, TickerListener, TickerPlugin, TilingSprite, TilingSpriteGpuData, TilingSpritePipe, TilingSpriteShader, Transform, Triangle, UNIFORM_TO_ARRAY_SETTERS, UNIFORM_TO_SINGLE_SETTERS, UNIFORM_TYPES_MAP, UNIFORM_TYPES_VALUES, UPDATE_BLEND, UPDATE_COLOR, UPDATE_PRIORITY, UPDATE_TRANSFORM, UPDATE_VISIBLE, UboBatch, UboSystem, UniformGroup, VERSION, VideoSource, ViewContainer, ViewSystem, ViewableBuffer, WGSL_ALIGN_SIZE_DATA, WGSL_TO_STD40_SIZE, WRAP_MODES, WebGLRenderer, WebGPURenderer, WorkerManager, accessibilityTarget, addBits, addMaskBounds, addMaskLocalBounds, addProgramDefines, fragment$4 as alphaFrag, source$5 as alphaWgsl, appendSVGPath, applyMatrix, applyProjectiveTransformationToPlane, applyStyleParams, assignWithIgnore, autoDetectEnvironment, autoDetectRenderer, autoDetectSource, basisTranscoderUrls, bgr2rgb, bitmapFontCachePlugin, bitmapFontTextParser, bitmapFontXMLParser, bitmapFontXMLStringParser, bitmapTextSplit, blendTemplateFrag, blendTemplateVert, blendTemplate as blendTemplateWgsl, blockDataMap, source$4 as blurTemplateWgsl, boundsPool, browserExt, buildAdaptiveBezier, buildAdaptiveQuadratic, buildArc, buildArcTo, buildArcToSvg, buildCircle, buildContextBatches, buildEllipse, buildGeometryFromPath, buildLine, buildPixelLine, buildPolygon, buildRectangle, buildRoundedRectangle, buildSimpleUvs, buildTriangle, buildUvs, cacheAsTextureMixin, cacheTextureArray, calculatePathArea, calculateProjection, canvasTextSplit, checkChildrenDidChange, checkDataUrl, checkExtension, checkForNestedPattern, checkMaxIfStatementsInShader, childrenHelperMixin, cleanArray, cleanHash, clearList, closePointEps, collectAllRenderables, collectRenderablesMixin, color32BitToUniform, colorBit, colorBitGl, fragment$3 as colorMatrixFilterFrag, source$3 as colorMatrixFilterWgsl, colorToUniform, compareModeToGlCompare, compileHighShader, compileHighShaderGl, compileHighShaderGlProgram, compileHighShaderGpuProgram, compileHooks, compileInputs, compileOutputs, compileShader, compute2DProjection, convertFormatIfRequired, convertToList, copySearchParams, createIdFromString, createIndicesForQuads, createLevelBuffers, createLevelBuffersFromKTX, createStringVariations, createTexture, createUboElementsSTD40, createUboElementsWGSL, createUboSyncFunction, createUboSyncFunctionSTD40, createUboSyncFunctionWGSL, crossOrigin, cullingMixin, curveEps, vertex$2 as defaultFilterVert, defaultValue, definedProps, deprecation, detectAvif, detectBasis, detectCompressed, detectDefaults, detectMp4, detectOgv, detectVideoAlphaMode, detectWebm, detectWebp, determineCrossOrigin, fragment$2 as displacementFrag, vertex$1 as displacementVert, source$2 as displacementWgsl, earcut, effectsMixin, ensureAttributes, ensureIsBuffer, ensurePrecision, ensureTextOptions, executeInstructions, extensions, extractAttributesFromGlProgram, extractAttributesFromGpuProgram, extractFontFamilies, extractStructAndGroups, extractSubpaths, extractSvgUrlId, fastCopy, findMixin, fontStringFromTextStyle, formatShader, fragmentGPUTemplate, fragmentGlTemplate, generateArraySyncSTD40, generateArraySyncWGSL, generateBlurFragSource, generateBlurGlProgram, generateBlurProgram, generateBlurVertSource, generateGPULayout, generateGpuLayoutGroups, generateLayout, generateLayoutHash, generateParticleUpdateFunction, generateProgram, generateShaderSyncCode, generateTextStyleKey, generateTextureBatchBit, generateTextureBatchBitGl, generateTextureMatrix, generateUniformsSync, getAdjustedBlendModeBlend, getAttributeInfoFromFormat, getBatchSamplersUniformGroup, getBitmapTextLayout, getCanvasBoundingBox, getCanvasFillStyle, getCanvasTexture, getDefaultUniformValue, getFastGlobalBounds, getFastGlobalBoundsMixin, getFillInstructionData, getFontCss, getFontFamilyName, getGeometryBounds, getGlTypeFromFormat, getGlobalBounds, getGlobalMixin, getGlobalRenderableBounds, getLocalBounds, getMaxFragmentPrecision, getMaxTexturesPerBatch, getOrientationOfPoints, getPo2TextureFromSource, getResolutionOfUrl, getSVGUrl, getSupportedCompressedTextureFormats, getSupportedGPUCompressedTextureFormats, getSupportedGlCompressedTextureFormats, getSupportedTextureFormats, getTemporaryCanvasFromImage, getTestContext, getTextureBatchBindGroup, getTextureDefaultMatrix, getTextureFormatFromKTXTexture, getUboData, getUniformData, getUrlExtension, glFormatToGPUFormat, glUploadBufferImageResource, glUploadCompressedTextureResource, glUploadImageResource, glUploadVideoResource, globalUniformsBit, globalUniformsBitGl, globalUniformsUBOBitGl, gpuFormatToBasisTranscoderFormat, gpuFormatToKTXBasisTranscoderFormat, gpuUploadBufferImageResource, gpuUploadCompressedTextureResource, gpuUploadImageResource, gpuUploadVideoResource, groupD8, hasCachedCanvasTexture, hsl as hslWgsl, hslgl, hslgpu, injectBits, insertVersion, isMobile, isPow2, isRenderingToScreen, isSafari, isSingleItem, isWebGLSupported, isWebGPUSupported, ktxTranscoderUrls, loadBasis, loadBasisOnWorker, loadBitmapFont, loadDDS, loadEnvironmentExtensions, loadFontAsBase64, loadFontCSS, loadImageBitmap, loadJson, loadKTX, loadKTX2, loadKTX2onWorker, loadSVGImage, loadSvg, loadTextures, loadTxt, loadVideoTextures, loadWebFont, localUniformBit, localUniformBitGl, localUniformBitGroup2, localUniformMSDFBit, localUniformMSDFBitGl, log2, logDebugTexture, logProgramError, logRenderGroupScene, logScene, mSDFBit, mSDFBitGl, mapFormatToGlFormat, mapFormatToGlInternalFormat, mapFormatToGlType, mapGlToVertexFormat, mapSize, mapType, mapWebGLBlendModesToPixi, fragment as maskFrag, vertex as maskVert, source as maskWgsl, matrixPool, measureHtmlText, measureMixin, migrateFragmentFromV7toV8, mipmapScaleModeToGlFilter, multiplyColors, multiplyHexColors, nextPow2, fragment$1 as noiseFrag, source$1 as noiseWgsl, nonCompressedFormats, normalizeExtensionPriority, onRenderMixin, parseDDS, parseFunctionBody, parseKTX, parseSVGDefinitions, parseSVGFloatAttribute, parseSVGPath, parseSVGStyle, particleData, fragment$6 as particlesFrag, vertex$3 as particlesVert, wgsl as particlesWgsl, fragment$5 as passthroughFrag, source$6 as passthroughWgsl, path, pointInTriangle, preloadVideo, removeItems, removeStructAndGroupDuplicates, resetUids, resolveCharacters, resolveCompressedTextureUrl, resolveJsonUrl, resolveTextureUrl, resourceToTexture, roundPixelsBit, roundPixelsBitGl, roundedShapeArc, roundedShapeQuadraticCurve, sayHello, scaleModeToGlFilter, setBasisTranscoderPath, setKTXTranscoderPath, setPositions, setProgramName, setUvs, shapeBuilders, sortMixin, spritesheetAsset, squaredDistanceToLineSegment, stripVersion, styleAttributes, testImageFormat, testVideoFormat, textStyleToCSS, textureBit, textureBitGl, textureFrom, tilingBit, tilingBitGl, toFillStyle, toLocalGlobalMixin, toStrokeStyle, transformVertices, triangulateWithHoles, uboSyncFunctionsSTD40, uboSyncFunctionsWGSL, uid$1 as uid, uniformParsers, unpremultiplyAlpha$1 as unpremultiplyAlpha, unsafeEvalSupported, updateLocalTransform, updateQuadBounds, updateRenderGroupTransform, updateRenderGroupTransforms, updateTextBounds, updateTransformAndChildren, updateTransformBackwards, updateWorldTransform, v8_0_0, v8_3_4, validFormats, validateRenderables, vertexGPUTemplate, vertexGlTemplate, vkFormatToGPUFormat, warn, wrapModeToGlAddress };
 //# sourceMappingURL=pixi.mjs.map
