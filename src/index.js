@@ -15,6 +15,14 @@ window.assets = Assets;
 Color.prototype.toYiq = function () {
   return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
 };
+// Fallback UI function if CDN libraries are blocked
+if (typeof window.ui !== 'function') {
+  window.ui = function (...args) {
+    if (args.length > 0) {
+      console.warn('BeerCSS.js failed to load - CDN may be blocked:', args);
+    }
+  };
+}
 function listenOnDevicePixelRatio() {
   function onChange() {
     window.app.renderer.resolution = window.devicePixelRatio;
