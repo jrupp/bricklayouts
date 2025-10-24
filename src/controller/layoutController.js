@@ -1035,7 +1035,7 @@ export class LayoutController {
     this.workspace.position.set(0, 0);
     this.drawGrid(true);
     // Adjust scale so we don't exceed gl.MAX_TEXTURE_SIZE
-    const maxTextureSize = this.app.renderer.gl.MAX_TEXTURE_SIZE;
+    const maxTextureSize = this.app.renderer.gl?.MAX_TEXTURE_SIZE ?? 4096;
     const stageWidth = this.app.stage.width;
     const stageHeight = this.app.stage.height;
     
