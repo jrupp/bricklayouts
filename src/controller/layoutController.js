@@ -1049,7 +1049,7 @@ export class LayoutController {
     this.workspace.scale.set(rescale);
     this.grid.scale.set(rescale);
     this.subGrid.scale.set(rescale);
-    this.app.renderer.extract.download({target:this.app.stage, filename:"layout.png"});
+    this.app.renderer.extract.download({target:this.app.stage, filename:"layout.png", resolution:1});
     document.getElementById('exportloading').classList.add('hidden');
     this.workspace.scale.set(preScale);
     this.grid.scale.set(1.0);
