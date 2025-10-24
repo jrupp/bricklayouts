@@ -15,6 +15,17 @@ window.assets = Assets;
 Color.prototype.toYiq = function () {
   return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
 };
+
+// Fallback UI function if CDN libraries are blocked
+if (typeof window.ui !== 'function') {
+    window.ui = function(...args) {
+        // Log warning when fallback is used to help with debugging
+        if (args.length > 0) {
+            console.warn('UI library fallback used - CDN may be blocked:', args);
+        }
+        // Stub function to prevent errors when UI library is not loaded
+    };
+}
 function listenOnDevicePixelRatio() {
   function onChange() {
     window.app.renderer.resolution = window.devicePixelRatio;
