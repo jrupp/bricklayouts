@@ -20,6 +20,7 @@
  * @typedef {Object} SerializedConfiguration
  * @property {String} defaultZoom The default zoom level
  * @property {number} snapToSize The size to snap to, in pixels, when moving objects
+ * @property {string} backgroundColor The background color in hexadecimal
  * @property {SerializedGridSettings} gridSettings
  */
 let SerializedConfiguration;
@@ -53,7 +54,7 @@ export class Configuration {
 
         /**
          * Default values that serve as fallbacks
-         * @type {{gridSettings: GridSettings, defaultZoom: number, snapToSize: number}}
+         * @type {{gridSettings: GridSettings, defaultZoom: number, snapToSize: number, backgroundColor: number}}
          * @private
          */
         this._defaults = {
@@ -65,29 +66,32 @@ export class Configuration {
                 subColor: 0x9c9c9c
             },
             defaultZoom: 0.5,
-            snapToSize: 16
+            snapToSize: 16,
+            backgroundColor: 0x93bee2
         };
 
         /**
          * User settings stored in localStorage
-         * @type {{gridSettings: GridSettings, defaultZoom: number, snapToSize: number}}
+         * @type {{gridSettings: GridSettings, defaultZoom: number, snapToSize: number, backgroundColor: number}}
          * @private
          */
         this._userSettings = {
             gridSettings: {},
             defaultZoom: null,
-            snapToSize: null
+            snapToSize: null,
+            backgroundColor: null
         };
 
         /**
          * Workspace-specific settings
-         * @type {{gridSettings: GridSettings, defaultZoom: number|null, snapToSize: number|null}}
+         * @type {{gridSettings: GridSettings, defaultZoom: number|null, snapToSize: number|null, backgroundColor: number|null}}
          * @private
          */
         this._workspaceSettings = {
             gridSettings: {},
             defaultZoom: null,
-            snapToSize: null
+            snapToSize: null,
+            backgroundColor: null
         };
 
         this._loadUserSettings();
@@ -104,7 +108,8 @@ export class Configuration {
             this._userSettings = {
                 gridSettings: parsed.gridSettings || {},
                 defaultZoom: parsed.defaultZoom ?? null,
-                snapToSize: parsed.snapToSize ?? null
+                snapToSize: parsed.snapToSize ?? null,
+                backgroundColor: parsed.backgroundColor ?? null
             };
         }
     }
@@ -128,6 +133,9 @@ export class Configuration {
         }
         if (data.hasOwnProperty('snapToSize')) {
             this._workspaceSettings.snapToSize = data.snapToSize;
+        }
+        if (data.hasOwnProperty('backgroundColor')) {
+            this._workspaceSettings.backgroundColor = parseInt(data.backgroundColor.slice(1), 16);
         }
         if (data.hasOwnProperty('gridSettings')) {
             if (data.gridSettings.hasOwnProperty('enabled')) {
@@ -161,13 +169,16 @@ export class Configuration {
         if (this._workspaceSettings.snapToSize !== null) {
             settings.snapToSize = this._workspaceSettings.snapToSize;
         }
+        if (this._workspaceSettings.backgroundColor !== null) {
+            settings.backgroundColor = `#${this._workspaceSettings.backgroundColor.toString(16).padStart(6, '0')}`;
+        }
         if (Object.keys(this._workspaceSettings.gridSettings).length > 0) {
             settings.gridSettings = { ...this._workspaceSettings.gridSettings };
             if (settings.gridSettings.hasOwnProperty('mainColor')) {
-                settings.gridSettings.mainColor = `#${settings.gridSettings.mainColor.toString(16)}`;
+                settings.gridSettings.mainColor = `#${settings.gridSettings.mainColor.toString(16).padStart(6, '0')}`;
             }
             if (settings.gridSettings.hasOwnProperty('subColor')) {
-                settings.gridSettings.subColor = `#${settings.gridSettings.subColor.toString(16)}`;
+                settings.gridSettings.subColor = `#${settings.gridSettings.subColor.toString(16).padStart(6, '0')}`;
             }
         }
         return settings;
@@ -322,13 +333,55 @@ export class Configuration {
     }
 
     /**
+     * Gets the effective background color in hexadecimal
+     * @returns {number}
+     */
+    get backgroundColor() {
+        return this._getEffectiveValue('backgroundColor');
+    }
+
+    /**
+     * Gets the user's background color in hexadecimal
+     * @returns {number|null}
+     */
+    get userBackgroundColor() {
+        return this._userSettings.backgroundColor;
+    }
+
+    /**
+     * Sets the user's background color in hexadecimal
+     * @param {number|null} value - Use null to clear the setting
+     */
+    set userBackgroundColor(value) {
+        this._userSettings.backgroundColor = value;
+        this._saveUserSettings();
+    }
+
+    /**
+     * Gets the workspace background color in hexadecimal
+     * @returns {number|null}
+     */
+    get workspaceBackgroundColor() {
+        return this._workspaceSettings.backgroundColor;
+    }
+
+    /**
+     * Sets the workspace background color in hexadecimal
+     * @param {number|null} value - Use null to clear the setting
+     */
+    set workspaceBackgroundColor(value) {
+        this._workspaceSettings.backgroundColor = value;
+    }
+
+    /**
      * Clears all workspace-specific settings
      */
     clearWorkspaceSettings() {
         this._workspaceSettings = {
             gridSettings: {},
             defaultZoom: null,
-            snapToSize: null
+            snapToSize: null,
+            backgroundColor: null
         };
     }
 
@@ -345,6 +398,9 @@ export class Configuration {
             return false;
         }
         if (data.hasOwnProperty('snapToSize') && (typeof data.snapToSize !== 'number' || data.snapToSize < 0)) {
+            return false;
+        }
+        if (data.hasOwnProperty('backgroundColor') && (typeof data.backgroundColor !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.backgroundColor))) {
             return false;
         }
         if (data.hasOwnProperty('gridSettings')) {

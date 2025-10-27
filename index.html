@@ -689,6 +689,8 @@
                     data-tab="general">General</button>
                 <button class="responsive primary border fill extra bottom-margin extra-text small-round small-padding horizontal-padding config-tab"
                     data-tab="appearance">Appearance</button>
+                <button class="responsive primary border fill extra bottom-margin extra-text small-round small-padding horizontal-padding config-tab"
+                    data-tab="grid">Grid</button>
             </div>
             <div class="s9 small-padding vertical-padding">
                 <nav class="no-space">
@@ -727,6 +729,17 @@
                 </div>
                 <div class="page config-page active" data-tab="appearance">
                     <h6>Appearance Settings</h6>
+                    <div id="bgcolorfield"
+                        class="field label prefix suffix middle-align large-space border round medium vertical-margin">
+                        <i class="bottom-align large">colors</i>
+                        <input id="backgroundColor" type="color">
+                        <input type="text">
+                        <label>Background Color</label>
+                        <i id="resetbgcolor">format_color_reset</i>
+                    </div>
+                </div>
+                <div class="page config-page" data-tab="grid">
+                    <h6>Grid Settings</h6>
                     <div class="field middle-align small tiny-margin extra-text">
                         <span class="right-padding">Enable Grid?</span>
                         <label class="switch">

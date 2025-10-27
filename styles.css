@@ -686,11 +686,13 @@ i.legobrightgreen {
 	transition: background var(--speed) var(--easing);
 }
 
+#bgcolorfield *,
 #colorfield *,
 #subcolorfield * {
   cursor: pointer;
 }
 
+#bgcolorfield label,
 #colorfield label,
 #subcolorfield label,
 #layerNameField label,
@@ -705,6 +707,7 @@ i.legobrightgreen {
   font-size: 1.1rem;
 }
 
+#bgcolorfield input[type=text],
 #colorfield input[type=text],
 #subcolorfield input[type=text],
 #layerNameField input[type=text],
@@ -724,6 +727,7 @@ i.legobrightgreen {
   font-size: 1.5rem !important;
 }
 
+#bgcolorfield>i,
 #colorfield>i,
 #subcolorfield>i,
 #componentBorderColorField>i {
@@ -732,6 +736,7 @@ i.legobrightgreen {
   padding-bottom: 1px;
 }
 
+#bgcolorfield>i:after,
 #colorfield>i:after,
 #subcolorfield>i:after,
 #componentBorderColorField>i:after {
@@ -742,6 +747,14 @@ i.legobrightgreen {
   inset: 88% 0 0 3%;
   position: absolute;
   width: 80%;
+}
+
+#bgcolorfield>i:after {
+  background: var(--background-color);
+}
+
+#resetbgcolor {
+	z-index: 10;
 }
 
 #colorfield>i:after {

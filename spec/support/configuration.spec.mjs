@@ -51,6 +51,11 @@ describe("Configuration", () => {
             const config = Configuration.getInstance();
             expect(config.snapToSize).toBe(16);
         });
+
+        it("provides default background color", () => {
+            const config = Configuration.getInstance();
+            expect(config.backgroundColor).toBe(0x93bee2);
+        });
     });
 
     describe("User Settings", () => {
@@ -96,16 +101,32 @@ describe("Configuration", () => {
             expect(newConfig.userSnapToSize).toBe(64);
         });
 
+        it("persists user background color to localStorage", () => {
+            const config = Configuration.getInstance();
+            config.userBackgroundColor = 0xff0000;
+
+            // Verify localStorage was updated
+            const saved = JSON.parse(localStorage.getItem('bricklayouts-config'));
+            expect(saved.backgroundColor).toBe(0xff0000);
+
+            // Create new instance to verify loading
+            Configuration._instance = null;
+            const newConfig = Configuration.getInstance();
+            expect(newConfig.userBackgroundColor).toBe(0xff0000);
+        });
+
         it("loads user settings from localStorage", () => {
             localStorage.setItem('bricklayouts-config', JSON.stringify({
                 gridSettings: { divisions: 7 },
                 defaultZoom: 0.65,
-                snapToSize: 128
+                snapToSize: 128,
+                backgroundColor: 0x00ff00
             }));
             const config = Configuration.getInstance();
             expect(config.userGridSettings.divisions).toBe(7);
             expect(config.userDefaultZoom).toBe(0.65);
             expect(config.userSnapToSize).toBe(128);
+            expect(config.userBackgroundColor).toBe(0x00ff00);
         });
     });
 
@@ -140,17 +161,29 @@ describe("Configuration", () => {
             expect(savedData).toBeNull();
         });
 
+        it("stores workspace background color in memory", () => {
+            const config = Configuration.getInstance();
+            config.workspaceBackgroundColor = 0x0000ff;
+            expect(config.workspaceBackgroundColor).toBe(0x0000ff);
+            
+            // Verify it wasn't saved to localStorage
+            const savedData = JSON.parse(localStorage.getItem('bricklayouts-config'));
+            expect(savedData).toBeNull();
+        });
+
         it("clears workspace settings", () => {
             const config = Configuration.getInstance();
             config.updateWorkspaceGridSettings({ divisions: 5 });
             config.workspaceDefaultZoom = 0.25;
             config.workspaceSnapToSize = 32;
+            config.workspaceBackgroundColor = 0x0000ff;
             
             config.clearWorkspaceSettings();
             
             expect(config.workspaceGridSettings).toEqual({});
             expect(config.workspaceDefaultZoom).toBeNull();
             expect(config.workspaceSnapToSize).toBeNull();
+            expect(config.workspaceBackgroundColor).toBeNull();
         });
     });
 
@@ -211,11 +244,18 @@ describe("Configuration", () => {
             expect(serialized.snapToSize).toBe(32);
         });
 
+        it("serializes background color", () => {
+            const config = Configuration.getInstance();
+            config.workspaceBackgroundColor = 0x008cff;
+            const serialized = config.serializeWorkspaceSettings();
+            expect(serialized.backgroundColor).toBe("#008cff");
+        });
+
         it("serializes grid colors", () => {
             const config = Configuration.getInstance();
-            config.updateWorkspaceGridSettings({ mainColor: 0x123456, subColor: 0xabcdef });
+            config.updateWorkspaceGridSettings({ mainColor: 0x003456, subColor: 0xabcdef });
             const serialized = config.serializeWorkspaceSettings();
-            expect(serialized.gridSettings.mainColor).toBe("#123456");
+            expect(serialized.gridSettings.mainColor).toBe("#003456");
             expect(serialized.gridSettings.subColor).toBe("#abcdef");
         });
 
@@ -257,6 +297,12 @@ describe("Configuration", () => {
             expect(config.workspaceSnapToSize).toBe(256);
         });
 
+        it("deserializes background color", () => {
+            const config = Configuration.getInstance();
+            config.deserializeWorkspaceSettings({ backgroundColor: "#ff00ff" });
+            expect(config.workspaceBackgroundColor).toBe(0xff00ff);
+        });
+
         it("deserializes grid colors", () => {
             const config = Configuration.getInstance();
             config.deserializeWorkspaceSettings({ gridSettings: { mainColor: "#123456", subColor: "#abcdef" } });
@@ -275,7 +321,8 @@ describe("Configuration", () => {
             config.deserializeWorkspaceSettings({
                 gridSettings: { enabled: true, size: 1024, divisions: 4, mainColor: "#123456", subColor: "#abcdef" },
                 defaultZoom: 0.79,
-                snapToSize: 7
+                snapToSize: 7,
+                backgroundColor: "#000000"
             });
             expect(config.workspaceGridSettings.enabled).toBe(true);
             expect(config.workspaceGridSettings.size).toBe(1024);
@@ -284,6 +331,7 @@ describe("Configuration", () => {
             expect(config.workspaceGridSettings.subColor).toBe(0xabcdef);
             expect(config.workspaceDefaultZoom).toBe(0.79);
             expect(config.workspaceSnapToSize).toBe(7);
+            expect(config.workspaceBackgroundColor).toBe(0x000000);
         });
 
         it("clears existing settings before deserialization", () => {
@@ -291,11 +339,13 @@ describe("Configuration", () => {
             config.updateWorkspaceGridSettings({ divisions: 4, mainColor: 0x123456 });
             config.workspaceDefaultZoom = 0.76;
             config.workspaceSnapToSize = 100;
+            config.workspaceBackgroundColor = 0x0000ff;
             config.deserializeWorkspaceSettings({ gridSettings: { divisions: 5 } });
             expect(config.workspaceGridSettings.divisions).toBe(5);
             expect(config.workspaceGridSettings.mainColor).toBeUndefined();
             expect(config.workspaceDefaultZoom).toBeNull();
             expect(config.workspaceSnapToSize).toBeNull();
+            expect(config.workspaceBackgroundColor).toBeNull();
         });
     });
 
@@ -342,6 +392,12 @@ describe("Configuration", () => {
             expect(Configuration.validateImportData({ snapToSize: "32" })).toBeFalse();
             expect(Configuration.validateImportData({ snapToSize: 0 })).toBeTrue();
             expect(Configuration.validateImportData({ snapToSize: -16 })).toBeFalse();
+        });
+        it("validates background color", () => {
+            expect(Configuration.validateImportData({ backgroundColor: "#abcdef" })).toBeTrue();
+            expect(Configuration.validateImportData({ backgroundColor: 0xabcdef })).toBeFalse();
+            expect(Configuration.validateImportData({ backgroundColor: "#abcdeg" })).toBeFalse();
+            expect(Configuration.validateImportData({ backgroundColor: 123 })).toBeFalse();
         });
     });
 });
