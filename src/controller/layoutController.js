@@ -1798,7 +1798,7 @@ export class LayoutController {
     const bgColor = this.config.backgroundColor;
     if (this.app.renderer.background.color.toNumber() !== bgColor) {
       this.app.renderer.background.color.value = bgColor;
-      document.body.style.setProperty('--canvas-bg', Color.shared.setValue(bgColor).toHex());
+      document.body.style.setProperty('--canvas-bg', new Color(bgColor).toHex());
       this.drawGrid();
     }
   }
