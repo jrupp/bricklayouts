@@ -1,4 +1,4 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture } from '../pixi.mjs';
+import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
 import { Component, ComponentOptions, HexToColorName } from '../model/component.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -247,6 +247,8 @@ export class LayoutController {
     this.newLayer();
 
     this.initCustomComponentUI();
+
+    this.checkBackgroundColorChange();
 
     this.drawGrid();
 
@@ -970,6 +972,7 @@ export class LayoutController {
     this.workspace.position.set(0, 0);
     this.config.clearWorkspaceSettings();
     this.workspace.scale.set(this.config.defaultZoom);
+    this.checkBackgroundColorChange();
     this.drawGrid();
     this._hideSelectionToolbar();
     if (this.copiedComponent) {
@@ -1245,6 +1248,7 @@ export class LayoutController {
     this.reset();
     if (data.config) {
       this.config.deserializeWorkspaceSettings(data.config);
+      this.checkBackgroundColorChange();
       this.drawGrid();
     }
     data.layers.forEach((layer, index) => {
@@ -1790,6 +1794,15 @@ export class LayoutController {
     });
   }
 
+  checkBackgroundColorChange() {
+    const bgColor = this.config.backgroundColor;
+    if (this.app.renderer.background.color.toNumber() !== bgColor) {
+      this.app.renderer.background.color.value = bgColor;
+      document.body.style.setProperty('--canvas-bg', new Color(bgColor).toHex());
+      this.drawGrid();
+    }
+  }
+
   /**
    * Draw the grid on the workspace.
    * @param {boolean} [forScreenshot=false] Whether the grid is being drawn for a screenshot
@@ -1849,7 +1862,7 @@ export class LayoutController {
       }
       gridHeight *= this.workspace.scale.y;
       subGrid.rect(gridLeft, gridTop, gridWidth, gridHeight);
-      subGrid.fill(0x93bee2);
+      subGrid.fill(this.config.backgroundColor);
     }
 
     /**

@@ -137,12 +137,34 @@ export class ConfigurationController {
             }
         });
         this.#snapToWhatDefaultIndex = getOptionIndexByValue('snapToWhat', this.#config._defaults.snapToSize.toString());
+
+        document.getElementById('backgroundColor').addEventListener('change', (ev) => {
+            const color = parseInt(ev.target.value.replace('#', ''), 16);
+            document.querySelector('#bgcolorfield>i').style.setProperty('--background-color', ev.currentTarget.value);
+            if (ev.target.parentElement.parentElement.getAttribute('data-type') === 'user') {
+                this.#config.userBackgroundColor = color;
+            } else {
+                this.#config.workspaceBackgroundColor = color;
+            }
+            this.#layoutController.checkBackgroundColorChange();
+        });
+
+        document.getElementById('resetbgcolor').addEventListener('click', (ev) => {
+            let configType = ev.target.closest('[data-type]').getAttribute('data-type');
+            if (configType === 'user') {
+                this.#config.userBackgroundColor = null;
+            } else {
+                this.#config.workspaceBackgroundColor = null;
+            }
+            this.#switchType(configType);
+            this.#layoutController.checkBackgroundColorChange();
+        });
     }
 
     /**
      * 
      * @private
-     * @param {'general'|'appearance'} tabId 
+     * @param {'general'|'appearance'|'grid'} tabId 
      */
     #switchTab(tabId) {
         this.#tabButtons.forEach((button) => {
@@ -152,7 +174,7 @@ export class ConfigurationController {
             panel.classList.remove('active');
         });
 
-        document.querySelector(`.config-tab:not([data-tab="${tabId}"])`).classList.add('fill');
+        document.querySelectorAll(`.config-tab:not([data-tab="${tabId}"])`).forEach((tab) => tab.classList.add('fill'));
         document.querySelector(`.config-page[data-tab="${tabId}"]`).classList.add('active');
         window.ui();
     }
@@ -194,5 +216,11 @@ export class ConfigurationController {
             (snapToSize ?? this.#config._defaults.snapToSize).toString(),
             this.#snapToWhatDefaultIndex
         );
+        let backgroundColorValue = configType === 'user' ? this.#config.userBackgroundColor : this.#config.workspaceBackgroundColor;
+        let backgroundColorHex = (backgroundColorValue ?? this.#config._defaults.backgroundColor).toString(16).padStart(6, '0');
+        let backgroundColor = document.getElementById('backgroundColor');
+        backgroundColor.value = `#${backgroundColorHex}`;
+        backgroundColor.nextElementSibling.value = `#${backgroundColorHex}`;
+        document.querySelector('#bgcolorfield>i').style.setProperty('--background-color', `#${backgroundColorHex}`);
     }
 }
