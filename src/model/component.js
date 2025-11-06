@@ -337,6 +337,7 @@ export class Component extends Container {
       width: this.#width,
       height: this.#height,
       units: this.#units,
+      shape: this.#shape,
       color: this.#color?.toHex(),
       outlineColor: this.#outlineColor?.toHex(),
       opacity: this.#opacity,
