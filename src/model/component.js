@@ -13,6 +13,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {Number} [width] The width of the component, if applicable
  * @property {Number} [height] The height of the component, if applicable
  * @property {String} [units] The units that the component is measured in (e.g., "studs", "inches", "feet")
+ * @property {String} [shape] The shape of the component (e.g., "rectangle", "circle")
  * @property {String} color The color of the component
  * @property {String} [outline_color] The color of the outline, if applicable
  * @property {Number} [opacity] The opacity of the component, if applicable
@@ -28,6 +29,7 @@ export { SerializedComponent };
  * @property {number} width The width of the component
  * @property {number} height The height of the component
  * @property {string} units The units that the component is measured in (e.g., "studs", "inches", "feet")
+ * @property {string} shape The shape of the component (e.g., "rectangle", "circle")
  * @property {string} color The color of the component
  * @property {string} outlineColor The color of the outline
  * @property {number} opacity The opacity of the component
@@ -112,6 +114,14 @@ export class Component extends Container {
 
   /**
    * @type {String}
+   * The shape of the component, if applicable.
+   * This is used for shape components only.
+   * Example: rectangle, circle
+   */
+  #shape;
+
+  /**
+   * @type {String}
    * The text to display on the component, if applicable.
    */
   #text;
@@ -193,6 +203,10 @@ export class Component extends Container {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
       this.#units = options.units ?? 'studs';
+      this.#shape = options.shape ?? 'rectangle';
+      if (this.#shape === 'circle') {
+        this.#height = this.#width;
+      }
       this.#outlineColor = undefined;
       if (options.outlineColor) {
         this.#outlineColor = new Color(options.outlineColor);
@@ -203,7 +217,11 @@ export class Component extends Container {
         this.#opacity = options.opacity;
         this.sprite.alpha = options.opacity;
       }
-      this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+      if (this.#shape === 'circle') {
+        this.sprite.pivot.set(0, 0);
+      } else {
+        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+      }
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
@@ -462,7 +480,11 @@ export class Component extends Container {
 
   _drawShape() {
     this.sprite.clear();
-    this.sprite.rect(0, 0, this.#width, this.#height);
+    if (this.#shape === 'circle') {
+      this.sprite.drawCircle(0, 0, this.#width / 2);
+    } else {
+      this.sprite.rect(0, 0, this.#width, this.#height);
+    }
     this.sprite.fill(this.#color);
     if (this.#outlineColor) {
       this.sprite.stroke({width: 8, alignment: 1, color: this.#outlineColor});
@@ -546,6 +568,12 @@ export class Component extends Container {
       this.sprite.texture = this._generateBaseplateTexture();
     } else if (this.baseData.type === DataTypes.SHAPE) {
       this._drawShape();
+      if (this.#shape === 'circle') {
+        this.sprite.pivot.set(0, 0);
+        this.#height = this.#width;
+      } else {
+        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+      }
     }
   }
 
@@ -621,6 +649,10 @@ export class Component extends Container {
     this._drawShape();
   }
 
+  get shape() {
+    return this.#shape;
+  }
+
   get text() {
     return this.#text;
   }
@@ -664,6 +696,9 @@ export class Component extends Container {
     if (data.units !== undefined) {
       options.units = data.units;
     }
+    if (data.shape !== undefined) {
+      options.shape = data.shape;
+    }
     if (data.color !== undefined) {
       options.color = data.color;
     }
@@ -701,6 +736,7 @@ export class Component extends Container {
       width: this.#width,
       height: this.#height,
       units: this.#units,
+      shape: this.#shape,
       color: this.#color?.toHex(),
       outline_color: this.#outlineColor?.toHex(),
       opacity: this.#opacity,
@@ -732,6 +768,7 @@ export class Component extends Container {
       data?.units === undefined || (typeof data?.units === 'string' && data?.units.length > 0),
       data?.type !== "baseplate" || data?.units === "studs",
       data?.type !== "shape" || data?.units !== undefined,
+      data?.shape === undefined || (typeof data?.shape === 'string' && ['rectangle', 'circle'].includes(data?.shape)),
       data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
       data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),

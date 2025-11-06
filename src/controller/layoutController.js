@@ -594,6 +594,16 @@ export class LayoutController {
     const componentTextNode = document.getElementById('componentText');
     const componentBorderColor = document.getElementById('componentBorderColor');
     const componentColorFilter = document.getElementById('componentColorFilter');
+    const shapeSelectRectangle = document.getElementById('shapeSelectRectangle');
+    const shapeSelectCircle = document.getElementById('shapeSelectCircle');
+    shapeSelectRectangle.addEventListener('click', () => {
+      document.getElementById('componentShape').value = 'rectangle';
+      componentHeightNode.parentElement.parentElement.parentElement.classList.remove('hidden');
+    });
+    shapeSelectCircle.addEventListener('click', () => {
+      document.getElementById('componentShape').value = 'circle';
+      componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
+    });
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         if (document.getElementById('newCustomComponentDialog').classList.contains('editing')) {
@@ -720,14 +730,20 @@ export class LayoutController {
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
     const componentBorderColor = document.getElementById('componentBorderColor');
+    const componentShapeSelect = document.getElementById('componentShapeSelect');
+    const componentShape = document.getElementById('componentShape');
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
       document.getElementById('componentDialogTitle').innerText = `Edit Custom ${typeName}`;
       document.getElementById('newCustomComponentDialog').classList.add('editing');
+      componentShapeSelect.classList.add('hidden');
     } else {
       document.getElementById('componentDialogTitle').innerText = `New Custom ${typeName}`;
       document.getElementById('newCustomComponentDialog').classList.remove('editing');
+      componentShapeSelect.children[0].classList.add('active');
+      componentShapeSelect.children[1].classList.remove('active');
+      componentShape.value = 'rectangle';
     }
     componentHeightNode.value = '';
     componentWidthNode.value = '';
@@ -763,6 +779,7 @@ export class LayoutController {
         font = getOptionIndexByValue('componentFont', LayoutController.selectedComponent.font, 0);
         fontSize = getOptionIndexByValue('componentFontSize', (LayoutController.selectedComponent.fontSize / 20).toString(), 7);
       }
+      componentShapeSelect.classList.add('hidden');
       document.getElementById('componentFont').selectedIndex = font;
       document.getElementById('componentFontSize').selectedIndex = fontSize;
       document.getElementById('componentFontOptions').classList.remove('hidden');
@@ -785,6 +802,7 @@ export class LayoutController {
         componentHeightNode.parentElement.parentElement.classList.remove('s8');
         componentWidthNode.parentElement.parentElement.classList.add('s12');
         componentHeightNode.parentElement.parentElement.classList.add('s12');
+        componentShapeSelect.classList.add('hidden');
       } else {
         if (editing) {
           let units = LayoutController.selectedComponent.units;
@@ -798,6 +816,10 @@ export class LayoutController {
             multiplier = 51.2; // 1 inch = 51.2 pixels
           } else if (units === 'feet') {
             multiplier = 614.4; // 1 foot = 614.4 pixels
+          }
+          componentShape.value = LayoutController.selectedComponent.shape ?? 'rectangle';
+          if (componentShape.value === 'circle') {
+            componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
           }
           componentHeightNode.value = Math.round(LayoutController.selectedComponent.componentHeight / multiplier).toString();
           componentWidthNode.value = Math.round(LayoutController.selectedComponent.componentWidth / multiplier).toString();
@@ -813,6 +835,8 @@ export class LayoutController {
             componentBorderColor.nextElementSibling.value = outlineColor;
             componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', outlineColor);
           }
+        } else {
+          componentShapeSelect.classList.remove('hidden');
         }
         componentSizeUnits.parentElement.parentElement.classList.remove('hidden');
         componentWidthNode.parentElement.parentElement.classList.remove('s12');
@@ -838,6 +862,7 @@ export class LayoutController {
     let componentHeight = componentHeightNode.value;
     let componentText = componentTextNode.value.trim();
     let componentColor = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    let componentShape = document.getElementById('componentShape').value;
     /** @type {ComponentOptions} */
     let options = {
       color: componentColor
@@ -849,7 +874,7 @@ export class LayoutController {
         componentWidthNode.focus();
         return;
       }
-      if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
+      if (componentShape === 'rectangle' && (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0)) {
         document.getElementById('componentHeightError').innerText = "Height must be a positive number";
         componentHeightNode.parentElement.classList.add('invalid');
         componentHeightNode.focus();
@@ -867,7 +892,9 @@ export class LayoutController {
         multiplier = 614.4; // 1 foot = 614.4 pixels
       }
       options.width = parseInt(componentWidth) * multiplier;
-      options.height = parseInt(componentHeight) * multiplier;
+      if (componentShape === 'rectangle') {
+        options.height = parseInt(componentHeight) * multiplier;
+      }
       options.units = units;
       if (this.#customComponentType === DataTypes.SHAPE) {
         if (document.getElementById('componentBorder').checked) {
@@ -877,6 +904,7 @@ export class LayoutController {
         if (opacity >= 0 && opacity <= 100) {
           options.opacity = opacity / 100;
         }
+        options.shape = componentShape;
       }
     } else {
       if (componentText.length === 0) {
@@ -901,6 +929,7 @@ export class LayoutController {
     let componentWidth = componentWidthNode.value;
     let componentHeight = componentHeightNode.value;
     let componentText = componentTextNode.value.trim();
+    let componentShape = document.getElementById('componentShape').value;
     if (this.#customComponentType === DataTypes.TEXT) {
       if (componentText.length === 0) {
         document.getElementById('componentTextError').innerText = "Text cannot be empty";
@@ -918,7 +947,7 @@ export class LayoutController {
         componentWidthNode.focus();
         return;
       }
-      if (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0) {
+      if (componentShape === 'rectangle' && (componentHeight.length === 0 || isNaN(componentHeight) || componentHeight <= 0)) {
         document.getElementById('componentHeightError').innerText = "Height must be a positive number";
         componentHeightNode.parentElement.classList.add('invalid');
         componentHeightNode.focus();

@@ -529,6 +529,18 @@
                 </nav>
             </header>
             <div style="padding-left: 0.5rem; padding-right: 0.5rem;">
+                <nav id="componentShapeSelect" class="tabbed small border vertical-margin">
+                    <a data-ui="#page1" id="shapeSelectRectangle" class="active">
+                        <i>rectangle</i>
+                        <span>Rectangle</span>
+                    </a>
+                    <a data-ui="#page1" id="shapeSelectCircle">
+                        <i>circle</i>
+                        <span>Circle</span>
+                    </a>
+                </nav>
+                <input type="hidden" id="componentShape" value="rectangle">
+                <div id="page1" class="page active"></div>
                 <div class="grid vertical-margin">
                     <div class="s8">
                         <div class="field label prefix middle-align large-space border medium no-margin" id="componentWidthField">
