@@ -469,6 +469,11 @@ canvas {
 	block-size: unset !important;
 }
 
+a.buylink {
+	color: blue;
+	text-decoration: underline;
+}
+
 #layerEditor {
 	width: 19rem;
 	z-index: 1000;
@@ -767,6 +772,12 @@ i.legobrightgreen {
 
 #componentBorderColorField>i:after {
   background: var(--component-border-color);
+}
+
+#componentShapeSelect a.active {
+	box-sizing: content-box;
+	border: 0.0625rem solid var(--outline);
+	box-shadow: none;
 }
 
 .toolbarItem {

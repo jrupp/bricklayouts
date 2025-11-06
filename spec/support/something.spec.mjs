@@ -25,6 +25,7 @@ describe("LayoutController", function() {
     let componentHeight;
     let componentHeightError;
     let componentSizeUnits;
+    let componentShape;
     let componentColorSelect;
     let componentOpacity;
     let componentBorder;
@@ -104,6 +105,16 @@ describe("LayoutController", function() {
         i.style.color = '#237841';
         componentColorSelect.appendChild(i);
         geiSpy.withArgs('componentColorSelect').and.returnValue(componentColorSelect);
+        let shapeSelectComp = document.createElement('nav');
+        let rectComp = document.createElement('a');
+        let circComp = document.createElement('a');
+        shapeSelectComp.appendChild(rectComp);
+        shapeSelectComp.appendChild(circComp);
+        geiSpy.withArgs('shapeSelectRectangle').and.returnValue(rectComp);
+        geiSpy.withArgs('shapeSelectCircle').and.returnValue(circComp);
+        geiSpy.withArgs('componentShapeSelect').and.returnValue(shapeSelectComp);
+        componentShape = document.createElement('input');
+        geiSpy.withArgs('componentShape').and.returnValue(componentShape);
         geiSpy.withArgs('componentColorMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('componentColorName').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentColorFilter').and.returnValue(document.createElement('input'));
@@ -375,7 +386,28 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, height: 1600, units: "studs", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, height: 1600, units: "studs", shape: "rectangle", opacity: jasmine.any(Number)});
+        });
+
+        it("creates a custom circle shape component", function() {
+            let layoutController = window.layoutController;
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('200');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentShape, 'value', 'get').and.returnValue('circle');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].children[0].shape).toBe('circle');
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, units: "studs", shape: "circle", opacity: jasmine.any(Number)});
         });
 
         it("creates using studs as units", function() {
@@ -394,7 +426,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 1600, height: 1600, units: "studs", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 1600, height: 1600, units: "studs", shape: "rectangle", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(1600);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(1600);
         });
@@ -415,7 +447,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 2000, height: 2000, units: "centimeters", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 2000, height: 2000, units: "centimeters", shape: "rectangle", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(2000);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(2000);
         });
@@ -436,7 +468,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 200, height: 200, units: "millimeters", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 200, height: 200, units: "millimeters", shape: "rectangle", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(200);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(200);
         });
@@ -457,7 +489,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 5120, height: 5120, units: "inches", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 5120, height: 5120, units: "inches", shape: "rectangle", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(5120);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(5120);
         });
@@ -478,7 +510,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 61440, height: 61440, units: "feet", opacity: jasmine.any(Number)});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: 61440, height: 61440, units: "feet", shape: "rectangle", opacity: jasmine.any(Number)});
             expect(layoutController.currentLayer.children[0].sprite.width).toBe(61440);
             expect(layoutController.currentLayer.children[0].sprite.height).toBe(61440);
         });
@@ -598,6 +630,7 @@ describe("LayoutController", function() {
             spyOnProperty(componentHeight, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
             spyOnProperty(componentHeight, 'value', 'get').and.returnValue('');
             spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentShape, 'value', 'get').and.returnValue('rectangle');
             let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
             let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
             let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
@@ -613,6 +646,32 @@ describe("LayoutController", function() {
             expect(heightError).toHaveBeenCalled();
             expect(uiSpy).not.toHaveBeenCalled();
             expect(addSpy).not.toHaveBeenCalled();
+        });
+
+        it("not show an error when height is empty for a circle", function() {
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('100');
+            spyOnProperty(componentHeight, 'parentElement', 'get').and.returnValue({ classList: { add: () => {} } });
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentShape, 'value', 'get').and.returnValue('circle');
+            let widthError = spyOnProperty(componentWidthError, 'innerText', 'set').and.stub();
+            let heightError = spyOnProperty(componentHeightError, 'innerText', 'set').and.stub();
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            let uiSpy = spyOn(window, 'ui').and.stub();
+            let layoutController = window.layoutController;
+            let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+            layoutController.onCreateCustomComponent();
+            expect(layoutController.layers).toHaveSize(1);
+            expect(layoutController.layers[0].children).toHaveSize(2);
+            expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
+            expect(layoutController.layers[0].children[0].shape).toBe('circle');
+            expect(layoutController.layers[0].openConnections).toHaveSize(0);
+            expect(widthError).not.toHaveBeenCalled();
+            expect(heightError).not.toHaveBeenCalled();
+            expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
+            expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: 1600, units: "studs", shape: "circle", opacity: jasmine.any(Number)});
         });
 
         it("creates with 50% opacity", function() {
@@ -632,7 +691,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", opacity: 0.5});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", shape: "rectangle", opacity: 0.5});
             expect(layoutController.currentLayer.children[0].sprite.alpha).toBe(0.5);
         });
         
@@ -654,7 +713,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), outlineColor: '#ff0000', units: "studs", opacity: 1});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.any(Object), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), outlineColor: '#ff0000', units: "studs", shape: "rectangle", opacity: 1});
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(8);
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.color).toBe(16711680); // #ff0000 in hex
         });
@@ -677,7 +736,7 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].openConnections).toHaveSize(0);
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", opacity: 1});
+            expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {color: "#237841", width: jasmine.any(Number), height: jasmine.any(Number), units: "studs", shape: "rectangle", opacity: 1});
             expect(layoutController.currentLayer.children[0].sprite.strokeStyle.width).toBe(1);
         });
     });
@@ -1943,6 +2002,7 @@ describe("LayoutController", function() {
                     expect(child.sprite).toBeInstanceOf(Sprite);
                 } else {
                     expect(child.sprite).toBeInstanceOf(Graphics);
+                    expect(child.shape).toBe('rectangle');
                     if (index == 4) {
                         expect(child.sprite.alpha).toBe(0.5);
                         expect(child.sprite.strokeStyle.width).toBe(8);
