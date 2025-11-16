@@ -2164,6 +2164,7 @@ describe("LayoutController", function() {
                 width: component.componentWidth,
                 height: component.componentHeight,
                 units: undefined,
+                shape: undefined,
                 color: '#6c6e68',
                 outlineColor: undefined,
                 opacity: undefined,
