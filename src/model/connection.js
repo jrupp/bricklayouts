@@ -61,6 +61,7 @@ export class Connection {
          * @type {Graphics}
          */
         this.circle = new Graphics();
+        this.circle.priority = true;
         this.updateCircle();
         parent.addChild(this.circle);
         this.component.layer?.openConnections.set(this.#uuid, this);
@@ -77,6 +78,7 @@ export class Connection {
 
     /**
      * Unique identifier for this Connection
+     * @returns {String}
      */
     get uuid() {
         return this.#uuid;
@@ -108,8 +110,8 @@ export class Connection {
         }
         this.otherConnection = other;
         other.otherConnection = this;
-        this.component.layer.openConnections.delete(this.#uuid);
-        this.component.layer.openConnections.delete(other.uuid);
+        this.component.layer?.openConnections.delete(this.#uuid);
+        this.component.layer?.openConnections.delete(other.uuid);
         this.updateCircle();
         other.updateCircle();
     }
@@ -121,12 +123,12 @@ export class Connection {
     disconnect(redraw = true) {
         if (this.otherConnection) {
             this.otherConnection.otherConnection = null;
-            this.component.layer.openConnections.set(this.otherConnection.uuid, this.otherConnection);
+            this.component.layer?.openConnections.set(this.otherConnection.uuid, this.otherConnection);
             if (redraw) {
                 this.otherConnection.updateCircle();
             }
             this.otherConnection = null;
-            this.component.layer.openConnections.set(this.#uuid, this);
+            this.component.layer?.openConnections.set(this.#uuid, this);
         }
         if (redraw) {
             this.updateCircle();

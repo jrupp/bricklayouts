@@ -1,5 +1,6 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
 import { Component, ComponentOptions, HexToColorName } from '../model/component.js';
+import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
@@ -97,7 +98,7 @@ export class LayoutController {
   static _instance = null;
 
   /**
-   * @type {?Component}
+   * @type {?Component | ComponentGroup}
    */
   static dragTarget = null;
 
@@ -107,10 +108,15 @@ export class LayoutController {
   static dragDistance = 0;
 
   /**
-   * @type {?Component}
+   * @type {?Component | ComponentGroup}
    */
   static selectedComponent = null;
  
+  /**
+   * @type {Boolean}
+   */
+  static isSelecting = false;
+
   /**
    * @type {Boolean}
    */
@@ -182,7 +188,7 @@ export class LayoutController {
      */
     this.componentBrowser = document.getElementById('componentBrowser');
     /**
-     * @type {Component}
+     * @type {?Component | ComponentGroup}
      */
     this.copiedComponent = null;
     /**
@@ -228,12 +234,22 @@ export class LayoutController {
      * @type {Configuration}
      */
     this.config = Configuration.getInstance();
+
     /**
      * @type {Container}
      */
     this.workspace = new Container();
     this.workspace.scale.set(this.config.defaultZoom);
     app.stage.addChild(this.workspace);
+
+    /**
+     * Selection box for multiple selection
+     * @type {Graphics}
+     */
+    this.selectBox = new Graphics();
+    this.selectBox.eventMode = 'none';
+    this.selectBox.visible = false;
+    app.stage.addChild(this.selectBox);
 
     /**
      * @type {Array<LayoutLayer>}
@@ -408,6 +424,7 @@ export class LayoutController {
       } else if (LayoutController.eventCache.size === 2) {
         if (LayoutController.dragTarget) {
           LayoutController.dragTarget.alpha = 1;
+          LayoutController.dragTarget.insertCollisionTree();
           LayoutController.dragTarget = null;
         }
         this._hideSelectionToolbar();
@@ -418,6 +435,16 @@ export class LayoutController {
       }
     });
     this.app.stage.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {
+      if (event.button === 0 && event.pointerType === "mouse" && LayoutController.dragTarget == null) {
+        LayoutController.isSelecting = false;
+        LayoutController.isPanning = false;
+        LayoutController.isDragging = false;
+        LayoutController.panDistance = 0;
+        this.panOffset.set(event.global.x, event.global.y);
+        this.app.stage.on('pointermove', LayoutController.onSelectionMove, this);
+        this.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
+        return;
+      }
       if (event.button != 1 && !this.isSpaceDown && (event.pointerType != "touch" || !event.nativeEvent.isPrimary || LayoutController.dragTarget)) {
         LayoutController.isPanning = false;
         return;
@@ -1365,7 +1392,7 @@ export class LayoutController {
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
-        if (LayoutController.selectedComponent?.uid !== LayoutController.dragTarget.uid) {
+        if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
           LayoutController.selectComponent(null);
         }
       }
@@ -1385,13 +1412,33 @@ export class LayoutController {
     }
   }
 
+  /**
+   * 
+   * @param {FederatedPointerEvent} event 
+   */
+  static onSelectionMove(event) {
+    if (!LayoutController.isSelecting) {
+      const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
+      LayoutController.panDistance += diff;
+      if (LayoutController.panDistance < 5) {
+        return;
+      }
+      LayoutController.isSelecting = true;
+      this.selectBox.visible = true;
+      LayoutController.getInstance()._hideSelectionToolbar();
+    }
+    this._drawSelectBox({x: event.global.x, y: event.global.y});
+  }
+
   static onDragEnd() {
     window.app.stage.off('pointerupoutside', LayoutController.onDragEnd);
     if (LayoutController.dragTarget) {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
-      LayoutController.dragTarget.alpha = 1;
-      LayoutController.dragTarget.dragStartConnection = null;
-      if (LayoutController.dragTarget.connections.length > 0) {
+      let target = LayoutController.dragTarget;
+      target.alpha = 1;
+      target.dragStartConnection = null;
+      target.insertCollisionTree();
+      if (Array.from(LayoutController.dragTarget.connections.values()).length > 0) {
         let openConnections = LayoutController.dragTarget.getOpenConnections();
         if (openConnections.length > 0) {
           let currentLayer = LayoutController.getInstance().currentLayer;
@@ -1404,9 +1451,34 @@ export class LayoutController {
       LayoutController.dragDistance = 0;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);
+      window.app.stage.off('pointermove', LayoutController.onSelectionMove);
       if (LayoutController.isPanning) {
         LayoutController.isPanning = false;
         LayoutController.getInstance().updateCursor();
+      } else if (LayoutController.isSelecting) {
+        LayoutController.isSelecting = false;
+        LayoutController.getInstance().selectBox.visible = false;
+        // Select components within selection box
+        const selectionBox = LayoutController.getInstance().selectBox;
+        const layer = LayoutController.getInstance().currentLayer;
+        let min = layer.toLocal({x: selectionBox.bounds.minX, y: selectionBox.bounds.minY});
+        let max = layer.toLocal({x: selectionBox.bounds.maxX, y: selectionBox.bounds.maxY});
+        let a = layer.tree.search({
+          minX: min.x,
+          minY: min.y,
+          maxX: max.x,
+          maxY: max.y
+        });
+        if (a.length === 1) {
+          LayoutController.selectComponent(a[0].component);
+        } else if (a.length > 1) {
+          // Create a temporary group component
+          let group = new ComponentGroup(true);
+          a.forEach((item) => {
+            group.addComponent(item.component);
+          });
+          LayoutController.selectComponent(group);
+        }
       } else if (LayoutController.selectedComponent) {
         LayoutController.selectComponent(null);
       }
@@ -1480,14 +1552,20 @@ export class LayoutController {
 
   /**
    * Select a component and highlight it.
-   * @param {Component} component - The component to select.
+   * @param {Component | ComponentGroup} component - The component to select.
    */
   static selectComponent(component) {
     if (LayoutController.selectedComponent) {
       LayoutController.selectedComponent.tint = 0xffffff;
+      if (LayoutController.selectedComponent instanceof ComponentGroup && LayoutController.selectedComponent.isTemporary) {
+        LayoutController.selectedComponent.destroy();
+      }
     }
     LayoutController.selectedComponent = component;
     if (LayoutController.selectedComponent) {
+      if (LayoutController.selectedComponent.group) {
+        LayoutController.selectedComponent = LayoutController.selectedComponent.group;
+      }
       LayoutController.selectedComponent.tint = 0xffff00;
       // Show and position toolbar when a component is selected
       const inst = LayoutController.getInstance();
@@ -1506,7 +1584,11 @@ export class LayoutController {
   bringSelectedComponentToFront() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
-      this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+      if (LayoutController.selectedComponent instanceof Component) {
+        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
+      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
+        LayoutController.selectedComponent.bringToFront();
+      }
     }
   }
 
@@ -1514,6 +1596,9 @@ export class LayoutController {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
       if (this.copiedComponent) {
+        if (this.copiedComponent instanceof ComponentGroup && this.copiedComponent.isTemporary) {
+          this.copiedComponent.isTemporary = false;
+        }
         this.copiedComponent.destroy();
         this.copiedComponent = null;
       }
@@ -1540,6 +1625,9 @@ export class LayoutController {
     if (this.copiedComponent === component) {
       this.copiedComponent = null;
     }
+    if (component instanceof ComponentGroup && component.isTemporary) {
+      component.isTemporary = false;
+    }
     component.destroy();
     component = null;
   }
@@ -1557,24 +1645,27 @@ export class LayoutController {
 
   /**
    * Duplicate a component and add it to the layout.
-   * @param {Component} component - The component to duplicate.
+   * @param {Component | ComponentGroup} component - The component to duplicate.
    */
   duplicateComponent(component) {
     if (!component) return;
-    /** @type {?Component} */
+    /** @type {?Component | ComponentGroup} */
     let connectTo = null;
     if (LayoutController.selectedComponent) {
       connectTo = LayoutController.selectedComponent;
     }
-    /** @type {Component} */
+    /** @type {Component | ComponentGroup} */
     let clone = component.clone(this.currentLayer, connectTo);
-    if (clone.getUsedConnections().length === 0) {
+    // FIXME: This should only be looking at used external connections
+    if (!LayoutController.selectedComponent && clone.getUsedConnections().length === 0) {
       let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle);
+      clone.deleteCollisionTree();
       clone.position.set(newPos.x, newPos.y);
+      clone.insertCollisionTree();
     }
     this.currentLayer.addChild(clone);
     let openConnections = clone.getOpenConnections();
-    if (openConnections.length < clone.connections.length) {
+    if (openConnections.length < Array.from(clone.connections.values()).length) {
       openConnections.forEach((openCon) => {
         this.currentLayer.findMatchingConnection(openCon, true);
       });
@@ -1592,7 +1683,7 @@ export class LayoutController {
 
   editSelectedComponent() {
     this.hideFileMenu();
-    if (LayoutController.selectedComponent) {
+    if (LayoutController.selectedComponent && LayoutController.selectedComponent.size === 1) {
       this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
     }
   }
@@ -1987,7 +2078,7 @@ export class LayoutController {
     if (!comp || comp.destroyed) {
       return;
     }
-    if (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate")) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate"))) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');
@@ -2050,5 +2141,22 @@ export class LayoutController {
         this.selectionToolMenu.classList.add('top');
       }
     }
+  }
+
+  _drawSelectBox(currentPosition) {
+    this.selectBox.clear();
+    if (!LayoutController.isSelecting) return;
+    const { x, y } = this.panOffset;
+    const width = currentPosition.x - x;
+    const height = currentPosition.y - y;
+    
+    // Calculate top-left corner and absolute dimensions
+    const left = width < 0 ? currentPosition.x : x;
+    const top = height < 0 ? currentPosition.y : y;
+    const absWidth = Math.abs(width);
+    const absHeight = Math.abs(height);
+    
+    this.selectBox.rect(left, top, absWidth, absHeight);
+    this.selectBox.stroke({width: 2, color: 0x000000, alpha: 1});
   }
 }
