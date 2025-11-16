@@ -354,7 +354,7 @@ export class ComponentGroup {
     const centerX = (bounds.minX + bounds.maxX) / 2;
     const centerY = (bounds.minY + bounds.maxY) / 2;
 
-    return {x:centerX, y:centerY};
+    return {x: centerX, y: centerY};
   }
 
   /**
