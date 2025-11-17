@@ -435,7 +435,7 @@ export class LayoutController {
       }
     });
     this.app.stage.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {
-      if (event.button === 0 && event.pointerType === "mouse" && LayoutController.dragTarget == null) {
+      if (event.button === 0 && event.pointerType === "mouse" && LayoutController.dragTarget == null && !this.isSpaceDown) {
         LayoutController.isSelecting = false;
         LayoutController.isPanning = false;
         LayoutController.isDragging = false;
