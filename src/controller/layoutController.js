@@ -1507,9 +1507,9 @@ export class LayoutController {
     if (LayoutController.previousPinchDistance > 0) {
       const preScale = this.workspace.scale.x;
       if (curDiff > LayoutController.previousPinchDistance) {
-        this.workspace.scale.set(this.workspace.scale.x * 1.1);
+        this.workspace.scale.set(this.workspace.scale.x * 1.05);
       } else if (curDiff < LayoutController.previousPinchDistance) {
-        this.workspace.scale.set(this.workspace.scale.x / 1.1);
+        this.workspace.scale.set(this.workspace.scale.x / 1.05);
       }
       const scaleChange = this.workspace.scale.x / preScale;
       const midPoint = new Point(
