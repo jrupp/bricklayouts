@@ -1,5 +1,6 @@
 import { Container, RenderLayer } from "../pixi.mjs";
 import { Component, SerializedComponent } from "./component.js";
+import { ComponentGroup } from "./componentGroup.js";
 import { Connection } from "./connection.js";
 
 /**
@@ -17,6 +18,11 @@ export class LayoutLayer extends Container {
      * @type {String}
      */
     #uuid;
+
+    /**
+     * @type {RBush<Component>}
+     */
+    tree;
 
     constructor() {
         super();
@@ -40,6 +46,8 @@ export class LayoutLayer extends Container {
          */
         this.openConnections = new Map();
 
+        this.tree = new RBush();
+
         super.addChild(this.overlay);
     }
 
@@ -47,14 +55,19 @@ export class LayoutLayer extends Container {
         this.clear();
         this.overlay.detachAll();
         this.overlay = null;
+        this.tree = null;
         super.destroy();
     }
 
     addChild(...children) {
         let index = this.children.length - 1;
         children.forEach(child => {
+            if (child instanceof ComponentGroup) {
+                child.addToLayer(this);
+                return;
+            }
             super.addChildAt(child, index);
-            this.overlay.attach(...(child.children.filter((component) => component.renderPipeId == "graphics" && component.pivot.x === 0)));
+            this.overlay.attach(...(child.children.filter((component) => component.renderPipeId == "graphics" && (component.priority ?? false))));
         });
         return children[0];
     }
@@ -69,6 +82,7 @@ export class LayoutLayer extends Container {
             }
         });
         this.openConnections.clear();
+        this.tree.clear();
     }
 
     /**
@@ -106,7 +120,7 @@ export class LayoutLayer extends Container {
      */
     findMatchingConnection(openConnection, connect = false) {
         for (const [key, connectionTest] of this.openConnections) {
-          if (connectionTest.component.uid === openConnection.component.uid) {
+          if (connectionTest.component.uuid === openConnection.component.uuid) {
             continue;
           }
           if (connectionTest.getPose().isInRadius(openConnection.getPose(), 1) && connectionTest.getPose().hasOppositeAngle(openConnection.getPose())) {

@@ -1,5 +1,6 @@
 import { Assets, BitmapText, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
 import { LayoutController, TrackData, DataTypes } from '../controller/layoutController.js';
+import { ComponentGroup } from "./componentGroup.js";
 import { Connection, SerializedConnection } from "./connection.js";
 import { Pose, SerializedPose } from "./pose.js";
 import { LayoutLayer } from "./layoutLayer.js";
@@ -147,6 +148,9 @@ export class Component extends Container {
    */
   #opacity;
 
+  /** @type {String} */
+  #uuid;
+
   /**
    * @type {Pose}
    * The offset position from the mouse to this Component's position when dragging.
@@ -170,6 +174,11 @@ export class Component extends Container {
   sprite;
 
   /**
+   * @type {?ComponentGroup}
+   */
+  group;
+
+  /**
    * @param {TrackData} baseData
    * @param {Pose} pose
    * @param {LayoutLayer} layer The layer this Component will be on
@@ -188,10 +197,14 @@ export class Component extends Container {
      */
     this.layer = layer;
 
+    this.group = null;
+
     /**
      * @type {Boolean}
      */
     this.isDragging = false;
+
+    this.#uuid = crypto.randomUUID();
 
     if (this.baseData.type === DataTypes.TRACK) {
       this.sprite = new Sprite(Assets.get(baseData.alias));
@@ -217,11 +230,7 @@ export class Component extends Container {
         this.#opacity = options.opacity;
         this.sprite.alpha = options.opacity;
       }
-      if (this.#shape === 'circle') {
-        this.sprite.pivot.set(0, 0);
-      } else {
-        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
-      }
+      this.sprite.pivot.set(0, 0);
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
@@ -251,6 +260,15 @@ export class Component extends Container {
 
     this.sprite.rotation = pose.angle;
     this.position.set(pose.x, pose.y);
+    let bbox = this.sprite.getLocalBounds();
+    this.layer?.tree.insert({
+      id: this.#uuid,
+      minX: bbox.minX + pose.x,
+      minY: bbox.minY + pose.y,
+      maxX: bbox.maxX + pose.x,
+      maxY: bbox.maxY + pose.y,
+      component: this
+    });
     this.addChild(this.sprite);
 
     this.sprite.eventMode = 'static';
@@ -301,7 +319,7 @@ export class Component extends Container {
    * @returns {Component|null} The new Component or null if no open connections found
    */
   static fromComponent(baseData, component, layer, options = {}) {
-    if (component.connections.length === 0 || (baseData.connections ?? []).length === 0) {
+    if (Array.from(component.connections.values()).length === 0 || (baseData.connections ?? []).length === 0) {
       // Calculate a position that is next to the component instead.
       let width = baseData.width ?? 0;
       // Helper to calculate the position vector for a new component next to another
@@ -314,7 +332,9 @@ export class Component extends Container {
       if (width === 0) {
         width = newComp.sprite.width;
         newPos = calculateNextToPosition(component, width);
+        newComp.deleteCollisionTree();
         newComp.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
+        newComp.insertCollisionTree();
       }
       return newComp;
     }
@@ -357,8 +377,23 @@ export class Component extends Container {
 
   destroy() {
     this.dragStartConnection = null;
+    if (this.group) {
+      this.group.removeComponent(this);
+    }
+    this.group = null;
     this.connections.forEach((connection) => connection.destroy());
     this.connections = null;
+    let bbox = this.sprite.getLocalBounds();
+    let item = {
+      id: this.#uuid,
+      minX: bbox.minX + this.position.x,
+      minY: bbox.minY + this.position.y,
+      maxX: bbox.maxX + this.position.x,
+      maxY: bbox.maxY + this.position.y
+    };
+    this.layer?.tree.remove(item, (a,b) => {return a.id === b.id});
+    bbox = null;
+    item = null;
     this.layer = null;
     if (this.baseData.type === DataTypes.SHAPE) {
       this.sprite.destroy();
@@ -451,7 +486,9 @@ export class Component extends Container {
     if (currentConnections.length > 1) {
       return;
     } else if (currentConnections.length === 0) {
+      this.deleteCollisionTree();
       this.sprite.rotation += Math.PI / 8;
+      this.insertCollisionTree();
     } else if (currentConnections.length === 1) {
       const connection = currentConnections[0];
       const otherConnection = connection.otherConnection;
@@ -465,8 +502,10 @@ export class Component extends Container {
       let conPose = otherConnection.getPose();
       conPose.turnAngle(Math.PI);
       let newPos = nextOpen.offsetVector.getStartPosition(conPose);
+      this.deleteCollisionTree();
       this.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
       this.sprite.rotation = newPos.angle;
+      this.insertCollisionTree();
     }
     let openConnections = this.getOpenConnections();
     if (openConnections.length > 0) {
@@ -482,9 +521,9 @@ export class Component extends Container {
   _drawShape() {
     this.sprite.clear();
     if (this.#shape === 'circle') {
-      this.sprite.drawCircle(0, 0, this.#width / 2);
+      this.sprite.circle(0, 0, this.#width / 2);
     } else {
-      this.sprite.rect(0, 0, this.#width, this.#height);
+      this.sprite.rect(0 - this.#width / 2, 0 - this.#height / 2, this.#width, this.#height);
     }
     this.sprite.fill(this.#color);
     if (this.#outlineColor) {
@@ -654,6 +693,10 @@ export class Component extends Container {
     return this.#shape;
   }
 
+  get size() {
+    return 1;
+  }
+
   get text() {
     return this.#text;
   }
@@ -672,6 +715,42 @@ export class Component extends Container {
 
   get units() {
     return this.#units;
+  }
+
+  get uuid() {
+    return this.#uuid;
+  }
+
+  /**
+   * Remove this Component from the collision tree.
+   */
+  deleteCollisionTree() {
+    let bbox = this.sprite.getLocalBounds();
+    let item = {
+      id: this.#uuid,
+      minX: bbox.minX + this.position.x,
+      minY: bbox.minY + this.position.y,
+      maxX: bbox.maxX + this.position.x,
+      maxY: bbox.maxY + this.position.y,
+      component: this
+    };
+    this.layer.tree.remove(item, (a,b) => {return a.id === b.id});
+  }
+
+  /**
+   * Insert this Component into the collision tree.
+   */
+  insertCollisionTree() {
+    let bbox = this.sprite.getLocalBounds();
+    let item = {
+      id: this.#uuid,
+      minX: bbox.minX + this.position.x,
+      minY: bbox.minY + this.position.y,
+      maxX: bbox.maxX + this.position.x,
+      maxY: bbox.maxY + this.position.y,
+      component: this
+    };
+    this.layer.tree.insert(item);
   }
 
   /**
@@ -789,7 +868,11 @@ export class Component extends Container {
       return;
     }
     if (!this.isDragging) {
-      LayoutController.selectComponent(this);
+      if (this.group && !this.group.isTemporary) {
+        LayoutController.selectComponentGroup(this.group);
+      } else {
+        LayoutController.selectComponent(this);
+      }
     }
     this.isDragging = false;
   }
@@ -800,6 +883,10 @@ export class Component extends Container {
    */
   onStartDrag(e) {
     if (e.button != 0 || !e.nativeEvent.isPrimary || LayoutController._instance.isSpaceDown) {
+      return;
+    }
+    if (this.group) {
+      this.group.onStartDrag(e);
       return;
     }
     LayoutController.dragTarget = this;
@@ -835,6 +922,7 @@ export class Component extends Container {
       this.dragStartPos = this.getPose().subtract({...a, angle: 0});
       this.dragStartOffset = new Pose(0, 0, 0);
     }
+    this.deleteCollisionTree();
     window.app.stage.on('pointermove', LayoutController.onDragMove);
     window.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
     console.log(this.baseData.alias);

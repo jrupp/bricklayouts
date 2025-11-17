@@ -112,6 +112,24 @@ export class Pose {
     }
 
     /**
+     * Rotates this Pose around a point by a given angle.
+     * @param {Number} originX - The x-coordinate of the rotation origin.
+     * @param {Number} originY - The y-coordinate of the rotation origin.
+     * @param {Number} deltaAngle - The angle to rotate by in radians.
+     * @returns {Pose} This Pose, after rotation.
+     */
+    rotateAround(originX, originY, deltaAngle) {
+        const dx = this.x - originX;
+        const dy = this.y - originY;
+        const cosA = Math.cos(deltaAngle);
+        const sinA = Math.sin(deltaAngle);
+        this.x = originX + dx * cosA - dy * sinA;
+        this.y = originY + dx * sinA + dy * cosA;
+        this.angle += deltaAngle;
+        return this;
+    }
+
+    /**
      * Subtract a Pose from this one, and return the result.
      * @param {Pose} pose 
      * @returns {Pose} A new Pose containing the result of the subtraction
