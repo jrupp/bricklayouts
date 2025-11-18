@@ -420,18 +420,11 @@ export class Component extends Container {
       startIndex = 0;
     }
     let openConnections = this.getOpenConnections();
-    let returnConnection = null;
-    openConnections.forEach((connection) => {
-      if (connection.otherConnection) {
-        return;
-      }
-      if (connection.connectionIndex >= startIndex) {
-        returnConnection = connection;
-      } else if (returnConnection === null) {
-        returnConnection = connection; // If no other open connections found, return the first one
-      }
-    });
-    return returnConnection;
+    if (openConnections.length === 0) {
+      return null;
+    }
+    let returnConnection = openConnections.find((conn) => conn.connectionIndex >= startIndex);
+    return returnConnection || openConnections[0];
   }
 
   /**
