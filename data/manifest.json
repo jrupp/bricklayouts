@@ -396,6 +396,53 @@
                     "color": "#000000"
                 },
                 {
+                    "alias": "railDblCross",
+                    "src": "7996.png",
+                    "category": "9V",
+                    "name": "Double Crossover",
+                    "partNumber": "7996",
+                    "make": 1,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                1.1024163823495667,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 0,
+                            "vector": [
+                                404.7715405015526,
+                                1.8975836176504333,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                0.8975836176504333,
+                                1
+                            ],
+                            "next": 3
+                        },
+                        {
+                            "type": 0,
+                            "vector": [
+                                404.7715405015526,
+                                0.10241638234956671,
+                                0
+                            ],
+                            "next": 2
+                        }
+                    ]
+                },
+                {
                     "alias": "railStraight9VHalf",
                     "src": "2865-half.png",
                     "category": "9V",

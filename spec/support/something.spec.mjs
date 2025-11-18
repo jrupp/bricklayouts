@@ -2200,10 +2200,10 @@ describe("LayoutController", function() {
                 expect(newcomp).toBeDefined();
                 expect(newcomp.uid).not.toBe(component.uid);
                 expect(newcomp.baseData).toEqual(straightTrackData);
-                expect(layoutController.currentLayer.openConnections.values()).toContain(newcomp.connections[1]);
-                expect(layoutController.currentLayer.openConnections.values()).not.toContain(newcomp.connections[0]);
-                expect(newcomp.connections[0].otherConnection).toBe(component.connections[1]);
-                expect(component.connections[1].otherConnection).toBe(newcomp.connections[0]);
+                expect(layoutController.currentLayer.openConnections.values()).toContain(newcomp.connections[0]);
+                expect(layoutController.currentLayer.openConnections.values()).not.toContain(newcomp.connections[1]);
+                expect(newcomp.connections[1].otherConnection).toBe(component.connections[0]);
+                expect(component.connections[0].otherConnection).toBe(newcomp.connections[1]);
             });
 
             it("positions a new component next to the existing when no connections", function() {
