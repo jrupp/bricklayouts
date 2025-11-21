@@ -141,6 +141,36 @@ export class LayoutController {
   static editorController = null;
 
   /**
+   * @type {?HTMLElement}
+   * The component browser button currently being dragged
+   */
+  static browserDragButton = null;
+
+  /**
+   * @type {?TrackData}
+   * The track data for the component browser button being dragged
+   */
+  static browserDragTrack = null;
+
+  /**
+   * @type {Number}
+   * Distance dragged from the browser button
+   */
+  static browserDragDistance = 0;
+
+  /**
+   * @type {?{x: Number, y: Number}}
+   * Starting position of browser button drag
+   */
+  static browserDragStartPos = null;
+
+  /**
+   * @type {?HTMLElement}
+   * Ghost preview element following cursor during browser drag
+   */
+  static ghostElement = null;
+
+  /**
    * The currently active layer
    * @type {LayoutLayer}
    */
@@ -536,7 +566,13 @@ export class LayoutController {
         button.title = track.name;
         button.appendChild(track.image);
         button.appendChild(label);
-        button.addEventListener('click', this.addComponent.bind(this, track, true));
+        button.dataset.trackAlias = track.alias;
+        button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
+        button.addEventListener('click', (e) => {
+          if (e.pointerType === 'touch' || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) {
+            this.addComponent(track, true);
+          }
+        });
         this.componentBrowser.appendChild(button);
       }
     });
@@ -545,6 +581,186 @@ export class LayoutController {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
     }
+  }
+
+  /**
+   * Handler for pointerdown event on component browser buttons.
+   * Initiates drag-and-drop from browser to canvas.
+   * @param {TrackData} track - The track data for the component
+   * @param {PointerEvent} event - The pointer event
+   */
+  _onBrowserButtonPointerDown(track, event) {
+    if (event.pointerType === 'touch') {
+      return;
+    }
+    
+    if (event.button !== 0 || !event.isPrimary) {
+      return;
+    }
+
+    event.preventDefault();
+    LayoutController.browserDragButton = event.currentTarget;
+    LayoutController.browserDragTrack = track;
+    LayoutController.browserDragStartPos = { x: event.clientX, y: event.clientY };
+    LayoutController.browserDragDistance = 0;
+
+    document.addEventListener('pointermove', this._onBrowserDragMove.bind(this));
+    document.addEventListener('pointerup', this._onBrowserDragEnd.bind(this));
+    document.addEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+  }
+
+  /**
+   * Handler for pointermove during browser button drag.
+   * Creates ghost element and transitions to component drag when over canvas.
+   * @param {PointerEvent} event - The pointer event
+   */
+  _onBrowserDragMove(event) {
+    if (!LayoutController.browserDragTrack || !LayoutController.browserDragStartPos) {
+      return;
+    }
+
+    const clientX = event.clientX;
+    const clientY = event.clientY;
+    const dx = clientX - LayoutController.browserDragStartPos.x;
+    const dy = clientY - LayoutController.browserDragStartPos.y;
+    LayoutController.browserDragDistance = Math.sqrt(dx * dx + dy * dy);
+
+    if (LayoutController.browserDragDistance >= DRAG_THRESHOLD) {
+      if (!LayoutController.ghostElement) {
+        const track = LayoutController.browserDragTrack;
+        LayoutController.ghostElement = track.image.cloneNode(true);
+        LayoutController.ghostElement.style.position = 'fixed';
+        LayoutController.ghostElement.style.pointerEvents = 'none';
+        LayoutController.ghostElement.style.opacity = '0.7';
+        LayoutController.ghostElement.style.zIndex = '10000';
+        LayoutController.ghostElement.style.width = track.image.width + 'px';
+        LayoutController.ghostElement.style.height = track.image.height + 'px';
+        document.body.appendChild(LayoutController.ghostElement);
+      }
+
+      if (LayoutController.ghostElement) {
+        const ghostWidth = LayoutController.ghostElement.offsetWidth;
+        const ghostHeight = LayoutController.ghostElement.offsetHeight;
+        LayoutController.ghostElement.style.left = (clientX - ghostWidth / 2) + 'px';
+        LayoutController.ghostElement.style.top = (clientY - ghostHeight / 2) + 'px';
+      }
+
+      // Check if cursor is over canvas but NOT over component browser
+      const canvasContainer = document.getElementById('canvasContainer');
+      const canvasRect = canvasContainer.getBoundingClientRect();
+      const componentBrowser = document.getElementById('componentMenu');
+      const browserRect = componentBrowser.getBoundingClientRect();
+
+      const isOverCanvas = clientX >= canvasRect.left && 
+                          clientX <= canvasRect.right && 
+                          clientY >= canvasRect.top && 
+                          clientY <= canvasRect.bottom;
+
+      const isOverBrowser = clientX >= browserRect.left && 
+                           clientX <= browserRect.right && 
+                           clientY >= browserRect.top && 
+                           clientY <= browserRect.bottom;
+
+      if (isOverCanvas && !isOverBrowser) {
+        event.preventDefault();
+        document.removeEventListener('pointermove', this._onBrowserDragMove.bind(this));
+        document.removeEventListener('pointerup', this._onBrowserDragEnd.bind(this));
+        document.removeEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+
+        const track = LayoutController.browserDragTrack;
+        const newComponent = new Component(track, {x: 0, y: 0, angle: 0}, this.currentLayer, {});
+        
+        if (newComponent) {
+          const syntheticEvent = {
+            getLocalPosition: (container) => {
+              const stageRect = canvasContainer.getBoundingClientRect();
+              const globalX = clientX - stageRect.left;
+              const globalY = clientY - stageRect.top;
+              return container.toLocal({ x: globalX, y: globalY });
+            }
+          };
+
+          let a = syntheticEvent.getLocalPosition(this.#currentLayer);
+          newComponent.deleteCollisionTree();
+          newComponent.position.set(a.x, a.y);
+          newComponent.insertCollisionTree();
+          this.#currentLayer.addChild(newComponent);
+          this._hideSelectionToolbar();
+          this.hideFileMenu();
+
+          LayoutController.dragTarget = newComponent;
+          LayoutController.dragDistance = 0;
+          newComponent.alpha = 0.5;
+          newComponent.isDragging = false;
+          newComponent.dragStartConnection = null;
+          
+          // Find the closest connection to the start of dragging
+          let closestDistance = Infinity;
+          for (let connection of newComponent.connections) {
+            let distance = connection.getPose().subtract({...a, angle: 0}).magnitude();
+            if (newComponent.dragStartConnection === null || distance < closestDistance) {
+              closestDistance = distance;
+              newComponent.dragStartConnection = connection;
+            }
+          }
+          
+          // Calculate dragStartPos and dragStartOffset based on component type
+          if (newComponent.dragStartConnection) {
+            let b = newComponent.dragStartConnection.getPose();
+            newComponent.dragStartPos = b.subtract({...a, angle: 0});
+            newComponent.dragStartOffset = newComponent.getPose().subtract(b);
+          } else if (newComponent.baseData.type === DataTypes.TRACK) {
+            newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.width / 2, y: newComponent.height / 2, angle: 0}).subtract({...a, angle: 0});
+            newComponent.dragStartOffset = new Pose(newComponent.width / 2, newComponent.height / 2, 0);
+          } else if (newComponent.baseData.type === DataTypes.BASEPLATE) {
+            newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.componentWidth / 2, y: newComponent.componentHeight / 2, angle: 0}).subtract({...a, angle: 0});
+            newComponent.dragStartOffset = new Pose(newComponent.componentWidth / 2, newComponent.componentHeight / 2, 0);
+          } else {
+            newComponent.dragStartPos = newComponent.getPose().subtract({...a, angle: 0});
+            newComponent.dragStartOffset = new Pose(0, 0, 0);
+          }
+          
+          newComponent.deleteCollisionTree();
+          window.app.stage.on('pointermove', LayoutController.onDragMove);
+          window.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
+        }
+
+        if (LayoutController.ghostElement) {
+          LayoutController.ghostElement.remove();
+          LayoutController.ghostElement = null;
+        }
+
+        LayoutController.browserDragButton = null;
+        LayoutController.browserDragTrack = null;
+        LayoutController.browserDragDistance = 0;
+        LayoutController.browserDragStartPos = null;
+      }
+    }
+  }
+
+  /**
+   * Handler for pointerup during browser button drag.
+   * Cleans up drag state and treats as click if threshold not met.
+   * @param {PointerEvent} event - The pointer event
+   */
+  _onBrowserDragEnd(event) {
+    document.removeEventListener('pointermove', this._onBrowserDragMove.bind(this));
+    document.removeEventListener('pointerup', this._onBrowserDragEnd.bind(this));
+    document.removeEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+
+    if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
+      this.addComponent(LayoutController.browserDragTrack, true);
+    }
+
+    if (LayoutController.ghostElement) {
+      LayoutController.ghostElement.remove();
+      LayoutController.ghostElement = null;
+    }
+
+    LayoutController.browserDragButton = null;
+    LayoutController.browserDragTrack = null;
+    LayoutController.browserDragDistance = 0;
+    LayoutController.browserDragStartPos = null;
   }
 
   /**
@@ -1123,6 +1339,11 @@ export class LayoutController {
    */
   onKeyDown(event) {
     this.hideFileMenu();
+    if (LayoutController.dragTarget || LayoutController.selectedComponent) {
+      if (event.key === 'r' && !event.ctrlKey) {
+        this.rotateSelectedComponent();
+      }
+    }
     if (LayoutController.selectedComponent) {
       if (event.key === 'Delete') {
         this.deleteSelectedComponent();
@@ -1696,6 +1917,9 @@ export class LayoutController {
   rotateSelectedComponent() {
     this.hideFileMenu();
     if (!LayoutController.selectedComponent) {
+      if (LayoutController.dragTarget) {
+        LayoutController.dragTarget.rotate();
+      }
       return;
     }
     LayoutController.selectedComponent.rotate();
