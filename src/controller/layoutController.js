@@ -171,6 +171,18 @@ export class LayoutController {
   static ghostElement = null;
 
   /**
+   * @type {?Function}
+   * Bound reference to _onBrowserDragMove for event listener removal
+   */
+  static boundBrowserDragMove = null;
+
+  /**
+   * @type {?Function}
+   * Bound reference to _onBrowserDragEnd for event listener removal
+   */
+  static boundBrowserDragEnd = null;
+
+  /**
    * The currently active layer
    * @type {LayoutLayer}
    */
@@ -604,9 +616,11 @@ export class LayoutController {
     LayoutController.browserDragStartPos = { x: event.clientX, y: event.clientY };
     LayoutController.browserDragDistance = 0;
 
-    document.addEventListener('pointermove', this._onBrowserDragMove.bind(this));
-    document.addEventListener('pointerup', this._onBrowserDragEnd.bind(this));
-    document.addEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+    LayoutController.boundBrowserDragMove = this._onBrowserDragMove.bind(this);
+    LayoutController.boundBrowserDragEnd = this._onBrowserDragEnd.bind(this);
+    document.addEventListener('pointermove', LayoutController.boundBrowserDragMove);
+    document.addEventListener('pointerup', LayoutController.boundBrowserDragEnd);
+    document.addEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
   }
 
   /**
@@ -663,9 +677,9 @@ export class LayoutController {
 
       if (isOverCanvas && !isOverBrowser) {
         event.preventDefault();
-        document.removeEventListener('pointermove', this._onBrowserDragMove.bind(this));
-        document.removeEventListener('pointerup', this._onBrowserDragEnd.bind(this));
-        document.removeEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+        document.removeEventListener('pointermove', LayoutController.boundBrowserDragMove);
+        document.removeEventListener('pointerup', LayoutController.boundBrowserDragEnd);
+        document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
         const track = LayoutController.browserDragTrack;
         const newComponent = new Component(track, {x: 0, y: 0, angle: 0}, this.currentLayer, {});
@@ -734,6 +748,8 @@ export class LayoutController {
         LayoutController.browserDragTrack = null;
         LayoutController.browserDragDistance = 0;
         LayoutController.browserDragStartPos = null;
+        LayoutController.boundBrowserDragMove = null;
+        LayoutController.boundBrowserDragEnd = null;
       }
     }
   }
@@ -744,9 +760,9 @@ export class LayoutController {
    * @param {PointerEvent} event - The pointer event
    */
   _onBrowserDragEnd(event) {
-    document.removeEventListener('pointermove', this._onBrowserDragMove.bind(this));
-    document.removeEventListener('pointerup', this._onBrowserDragEnd.bind(this));
-    document.removeEventListener('pointercancel', this._onBrowserDragEnd.bind(this));
+    document.removeEventListener('pointermove', LayoutController.boundBrowserDragMove);
+    document.removeEventListener('pointerup', LayoutController.boundBrowserDragEnd);
+    document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
     if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
       this.addComponent(LayoutController.browserDragTrack, true);
@@ -761,6 +777,8 @@ export class LayoutController {
     LayoutController.browserDragTrack = null;
     LayoutController.browserDragDistance = 0;
     LayoutController.browserDragStartPos = null;
+    LayoutController.boundBrowserDragMove = null;
+    LayoutController.boundBrowserDragEnd = null;
   }
 
   /**
