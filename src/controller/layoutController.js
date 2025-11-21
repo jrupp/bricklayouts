@@ -569,7 +569,7 @@ export class LayoutController {
         button.dataset.trackAlias = track.alias;
         button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
         button.addEventListener('click', (e) => {
-          if (e.pointerType === 'touch' || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches)) {
+          if (e.pointerType === 'touch') {
             this.addComponent(track, true);
           }
         });
