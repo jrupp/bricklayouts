@@ -706,6 +706,7 @@ export class LayoutController {
           this._hideSelectionToolbar();
           this.hideFileMenu();
 
+          // TODO: See if there is a way to reduce the code duplication with onDragStart
           LayoutController.dragTarget = newComponent;
           LayoutController.dragDistance = 0;
           newComponent.alpha = 0.5;
@@ -1279,6 +1280,16 @@ export class LayoutController {
     LayoutController.panDistance = 0;
     LayoutController.previousPinchDistance = -1;
     LayoutController.browserMobileClick = false;
+    if (LayoutController.ghostElement) {
+        LayoutController.ghostElement.remove();
+        LayoutController.ghostElement = null;
+    }
+    LayoutController.browserDragButton = null;
+    LayoutController.browserDragTrack = null;
+    LayoutController.browserDragDistance = 0;
+    LayoutController.browserDragStartPos = null;
+    LayoutController.boundBrowserDragMove = null;
+    LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
     this.newLayer();
   }
