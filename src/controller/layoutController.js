@@ -686,21 +686,20 @@ export class LayoutController {
         document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
         const track = LayoutController.browserDragTrack;
-        const newComponent = new Component(track, {x: 0, y: 0, angle: 0}, this.currentLayer, {});
+        const syntheticEvent = {
+          getLocalPosition: (container) => {
+            const stageRect = canvasContainer.getBoundingClientRect();
+            const globalX = clientX - stageRect.left;
+            const globalY = clientY - stageRect.top;
+            return container.toLocal({ x: globalX, y: globalY });
+          }
+        };
+
+        let a = syntheticEvent.getLocalPosition(this.#currentLayer);
+        const newComponent = new Component(track, {x: a.x, y: a.y, angle: 0}, this.currentLayer, {});
         
         if (newComponent) {
-          const syntheticEvent = {
-            getLocalPosition: (container) => {
-              const stageRect = canvasContainer.getBoundingClientRect();
-              const globalX = clientX - stageRect.left;
-              const globalY = clientY - stageRect.top;
-              return container.toLocal({ x: globalX, y: globalY });
-            }
-          };
-
-          let a = syntheticEvent.getLocalPosition(this.#currentLayer);
           newComponent.deleteCollisionTree();
-          newComponent.position.set(a.x, a.y);
           newComponent.insertCollisionTree();
           this.#currentLayer.addChild(newComponent);
           this._hideSelectionToolbar();
