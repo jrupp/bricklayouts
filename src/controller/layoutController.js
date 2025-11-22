@@ -164,6 +164,8 @@ export class LayoutController {
    */
   static browserDragStartPos = null;
 
+  static browserMobileClick = false;
+
   /**
    * @type {?HTMLElement}
    * Ghost preview element following cursor during browser drag
@@ -581,7 +583,8 @@ export class LayoutController {
         button.dataset.trackAlias = track.alias;
         button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
         button.addEventListener('click', (e) => {
-          if (e.pointerType === 'touch') {
+          if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
+            LayoutController.browserMobileClick = false;
             this.addComponent(track, true);
           }
         });
@@ -602,7 +605,8 @@ export class LayoutController {
    * @param {PointerEvent} event - The pointer event
    */
   _onBrowserButtonPointerDown(track, event) {
-    if (event.pointerType === 'touch') {
+    if (event.pointerType !== 'mouse') {
+      LayoutController.browserMobileClick = true;
       return;
     }
     
@@ -1274,6 +1278,7 @@ export class LayoutController {
     LayoutController.isPanning = false;
     LayoutController.panDistance = 0;
     LayoutController.previousPinchDistance = -1;
+    LayoutController.browserMobileClick = false;
     LayoutController.eventCache.clear();
     this.newLayer();
   }
