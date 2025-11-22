@@ -34,6 +34,7 @@ describe("LayoutController", function() {
     let componentFont;
     let componentFontSize;
     let selectionToolbar;
+    let geiSpy;
     beforeAll(async () => {
         const app = new Application();
         await app.init();
@@ -47,7 +48,7 @@ describe("LayoutController", function() {
             }
         };
         spyOn(window, 'RBush').and.returnValue(jasmine.createSpyObj("RBush", ["insert", "remove", "clear", "search"]));
-        let geiSpy = spyOn(document, 'getElementById');
+        geiSpy = spyOn(document, 'getElementById');
         geiSpy.withArgs('componentBrowser').and.returnValue(document.createElement('div'));
         geiSpy.withArgs('categories').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('searchText').and.returnValue(document.createElement('input'));
@@ -2318,6 +2319,203 @@ describe("LayoutController", function() {
         it("uses default angle 0 when none provided", function() {
             const pos = layoutController._newComponentPosition(straightTrackData);
             expect(pos.angle).toBe(0);
+        });
+    });
+
+    describe("browser drag-and-drop", function() {
+        let layoutController;
+        let straightTrackData;
+        let canvasContainer;
+        let componentMenu;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+            // Mock canvas container (800x600)
+            canvasContainer = document.createElement('div');
+            canvasContainer.id = 'canvasContainer';
+            spyOn(canvasContainer, 'getBoundingClientRect').and.returnValue({
+                left: 0,
+                top: 0,
+                right: 800,
+                bottom: 600,
+                width: 800,
+                height: 600
+            });
+
+            // Mock component menu (bottom-left quarter: 400x300)
+            componentMenu = document.createElement('div');
+            componentMenu.id = 'componentMenu';
+            spyOn(componentMenu, 'getBoundingClientRect').and.returnValue({
+                left: 0,
+                top: 300,
+                right: 400,
+                bottom: 600,
+                width: 400,
+                height: 300
+            });
+
+            geiSpy.withArgs('canvasContainer').and.returnValue(canvasContainer);
+            geiSpy.withArgs('componentMenu').and.returnValue(componentMenu);
+            geiSpy.and.callThrough(); // Allow other calls to pass through
+
+            layoutController.createComponentBrowser();
+        });
+
+        it("adds component on touch tap (iOS Safari behavior)", function() {
+            const button = layoutController.componentBrowser.querySelector('button[data-track-alias="railStraight9V"]');
+            expect(button).toBeDefined();
+
+            const initialComponentCount = layoutController.currentLayer.children.length;
+
+            // Simulate touch pointerdown (sets browserMobileClick flag)
+            const pointerDownEvent = new PointerEvent('pointerdown', {
+                pointerType: 'touch',
+                button: 0,
+                isPrimary: true,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            button.dispatchEvent(pointerDownEvent);
+            expect(LayoutController.browserMobileClick).toBeTrue();
+
+            // iOS Safari reports touch as 'mouse' in click event
+            const clickEvent = new MouseEvent('click', {
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            Object.defineProperty(clickEvent, 'pointerType', { value: 'mouse', writable: false });
+            button.dispatchEvent(clickEvent);
+
+            expect(layoutController.currentLayer.children.length).toBe(initialComponentCount + 1);
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(LayoutController.browserMobileClick).toBeFalse();
+            expect(LayoutController.ghostElement).toBeNull();
+        });
+
+        it("adds component on mouse short-click below threshold", function() {
+            const button = layoutController.componentBrowser.querySelector('button[data-track-alias="railStraight9V"]');
+            expect(button).toBeDefined();
+            const initialComponentCount = layoutController.currentLayer.children.length;
+
+            // Simulate mouse pointerdown
+            const pointerDownEvent = new PointerEvent('pointerdown', {
+                pointerType: 'mouse',
+                button: 0,
+                isPrimary: true,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            Object.defineProperty(pointerDownEvent, 'currentTarget', { value: button, writable: false });
+            button.dispatchEvent(pointerDownEvent);
+            expect(LayoutController.browserDragButton).toBe(button);
+            expect(LayoutController.browserDragTrack).toBe(straightTrackData);
+            expect(LayoutController.browserDragStartPos).toEqual({ x: 100, y: 400 });
+
+            // Simulate pointerup at same position (no drag)
+            const pointerUpEvent = new PointerEvent('pointerup', {
+                pointerType: 'mouse',
+                button: 0,
+                isPrimary: true,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            document.dispatchEvent(pointerUpEvent);
+            expect(layoutController.currentLayer.children.length).toBe(initialComponentCount + 1);
+            expect(layoutController.currentLayer.children[0]).toBeInstanceOf(Component);
+            expect(LayoutController.browserDragButton).toBeNull();
+            expect(LayoutController.browserDragTrack).toBeNull();
+            expect(LayoutController.browserDragDistance).toBe(0);
+            expect(LayoutController.browserDragStartPos).toBeNull();
+            expect(LayoutController.ghostElement).toBeNull();
+        });
+
+        it("creates ghost on mouse drag past threshold and transitions to canvas drag", function() {
+            const button = layoutController.componentBrowser.querySelector('button[data-track-alias="railStraight9V"]');
+            expect(button).toBeDefined();
+            const initialComponentCount = layoutController.currentLayer.children.length;
+
+            // Simulate mouse pointerdown
+            const pointerDownEvent = new PointerEvent('pointerdown', {
+                pointerType: 'mouse',
+                button: 0,
+                isPrimary: true,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            Object.defineProperty(pointerDownEvent, 'currentTarget', { value: button, writable: false });
+            button.dispatchEvent(pointerDownEvent);
+
+            // Simulate pointermove to exceed threshold (move 20px horizontally)
+            const pointerMoveEvent1 = new PointerEvent('pointermove', {
+                pointerType: 'mouse',
+                clientX: 120,
+                clientY: 400,
+                bubbles: true
+            });
+            document.dispatchEvent(pointerMoveEvent1);
+            expect(LayoutController.ghostElement).not.toBeNull();
+            expect(LayoutController.ghostElement.parentElement).toBe(document.body);
+
+            // Simulate pointermove to canvas area outside browser (top-right)
+            const pointerMoveEvent2 = new PointerEvent('pointermove', {
+                pointerType: 'mouse',
+                clientX: 500,
+                clientY: 200,
+                bubbles: true
+            });
+            document.dispatchEvent(pointerMoveEvent2);
+            expect(layoutController.currentLayer.children.length).toBe(initialComponentCount + 1);
+            const newComponent = layoutController.currentLayer.children[0];
+            expect(newComponent).toBeInstanceOf(Component);
+            expect(LayoutController.dragTarget).toBe(newComponent);
+            expect(LayoutController.ghostElement).toBeNull();
+            expect(LayoutController.browserDragButton).toBeNull();
+            expect(LayoutController.browserDragTrack).toBeNull();
+            expect(LayoutController.browserDragStartPos).toBeNull();
+        });
+
+        it("ignores non-primary mouse buttons", function() {
+            const button = layoutController.componentBrowser.querySelector('button[data-track-alias="railStraight9V"]');
+            expect(button).toBeDefined();
+            const initialComponentCount = layoutController.currentLayer.children.length;
+
+            // Simulate right-click (button 1)
+            const pointerDownEvent1 = new PointerEvent('pointerdown', {
+                pointerType: 'mouse',
+                button: 1,
+                isPrimary: true,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            Object.defineProperty(pointerDownEvent1, 'currentTarget', { value: button, writable: false });
+            button.dispatchEvent(pointerDownEvent1);
+            expect(LayoutController.browserDragButton).toBeNull();
+            expect(LayoutController.browserDragTrack).toBeNull();
+            
+            // Simulate non-primary pointer
+            const pointerDownEvent2 = new PointerEvent('pointerdown', {
+                pointerType: 'mouse',
+                button: 0,
+                isPrimary: false,
+                clientX: 100,
+                clientY: 400,
+                bubbles: true
+            });
+            Object.defineProperty(pointerDownEvent2, 'currentTarget', { value: button, writable: false });
+            button.dispatchEvent(pointerDownEvent2);
+
+            expect(LayoutController.browserDragButton).toBeNull();
+            expect(LayoutController.browserDragTrack).toBeNull();
+            expect(layoutController.currentLayer.children.length).toBe(initialComponentCount);
         });
     });
 });
