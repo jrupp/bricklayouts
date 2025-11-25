@@ -443,6 +443,100 @@
                     ]
                 },
                 {
+                    "alias": "railCrossRight",
+                    "src": "crossover-right.png",
+                    "category": "9V",
+                    "name": "Crossover Right",
+                    "partNumber": "211-2",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                1.1024163823495667,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                181.01933598375618,
+                                1.75,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                181.0193446154309,
+                                0.7499999848218024,
+                                1
+                            ],
+                            "next": 3
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                0.10241638234956671,
+                                0
+                            ],
+                            "next": 2
+                        }
+                    ]
+                },
+                {
+                    "alias": "railCrossLeft",
+                    "src": "crossover-left.png",
+                    "category": "9V",
+                    "name": "Crossover Left",
+                    "partNumber": "211-4",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                0.8975836176504333,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                181.01933598375618,
+                                0.25,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                181.0193446154309,
+                                1.25,
+                                1
+                            ],
+                            "next": 3
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                404.7715405015526,
+                                1.8975836176504333,
+                                0
+                            ],
+                            "next": 2
+                        }
+                    ]
+                },
+                {
                     "alias": "railStraight9VHalf",
                     "src": "2865-half.png",
                     "category": "9V",
