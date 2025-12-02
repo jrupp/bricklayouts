@@ -1384,9 +1384,6 @@ export class LayoutController {
       if (event.key === 'Escape') {
         LayoutController.selectComponent(null);
       }
-      if (event.key === 'r' && !event.ctrlKey) {
-        this.rotateSelectedComponent();
-      }
       if (event.key === 'PageUp') {
         this.bringSelectedComponentToFront();
         event.preventDefault();
