@@ -13,57 +13,60 @@
  */
 
 describe("LayoutController Rotation Bug Fix", () => {
+    let sourceCode;
+
+    // Fetch the source code once before running tests
+    beforeAll(async () => {
+        const response = await fetch('/src/controller/layoutController.js');
+        sourceCode = await response.text();
+    });
+
     /**
      * This test verifies the code structure of onKeyDown to ensure
      * the rotation handler is not duplicated.
      */
     describe("onKeyDown method structure", () => {
-        it("should only have one 'r' key handler that calls rotateSelectedComponent", async () => {
-            // Import the LayoutController source code as text
-            const response = await fetch('/src/controller/layoutController.js');
-            const sourceCode = await response.text();
-            
-            // Extract the onKeyDown method
-            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(event\)\s*{\s*[\s\S]*?(?=\n  \w+\s*\(|$)/);
+        it("should only have one 'r' key handler that calls rotateSelectedComponent", () => {
+            // Extract the onKeyDown method with a flexible pattern
+            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?(?=\n\s{0,4}\w+\s*\()/);
             expect(onKeyDownMatch).not.toBeNull('onKeyDown method should exist in LayoutController');
             
             const onKeyDownCode = onKeyDownMatch[0];
             
             // Find all occurrences of the 'r' key check followed by rotateSelectedComponent
-            const rotatePattern = /if\s*\(\s*event\.key\s*===\s*['"]r['"]\s*&&\s*!event\.ctrlKey\s*\)\s*{[\s\S]*?rotateSelectedComponent/g;
+            // This pattern is flexible about whitespace and formatting
+            const rotatePattern = /if\s*\(\s*event\s*\.\s*key\s*===\s*['"]r['"]\s*&&\s*!\s*event\s*\.\s*ctrlKey\s*\)\s*\{[\s\S]{0,50}?rotateSelectedComponent/g;
             const matches = onKeyDownCode.match(rotatePattern);
             
             // There should be exactly one occurrence
             expect(matches).not.toBeNull('At least one r key handler should exist');
             expect(matches.length).toBe(1, 
-                "Expected exactly one 'r' key handler that calls rotateSelectedComponent in onKeyDown. " +
-                "Having multiple handlers causes double rotation. Found: " + matches.length);
+                `Expected exactly one 'r' key handler that calls rotateSelectedComponent in onKeyDown. ` +
+                `Having multiple handlers causes double rotation. Found: ${matches.length}`);
         });
 
-        it("should have the 'r' key handler in the dragTarget/selectedComponent block only", async () => {
-            // Import the LayoutController source code as text
-            const response = await fetch('/src/controller/layoutController.js');
-            const sourceCode = await response.text();
-            
-            // Extract the onKeyDown method
-            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(event\)\s*{\s*[\s\S]*?(?=\n  \w+\s*\(|$)/);
+        it("should have the 'r' key handler in the dragTarget/selectedComponent block only", () => {
+            // Extract the onKeyDown method with a flexible pattern
+            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?(?=\n\s{0,4}\w+\s*\()/);
             expect(onKeyDownMatch).not.toBeNull('onKeyDown method should exist');
             
             const onKeyDownCode = onKeyDownMatch[0];
             
             // Verify the 'r' key handler is in the first block (dragTarget || selectedComponent)
-            const firstBlockPattern = /if\s*\(\s*LayoutController\.dragTarget\s*\|\|\s*LayoutController\.selectedComponent\s*\)\s*{[\s\S]*?if\s*\(\s*event\.key\s*===\s*['"]r['"]/;
+            // This pattern is flexible about whitespace
+            const firstBlockPattern = /if\s*\(\s*LayoutController\s*\.\s*dragTarget\s*\|\|\s*LayoutController\s*\.\s*selectedComponent\s*\)\s*\{[\s\S]*?if\s*\(\s*event\s*\.\s*key\s*===\s*['"]r['"]/;
             expect(onKeyDownCode).toMatch(firstBlockPattern,
                 "The 'r' key handler should be in the dragTarget/selectedComponent block");
             
             // Extract the selectedComponent-only block (the one checking for Delete)
-            const selectedComponentBlockPattern = /if\s*\(\s*LayoutController\.selectedComponent\s*\)\s*{[\s\S]*?if\s*\(\s*event\.key\s*===\s*['"]Delete['"]/;
+            // This is a more robust way to find the block
+            const selectedComponentBlockPattern = /if\s*\(\s*LayoutController\s*\.\s*selectedComponent\s*\)\s*\{[\s\S]*?if\s*\(\s*event\s*\.\s*key\s*===\s*['"]Delete['"]/;
             const selectedComponentBlockMatch = onKeyDownCode.match(selectedComponentBlockPattern);
             
             if (selectedComponentBlockMatch) {
                 const selectedComponentBlock = selectedComponentBlockMatch[0];
                 // The selectedComponent-only block should NOT contain a duplicate 'r' key handler
-                const hasDuplicateRHandler = /if\s*\(\s*event\.key\s*===\s*['"]r['"]\s*&&\s*!event\.ctrlKey\s*\)/.test(selectedComponentBlock);
+                const hasDuplicateRHandler = /if\s*\(\s*event\s*\.\s*key\s*===\s*['"]r['"]\s*&&\s*!\s*event\s*\.\s*ctrlKey\s*\)/.test(selectedComponentBlock);
                 expect(hasDuplicateRHandler).toBe(false,
                     "The selectedComponent block should NOT have a duplicate 'r' key handler. " +
                     "This would cause double rotation.");
