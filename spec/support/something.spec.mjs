@@ -380,7 +380,7 @@ describe("LayoutController", function() {
                 
                 expect(drawGridSpyLocal).not.toHaveBeenCalled();
                 
-                // Should be called after debounce delay (300ms for non-iOS Chrome)
+                // Should be called after 300ms debounce delay (using 350ms to ensure completion)
                 jasmine.clock().tick(350);
                 expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
                 
@@ -445,7 +445,7 @@ describe("LayoutController", function() {
                 // Trigger resize event
                 window.dispatchEvent(new Event('resize'));
                 
-                // Should be called at 300ms for non-iOS Chrome
+                // Should be called after 300ms debounce delay (using 350ms to ensure completion)
                 jasmine.clock().tick(350);
                 expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
                 
