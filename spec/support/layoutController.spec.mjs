@@ -27,8 +27,9 @@ describe("LayoutController Rotation Bug Fix", () => {
      */
     describe("onKeyDown method structure", () => {
         it("should only have one 'r' key handler that calls rotateSelectedComponent", () => {
-            // Extract the onKeyDown method with a flexible pattern
-            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?(?=\n\s{0,4}\w+\s*\()/);
+            // Extract the onKeyDown method - match until we hit the closing brace at the method level
+            // Look for "onKeyDown(event) {" followed by content until we hit "}\n\n" or "}/**" (method end)
+            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?\n\s{2}\}/);
             expect(onKeyDownMatch).not.toBeNull('onKeyDown method should exist in LayoutController');
             
             const onKeyDownCode = onKeyDownMatch[0];
@@ -46,8 +47,8 @@ describe("LayoutController Rotation Bug Fix", () => {
         });
 
         it("should have the 'r' key handler in the dragTarget/selectedComponent block only", () => {
-            // Extract the onKeyDown method with a flexible pattern
-            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?(?=\n\s{0,4}\w+\s*\()/);
+            // Extract the onKeyDown method - match until we hit the closing brace at the method level
+            const onKeyDownMatch = sourceCode.match(/onKeyDown\s*\(\s*event\s*\)\s*\{[\s\S]*?\n\s{2}\}/);
             expect(onKeyDownMatch).not.toBeNull('onKeyDown method should exist');
             
             const onKeyDownCode = onKeyDownMatch[0];
