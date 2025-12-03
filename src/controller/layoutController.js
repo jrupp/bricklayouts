@@ -2314,10 +2314,14 @@ export class LayoutController {
         timeoutId = setTimeout(() => func.apply(this), delay);
       };
     }
+    // Debounce delay constants (in milliseconds)
+    const DEBOUNCE_DELAY_DEFAULT = 300;
+    const DEBOUNCE_DELAY_IOS_CHROME = 500;
+    
     // Detect iOS Chrome (CriOS in user agent)
     const isIOSChrome = /CriOS/.test(navigator.userAgent);
     // Use longer debounce on iOS Chrome to account for viewport settling
-    const debounceDelay = isIOSChrome ? 500 : 300;
+    const debounceDelay = isIOSChrome ? DEBOUNCE_DELAY_IOS_CHROME : DEBOUNCE_DELAY_DEFAULT;
     const debouncedHandler = debounce(() => {
       this.drawGrid();
       this._positionSelectionToolbar();

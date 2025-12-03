@@ -380,7 +380,7 @@ describe("LayoutController", function() {
                 
                 expect(drawGridSpyLocal).not.toHaveBeenCalled();
                 
-                // For default (non-iOS Chrome) debounce of 300ms, using 350ms to ensure completion
+                // No iOS Chrome user agent set, so uses default 300ms debounce. Wait 350ms to ensure completion.
                 jasmine.clock().tick(350);
                 expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
                 
@@ -490,11 +490,12 @@ describe("LayoutController", function() {
                 orientationListener({ matches: true });
                 jasmine.clock().tick(100);
                 window.dispatchEvent(new Event('resize'));
+                // At this point: 200ms have elapsed since first event, last event just fired
                 
                 // Should not be called yet
                 expect(drawGridSpyLocal).not.toHaveBeenCalled();
                 
-                // Should be called once after iOS Chrome debounce of 500ms from last event (200ms elapsed, need 300ms more)
+                // iOS Chrome uses 500ms debounce. Need 300ms more from last event (200ms elapsed + 300ms = 500ms total)
                 jasmine.clock().tick(300);
                 expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
                 
