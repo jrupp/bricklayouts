@@ -2131,6 +2131,72 @@ describe("LayoutController", function() {
             expect(layoutController.currentLayer.children[1].canRotate()).toBeFalse();
         });
 
+        it("rotates component once when 'r' hotkey is pressed", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            LayoutController.selectComponent(component);
+            
+            // Spy on rotateSelectedComponent method
+            let rotateSpy = spyOn(layoutController, 'rotateSelectedComponent').and.callThrough();
+            
+            // Simulate 'r' keypress
+            const keyEvent = new KeyboardEvent('keydown', {
+                key: 'r',
+                ctrlKey: false,
+                bubbles: true
+            });
+            window.dispatchEvent(keyEvent);
+            
+            // rotateSelectedComponent should be called exactly once
+            expect(rotateSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("rotates component once when 'r' hotkey is pressed with dragTarget", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            LayoutController.dragTarget = component;
+            
+            // Spy on rotateSelectedComponent method
+            let rotateSpy = spyOn(layoutController, 'rotateSelectedComponent').and.callThrough();
+            
+            // Simulate 'r' keypress
+            const keyEvent = new KeyboardEvent('keydown', {
+                key: 'r',
+                ctrlKey: false,
+                bubbles: true
+            });
+            window.dispatchEvent(keyEvent);
+            
+            // rotateSelectedComponent should be called exactly once
+            expect(rotateSpy).toHaveBeenCalledTimes(1);
+            
+            // Clean up
+            LayoutController.dragTarget = null;
+        });
+
+        it("does not rotate when 'ctrl+r' is pressed", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            LayoutController.selectComponent(component);
+            
+            // Spy on rotateSelectedComponent method
+            let rotateSpy = spyOn(layoutController, 'rotateSelectedComponent').and.callThrough();
+            
+            // Simulate 'ctrl+r' keypress
+            const keyEvent = new KeyboardEvent('keydown', {
+                key: 'r',
+                ctrlKey: true,
+                bubbles: true
+            });
+            window.dispatchEvent(keyEvent);
+            
+            // rotateSelectedComponent should not be called
+            expect(rotateSpy).not.toHaveBeenCalled();
+        });
+
         it("clones a component", function() {
             layoutController.addComponent(straightTrackData);
             /** @type {Component} */
