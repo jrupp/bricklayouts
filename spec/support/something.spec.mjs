@@ -317,6 +317,190 @@ describe("LayoutController", function() {
                 expect(drawGridSpy).not.toHaveBeenCalled();
             });
         });
+
+        describe("iOS Chrome rotation fix", function() {
+            let originalUserAgent;
+            let originalVisualViewport;
+            
+            beforeEach(function() {
+                // Save original values
+                originalUserAgent = navigator.userAgent;
+                originalVisualViewport = window.visualViewport;
+            });
+
+            afterEach(function() {
+                // Restore original values
+                Object.defineProperty(navigator, 'userAgent', {
+                    value: originalUserAgent,
+                    writable: true,
+                    configurable: true
+                });
+                if (originalVisualViewport) {
+                    window.visualViewport = originalVisualViewport;
+                } else {
+                    delete window.visualViewport;
+                }
+            });
+
+            it("registers visualViewport resize listener when available", function() {
+                // Create a mock visualViewport
+                const mockVisualViewport = {
+                    addEventListener: jasmine.createSpy('visualViewport.addEventListener'),
+                    removeEventListener: jasmine.createSpy('visualViewport.removeEventListener')
+                };
+                window.visualViewport = mockVisualViewport;
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                testController.initWindowEvents();
+
+                expect(mockVisualViewport.addEventListener).toHaveBeenCalledWith('resize', jasmine.any(Function));
+            });
+
+            it("handles visualViewport resize events", function() {
+                jasmine.clock().install();
+                
+                const mockVisualViewport = {
+                    addEventListener: jasmine.createSpy('visualViewport.addEventListener'),
+                    removeEventListener: jasmine.createSpy('visualViewport.removeEventListener')
+                };
+                window.visualViewport = mockVisualViewport;
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                testController.initWindowEvents();
+
+                // Get the visualViewport resize listener
+                const visualViewportListener = mockVisualViewport.addEventListener.calls.mostRecent().args[1];
+                
+                // Trigger visualViewport resize
+                visualViewportListener(new Event('resize'));
+                
+                expect(drawGridSpyLocal).not.toHaveBeenCalled();
+                
+                // Should be called after debounce delay (300ms for non-iOS Chrome)
+                jasmine.clock().tick(350);
+                expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
+                
+                jasmine.clock().uninstall();
+            });
+
+            it("does not register visualViewport listener when not available", function() {
+                // Remove visualViewport
+                delete window.visualViewport;
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                // Should not throw error when visualViewport is undefined
+                expect(() => testController.initWindowEvents()).not.toThrow();
+            });
+
+            it("uses 500ms debounce delay for iOS Chrome", function() {
+                jasmine.clock().install();
+                
+                // Mock iOS Chrome user agent
+                Object.defineProperty(navigator, 'userAgent', {
+                    value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/108.0.5359.112 Mobile/15E148 Safari/604.1',
+                    writable: true,
+                    configurable: true
+                });
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                testController.initWindowEvents();
+
+                // Trigger resize event
+                window.dispatchEvent(new Event('resize'));
+                
+                // Should not be called at 300ms
+                jasmine.clock().tick(300);
+                expect(drawGridSpyLocal).not.toHaveBeenCalled();
+                
+                // Should be called at 500ms for iOS Chrome
+                jasmine.clock().tick(250);
+                expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
+                
+                jasmine.clock().uninstall();
+            });
+
+            it("uses 300ms debounce delay for non-iOS Chrome browsers", function() {
+                jasmine.clock().install();
+                
+                // Mock non-iOS Chrome user agent (e.g., Safari)
+                Object.defineProperty(navigator, 'userAgent', {
+                    value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
+                    writable: true,
+                    configurable: true
+                });
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                testController.initWindowEvents();
+
+                // Trigger resize event
+                window.dispatchEvent(new Event('resize'));
+                
+                // Should be called at 300ms for non-iOS Chrome
+                jasmine.clock().tick(350);
+                expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
+                
+                jasmine.clock().uninstall();
+            });
+
+            it("coordinates visualViewport, resize, and orientation events for iOS Chrome", function() {
+                jasmine.clock().install();
+                
+                // Mock iOS Chrome
+                Object.defineProperty(navigator, 'userAgent', {
+                    value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/108.0.5359.112 Mobile/15E148 Safari/604.1',
+                    writable: true,
+                    configurable: true
+                });
+
+                const mockVisualViewport = {
+                    addEventListener: jasmine.createSpy('visualViewport.addEventListener'),
+                    removeEventListener: jasmine.createSpy('visualViewport.removeEventListener')
+                };
+                window.visualViewport = mockVisualViewport;
+
+                const mockOrientationQuery = {
+                    matches: false,
+                    addEventListener: jasmine.createSpy('addEventListener'),
+                    removeEventListener: jasmine.createSpy('removeEventListener')
+                };
+                spyOn(window, 'matchMedia').and.returnValue(mockOrientationQuery);
+
+                const testController = LayoutController.getInstance(window.app);
+                const drawGridSpyLocal = spyOn(testController, 'drawGrid').and.stub();
+                
+                testController.initWindowEvents();
+
+                // Get all listeners
+                const visualViewportListener = mockVisualViewport.addEventListener.calls.mostRecent().args[1];
+                const orientationListener = mockOrientationQuery.addEventListener.calls.mostRecent().args[1];
+                
+                // Simulate iOS Chrome rotation: visualViewport resizes, orientation changes, window resizes
+                visualViewportListener(new Event('resize'));
+                jasmine.clock().tick(100);
+                orientationListener({ matches: true });
+                jasmine.clock().tick(100);
+                window.dispatchEvent(new Event('resize'));
+                
+                // Should not be called yet
+                expect(drawGridSpyLocal).not.toHaveBeenCalled();
+                
+                // Should be called once after debounce (500ms total from last event)
+                jasmine.clock().tick(350);
+                expect(drawGridSpyLocal).toHaveBeenCalledTimes(1);
+                
+                jasmine.clock().uninstall();
+            });
+        });
     });
 
     describe("reset", function() {

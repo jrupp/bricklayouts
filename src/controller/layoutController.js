@@ -2314,13 +2314,22 @@ export class LayoutController {
         timeoutId = setTimeout(() => func.apply(this), delay);
       };
     }
+    // Detect iOS Chrome (CriOS in user agent)
+    const isIOSChrome = /CriOS/.test(navigator.userAgent);
+    // Use longer debounce on iOS Chrome to account for viewport settling
+    const debounceDelay = isIOSChrome ? 500 : 300;
     const debouncedHandler = debounce(() => {
       this.drawGrid();
       this._positionSelectionToolbar();
-    }, 300);
+    }, debounceDelay);
     const orientationQuery = window.matchMedia('(orientation: portrait)');
     window.addEventListener('resize', debouncedHandler);
     orientationQuery.addEventListener('change', debouncedHandler);
+    // Visual Viewport API listener (for iOS Chrome and modern browsers)
+    // This helps iOS Chrome handle rotation properly when address bar shows/hides
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', debouncedHandler);
+    }
   }
 
   /**
