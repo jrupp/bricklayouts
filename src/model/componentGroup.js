@@ -517,7 +517,9 @@ export class ComponentGroup {
         connection.updateCircle();
       });
     });
-    this.insertCollisionTree();
+    if (!this.isDragging) {
+      this.insertCollisionTree();
+    }
   }
 
   /**

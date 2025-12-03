@@ -2197,6 +2197,47 @@ describe("LayoutController", function() {
             expect(rotateSpy).not.toHaveBeenCalled();
         });
 
+        it("does not insert collision tree when rotating while dragging", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Set up component as if it's being dragged
+            component.isDragging = true;
+            
+            // Spy on insertCollisionTree
+            let insertSpy = spyOn(component, 'insertCollisionTree');
+            let deleteSpy = spyOn(component, 'deleteCollisionTree').and.callThrough();
+            
+            // Rotate the component
+            component.rotate();
+            
+            // deleteCollisionTree should be called
+            expect(deleteSpy).toHaveBeenCalled();
+            // insertCollisionTree should NOT be called because isDragging is true
+            expect(insertSpy).not.toHaveBeenCalled();
+        });
+
+        it("inserts collision tree when rotating while not dragging", function() {
+            layoutController.addComponent(baseplateData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Ensure isDragging is false
+            component.isDragging = false;
+            
+            // Spy on insertCollisionTree
+            let insertSpy = spyOn(component, 'insertCollisionTree');
+            let deleteSpy = spyOn(component, 'deleteCollisionTree').and.callThrough();
+            
+            // Rotate the component
+            component.rotate();
+            
+            // Both deleteCollisionTree and insertCollisionTree should be called
+            expect(deleteSpy).toHaveBeenCalled();
+            expect(insertSpy).toHaveBeenCalled();
+        });
+
         it("clones a component", function() {
             layoutController.addComponent(straightTrackData);
             /** @type {Component} */

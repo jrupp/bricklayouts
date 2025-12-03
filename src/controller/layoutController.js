@@ -1687,6 +1687,7 @@ export class LayoutController {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
       let target = LayoutController.dragTarget;
       target.alpha = 1;
+      target.isDragging = false;
       target.dragStartConnection = null;
       target.insertCollisionTree();
       if (Array.from(LayoutController.dragTarget.connections.values()).length > 0) {

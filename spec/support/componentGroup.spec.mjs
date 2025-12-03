@@ -1228,6 +1228,53 @@ describe('ComponentGroup', () => {
       expect(mockComponent2.position.set).toHaveBeenCalledWith(15, 15);
       expect(mockComponent2.sprite.rotation).toBe(Math.PI / 4);
     });
+
+    it('should NOT insert collision tree when rotating while dragging', () => {
+      const group = new ComponentGroup();
+      
+      const mockComponent = createMockComponent({
+        connections: [{}]
+      });
+      
+      group.addComponent(mockComponent);
+      
+      // Set group as dragging
+      group.isDragging = true;
+      
+      spyOn(group, 'getLocalPosition').and.returnValue({ x: 5, y: 5 });
+      spyOn(group, 'deleteCollisionTree');
+      spyOn(group, 'insertCollisionTree');
+      
+      group.rotate(Math.PI / 4);
+      
+      // deleteCollisionTree should be called
+      expect(group.deleteCollisionTree).toHaveBeenCalled();
+      // insertCollisionTree should NOT be called because isDragging is true
+      expect(group.insertCollisionTree).not.toHaveBeenCalled();
+    });
+
+    it('should insert collision tree when rotating while not dragging', () => {
+      const group = new ComponentGroup();
+      
+      const mockComponent = createMockComponent({
+        connections: [{}]
+      });
+      
+      group.addComponent(mockComponent);
+      
+      // Ensure isDragging is false
+      group.isDragging = false;
+      
+      spyOn(group, 'getLocalPosition').and.returnValue({ x: 5, y: 5 });
+      spyOn(group, 'deleteCollisionTree');
+      spyOn(group, 'insertCollisionTree');
+      
+      group.rotate(Math.PI / 4);
+      
+      // Both deleteCollisionTree and insertCollisionTree should be called
+      expect(group.deleteCollisionTree).toHaveBeenCalled();
+      expect(group.insertCollisionTree).toHaveBeenCalled();
+    });
   });
 
   describe('onStartDrag', () => {
