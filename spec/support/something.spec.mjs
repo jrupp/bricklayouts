@@ -49,6 +49,11 @@ describe("LayoutController", function() {
         };
         spyOn(window, 'RBush').and.returnValue(jasmine.createSpyObj("RBush", ["insert", "remove", "clear", "search"]));
         geiSpy = spyOn(document, 'getElementById');
+        // Mock canvasContainer for resize handling
+        const mockCanvasContainer = document.createElement('div');
+        Object.defineProperty(mockCanvasContainer, 'clientWidth', { value: 800, writable: true });
+        Object.defineProperty(mockCanvasContainer, 'clientHeight', { value: 600, writable: true });
+        geiSpy.withArgs('canvasContainer').and.returnValue(mockCanvasContainer);
         geiSpy.withArgs('componentBrowser').and.returnValue(document.createElement('div'));
         geiSpy.withArgs('categories').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('searchText').and.returnValue(document.createElement('input'));
