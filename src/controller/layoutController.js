@@ -2320,19 +2320,69 @@ export class LayoutController {
     
     // Detect iOS Chrome (CriOS in user agent)
     const isIOSChrome = /CriOS/.test(navigator.userAgent);
+    
+    // Diagnostic logging for iOS Chrome rotation issue
+    console.log('[Rotation Debug] User Agent:', navigator.userAgent);
+    console.log('[Rotation Debug] iOS Chrome detected:', isIOSChrome);
+    console.log('[Rotation Debug] Visual Viewport API available:', !!window.visualViewport);
+    console.log('[Rotation Debug] Initial screen size:', window.innerWidth, 'x', window.innerHeight);
+    console.log('[Rotation Debug] Initial app.screen size:', this.app.screen.width, 'x', this.app.screen.height);
+    console.log('[Rotation Debug] Initial canvas size:', this.app.canvas.width, 'x', this.app.canvas.height);
+    console.log('[Rotation Debug] Canvas container size:', document.getElementById('canvasContainer')?.clientWidth, 'x', document.getElementById('canvasContainer')?.clientHeight);
+    if (window.visualViewport) {
+      console.log('[Rotation Debug] Visual Viewport size:', window.visualViewport.width, 'x', window.visualViewport.height);
+    }
+    
     // Use longer debounce on iOS Chrome to account for viewport settling
     const debounceDelay = isIOSChrome ? DEBOUNCE_DELAY_IOS_CHROME : DEBOUNCE_DELAY_DEFAULT;
+    console.log('[Rotation Debug] Using debounce delay:', debounceDelay, 'ms');
+    
     const debouncedHandler = debounce(() => {
+      console.log('[Rotation Debug] drawGrid called - app.screen:', this.app.screen.width, 'x', this.app.screen.height);
+      console.log('[Rotation Debug] drawGrid called - window:', window.innerWidth, 'x', window.innerHeight);
+      console.log('[Rotation Debug] drawGrid called - canvas:', this.app.canvas.width, 'x', this.app.canvas.height);
+      console.log('[Rotation Debug] drawGrid called - container:', document.getElementById('canvasContainer')?.clientWidth, 'x', document.getElementById('canvasContainer')?.clientHeight);
+      if (window.visualViewport) {
+        console.log('[Rotation Debug] drawGrid called - visualViewport:', window.visualViewport.width, 'x', window.visualViewport.height);
+      }
+      
+      // Force PixiJS to update its screen dimensions if they don't match the container
+      const container = document.getElementById('canvasContainer');
+      if (container && (this.app.screen.width !== container.clientWidth || this.app.screen.height !== container.clientHeight)) {
+        console.log('[Rotation Debug] Screen size mismatch detected! Forcing renderer resize.');
+        console.log('[Rotation Debug] Before resize - app.screen:', this.app.screen.width, 'x', this.app.screen.height);
+        this.app.renderer.resize(container.clientWidth, container.clientHeight);
+        console.log('[Rotation Debug] After resize - app.screen:', this.app.screen.width, 'x', this.app.screen.height);
+      }
+      
       this.drawGrid();
       this._positionSelectionToolbar();
     }, debounceDelay);
+    
     const orientationQuery = window.matchMedia('(orientation: portrait)');
-    window.addEventListener('resize', debouncedHandler);
-    orientationQuery.addEventListener('change', debouncedHandler);
+    
+    // Wrapped handlers with logging
+    const resizeHandler = (event) => {
+      console.log('[Rotation Debug] window.resize event - app.screen:', this.app.screen.width, 'x', this.app.screen.height, 'window:', window.innerWidth, 'x', window.innerHeight);
+      debouncedHandler();
+    };
+    
+    const orientationHandler = (event) => {
+      console.log('[Rotation Debug] orientation change event - matches portrait:', event.matches, 'app.screen:', this.app.screen.width, 'x', this.app.screen.height);
+      debouncedHandler();
+    };
+    
+    window.addEventListener('resize', resizeHandler);
+    orientationQuery.addEventListener('change', orientationHandler);
+    
     // Visual Viewport API listener (for iOS Chrome and modern browsers)
     // This helps iOS Chrome handle rotation properly when address bar shows/hides
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', debouncedHandler);
+      const visualViewportHandler = (event) => {
+        console.log('[Rotation Debug] visualViewport.resize event - visualViewport:', window.visualViewport.width, 'x', window.visualViewport.height, 'app.screen:', this.app.screen.width, 'x', this.app.screen.height);
+        debouncedHandler();
+      };
+      window.visualViewport.addEventListener('resize', visualViewportHandler);
     }
   }
 
