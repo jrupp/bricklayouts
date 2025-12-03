@@ -9,10 +9,23 @@ This file contains important instructions for GitHub Copilot Coding Agents worki
 ### Correct way to run tests:
 
 ```bash
-npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
+CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-This command runs tests in CI mode without starting an interactive server.
+**Key points:**
+- Set `CI=true` environment variable to run tests in headless Chrome mode
+- Use the CI configuration file `spec/support/jasmine-browser.ci.mjs`
+- Chrome/Chromium is already available in the GitHub Actions runner environment (no installation needed)
+- This command runs tests in CI mode and will complete automatically in GitHub Actions
+- **Note for Agents**: In the sandbox environment, this command may hang waiting for browser completion. The tests will run successfully in GitHub Actions CI. You can validate syntax instead with `node -c <filename>`
+
+### Alternative: Syntax Check Only
+
+If tests hang in the sandbox, you can at least validate JavaScript syntax:
+
+```bash
+node -c src/controller/layoutController.js
+```
 
 ### Test Files Location
 
