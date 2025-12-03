@@ -481,7 +481,9 @@ export class Component extends Container {
     } else if (currentConnections.length === 0) {
       this.deleteCollisionTree();
       this.sprite.rotation += Math.PI / 8;
-      this.insertCollisionTree();
+      if (!this.isDragging) {
+        this.insertCollisionTree();
+      }
     } else if (currentConnections.length === 1) {
       const connection = currentConnections[0];
       const otherConnection = connection.otherConnection;
@@ -498,7 +500,9 @@ export class Component extends Container {
       this.deleteCollisionTree();
       this.position.set(Math.fround(newPos.x), Math.fround(newPos.y));
       this.sprite.rotation = newPos.angle;
-      this.insertCollisionTree();
+      if (!this.isDragging) {
+        this.insertCollisionTree();
+      }
     }
     let openConnections = this.getOpenConnections();
     if (openConnections.length > 0) {
