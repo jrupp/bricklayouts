@@ -1,0 +1,15 @@
+# Copilot Agent Setup Steps
+# This file defines the setup steps that should be run when a Copilot Agent
+# starts working on this repository. These steps ensure that the agent has
+# everything it needs to successfully run tests and work with the codebase.
+
+steps:
+  - name: Install dependencies
+    run: npm install
+    
+  - name: Make selenium-manager wrapper executable
+    run: chmod +x .github/selenium-manager-offline.sh
+
+# Note: Tests should be run with the SE_MANAGER_PATH environment variable
+# set in the command itself. See .github/copilot-instructions.md for the
+# correct test command to use.
