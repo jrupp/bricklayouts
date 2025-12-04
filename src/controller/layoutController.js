@@ -108,6 +108,12 @@ export class LayoutController {
   static dragDistance = 0;
 
   /**
+   * @type {Boolean}
+   * Flag to track if Alt key was pressed when drag started (for duplication)
+   */
+  static dragWithAlt = false;
+
+  /**
    * @type {?Component | ComponentGroup}
    */
   static selectedComponent = null;
@@ -1640,11 +1646,50 @@ export class LayoutController {
         if (LayoutController.dragDistance <= threshold) {
           return;
         }
-        LayoutController.dragTarget.isDragging = true;
-        LayoutController.getInstance()._hideSelectionToolbar();
-        LayoutController.dragTarget.closeConnections();
-        if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
-          LayoutController.selectComponent(null);
+        
+        // If Alt key was pressed at drag start, duplicate the component now that threshold is passed
+        if (LayoutController.dragWithAlt) {
+          const originalComponent = LayoutController.dragTarget;
+          const layer = originalComponent.layer || originalComponent.parent;
+          
+          // Clone the original component
+          const clonedComponent = originalComponent.clone(layer);
+          layer.addChild(clonedComponent);
+          
+          // Finalize the original component (restore it to normal state)
+          LayoutController.finalizeDraggedComponent(originalComponent);
+          
+          // Deselect the original component if it was selected
+          if (LayoutController.selectedComponent?.uuid === originalComponent.uuid || LayoutController.selectedComponent === originalComponent) {
+            LayoutController.selectComponent(null);
+          }
+          
+          // Set up the clone as the new drag target
+          LayoutController.dragTarget = clonedComponent;
+          clonedComponent.alpha = 0.5;
+          clonedComponent.isDragging = true;
+          
+          // Copy drag state from original to clone
+          clonedComponent.dragStartConnection = originalComponent.dragStartConnection;
+          clonedComponent.dragStartPos = originalComponent.dragStartPos;
+          clonedComponent.dragStartOffset = originalComponent.dragStartOffset;
+          
+          // Remove clone from collision tree during drag
+          clonedComponent.deleteCollisionTree();
+          
+          // Close connections on the clone
+          clonedComponent.closeConnections();
+          
+          // Reset the dragWithAlt flag
+          LayoutController.dragWithAlt = false;
+        } else {
+          // Original behavior for non-Alt drag
+          LayoutController.dragTarget.isDragging = true;
+          LayoutController.getInstance()._hideSelectionToolbar();
+          LayoutController.dragTarget.closeConnections();
+          if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
+            LayoutController.selectComponent(null);
+          }
         }
       }
       let a = event.getLocalPosition(LayoutController.dragTarget.parent);
@@ -1681,26 +1726,35 @@ export class LayoutController {
     this._drawSelectBox({x: event.global.x, y: event.global.y});
   }
 
+  /**
+   * Finalizes a component after dragging by restoring its visual state and inserting it into the collision tree.
+   * @param {Component | ComponentGroup} component - The component to finalize
+   */
+  static finalizeDraggedComponent(component) {
+    component.alpha = 1;
+    component.isDragging = false;
+    component.dragStartConnection = null;
+    component.insertCollisionTree();
+    if (Array.from(component.connections.values()).length > 0) {
+      let openConnections = component.getOpenConnections();
+      if (openConnections.length > 0) {
+        let currentLayer = LayoutController.getInstance().currentLayer;
+        openConnections.forEach((openCon) => {
+          currentLayer.findMatchingConnection(openCon, true);
+        });
+      }
+    }
+  }
+
   static onDragEnd() {
     window.app.stage.off('pointerupoutside', LayoutController.onDragEnd);
     if (LayoutController.dragTarget) {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
       let target = LayoutController.dragTarget;
-      target.alpha = 1;
-      target.isDragging = false;
-      target.dragStartConnection = null;
-      target.insertCollisionTree();
-      if (Array.from(LayoutController.dragTarget.connections.values()).length > 0) {
-        let openConnections = LayoutController.dragTarget.getOpenConnections();
-        if (openConnections.length > 0) {
-          let currentLayer = LayoutController.getInstance().currentLayer;
-          openConnections.forEach((openCon) => {
-            currentLayer.findMatchingConnection(openCon, true);
-          });
-        }
-      }
+      LayoutController.finalizeDraggedComponent(target);
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
+      LayoutController.dragWithAlt = false;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);
       window.app.stage.off('pointermove', LayoutController.onSelectionMove);

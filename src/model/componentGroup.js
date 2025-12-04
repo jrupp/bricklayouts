@@ -459,48 +459,33 @@ export class ComponentGroup {
    * @param {FederatedPointerEvent} e 
    */
   onStartDrag(e) {
-    // Check if Alt key is pressed for duplication
-    let targetGroup = this;
-    if (e.altKey) {
-      // Clone the component group for duplication
-      const clonedGroup = this.clone(this.parent);
-      targetGroup = clonedGroup;
-      
-      // Deselect the original group if it was selected
-      if (LayoutController.selectedComponent === this) {
-        LayoutController.selectComponent(null);
-      }
-    } else {
-      // Original behavior: remove from collision tree when moving
-      this.deleteCollisionTree();
-    }
-
-    LayoutController.dragTarget = targetGroup;
+    LayoutController.dragTarget = this;
     LayoutController.dragDistance = 0;
-    targetGroup.alpha = 0.5;
-    targetGroup.isDragging = false;
-    let a = e.getLocalPosition(targetGroup.parent);
-    targetGroup.dragStartConnection = null;
+    LayoutController.dragWithAlt = e.altKey; // Track if Alt key is pressed for duplication
+    this.alpha = 0.5;
+    this.isDragging = false;
+    let a = e.getLocalPosition(this.parent);
+    this.dragStartConnection = null;
     // Find the closest connection to the start of dragging
     let closestDistance = Infinity;
-    for (let connection of targetGroup.connections.values()) {
+    for (let connection of this.connections.values()) {
       let distance = connection.getPose().subtract({...a, angle: 0}).magnitude();
-      if (targetGroup.dragStartConnection === null || distance < closestDistance) {
+      if (this.dragStartConnection === null || distance < closestDistance) {
         closestDistance = distance;
-        targetGroup.dragStartConnection = connection;
+        this.dragStartConnection = connection;
       }
     }
-    if (targetGroup.dragStartConnection) {
+    if (this.dragStartConnection) {
       // If we found a connection, set the drag start position to the connection's pose
-      let b = targetGroup.dragStartConnection.getPose();
-      targetGroup.dragStartPos = b.subtract({...a, angle: 0});
-      targetGroup.dragStartOffset =  targetGroup.getPose().subtract(b);
+      let b = this.dragStartConnection.getPose();
+      this.dragStartPos = b.subtract({...a, angle: 0});
+      this.dragStartOffset =  this.getPose().subtract(b);
     } else {
       // If we didn't find a connection, set the drag start position to the center of the component group
-      targetGroup.dragStartPos = targetGroup.getPose().subtract({...a, angle: 0});
-      targetGroup.dragStartOffset = new Pose(0, 0, 0);
+      this.dragStartPos = this.getPose().subtract({...a, angle: 0});
+      this.dragStartOffset = new Pose(0, 0, 0);
     }
-    targetGroup.deleteCollisionTree();
+    this.deleteCollisionTree();
     window.app.stage.on('pointermove', LayoutController.onDragMove);
     window.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
     e.stopImmediatePropagation();
