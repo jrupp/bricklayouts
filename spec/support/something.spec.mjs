@@ -2965,6 +2965,9 @@ describe("LayoutLayer", function() {
 
         describe("when Alt key is pressed at drag start", function() {
             it("should set dragWithAlt flag to true", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 
@@ -2983,6 +2986,9 @@ describe("LayoutLayer", function() {
             });
 
             it("should NOT duplicate immediately on drag start", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 const initialChildCount = currentLayer.children.length;
@@ -3004,6 +3010,9 @@ describe("LayoutLayer", function() {
 
         describe("when Alt key is NOT pressed at drag start", function() {
             it("should set dragWithAlt flag to false", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 
@@ -3023,6 +3032,9 @@ describe("LayoutLayer", function() {
 
         describe("duplication after threshold in onDragMove", function() {
             it("should duplicate component after threshold is passed with Alt", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 const originalUuid = component.uuid;
@@ -3061,6 +3073,9 @@ describe("LayoutLayer", function() {
             });
 
             it("should NOT duplicate before threshold is passed", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 const initialChildCount = currentLayer.children.length;
@@ -3090,6 +3105,9 @@ describe("LayoutLayer", function() {
             });
 
             it("should NOT duplicate without Alt even after threshold", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 const originalUuid = component.uuid;
@@ -3121,6 +3139,9 @@ describe("LayoutLayer", function() {
             });
 
             it("should restore original component to normal state after duplication", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 
@@ -3153,6 +3174,9 @@ describe("LayoutLayer", function() {
             });
 
             it("should deselect original component if it was selected", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === 'railStraight9V');
                 const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
                 currentLayer.addChild(component);
                 LayoutController.selectedComponent = component;
