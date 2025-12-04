@@ -2315,13 +2315,33 @@ export class LayoutController {
         timeoutId = setTimeout(() => func.apply(this), delay);
       };
     }
+
+    const DEBOUNCE_DELAY_DEFAULT = 300;
+    const DEBOUNCE_DELAY_IOS_CHROME = 500;
+    const isIOSChrome = /CriOS/.test(navigator.userAgent);
+    const debounceDelay = isIOSChrome ? DEBOUNCE_DELAY_IOS_CHROME : DEBOUNCE_DELAY_DEFAULT;
     const debouncedHandler = debounce(() => {
+      // Force PixiJS renderer to resize to match container dimensions
+      // This ensures app.screen dimensions are correct before drawing the grid
+      // PixiJS's internal resize handling may lag behind the actual container size change
+      const container = document.getElementById('canvasContainer');
+      if (container) {
+        this.app.renderer.resize(container.clientWidth, container.clientHeight);
+      }
+
       this.drawGrid();
       this._positionSelectionToolbar();
-    }, 300);
+    }, debounceDelay);
+
     const orientationQuery = window.matchMedia('(orientation: portrait)');
     window.addEventListener('resize', debouncedHandler);
     orientationQuery.addEventListener('change', debouncedHandler);
+
+    // Visual Viewport API listener (for iOS Chrome and modern browsers)
+    // This helps iOS Chrome handle rotation properly when address bar shows/hides
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', debouncedHandler);
+    }
   }
 
   /**
