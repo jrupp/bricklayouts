@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # Wrapper for selenium-manager that forces offline mode
 # This prevents selenium-manager from trying to download chromedriver,
 # which can hang in the sandbox environment. Instead, it will use the
@@ -25,5 +26,14 @@ if [ ! -f "$REAL_SM" ]; then
   exit 1
 fi
 
-# Add --offline flag to prevent network downloads
-exec "$REAL_SM" "$@" --offline
+# Add --offline flag to prevent network downloads (if not already present)
+OFFLINE_FLAG="--offline"
+for arg in "$@"; do
+  if [ "$arg" = "$OFFLINE_FLAG" ]; then
+    # --offline already present, just pass through all arguments
+    exec "$REAL_SM" "$@"
+  fi
+done
+
+# Add --offline flag
+exec "$REAL_SM" "$@" "$OFFLINE_FLAG"
