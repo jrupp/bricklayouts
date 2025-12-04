@@ -123,7 +123,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
         expect(mockLayer.addChild).toHaveBeenCalled();
       });
 
-      it('should insert clone into collision tree', () => {
+      it('should NOT insert clone into collision tree initially (will be inserted on drag end)', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
         
         const mockEvent = {
@@ -136,9 +136,9 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
         component.onStartDrag(mockEvent);
 
-        // The clone should be inserted into collision tree
-        // (once after creation, then deleted before drag starts)
-        expect(mockLayer.tree.insert).toHaveBeenCalled();
+        // The clone should NOT be inserted into collision tree yet
+        // It will be inserted when drag ends
+        expect(mockLayer.tree.insert).not.toHaveBeenCalled();
       });
 
       it('should deselect original component if it was selected', () => {
@@ -235,7 +235,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
         expect(LayoutController.dragTarget).not.toBe(group);
       });
 
-      it('should insert cloned group into collision tree', () => {
+      it('should NOT insert cloned group into collision tree initially (will be inserted on drag end)', () => {
         const group = new ComponentGroup();
         const component1 = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
         const component2 = new Component(mockTrackData, new Pose(200, 200, 0), mockLayer, {});
@@ -254,8 +254,9 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
         group.onStartDrag(mockEvent);
 
-        // The cloned group's components should be inserted into collision tree
-        expect(mockLayer.tree.insert).toHaveBeenCalled();
+        // The cloned group's components should NOT be inserted into collision tree yet
+        // They will be inserted when drag ends
+        expect(mockLayer.tree.insert).not.toHaveBeenCalled();
       });
 
       it('should deselect original group if it was selected', () => {
@@ -309,7 +310,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
   });
 
   describe('Collision tree integrity', () => {
-    it('should ensure no duplicate entries after alt-drag of component', () => {
+    it('should ensure no insertions during alt-drag start (insertions happen on drag end)', () => {
       const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
       const insertCalls = [];
       
@@ -328,13 +329,11 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
       component.onStartDrag(mockEvent);
 
-      // Verify no duplicate IDs in collision tree inserts
-      const ids = insertCalls.map(item => item.id);
-      const uniqueIds = new Set(ids);
-      expect(ids.length).toBe(uniqueIds.size);
+      // Should have no inserts during drag start (will be inserted on drag end)
+      expect(insertCalls.length).toBe(0);
     });
 
-    it('should ensure no duplicate entries after alt-drag of component group', () => {
+    it('should ensure no insertions during alt-drag start of component group', () => {
       const group = new ComponentGroup();
       const component1 = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
       const component2 = new Component(mockTrackData, new Pose(200, 200, 0), mockLayer, {});
@@ -358,20 +357,13 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
       group.onStartDrag(mockEvent);
 
-      // Verify no duplicate IDs in collision tree inserts
-      const ids = insertCalls.map(item => item.id);
-      const uniqueIds = new Set(ids);
-      expect(ids.length).toBe(uniqueIds.size);
+      // Should have no inserts during drag start (will be inserted on drag end)
+      expect(insertCalls.length).toBe(0);
     });
 
-    it('should have both original and duplicate component in tree after alt-drag', () => {
+    it('should create a clone with different UUID when alt-dragging', () => {
       const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
       const originalUuid = component.uuid;
-      const insertCalls = [];
-      
-      mockLayer.tree.insert.and.callFake((item) => {
-        insertCalls.push(item);
-      });
       
       const mockEvent = {
         button: 0,
@@ -382,13 +374,11 @@ describe('Alt-Drag to Duplicate Feature', () => {
       };
 
       component.onStartDrag(mockEvent);
-
-      // Should have at least one insert (the clone)
-      expect(insertCalls.length).toBeGreaterThan(0);
       
       // The clone should have a different UUID than the original
       const clonedComponent = LayoutController.dragTarget;
       expect(clonedComponent.uuid).not.toBe(originalUuid);
+      expect(clonedComponent).not.toBe(component);
     });
   });
 });

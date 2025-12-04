@@ -893,7 +893,6 @@ export class Component extends Container {
       // Clone the component for duplication
       const clonedComponent = this.clone(this.layer);
       this.layer.addChild(clonedComponent);
-      clonedComponent.insertCollisionTree();
       targetComponent = clonedComponent;
       
       // Deselect the original component if it was selected

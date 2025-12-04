@@ -464,7 +464,6 @@ export class ComponentGroup {
     if (e.altKey) {
       // Clone the component group for duplication
       const clonedGroup = this.clone(this.parent);
-      clonedGroup.insertCollisionTree();
       targetGroup = clonedGroup;
       
       // Deselect the original group if it was selected
