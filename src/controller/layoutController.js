@@ -2129,23 +2129,30 @@ export class LayoutController {
     let index = parseInt(event.currentTarget.dataset.layer);
     console.log(`Edit Layer ${index}`);
     const layerNameNode = document.getElementById('layerName');
+    const layerOpacityNode = document.getElementById('layerOpacity');
     layerNameNode.parentElement.classList.remove('invalid');
     layerNameNode.value = this.layers[index].label;
     layerNameNode.setAttribute('data-layer', index);
+    layerOpacityNode.value = Math.round(this.layers[index].alpha * 100);
     this.hideFileMenu();
     ui("#editLayerDialog");
   }
 
   onSaveLayerName() {
     const layerNameNode = document.getElementById('layerName');
+    const layerOpacityNode = document.getElementById('layerOpacity');
     let layerName = layerNameNode.value;
+    let layerOpacity = parseInt(layerOpacityNode.value, 10);
     let index = parseInt(layerNameNode.getAttribute('data-layer'));
     if (layerName.length === 0) {
       layerNameNode.parentElement.classList.add('invalid');
       layerNameNode.focus();
       return;
     }
+    // Ensure opacity is within valid range
+    layerOpacity = Math.max(0, Math.min(100, layerOpacity));
     this.layers[index].label = layerName;
+    this.layers[index].alpha = layerOpacity / 100;
     this.updateLayerList();
     ui("#editLayerDialog");
   }
