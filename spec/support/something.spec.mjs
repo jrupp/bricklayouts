@@ -2927,7 +2927,103 @@ describe("LayoutLayer", function() {
         expect(serialized).toEqual({
             components: [],
             name: "Test Layer",
-            visible: true
+            visible: true,
+            opacity: 100
         });
+    });
+
+    it("serializes a layer with custom opacity", function() {
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.label = "Test Layer";
+        layoutLayer.visible = true;
+        layoutLayer.alpha = 0.5;
+        let serialized = layoutLayer.serialize();
+        expect(serialized).toEqual({
+            components: [],
+            name: "Test Layer",
+            visible: true,
+            opacity: 50
+        });
+    });
+
+    it("deserializes a layer with opacity", function() {
+        let serialized = {
+            components: [],
+            name: "Test Layer",
+            visible: true,
+            opacity: 75
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("Test Layer");
+        expect(layoutLayer.visible).toBeTrue();
+        expect(layoutLayer.alpha).toBeCloseTo(0.75, 2);
+    });
+
+    it("deserializes a layer without opacity defaults to 100%", function() {
+        let serialized = {
+            components: [],
+            name: "Test Layer",
+            visible: true
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        expect(layoutLayer.label).toBe("Test Layer");
+        expect(layoutLayer.visible).toBeTrue();
+        expect(layoutLayer.alpha).toBe(1.0);
+    });
+
+    it("validates a layer with valid opacity", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: 50
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("validates a layer with opacity 0", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: 0
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("validates a layer with opacity 100", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: 100
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
+    });
+
+    it("does not validate a layer with negative opacity", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: -1
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a layer with opacity over 100", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: 101
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+    });
+
+    it("does not validate a layer with non-number opacity", function() {
+        spyOn(Component, '_validateImportData').and.returnValue(true);
+        let serialized = {
+            components: [],
+            opacity: "50"
+        };
+        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
     });
 });
