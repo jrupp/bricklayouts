@@ -886,43 +886,62 @@ export class Component extends Container {
       this.group.onStartDrag(e);
       return;
     }
-    LayoutController.dragTarget = this;
+
+    // Check if Alt key is pressed for duplication
+    let targetComponent = this;
+    if (e.altKey) {
+      // Clone the component for duplication
+      const clonedComponent = this.clone(this.layer);
+      this.layer.addChild(clonedComponent);
+      clonedComponent.insertCollisionTree();
+      targetComponent = clonedComponent;
+      
+      // Deselect the original component if it was selected
+      if (LayoutController.selectedComponent?.uuid === this.uuid) {
+        LayoutController.selectComponent(null);
+      }
+    } else {
+      // Original behavior: remove from collision tree when moving
+      this.deleteCollisionTree();
+    }
+
+    LayoutController.dragTarget = targetComponent;
     LayoutController.dragDistance = 0;
-    this.alpha = 0.5;
-    this.isDragging = false;
-    let a = e.getLocalPosition(this.parent);
-    this.dragStartConnection = null;
+    targetComponent.alpha = 0.5;
+    targetComponent.isDragging = false;
+    let a = e.getLocalPosition(targetComponent.parent);
+    targetComponent.dragStartConnection = null;
     // Find the closest connection to the start of dragging
     let closestDistance = Infinity;
-    for (let connection of this.connections) {
+    for (let connection of targetComponent.connections) {
       let distance = connection.getPose().subtract({...a, angle: 0}).magnitude();
-      if (this.dragStartConnection === null || distance < closestDistance) {
+      if (targetComponent.dragStartConnection === null || distance < closestDistance) {
         closestDistance = distance;
-        this.dragStartConnection = connection;
+        targetComponent.dragStartConnection = connection;
       }
     }
-    if (this.dragStartConnection) {
+    if (targetComponent.dragStartConnection) {
       // If we found a connection, set the drag start position to the connection's pose
-      let b = this.dragStartConnection.getPose();
-      this.dragStartPos = b.subtract({...a, angle: 0});
-      this.dragStartOffset =  this.getPose().subtract(b);
-    } else if (this.baseData.type === DataTypes.TRACK) {
+      let b = targetComponent.dragStartConnection.getPose();
+      targetComponent.dragStartPos = b.subtract({...a, angle: 0});
+      targetComponent.dragStartOffset =  targetComponent.getPose().subtract(b);
+    } else if (targetComponent.baseData.type === DataTypes.TRACK) {
       // Set the drag start to the top left of the track
-      this.dragStartPos = this.getPose().subtract({x: this.width / 2, y: this.height / 2, angle: 0}).subtract({...a, angle: 0});
-      this.dragStartOffset = new Pose(this.width / 2, this.height / 2, 0);
-    } else if (this.baseData.type === DataTypes.BASEPLATE) {
+      targetComponent.dragStartPos = targetComponent.getPose().subtract({x: targetComponent.width / 2, y: targetComponent.height / 2, angle: 0}).subtract({...a, angle: 0});
+      targetComponent.dragStartOffset = new Pose(targetComponent.width / 2, targetComponent.height / 2, 0);
+    } else if (targetComponent.baseData.type === DataTypes.BASEPLATE) {
       // Set the drag start to the upper left corner of the baseplate
-      this.dragStartPos = this.getPose().subtract({x: this.#width / 2, y: this.#height / 2, angle: 0}).subtract({...a, angle: 0});
-      this.dragStartOffset = new Pose(this.#width / 2, this.#height / 2, 0);
+      targetComponent.dragStartPos = targetComponent.getPose().subtract({x: targetComponent.componentWidth / 2, y: targetComponent.componentHeight / 2, angle: 0}).subtract({...a, angle: 0});
+      targetComponent.dragStartOffset = new Pose(targetComponent.componentWidth / 2, targetComponent.componentHeight / 2, 0);
     } else {
       // If we didn't find a connection, set the drag start position to the Component's pose
-      this.dragStartPos = this.getPose().subtract({...a, angle: 0});
-      this.dragStartOffset = new Pose(0, 0, 0);
+      targetComponent.dragStartPos = targetComponent.getPose().subtract({...a, angle: 0});
+      targetComponent.dragStartOffset = new Pose(0, 0, 0);
     }
-    this.deleteCollisionTree();
+    targetComponent.deleteCollisionTree();
     window.app.stage.on('pointermove', LayoutController.onDragMove);
     window.app.stage.on('pointerupoutside', LayoutController.onDragEnd);
-    console.log(this.baseData.alias);
+    console.log(targetComponent.baseData.alias);
     e.stopImmediatePropagation();
   }
 }
