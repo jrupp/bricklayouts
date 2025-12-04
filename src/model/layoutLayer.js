@@ -7,6 +7,7 @@ import { Connection } from "./connection.js";
  * @typedef {Object} SerializedLayoutLayer
  * @property {String} name The display name of the layer
  * @property {Boolean} visible The visibility of the layer
+ * @property {Number} [opacity] The opacity of the layer (0-100), defaults to 100
  * @property {Array<SerializedComponent>} components
  */
 let SerializedLayoutLayer;
@@ -142,7 +143,8 @@ export class LayoutLayer extends Container {
             components: this.children.filter(/** @param {Container} child */(child) => child instanceof Component)
                                     .map(/** @param {Component} child */(child) => child.serialize()),
             name: this.label,
-            visible: this.visible
+            visible: this.visible,
+            opacity: Math.round(this.alpha * 100)
         };
     }
 
@@ -158,6 +160,7 @@ export class LayoutLayer extends Container {
 
         this.label = data?.name ?? "New Layer";
         this.visible = data?.visible ?? true;
+        this.alpha = (data?.opacity ?? 100) / 100;
     }
 
     /**
@@ -171,6 +174,8 @@ export class LayoutLayer extends Container {
             data?.name === undefined || typeof data?.name === 'string',
             data?.name === undefined || data?.name?.length > 0,
             data?.visible == undefined || typeof data?.visible === 'boolean',
+            data?.opacity == undefined || typeof data?.opacity === 'number',
+            data?.opacity == undefined || (data?.opacity >= 0 && data?.opacity <= 100),
             data?.components,
             Array.isArray(data?.components),
         ]
