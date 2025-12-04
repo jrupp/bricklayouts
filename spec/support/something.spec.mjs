@@ -2930,4 +2930,255 @@ describe("LayoutLayer", function() {
             visible: true
         });
     });
+
+    describe("Alt-Drag to Duplicate", function() {
+        let layoutController;
+        let currentLayer;
+        let trackData;
+
+        beforeAll(function() {
+            layoutController = window.layoutController;
+        });
+
+        beforeEach(function() {
+            currentLayer = layoutController.currentLayer;
+            // Get a real track data from the assets
+            trackData = window.assets.get('S-9090-Straight');
+        });
+
+        afterEach(function() {
+            // Clean up any components added during tests
+            if (currentLayer && currentLayer.children) {
+                const childrenCopy = [...currentLayer.children];
+                childrenCopy.forEach(child => {
+                    if (child instanceof Component) {
+                        child.destroy();
+                    }
+                });
+            }
+            // Reset LayoutController state
+            LayoutController.dragTarget = null;
+            LayoutController.dragDistance = 0;
+            LayoutController.dragWithAlt = false;
+            LayoutController.selectedComponent = null;
+        });
+
+        describe("when Alt key is pressed at drag start", function() {
+            it("should set dragWithAlt flag to true", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                
+                const mockEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+
+                component.onStartDrag(mockEvent);
+
+                expect(LayoutController.dragWithAlt).toBe(true);
+                expect(LayoutController.dragTarget).toBe(component);
+            });
+
+            it("should NOT duplicate immediately on drag start", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                const initialChildCount = currentLayer.children.length;
+                
+                const mockEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+
+                component.onStartDrag(mockEvent);
+
+                // Should not have created a duplicate yet
+                expect(currentLayer.children.length).toBe(initialChildCount);
+            });
+        });
+
+        describe("when Alt key is NOT pressed at drag start", function() {
+            it("should set dragWithAlt flag to false", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                
+                const mockEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: false,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+
+                component.onStartDrag(mockEvent);
+
+                expect(LayoutController.dragWithAlt).toBe(false);
+            });
+        });
+
+        describe("duplication after threshold in onDragMove", function() {
+            it("should duplicate component after threshold is passed with Alt", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                const originalUuid = component.uuid;
+                const initialChildCount = currentLayer.children.length;
+                
+                // Start drag with Alt
+                const startEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                component.onStartDrag(startEvent);
+
+                expect(LayoutController.dragWithAlt).toBe(true);
+
+                // Simulate drag movement past threshold
+                const moveEvent = {
+                    movementX: 10,
+                    movementY: 0,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 110, y: 100 })
+                };
+
+                LayoutController.onDragMove(moveEvent);
+
+                // Should have created a duplicate
+                expect(currentLayer.children.length).toBe(initialChildCount + 1);
+                
+                // dragTarget should now be the clone (different uuid)
+                expect(LayoutController.dragTarget).not.toBe(component);
+                expect(LayoutController.dragTarget.uuid).not.toBe(originalUuid);
+                
+                // dragWithAlt should be reset after duplication
+                expect(LayoutController.dragWithAlt).toBe(false);
+            });
+
+            it("should NOT duplicate before threshold is passed", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                const initialChildCount = currentLayer.children.length;
+                
+                // Start drag with Alt
+                const startEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                component.onStartDrag(startEvent);
+
+                // Simulate small drag movement below threshold
+                const moveEvent = {
+                    movementX: 1,
+                    movementY: 0,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 101, y: 100 })
+                };
+
+                LayoutController.onDragMove(moveEvent);
+
+                // Should NOT have created a duplicate yet
+                expect(currentLayer.children.length).toBe(initialChildCount);
+                expect(LayoutController.dragTarget).toBe(component);
+            });
+
+            it("should NOT duplicate without Alt even after threshold", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                const originalUuid = component.uuid;
+                const initialChildCount = currentLayer.children.length;
+                
+                // Start drag WITHOUT Alt
+                const startEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: false,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                component.onStartDrag(startEvent);
+
+                // Simulate drag movement past threshold
+                const moveEvent = {
+                    movementX: 10,
+                    movementY: 0,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 110, y: 100 })
+                };
+
+                LayoutController.onDragMove(moveEvent);
+
+                // Should NOT have created a duplicate
+                expect(currentLayer.children.length).toBe(initialChildCount);
+                expect(LayoutController.dragTarget).toBe(component);
+                expect(LayoutController.dragTarget.uuid).toBe(originalUuid);
+            });
+
+            it("should restore original component to normal state after duplication", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                
+                // Start drag with Alt
+                const startEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                component.onStartDrag(startEvent);
+
+                expect(component.alpha).toBe(0.5);
+                expect(component.isDragging).toBe(false);
+
+                // Simulate drag movement past threshold
+                const moveEvent = {
+                    movementX: 10,
+                    movementY: 0,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 110, y: 100 })
+                };
+
+                LayoutController.onDragMove(moveEvent);
+
+                // Original component should be restored
+                expect(component.alpha).toBe(1);
+                expect(component.isDragging).toBe(false);
+                expect(component.dragStartConnection).toBe(null);
+            });
+
+            it("should deselect original component if it was selected", function() {
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                LayoutController.selectedComponent = component;
+                
+                // Start drag with Alt
+                const startEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: true,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 100 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                component.onStartDrag(startEvent);
+
+                // Simulate drag movement past threshold
+                const moveEvent = {
+                    movementX: 10,
+                    movementY: 0,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 110, y: 100 })
+                };
+
+                LayoutController.onDragMove(moveEvent);
+
+                // Original should be deselected
+                expect(LayoutController.selectedComponent).not.toBe(component);
+            });
+        });
+    });
 });
