@@ -36,9 +36,10 @@ describe('Alt-Drag to Duplicate Feature', () => {
       alias: 'test-track',
       name: 'Test Track',
       category: 'test',
-      src: 'test.png',
-      image: new Image(),
-      scale: 1,
+      type: 'shape', // Using shape type to avoid Assets dependency
+      width: 100,
+      height: 100,
+      color: 0xA0A5A9,
       connections: []
     };
 
@@ -49,6 +50,15 @@ describe('Alt-Drag to Duplicate Feature', () => {
         off: jasmine.createSpy('off')
       }
     };
+
+    // Mock LayoutController.getInstance()
+    spyOn(LayoutController, 'getInstance').and.returnValue({
+      config: {
+        snapToSize: 0
+      },
+      _hideSelectionToolbar: jasmine.createSpy('_hideSelectionToolbar'),
+      currentLayer: mockLayer
+    });
   });
 
   afterEach(() => {
@@ -198,6 +208,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
       it('should create a clone and switch dragTarget to the clone', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
         const originalUuid = component.uuid;
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         // Set up initial drag state
         LayoutController.dragTarget = component;
@@ -234,6 +245,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
       it('should finalize the original component', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         // Set up initial drag state
         LayoutController.dragTarget = component;
@@ -265,6 +277,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
       it('should reset dragWithAlt flag after duplication', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         LayoutController.dragTarget = component;
         LayoutController.dragDistance = 0;
@@ -288,6 +301,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
 
       it('should deselect original if it was selected', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         LayoutController.dragTarget = component;
         LayoutController.dragDistance = 0;
@@ -316,6 +330,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
       it('should NOT create duplicate yet', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
         const originalUuid = component.uuid;
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         LayoutController.dragTarget = component;
         LayoutController.dragDistance = 0;
@@ -346,6 +361,7 @@ describe('Alt-Drag to Duplicate Feature', () => {
       it('should NOT create duplicate even after threshold', () => {
         const component = new Component(mockTrackData, new Pose(100, 100, 0), mockLayer, {});
         const originalUuid = component.uuid;
+        component.parent = mockLayer; // Set parent for getLocalPosition
         
         LayoutController.dragTarget = component;
         LayoutController.dragDistance = 0;
