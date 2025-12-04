@@ -1669,8 +1669,22 @@ export class LayoutController {
           clonedComponent.alpha = 0.5;
           clonedComponent.isDragging = true;
           
-          // Copy drag state from original to clone
-          clonedComponent.dragStartConnection = originalComponent.dragStartConnection;
+          // Calculate the closest connection on the clone instead of copying from original
+          clonedComponent.dragStartConnection = null;
+          if (originalComponent.dragStartConnection) {
+            // Find the closest connection on the clone to match the drag behavior
+            const originalDragPos = originalComponent.dragStartConnection.getPose();
+            let closestDistance = Infinity;
+            for (let connection of clonedComponent.connections) {
+              let distance = connection.getPose().subtract(originalDragPos).magnitude();
+              if (clonedComponent.dragStartConnection === null || distance < closestDistance) {
+                closestDistance = distance;
+                clonedComponent.dragStartConnection = connection;
+              }
+            }
+          }
+          
+          // Copy other drag state from original to clone
           clonedComponent.dragStartPos = originalComponent.dragStartPos;
           clonedComponent.dragStartOffset = originalComponent.dragStartOffset;
           
