@@ -6,31 +6,42 @@ This file contains important instructions for GitHub Copilot Coding Agents worki
 
 **IMPORTANT**: Do NOT use `npm test` to run tests, as it starts an interactive server that will hang.
 
-### Correct way to run tests:
+### Correct way to run tests in the Copilot Agent sandbox:
 
+```bash
+SE_MANAGER_PATH=$(pwd)/.github/selenium-manager-offline.sh npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.agent.mjs
+```
+
+**Key points:**
+- The `SE_MANAGER_PATH` environment variable points to a wrapper script that forces selenium-manager to run in offline mode
+- This prevents selenium-manager from trying to download chromedriver, which would hang in the sandbox environment
+- The wrapper script uses the system-installed chromedriver and Chrome that are already available
+- Use the agent configuration file `spec/support/jasmine-browser.agent.mjs` (for agent sandbox)
+- Tests complete in ~1-2 seconds with 319 specs
+
+### Alternative test commands:
+
+**For GitHub Actions CI:**
 ```bash
 CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-**Key points:**
-- Set `CI=true` environment variable to run tests in headless Chrome mode
-- Use the CI configuration file `spec/support/jasmine-browser.ci.mjs`
-- Chrome/Chromium is already available in the GitHub Actions runner environment (no installation needed)
-- This command runs tests in CI mode and will complete automatically in GitHub Actions
-- **Note for Agents**: In the sandbox environment, this command may hang waiting for browser completion. The tests will run successfully in GitHub Actions CI. You can validate syntax instead with `node -c <filename>`
-
-### Alternative: Syntax Check Only
-
-If tests hang in the sandbox, you can at least validate JavaScript syntax:
-
+**For local interactive development:**
 ```bash
-node -c src/controller/layoutController.js
+npm start  # then navigate to the jasmine test page
 ```
+
+### Why the special configuration is needed:
+
+The selenium-webdriver library (used by jasmine-browser-runner) includes a selenium-manager tool that automatically downloads browser drivers. In the sandbox environment, selenium-manager's network requests hang indefinitely, preventing tests from running. The solution uses selenium-manager's `--offline` flag to skip downloads and use the system-installed chromedriver instead.
 
 ### Test Files Location
 
 - Test specifications are in: `spec/support/`
-- Test configuration: `spec/support/jasmine-browser.ci.mjs` (CI mode) and `spec/support/jasmine-browser.mjs` (interactive mode)
+- Test configuration files:
+  - `spec/support/jasmine-browser.agent.mjs` - Agent sandbox configuration
+  - `spec/support/jasmine-browser.ci.mjs` - CI configuration  
+  - `spec/support/jasmine-browser.mjs` - Interactive development configuration
 
 ## Building and Development
 
