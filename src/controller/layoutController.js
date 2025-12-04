@@ -2314,16 +2314,11 @@ export class LayoutController {
         timeoutId = setTimeout(() => func.apply(this), delay);
       };
     }
-    // Debounce delay constants (in milliseconds)
+
     const DEBOUNCE_DELAY_DEFAULT = 300;
     const DEBOUNCE_DELAY_IOS_CHROME = 500;
-    
-    // Detect iOS Chrome (CriOS in user agent)
     const isIOSChrome = /CriOS/.test(navigator.userAgent);
-    
-    // Use longer debounce on iOS Chrome to account for viewport settling
     const debounceDelay = isIOSChrome ? DEBOUNCE_DELAY_IOS_CHROME : DEBOUNCE_DELAY_DEFAULT;
-    
     const debouncedHandler = debounce(() => {
       // Force PixiJS renderer to resize to match container dimensions
       // This ensures app.screen dimensions are correct before drawing the grid
@@ -2332,16 +2327,15 @@ export class LayoutController {
       if (container) {
         this.app.renderer.resize(container.clientWidth, container.clientHeight);
       }
-      
+
       this.drawGrid();
       this._positionSelectionToolbar();
     }, debounceDelay);
-    
+
     const orientationQuery = window.matchMedia('(orientation: portrait)');
-    
     window.addEventListener('resize', debouncedHandler);
     orientationQuery.addEventListener('change', debouncedHandler);
-    
+
     // Visual Viewport API listener (for iOS Chrome and modern browsers)
     // This helps iOS Chrome handle rotation properly when address bar shows/hides
     if (window.visualViewport) {
