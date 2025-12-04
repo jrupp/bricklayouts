@@ -9,6 +9,7 @@ steps:
     
   - name: Make selenium-manager wrapper executable
     run: chmod +x .github/selenium-manager-offline.sh
-    
-  - name: Export selenium manager path
-    run: echo "export SE_MANAGER_PATH=$(pwd)/.github/selenium-manager-offline.sh" >> ~/.bashrc
+
+# Note: Tests should be run with the SE_MANAGER_PATH environment variable
+# set in the command itself. See .github/copilot-instructions.md for the
+# correct test command to use.
