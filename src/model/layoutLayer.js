@@ -174,8 +174,8 @@ export class LayoutLayer extends Container {
             data?.name === undefined || typeof data?.name === 'string',
             data?.name === undefined || data?.name?.length > 0,
             data?.visible == undefined || typeof data?.visible === 'boolean',
-            data?.opacity === undefined || typeof data?.opacity === 'number',
-            data?.opacity === undefined || (data?.opacity >= 0 && data?.opacity <= 100),
+            data?.opacity == undefined || typeof data?.opacity === 'number',
+            data?.opacity == undefined || (data?.opacity >= 0 && data?.opacity <= 100),
             data?.components,
             Array.isArray(data?.components),
         ]

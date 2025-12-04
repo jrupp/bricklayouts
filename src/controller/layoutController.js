@@ -2088,13 +2088,15 @@ export class LayoutController {
     const layerNameNode = document.getElementById('layerName');
     const layerOpacityNode = document.getElementById('layerOpacity');
     let layerName = layerNameNode.value;
-    let layerOpacity = parseInt(layerOpacityNode.value);
+    let layerOpacity = parseInt(layerOpacityNode.value, 10);
     let index = parseInt(layerNameNode.getAttribute('data-layer'));
     if (layerName.length === 0) {
       layerNameNode.parentElement.classList.add('invalid');
       layerNameNode.focus();
       return;
     }
+    // Ensure opacity is within valid range
+    layerOpacity = Math.max(0, Math.min(100, layerOpacity));
     this.layers[index].label = layerName;
     this.layers[index].alpha = layerOpacity / 100;
     this.updateLayerList();
