@@ -1671,7 +1671,7 @@ export class LayoutController {
             // Find the closest connection on the clone to match the drag behavior
             const originalDragPos = originalDragStartConnection.getPose();
             let closestDistance = Infinity;
-            for (let connection of clonedComponent.connections) {
+            for (let connection of Array.from(clonedComponent.connections.values())) {
               let distance = connection.getPose().subtract(originalDragPos).magnitude();
               if (clonedComponent.dragStartConnection === null || distance < closestDistance) {
                 closestDistance = distance;
