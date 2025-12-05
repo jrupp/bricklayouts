@@ -1396,6 +1396,10 @@ export class LayoutController {
         this.bringSelectedComponentToFront();
         event.preventDefault();
       }
+      if (event.key === 'PageDown') {
+        this.sendSelectedComponentToBack();
+        event.preventDefault();
+      }
       if (event.key === 'd' && event.ctrlKey) {
         this.duplicateSelectedComponent();
         event.preventDefault();
