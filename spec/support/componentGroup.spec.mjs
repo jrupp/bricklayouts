@@ -1288,6 +1288,237 @@ describe('ComponentGroup', () => {
     });
   });
 
+  describe('sendToBack', () => {
+    let mockLayoutController;
+    let mockSpy;
+
+    beforeAll(() => {
+      mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
+    });
+
+    it('should return early when the group is destroyed', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex')
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent,
+        group: null
+      };
+      
+      group.addComponent(mockComponent);
+      group.destroy();
+      
+      // Call sendToBack on destroyed group
+      group.sendToBack();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should return early when the group has no parent', () => {
+      const group = new ComponentGroup();
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: null
+      };
+      
+      // Don't add component to group (so parent stays null)
+      // Just manually set up the internal state
+      group.addComponent(mockComponent);
+      group.parent = null;
+      
+      const setChildIndexSpy = jasmine.createSpy('setChildIndex');
+      
+      // Call sendToBack with no parent
+      group.sendToBack();
+      
+      // Should not throw and should not call setChildIndex
+      expect(setChildIndexSpy).not.toHaveBeenCalled();
+    });
+
+    it('should complete without error when the group is empty', () => {
+      const group = new ComponentGroup();
+      
+      // Set up a mock parent
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex')
+      };
+      group.parent = mockParent;
+      
+      // Call sendToBack on empty group
+      expect(() => group.sendToBack()).not.toThrow();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should move single component to index 0', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex').and.returnValue(5)
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent
+      };
+      
+      group.addComponent(mockComponent);
+      
+      // Call sendToBack
+      group.sendToBack();
+      
+      // Should get the current index
+      expect(mockParent.getChildIndex).toHaveBeenCalledWith(mockComponent);
+      
+      // Should move component to index 0
+      expect(mockParent.setChildIndex).toHaveBeenCalledWith(mockComponent, 0);
+      expect(mockParent.setChildIndex).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('bringToFront', () => {
+    let mockLayoutController;
+    let mockSpy;
+
+    beforeAll(() => {
+      mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
+    });
+
+    it('should return early when the group is destroyed', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex'),
+        children: { length: 10 }
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent,
+        group: null
+      };
+      
+      group.addComponent(mockComponent);
+      group.destroy();
+      
+      // Call bringToFront on destroyed group
+      group.bringToFront();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should return early when the group has no parent', () => {
+      const group = new ComponentGroup();
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: null
+      };
+      
+      // Don't add component to group (so parent stays null)
+      // Just manually set up the internal state
+      group.addComponent(mockComponent);
+      group.parent = null;
+      
+      const setChildIndexSpy = jasmine.createSpy('setChildIndex');
+      
+      // Call bringToFront with no parent
+      group.bringToFront();
+      
+      // Should not throw and should not call setChildIndex
+      expect(setChildIndexSpy).not.toHaveBeenCalled();
+    });
+
+    it('should complete without error when the group is empty', () => {
+      const group = new ComponentGroup();
+      
+      // Set up a mock parent
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex'),
+        children: { length: 10 }
+      };
+      group.parent = mockParent;
+      
+      // Call bringToFront on empty group
+      expect(() => group.bringToFront()).not.toThrow();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should move single component to front', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex').and.returnValue(5),
+        children: { length: 10 }
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent
+      };
+      
+      group.addComponent(mockComponent);
+      
+      // Call bringToFront
+      group.bringToFront();
+      
+      // Should get the current index
+      expect(mockParent.getChildIndex).toHaveBeenCalledWith(mockComponent);
+      
+      // Should move component to front (length - 2 = 8)
+      expect(mockParent.setChildIndex).toHaveBeenCalledWith(mockComponent, 8);
+      expect(mockParent.setChildIndex).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('onStartDrag', () => {
     let mockEvent;
     let mockStage;
