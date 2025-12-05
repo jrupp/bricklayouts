@@ -1652,6 +1652,9 @@ export class LayoutController {
           const originalComponent = LayoutController.dragTarget;
           const layer = originalComponent.layer || originalComponent.parent;
           
+          // Save the dragStartConnection before finalizing the original
+          const originalDragStartConnection = originalComponent.dragStartConnection;
+          
           // Clone the original component
           const clonedComponent = originalComponent.clone(layer);
           layer.addChild(clonedComponent);
@@ -1671,9 +1674,9 @@ export class LayoutController {
           
           // Calculate the closest connection on the clone instead of copying from original
           clonedComponent.dragStartConnection = null;
-          if (originalComponent.dragStartConnection) {
+          if (originalDragStartConnection) {
             // Find the closest connection on the clone to match the drag behavior
-            const originalDragPos = originalComponent.dragStartConnection.getPose();
+            const originalDragPos = originalDragStartConnection.getPose();
             let closestDistance = Infinity;
             for (let connection of clonedComponent.connections) {
               let distance = connection.getPose().subtract(originalDragPos).magnitude();
