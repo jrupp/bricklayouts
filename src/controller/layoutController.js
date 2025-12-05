@@ -1876,6 +1876,9 @@ export class LayoutController {
    */
   static selectComponent(component) {
     if (LayoutController.selectedComponent) {
+      if (component && component.group && LayoutController.selectedComponent instanceof ComponentGroup && LayoutController.selectedComponent.uuid === component.group.uuid) {
+        return;
+      }
       LayoutController.selectedComponent.tint = 0xffffff;
       if (LayoutController.selectedComponent instanceof ComponentGroup && LayoutController.selectedComponent.isTemporary) {
         LayoutController.selectedComponent.destroy();
