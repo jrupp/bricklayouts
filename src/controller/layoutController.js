@@ -1670,7 +1670,6 @@ export class LayoutController {
           // Set up the clone as the new drag target
           LayoutController.dragTarget = clonedComponent;
           clonedComponent.alpha = 0.5;
-          clonedComponent.isDragging = true;
           
           // Calculate the closest connection on the clone instead of copying from original
           clonedComponent.dragStartConnection = null;
@@ -1694,19 +1693,17 @@ export class LayoutController {
           // Remove clone from collision tree during drag
           clonedComponent.deleteCollisionTree();
           
-          // Close connections on the clone
-          clonedComponent.closeConnections();
-          
           // Reset the dragWithAlt flag
           LayoutController.dragWithAlt = false;
-        } else {
-          // Original behavior for non-Alt drag
-          LayoutController.dragTarget.isDragging = true;
-          LayoutController.getInstance()._hideSelectionToolbar();
-          LayoutController.dragTarget.closeConnections();
-          if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
-            LayoutController.selectComponent(null);
-          }
+        }
+        
+        // Common drag setup for both Alt-drag and normal drag
+        LayoutController.dragTarget.isDragging = true;
+        LayoutController.getInstance()._hideSelectionToolbar();
+        LayoutController.dragTarget.closeConnections();
+        // Deselect any other component that might be selected (but not the one being dragged)
+        if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
+          LayoutController.selectComponent(null);
         }
       }
       let a = event.getLocalPosition(LayoutController.dragTarget.parent);
