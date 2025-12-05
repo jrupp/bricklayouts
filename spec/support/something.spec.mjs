@@ -5,6 +5,8 @@ import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
+import { ComponentGroup } from "../../src/model/componentGroup.js";
+import * as fc from 'https://cdn.jsdelivr.net/npm/fast-check@3.15.0/+esm';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
@@ -2711,23 +2713,14 @@ describe("LayoutController", function() {
     describe("Alt-Drag to Duplicate", function() {
         afterEach(function() {
             const layoutController = window.layoutController;
-            if (!layoutController) return;
-            const currentLayer = layoutController.currentLayer;
-            
-            // Clean up any components added during tests
-            if (currentLayer && currentLayer.children) {
-                const childrenCopy = [...currentLayer.children];
-                childrenCopy.forEach(child => {
-                    if (child instanceof Component) {
-                        child.destroy();
-                    }
-                });
-            }
             // Reset LayoutController state
             LayoutController.dragTarget = null;
             LayoutController.dragDistance = 0;
             LayoutController.dragWithAlt = false;
             LayoutController.selectedComponent = null;
+            if (!layoutController) return;
+            layoutController.reset();
+
         });
 
         describe("when Alt key is pressed at drag start", function() {
@@ -2970,6 +2963,308 @@ describe("LayoutController", function() {
                 // Original should be deselected
                 expect(LayoutController.selectedComponent).not.toBe(component);
             });
+        });
+    });
+
+    describe("onKeyDown", function() {
+        describe("PageDown key", function() {
+            it("should call preventDefault when PageDown is pressed with selected component", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                LayoutController.selectComponent(component);
+
+                // Create mock KeyboardEvent with preventDefault spy
+                const mockEvent = {
+                    key: 'PageDown',
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown with mock event
+                layoutController.onKeyDown(mockEvent);
+
+                // Verify preventDefault was called
+                expect(mockEvent.preventDefault).toHaveBeenCalled();
+            });
+
+            // Feature: send-to-back-improvements, Property 3: Single component sent to back
+            it("should send single component to back (z-index 0) when PageDown is pressed", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+                fc.assert(
+                    fc.property(
+                        fc.integer({ min: 1, max: 20 }), // Random z-index for the component
+                        (initialZIndex) => {
+                            // Reset layer
+                            layoutController.reset();
+                            const currentLayer = layoutController.currentLayer;
+
+                            // Add filler components to create different z-indices
+                            for (let i = 0; i < initialZIndex; i++) {
+                                const fillerComponent = new Component(trackData, new Pose(i * 50, 0, 0), currentLayer, {});
+                                currentLayer.addChild(fillerComponent);
+                            }
+
+                            // Add the test component at a higher z-index
+                            const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                            currentLayer.addChild(component);
+                            
+                            // Verify component is not at index 0
+                            const initialIndex = currentLayer.getChildIndex(component);
+                            expect(initialIndex).toBeGreaterThan(0);
+
+                            // Select the component
+                            LayoutController.selectComponent(component);
+
+                            // Simulate PageDown keypress
+                            const mockEvent = {
+                                key: 'PageDown',
+                                preventDefault: jasmine.createSpy('preventDefault')
+                            };
+                            layoutController.onKeyDown(mockEvent);
+
+                            // Verify component moved to index 0
+                            const finalIndex = currentLayer.getChildIndex(component);
+                            expect(finalIndex).toBe(0);
+                        }
+                    ),
+                    { numRuns: 100 }
+                );
+            });
+
+            // Feature: send-to-back-improvements, Property 4: Component group sent to back with ordering preserved
+            it("should send component group to back with preserved relative ordering when PageDown is pressed", function() {
+                const layoutController = window.layoutController;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+                fc.assert(
+                    fc.property(
+                        fc.integer({ min: 2, max: 10 }), // Number of components in the group
+                        fc.integer({ min: 1, max: 10 }), // Number of filler components before
+                        (numGroupComponents, numFillersBefore) => {
+                            // Reset layer
+                            layoutController.reset();
+                            const currentLayer = layoutController.currentLayer;
+
+                            // Add filler components before the group
+                            for (let i = 0; i < numFillersBefore; i++) {
+                                const fillerComponent = new Component(trackData, new Pose(i * 50, 0, 0), currentLayer, {});
+                                currentLayer.addChild(fillerComponent);
+                            }
+
+                            // Create a component group with multiple components
+                            const group = new ComponentGroup(false);
+                            const groupComponents = [];
+                            
+                            for (let i = 0; i < numGroupComponents; i++) {
+                                const component = new Component(trackData, new Pose(100 + i * 50, 100, 0), currentLayer, {});
+                                currentLayer.addChild(component);
+                                group.addComponent(component);
+                                groupComponents.push(component);
+                            }
+
+                            // Record initial relative ordering
+                            const initialIndices = groupComponents.map(comp => currentLayer.getChildIndex(comp));
+                            const initialRelativeOrder = initialIndices.map((idx, i) => {
+                                return initialIndices.filter(otherIdx => otherIdx < idx).length;
+                            });
+
+                            // Verify components are not all at the back
+                            expect(Math.min(...initialIndices)).toBeGreaterThan(0);
+
+                            // Select the group
+                            LayoutController.selectComponent(group);
+
+                            // Simulate PageDown keypress
+                            const mockEvent = {
+                                key: 'PageDown',
+                                preventDefault: jasmine.createSpy('preventDefault')
+                            };
+                            layoutController.onKeyDown(mockEvent);
+
+                            // Verify all components moved to the back
+                            const finalIndices = groupComponents.map(comp => currentLayer.getChildIndex(comp));
+                            expect(Math.max(...finalIndices)).toBeLessThan(numGroupComponents);
+
+                            // Verify relative ordering is preserved
+                            const finalRelativeOrder = finalIndices.map((idx, i) => {
+                                return finalIndices.filter(otherIdx => otherIdx < idx).length;
+                            });
+
+                            expect(finalRelativeOrder).toEqual(initialRelativeOrder);
+                        }
+                    ),
+                    { numRuns: 100 }
+                );
+            });
+        });
+    });
+
+    describe("sendSelectedComponentToBack", function() {
+        it("should send selected Component to back", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const currentLayer = layoutController.currentLayer;
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+            // Add multiple components to create z-order
+            const component1 = new Component(trackData, new Pose(0, 0, 0), currentLayer, {});
+            currentLayer.addChild(component1);
+            const component2 = new Component(trackData, new Pose(50, 0, 0), currentLayer, {});
+            currentLayer.addChild(component2);
+            const component3 = new Component(trackData, new Pose(100, 0, 0), currentLayer, {});
+            currentLayer.addChild(component3);
+
+            // Select component2 (middle component)
+            LayoutController.selectComponent(component2);
+            const initialIndex = currentLayer.getChildIndex(component2);
+            expect(initialIndex).toBeGreaterThan(0);
+
+            // Call sendSelectedComponentToBack
+            layoutController.sendSelectedComponentToBack();
+
+            // Verify component moved to index 0
+            const finalIndex = currentLayer.getChildIndex(component2);
+            expect(finalIndex).toBe(0);
+        });
+
+        it("should send selected ComponentGroup to back", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const currentLayer = layoutController.currentLayer;
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+            // Add filler components
+            const filler1 = new Component(trackData, new Pose(0, 0, 0), currentLayer, {});
+            currentLayer.addChild(filler1);
+            const filler2 = new Component(trackData, new Pose(50, 0, 0), currentLayer, {});
+            currentLayer.addChild(filler2);
+
+            // Create a component group
+            const group = new ComponentGroup(false);
+            const groupComp1 = new Component(trackData, new Pose(100, 0, 0), currentLayer, {});
+            currentLayer.addChild(groupComp1);
+            group.addComponent(groupComp1);
+            const groupComp2 = new Component(trackData, new Pose(150, 0, 0), currentLayer, {});
+            currentLayer.addChild(groupComp2);
+            group.addComponent(groupComp2);
+
+            // Verify components are not at the back
+            expect(currentLayer.getChildIndex(groupComp1)).toBeGreaterThan(0);
+            expect(currentLayer.getChildIndex(groupComp2)).toBeGreaterThan(0);
+
+            // Select the group
+            LayoutController.selectComponent(group);
+
+            // Call sendSelectedComponentToBack
+            layoutController.sendSelectedComponentToBack();
+
+            // Verify all group components moved to the back
+            const finalIndex1 = currentLayer.getChildIndex(groupComp1);
+            const finalIndex2 = currentLayer.getChildIndex(groupComp2);
+            expect(finalIndex1).toBeLessThan(2);
+            expect(finalIndex2).toBeLessThan(2);
+        });
+
+        it("should handle gracefully when no component is selected", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            
+            // Ensure no component is selected
+            LayoutController.selectedComponent = null;
+
+            // Call sendSelectedComponentToBack - should not throw error
+            expect(() => {
+                layoutController.sendSelectedComponentToBack();
+            }).not.toThrow();
+        });
+    });
+
+    describe("bringSelectedComponentToFront", function() {
+        it("should bring selected Component to front", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const currentLayer = layoutController.currentLayer;
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+            // Add multiple components to create z-order
+            const component1 = new Component(trackData, new Pose(0, 0, 0), currentLayer, {});
+            currentLayer.addChild(component1);
+            const component2 = new Component(trackData, new Pose(50, 0, 0), currentLayer, {});
+            currentLayer.addChild(component2);
+            const component3 = new Component(trackData, new Pose(100, 0, 0), currentLayer, {});
+            currentLayer.addChild(component3);
+
+            // Select component1 (first component)
+            LayoutController.selectComponent(component1);
+            const initialIndex = currentLayer.getChildIndex(component1);
+            expect(initialIndex).toBe(0);
+
+            // Call bringSelectedComponentToFront
+            layoutController.bringSelectedComponentToFront();
+
+            // Verify component moved to front (length - 2, accounting for grid overlay)
+            const finalIndex = currentLayer.getChildIndex(component1);
+            expect(finalIndex).toBe(currentLayer.children.length - 2);
+        });
+
+        it("should bring selected ComponentGroup to front", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const currentLayer = layoutController.currentLayer;
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+
+            // Create a component group
+            const group = new ComponentGroup(false);
+            const groupComp1 = new Component(trackData, new Pose(0, 0, 0), currentLayer, {});
+            currentLayer.addChild(groupComp1);
+            group.addComponent(groupComp1);
+            const groupComp2 = new Component(trackData, new Pose(50, 0, 0), currentLayer, {});
+            currentLayer.addChild(groupComp2);
+            group.addComponent(groupComp2);
+
+            // Add filler components after the group
+            const filler1 = new Component(trackData, new Pose(100, 0, 0), currentLayer, {});
+            currentLayer.addChild(filler1);
+            const filler2 = new Component(trackData, new Pose(150, 0, 0), currentLayer, {});
+            currentLayer.addChild(filler2);
+
+            // Record initial indices
+            const initialIndex1 = currentLayer.getChildIndex(groupComp1);
+            const initialIndex2 = currentLayer.getChildIndex(groupComp2);
+            const maxInitialIndex = Math.max(initialIndex1, initialIndex2);
+            
+            // Verify components are not at the front
+            expect(maxInitialIndex).toBeLessThan(currentLayer.children.length - 2);
+
+            // Select the group
+            LayoutController.selectComponent(group);
+
+            // Call bringSelectedComponentToFront
+            layoutController.bringSelectedComponentToFront();
+
+            // Verify all group components moved to the front
+            const finalIndex1 = currentLayer.getChildIndex(groupComp1);
+            const finalIndex2 = currentLayer.getChildIndex(groupComp2);
+            const minFinalIndex = Math.min(finalIndex1, finalIndex2);
+            expect(minFinalIndex).toBeGreaterThan(maxInitialIndex);
+        });
+
+        it("should handle gracefully when no component is selected", function() {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            
+            // Ensure no component is selected
+            LayoutController.selectedComponent = null;
+
+            // Call bringSelectedComponentToFront - should not throw error
+            expect(() => {
+                layoutController.bringSelectedComponentToFront();
+            }).not.toThrow();
         });
     });
 });

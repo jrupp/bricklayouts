@@ -2,6 +2,8 @@ import { ComponentGroup } from '../../src/model/componentGroup.js';
 import { LayoutController } from '../../src/controller/layoutController.js';
 import { Pose } from '../../src/model/pose.js';
 import { PolarVector } from '../../src/model/polarVector.js';
+import * as fc from 'https://cdn.jsdelivr.net/npm/fast-check@3.15.0/+esm';
+import { Component } from '../../src/model/component.js';
 
 describe('ComponentGroup', () => {
   describe('getBounds', () => {
@@ -414,13 +416,24 @@ describe('ComponentGroup', () => {
 
   describe('destroy', () => {
     let mockLayoutController;
+    let mockSpy;
 
-    beforeEach(() => {
+    beforeAll(() => {
       mockLayoutController = {
         deleteComponent: jasmine.createSpy('deleteComponent')
       };
       
-      spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
     });
 
     it('should set destroyed flag to true', () => {
@@ -1277,6 +1290,339 @@ describe('ComponentGroup', () => {
     });
   });
 
+  describe('sendToBack', () => {
+    let mockLayoutController;
+    let mockSpy;
+
+    beforeAll(() => {
+      mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
+    });
+
+    it('should return early when the group is destroyed', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex')
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent,
+        group: null
+      };
+      
+      group.addComponent(mockComponent);
+      group.destroy();
+      
+      // Call sendToBack on destroyed group
+      group.sendToBack();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should return early when the group has no parent', () => {
+      const group = new ComponentGroup();
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: null
+      };
+      
+      // Don't add component to group (so parent stays null)
+      // Just manually set up the internal state
+      group.addComponent(mockComponent);
+      group.parent = null;
+      
+      const setChildIndexSpy = jasmine.createSpy('setChildIndex');
+      
+      // Call sendToBack with no parent
+      group.sendToBack();
+      
+      // Should not throw and should not call setChildIndex
+      expect(setChildIndexSpy).not.toHaveBeenCalled();
+    });
+
+    it('should complete without error when the group is empty', () => {
+      const group = new ComponentGroup();
+      
+      // Set up a mock parent
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex')
+      };
+      group.parent = mockParent;
+      
+      // Call sendToBack on empty group
+      expect(() => group.sendToBack()).not.toThrow();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should move single component to index 0', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex').and.returnValue(5)
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent
+      };
+      
+      group.addComponent(mockComponent);
+      
+      // Call sendToBack
+      group.sendToBack();
+      
+      // Should get the current index
+      expect(mockParent.getChildIndex).toHaveBeenCalledWith(mockComponent);
+      
+      // Should move component to index 0
+      expect(mockParent.setChildIndex).toHaveBeenCalledWith(mockComponent, 0);
+      expect(mockParent.setChildIndex).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('bringToFront', () => {
+    let mockLayoutController;
+    let mockSpy;
+
+    beforeAll(() => {
+      mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
+    });
+
+    it('should return early when the group is destroyed', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex'),
+        children: { length: 10 }
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent,
+        group: null
+      };
+      
+      group.addComponent(mockComponent);
+      group.destroy();
+      
+      // Call bringToFront on destroyed group
+      group.bringToFront();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should return early when the group has no parent', () => {
+      const group = new ComponentGroup();
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: null
+      };
+      
+      // Don't add component to group (so parent stays null)
+      // Just manually set up the internal state
+      group.addComponent(mockComponent);
+      group.parent = null;
+      
+      const setChildIndexSpy = jasmine.createSpy('setChildIndex');
+      
+      // Call bringToFront with no parent
+      group.bringToFront();
+      
+      // Should not throw and should not call setChildIndex
+      expect(setChildIndexSpy).not.toHaveBeenCalled();
+    });
+
+    it('should complete without error when the group is empty', () => {
+      const group = new ComponentGroup();
+      
+      // Set up a mock parent
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex'),
+        children: { length: 10 }
+      };
+      group.parent = mockParent;
+      
+      // Call bringToFront on empty group
+      expect(() => group.bringToFront()).not.toThrow();
+      
+      // Should not attempt to modify z-order
+      expect(mockParent.setChildIndex).not.toHaveBeenCalled();
+      expect(mockParent.getChildIndex).not.toHaveBeenCalled();
+    });
+
+    it('should move single component to front', () => {
+      const group = new ComponentGroup();
+      const mockParent = {
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        getChildIndex: jasmine.createSpy('getChildIndex').and.returnValue(5),
+        children: { length: 10 }
+      };
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: mockParent
+      };
+      
+      group.addComponent(mockComponent);
+      
+      // Call bringToFront
+      group.bringToFront();
+      
+      // Should get the current index
+      expect(mockParent.getChildIndex).toHaveBeenCalledWith(mockComponent);
+      
+      // Should move component to front (length - 2 = 8)
+      expect(mockParent.setChildIndex).toHaveBeenCalledWith(mockComponent, 8);
+      expect(mockParent.setChildIndex).toHaveBeenCalledTimes(1);
+    });
+
+    // Feature: send-to-back-improvements, Property 2: Relative ordering preservation for bringToFront
+    it('should preserve relative ordering when bringing multiple components to front', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 100 }), // Number of components in the group
+          fc.integer({ min: 0, max: 50 }), // Number of filler components before
+          fc.integer({ min: 0, max: 50 }), // Number of filler components after
+          (numGroupComponents, numFillersBefore, numFillersAfter) => {
+            const group = new ComponentGroup();
+            
+            // Create a mock parent container
+            const children = [];
+            const mockParent = {
+              children: children,
+              getChildIndex: jasmine.createSpy('getChildIndex').and.callFake((comp) => {
+                return children.indexOf(comp);
+              }),
+              setChildIndex: jasmine.createSpy('setChildIndex').and.callFake((comp, index) => {
+                // Remove component from current position
+                const currentIndex = children.indexOf(comp);
+                if (currentIndex !== -1) {
+                  children.splice(currentIndex, 1);
+                }
+                // Insert at new position
+                children.splice(index, 0, comp);
+              })
+            };
+            
+            // Add filler components before the group
+            for (let i = 0; i < numFillersBefore; i++) {
+              const fillerComponent = {
+                uuid: `filler-before-${i}`,
+                getBounds: jasmine.createSpy('getBounds'),
+                connections: [],
+                parent: mockParent
+              };
+              children.push(fillerComponent);
+            }
+            
+            // Create group components with random z-indices
+            const groupComponents = [];
+            for (let i = 0; i < numGroupComponents; i++) {
+              const component = {
+                uuid: `group-comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds'),
+                connections: [],
+                parent: mockParent
+              };
+              children.push(component);
+              group.addComponent(component);
+              groupComponents.push(component);
+            }
+            
+            // Add filler components after the group
+            for (let i = 0; i < numFillersAfter; i++) {
+              const fillerComponent = {
+                uuid: `filler-after-${i}`,
+                getBounds: jasmine.createSpy('getBounds'),
+                connections: [],
+                parent: mockParent
+              };
+              children.push(fillerComponent);
+            }
+            
+            // Add the grid overlay component at the end (required for bringToFront logic)
+            const gridOverlay = {
+              uuid: 'grid-overlay',
+              getBounds: jasmine.createSpy('getBounds'),
+              connections: [],
+              parent: mockParent
+            };
+            children.push(gridOverlay);
+            
+            // Record initial relative ordering within the group
+            const initialIndices = groupComponents.map(comp => children.indexOf(comp));
+            const initialRelativeOrder = initialIndices.map((idx, i) => {
+              return initialIndices.filter(otherIdx => otherIdx < idx).length;
+            });
+            
+            // Call bringToFront
+            group.bringToFront();
+            
+            // Verify all components moved to the front (before grid overlay)
+            const finalIndices = groupComponents.map(comp => children.indexOf(comp));
+            const maxGroupIndex = Math.max(...finalIndices);
+            const gridIndex = children.indexOf(gridOverlay);
+            
+            // All group components should be before the grid overlay
+            expect(maxGroupIndex).toBeLessThan(gridIndex);
+            
+            // Verify relative ordering is preserved
+            const finalRelativeOrder = finalIndices.map((idx, i) => {
+              return finalIndices.filter(otherIdx => otherIdx < idx).length;
+            });
+            
+            expect(finalRelativeOrder).toEqual(initialRelativeOrder);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
   describe('onStartDrag', () => {
     let mockEvent;
     let mockStage;
@@ -1297,8 +1643,6 @@ describe('ComponentGroup', () => {
 
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
-      LayoutController.onDragMove = jasmine.createSpy('onDragMove');
-      LayoutController.onDragEnd = jasmine.createSpy('onDragEnd');
     });
 
     afterEach(() => {

@@ -145,8 +145,39 @@ export class ComponentGroup {
   bringToFront() {
     if (this.destroyed) return;
     if (!this.parent) return;
-    this.#components.forEach((comp) => {
-      this.parent.setChildIndex(comp, this.parent.children.length - 2);
+    
+    // Cache current z-indices to avoid repeated indexOf calls during sort
+    const componentsWithIndices = this.#components.map(comp => ({
+      component: comp,
+      index: this.parent.getChildIndex(comp)
+    }));
+    
+    // Sort by current z-order (lowest index first)
+    componentsWithIndices.sort((a, b) => a.index - b.index);
+    
+    // Move components in order to the front
+    const targetIndex = this.parent.children.length - 2;
+    componentsWithIndices.forEach(({ component }) => {
+      this.parent.setChildIndex(component, targetIndex);
+    });
+  }
+
+  sendToBack() {
+    if (this.destroyed) return;
+    if (!this.parent) return;
+    
+    // Cache current z-indices to avoid repeated indexOf calls during sort
+    const componentsWithIndices = this.#components.map(comp => ({
+      component: comp,
+      index: this.parent.getChildIndex(comp)
+    }));
+    
+    // Sort by current z-order (highest index first)
+    componentsWithIndices.sort((a, b) => b.index - a.index);
+    
+    // Move components in reverse order to preserve relative ordering
+    componentsWithIndices.forEach(({ component }) => {
+      this.parent.setChildIndex(component, 0);
     });
   }
 
