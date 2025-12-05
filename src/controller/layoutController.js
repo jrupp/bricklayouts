@@ -389,6 +389,7 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolMenuDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolBringFront')?.addEventListener('click', () => this.bringSelectedComponentToFront());
+    this.selectionToolbar?.querySelector('#selToolSendBack')?.addEventListener('click', () => this.sendSelectedComponentToBack());
   }
 
   /**
@@ -1898,6 +1899,17 @@ export class LayoutController {
         this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
       } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
         LayoutController.selectedComponent.bringToFront();
+      }
+    }
+  }
+
+  sendSelectedComponentToBack() {
+    this.hideFileMenu();
+    if (LayoutController.selectedComponent) {
+      if (LayoutController.selectedComponent instanceof Component) {
+        this.currentLayer.setChildIndex(LayoutController.selectedComponent, 0);
+      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
+        LayoutController.selectedComponent.sendToBack();
       }
     }
   }

@@ -150,6 +150,14 @@ export class ComponentGroup {
     });
   }
 
+  sendToBack() {
+    if (this.destroyed) return;
+    if (!this.parent) return;
+    this.#components.forEach((comp) => {
+      this.parent.setChildIndex(comp, 0);
+    });
+  }
+
   /**
    * Checks if the group can be rotated.
    * This is true if all connections in the group are connected to other connections in the group,
