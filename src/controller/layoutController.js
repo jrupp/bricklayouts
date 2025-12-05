@@ -1283,6 +1283,7 @@ export class LayoutController {
     LayoutController.selectedComponent = null;
     LayoutController.dragTarget = null;
     LayoutController.isPanning = false;
+    LayoutController.dragWithAlt = false;
     LayoutController.panDistance = 0;
     LayoutController.previousPinchDistance = -1;
     LayoutController.browserMobileClick = false;
