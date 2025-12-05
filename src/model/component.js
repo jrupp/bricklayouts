@@ -888,6 +888,7 @@ export class Component extends Container {
     }
     LayoutController.dragTarget = this;
     LayoutController.dragDistance = 0;
+    LayoutController.dragWithAlt = e.altKey; // Track if Alt key is pressed for duplication
     this.alpha = 0.5;
     this.isDragging = false;
     let a = e.getLocalPosition(this.parent);
