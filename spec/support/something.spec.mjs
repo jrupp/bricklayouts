@@ -2711,23 +2711,14 @@ describe("LayoutController", function() {
     describe("Alt-Drag to Duplicate", function() {
         afterEach(function() {
             const layoutController = window.layoutController;
-            if (!layoutController) return;
-            const currentLayer = layoutController.currentLayer;
-            
-            // Clean up any components added during tests
-            if (currentLayer && currentLayer.children) {
-                const childrenCopy = [...currentLayer.children];
-                childrenCopy.forEach(child => {
-                    if (child instanceof Component) {
-                        child.destroy();
-                    }
-                });
-            }
             // Reset LayoutController state
             LayoutController.dragTarget = null;
             LayoutController.dragDistance = 0;
             LayoutController.dragWithAlt = false;
             LayoutController.selectedComponent = null;
+            if (!layoutController) return;
+            layoutController.reset();
+
         });
 
         describe("when Alt key is pressed at drag start", function() {

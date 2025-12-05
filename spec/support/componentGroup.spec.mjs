@@ -414,13 +414,24 @@ describe('ComponentGroup', () => {
 
   describe('destroy', () => {
     let mockLayoutController;
+    let mockSpy;
 
-    beforeEach(() => {
+    beforeAll(() => {
       mockLayoutController = {
         deleteComponent: jasmine.createSpy('deleteComponent')
       };
       
-      spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
     });
 
     it('should set destroyed flag to true', () => {
@@ -1297,8 +1308,6 @@ describe('ComponentGroup', () => {
 
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
-      LayoutController.onDragMove = jasmine.createSpy('onDragMove');
-      LayoutController.onDragEnd = jasmine.createSpy('onDragEnd');
     });
 
     afterEach(() => {
