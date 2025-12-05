@@ -1666,6 +1666,9 @@ export class LayoutController {
           if (LayoutController.selectedComponent?.uuid === originalComponent.uuid || LayoutController.selectedComponent === originalComponent) {
             LayoutController.selectComponent(null);
           }
+          if (clonedComponent instanceof ComponentGroup) {
+            LayoutController.selectComponent(clonedComponent);
+          }
           
           // Set up the clone as the new drag target
           LayoutController.dragTarget = clonedComponent;
