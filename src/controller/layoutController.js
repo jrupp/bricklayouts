@@ -1646,35 +1646,26 @@ export class LayoutController {
         if (LayoutController.dragDistance <= threshold) {
           return;
         }
-        
-        // If Alt key was pressed at drag start, duplicate the component now that threshold is passed
+
         if (LayoutController.dragWithAlt) {
           const originalComponent = LayoutController.dragTarget;
           const layer = originalComponent.layer || originalComponent.parent;
-          
-          // Save the dragStartConnection before finalizing the original
           const originalDragStartConnection = originalComponent.dragStartConnection;
-          
-          // Clone the original component
           const clonedComponent = originalComponent.clone(layer);
           layer.addChild(clonedComponent);
-          
-          // Finalize the original component (restore it to normal state)
+
           LayoutController.finalizeDraggedComponent(originalComponent);
-          
-          // Deselect the original component if it was selected
+
           if (LayoutController.selectedComponent?.uuid === originalComponent.uuid || LayoutController.selectedComponent === originalComponent) {
             LayoutController.selectComponent(null);
           }
           if (clonedComponent instanceof ComponentGroup) {
             LayoutController.selectComponent(clonedComponent);
           }
-          
-          // Set up the clone as the new drag target
+
           LayoutController.dragTarget = clonedComponent;
           clonedComponent.alpha = 0.5;
-          
-          // Calculate the closest connection on the clone instead of copying from original
+
           clonedComponent.dragStartConnection = null;
           if (originalDragStartConnection) {
             // Find the closest connection on the clone to match the drag behavior
@@ -1688,23 +1679,16 @@ export class LayoutController {
               }
             }
           }
-          
-          // Copy other drag state from original to clone
+
           clonedComponent.dragStartPos = originalComponent.dragStartPos;
           clonedComponent.dragStartOffset = originalComponent.dragStartOffset;
-          
-          // Remove clone from collision tree during drag
           clonedComponent.deleteCollisionTree();
-          
-          // Reset the dragWithAlt flag
           LayoutController.dragWithAlt = false;
         }
-        
-        // Common drag setup for both Alt-drag and normal drag
+
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
-        // Deselect any other component that might be selected (but not the one being dragged)
         if (LayoutController.selectedComponent?.uuid !== LayoutController.dragTarget.uuid) {
           LayoutController.selectComponent(null);
         }
