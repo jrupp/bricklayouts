@@ -931,11 +931,13 @@ describe("LayoutController", function() {
             layoutController.addComponent(trackData, false, {width: 160, height: 160, units: "studs", color: "#237841", shape: "rectangle", opacity: 1});
             let component = layoutController.currentLayer.children[0];
             
-            // Record initial position and rotation
+            // Record initial position, rotation, and pivot
             let initialPose = component.getPose();
             let initialX = initialPose.x;
             let initialY = initialPose.y;
             let initialAngle = initialPose.angle;
+            let initialPivotX = component.sprite.pivot.x;
+            let initialPivotY = component.sprite.pivot.y;
             
             // Edit the component without making any changes
             // (Form values should match the initial component: 10 studs = 160 pixels)
@@ -951,11 +953,13 @@ describe("LayoutController", function() {
             // Save without changing anything
             window.layoutController.onSaveCustomComponent();
             
-            // Check that position and rotation haven't changed
+            // Check that position, rotation, and pivot haven't changed
             let finalPose = component.getPose();
             expect(finalPose.x).toBe(initialX);
             expect(finalPose.y).toBe(initialY);
             expect(finalPose.angle).toBe(initialAngle);
+            expect(component.sprite.pivot.x).toBe(initialPivotX);
+            expect(component.sprite.pivot.y).toBe(initialPivotY);
         });
     });
 

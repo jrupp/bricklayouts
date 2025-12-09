@@ -230,13 +230,7 @@ export class Component extends Container {
         this.#opacity = options.opacity;
         this.sprite.alpha = options.opacity;
       }
-      // Set pivot correctly based on shape type
-      if (this.#shape === 'circle') {
-        this.sprite.pivot.set(0, 0);
-      } else {
-        // Rectangle: pivot at center of the drawn rectangle
-        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
-      }
+      this.sprite.pivot.set(0, 0);
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
@@ -615,7 +609,8 @@ export class Component extends Container {
         this.sprite.pivot.set(0, 0);
         this.#height = this.#width;
       } else {
-        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+        // Rectangle is drawn centered at 0,0, so pivot should also be 0,0
+        this.sprite.pivot.set(0, 0);
       }
     }
   }
