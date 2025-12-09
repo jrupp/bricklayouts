@@ -6,7 +6,7 @@ import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
-import * as fc from 'https://cdn.jsdelivr.net/npm/fast-check@3.15.0/+esm';
+import * as fc from './lib/fast-check.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
@@ -922,6 +922,44 @@ describe("LayoutController", function() {
             expect(textSpy).toHaveBeenCalledOnceWith("Hello");
             expect(fontSpy).toHaveBeenCalledOnceWith("Arial");
             expect(colorSpy).toHaveBeenCalledOnceWith("#237841");
+        });
+
+        it("does not change position when editing a custom rectangle shape without changes", function() {
+            let layoutController = window.layoutController;
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "shape");
+            // Create a 10x10 stud rectangle (160x160 pixels since 1 stud = 16 pixels)
+            layoutController.addComponent(trackData, false, {width: 160, height: 160, units: "studs", color: "#237841", shape: "rectangle", opacity: 1});
+            let component = layoutController.currentLayer.children[0];
+            
+            // Record initial position, rotation, and pivot
+            let initialPose = component.getPose();
+            let initialX = initialPose.x;
+            let initialY = initialPose.y;
+            let initialAngle = initialPose.angle;
+            let initialPivotX = component.sprite.pivot.x;
+            let initialPivotY = component.sprite.pivot.y;
+            
+            // Edit the component without making any changes
+            // (Form values should match the initial component: 10 studs = 160 pixels)
+            layoutController.showCreateCustomComponentDialog('shape', true);
+            spyOnProperty(componentWidth, 'value', 'get').and.returnValue('10');
+            spyOnProperty(componentHeight, 'value', 'get').and.returnValue('10');
+            spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+            spyOnProperty(componentShape, 'value', 'get').and.returnValue('rectangle');
+            let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+            spyOn(window, 'getComputedStyle').and.returnValue(j);
+            spyOn(window, 'ui').and.stub();
+            
+            // Save without changing anything
+            window.layoutController.onSaveCustomComponent();
+            
+            // Check that position, rotation, and pivot haven't changed
+            let finalPose = component.getPose();
+            expect(finalPose.x).toBe(initialX);
+            expect(finalPose.y).toBe(initialY);
+            expect(finalPose.angle).toBe(initialAngle);
+            expect(component.sprite.pivot.x).toBe(initialPivotX);
+            expect(component.sprite.pivot.y).toBe(initialPivotY);
         });
     });
 

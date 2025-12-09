@@ -605,11 +605,9 @@ export class Component extends Container {
       this.sprite.texture = this._generateBaseplateTexture();
     } else if (this.baseData.type === DataTypes.SHAPE) {
       this._drawShape();
+      this.sprite.pivot.set(0, 0);
       if (this.#shape === 'circle') {
-        this.sprite.pivot.set(0, 0);
         this.#height = this.#width;
-      } else {
-        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
       }
     }
   }
