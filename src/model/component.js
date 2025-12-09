@@ -230,7 +230,13 @@ export class Component extends Container {
         this.#opacity = options.opacity;
         this.sprite.alpha = options.opacity;
       }
-      this.sprite.pivot.set(0, 0);
+      // Set pivot correctly based on shape type
+      if (this.#shape === 'circle') {
+        this.sprite.pivot.set(0, 0);
+      } else {
+        // Rectangle: pivot at center of the drawn rectangle
+        this.sprite.pivot.set(this.#width / 2, this.#height / 2);
+      }
     } else if (this.baseData.type === DataTypes.BASEPLATE) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
