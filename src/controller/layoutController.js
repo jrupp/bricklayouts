@@ -2039,7 +2039,15 @@ export class LayoutController {
     this.currentLayer = new LayoutLayer();
     this.layers.push(this.#currentLayer);
     this.workspace.addChild(this.#currentLayer);
-    this.#currentLayer.label = `Layer ${this.layers.length}`;
+    
+    let layerNumber = this.layers.length;
+    let layerName = `Layer ${layerNumber}`;
+    while (this.layers.some(layer => layer.label === layerName)) {
+      layerNumber++;
+      layerName = `Layer ${layerNumber}`;
+    }
+    this.#currentLayer.label = layerName;
+    
     if (this.readOnly === true) {
       this.#currentLayer.eventMode = 'none';
       this.#currentLayer.interactiveChildren = false;

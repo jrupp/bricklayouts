@@ -3624,3 +3624,107 @@ describe("LayoutLayer", function() {
         expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
     });
 });
+
+describe("Layer name auto-generation", function() {
+    let layoutController;
+    let updateLayerListSpy;
+
+    beforeAll(function() {
+        layoutController = window.layoutController;
+        // Stub updateLayerList since we don't need UI updates in these tests
+        updateLayerListSpy = spyOn(layoutController, 'updateLayerList').and.stub();
+    });
+
+    beforeEach(function() {
+        updateLayerListSpy.calls.reset();
+        // Reset to a clean state with one layer
+        layoutController.layers.forEach(layer => {
+            if (layer !== layoutController.layers[0]) {
+                layoutController.workspace.removeChild(layer);
+            }
+        });
+        layoutController.layers = [layoutController.layers[0]];
+        layoutController.layers[0].label = "Layer 1";
+        layoutController.currentLayer = layoutController.layers[0];
+    });
+
+    it("should not create duplicate layer names when layers are deleted and new ones are added", function() {
+        // The test follows the reproduction steps from the problem statement:
+        // 1. Start with an empty layout, which automatically comes with a single layer named "Layer 1"
+        expect(layoutController.layers.length).toBe(1);
+        expect(layoutController.layers[0].label).toBe("Layer 1");
+
+        // 2. Add a new layer. This layer will be automatically named "Layer 2"
+        layoutController.newLayer();
+        expect(layoutController.layers.length).toBe(2);
+        expect(layoutController.layers[1].label).toBe("Layer 2");
+
+        // 3. Add another new layer. This layer will automatically be named "Layer 3"
+        layoutController.newLayer();
+        expect(layoutController.layers.length).toBe(3);
+        expect(layoutController.layers[2].label).toBe("Layer 3");
+
+        // 4. Delete the layer named "Layer 2" (simulating the onDeleteLayer behavior)
+        const layer2Index = layoutController.layers.findIndex(layer => layer.label === "Layer 2");
+        expect(layer2Index).toBe(1);
+        const tempLayer = layoutController.layers[layer2Index];
+        layoutController.layers.splice(layer2Index, 1);
+        layoutController.workspace.removeChild(tempLayer);
+        expect(layoutController.layers.length).toBe(2);
+
+        // 5. Add another new layer. This layer should NOT be named "Layer 3" (which already exists)
+        layoutController.newLayer();
+        expect(layoutController.layers.length).toBe(3);
+        
+        // The newest layer should be named "Layer 4" instead of "Layer 3"
+        const newestLayer = layoutController.layers[layoutController.layers.length - 1];
+        expect(newestLayer.label).not.toBe("Layer 3");
+        expect(newestLayer.label).toBe("Layer 4");
+
+        // Verify no duplicate layer names exist
+        const layerNames = layoutController.layers.map(layer => layer.label);
+        const uniqueLayerNames = [...new Set(layerNames)];
+        expect(layerNames.length).toBe(uniqueLayerNames.length);
+    });
+
+    it("should handle multiple deletions and find the next available layer number", function() {
+        // Start with "Layer 1"
+        expect(layoutController.layers.length).toBe(1);
+        
+        // Add layers 2, 3, 4, 5
+        layoutController.newLayer(); // Layer 2
+        layoutController.newLayer(); // Layer 3
+        layoutController.newLayer(); // Layer 4
+        layoutController.newLayer(); // Layer 5
+        expect(layoutController.layers.length).toBe(5);
+
+        // Delete layers 2, 3, and 4 (simulating the onDeleteLayer behavior)
+        const layer2 = layoutController.layers.find(layer => layer.label === "Layer 2");
+        const layer3 = layoutController.layers.find(layer => layer.label === "Layer 3");
+        const layer4 = layoutController.layers.find(layer => layer.label === "Layer 4");
+        
+        layoutController.workspace.removeChild(layer2);
+        layoutController.workspace.removeChild(layer3);
+        layoutController.workspace.removeChild(layer4);
+        
+        layoutController.layers = layoutController.layers.filter(layer => 
+            layer !== layer2 && layer !== layer3 && layer !== layer4
+        );
+        
+        expect(layoutController.layers.length).toBe(2);
+        expect(layoutController.layers.some(layer => layer.label === "Layer 1")).toBeTrue();
+        expect(layoutController.layers.some(layer => layer.label === "Layer 5")).toBeTrue();
+
+        // Add a new layer - should be "Layer 3" (starts at layers.length=2, increments to 3)
+        // Since "Layer 2" is deleted but that's less than layers.length, 
+        // the algorithm starts at layers.length which is 2, then checks and increments
+        layoutController.newLayer();
+        const newestLayer = layoutController.layers[layoutController.layers.length - 1];
+        expect(newestLayer.label).toBe("Layer 3");
+        
+        // Verify no duplicates
+        const layerNames = layoutController.layers.map(layer => layer.label);
+        const uniqueLayerNames = [...new Set(layerNames)];
+        expect(layerNames.length).toBe(uniqueLayerNames.length);
+    });
+});
