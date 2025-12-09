@@ -33,7 +33,8 @@ fi
 # Modify fast-check.mjs to use local pure-rand instead of CDN
 echo "Updating fast-check to use local pure-rand..."
 # Replace the CDN import path with local path
-sed -i "s|from\"/npm/pure-rand@[^\"]*\"|from\"./pure-rand.mjs\"|g" fast-check.mjs
+sed -i.bak "s|from\"/npm/pure-rand@[^\"]*\"|from\"./pure-rand.mjs\"|g" fast-check.mjs
+rm fast-check.mjs.bak
 
 # Verify the replacement was successful
 if grep -q 'from"./pure-rand.mjs"' fast-check.mjs; then
