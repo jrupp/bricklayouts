@@ -928,7 +928,7 @@ describe("LayoutController", function() {
         it("does not change position when editing a custom rectangle shape without changes", function() {
             let layoutController = window.layoutController;
             let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "shape");
-            // Create a 10x10 stud rectangle at default position
+            // Create a 10x10 stud rectangle (160x160 pixels since 1 stud = 16 pixels)
             layoutController.addComponent(trackData, false, {width: 160, height: 160, units: "studs", color: "#237841", shape: "rectangle", opacity: 1});
             let component = layoutController.currentLayer.children[0];
             
@@ -939,6 +939,7 @@ describe("LayoutController", function() {
             let initialAngle = initialPose.angle;
             
             // Edit the component without making any changes
+            // (Form values should match the initial component: 10 studs = 160 pixels)
             layoutController.showCreateCustomComponentDialog('shape', true);
             spyOnProperty(componentWidth, 'value', 'get').and.returnValue('10');
             spyOnProperty(componentHeight, 'value', 'get').and.returnValue('10');
