@@ -16,25 +16,36 @@ echo "Downloading fast-check@${FAST_CHECK_VERSION} and pure-rand@${PURE_RAND_VER
 
 # Download fast-check
 echo "Downloading fast-check..."
-wget -q -O fast-check.mjs "https://cdn.jsdelivr.net/npm/fast-check@${FAST_CHECK_VERSION}/+esm"
+FAST_CHECK_URL="https://cdn.jsdelivr.net/npm/fast-check@${FAST_CHECK_VERSION}/+esm"
+wget -q -O fast-check.mjs "$FAST_CHECK_URL"
+WGET_EXIT_CODE=$?
+if [ $WGET_EXIT_CODE -ne 0 ]; then
+    echo "Error: Failed to download fast-check from $FAST_CHECK_URL (wget exit code $WGET_EXIT_CODE)"
+    exit 1
+fi
 if [ ! -s fast-check.mjs ]; then
-    echo "Error: Failed to download fast-check or file is empty"
+    echo "Error: fast-check.mjs is empty after download from $FAST_CHECK_URL"
     exit 1
 fi
 
 # Download pure-rand
 echo "Downloading pure-rand..."
-wget -q -O pure-rand.mjs "https://cdn.jsdelivr.net/npm/pure-rand@${PURE_RAND_VERSION}/+esm"
+PURE_RAND_URL="https://cdn.jsdelivr.net/npm/pure-rand@${PURE_RAND_VERSION}/+esm"
+wget -q -O pure-rand.mjs "$PURE_RAND_URL"
+WGET_EXIT_CODE=$?
+if [ $WGET_EXIT_CODE -ne 0 ]; then
+    echo "Error: Failed to download pure-rand from $PURE_RAND_URL (wget exit code $WGET_EXIT_CODE)"
+    exit 1
+fi
 if [ ! -s pure-rand.mjs ]; then
-    echo "Error: Failed to download pure-rand or file is empty"
+    echo "Error: pure-rand.mjs is empty after download from $PURE_RAND_URL"
     exit 1
 fi
 
 # Modify fast-check.mjs to use local pure-rand instead of CDN
 echo "Updating fast-check to use local pure-rand..."
-# Replace the CDN import path with local path
-sed -i.bak "s|from\"/npm/pure-rand@[^\"]*\"|from\"./pure-rand.mjs\"|g" fast-check.mjs
-rm fast-check.mjs.bak
+# Replace the CDN import path with local path (cross-platform compatible)
+sed "s|from\"/npm/pure-rand@[^\"]*\"|from\"./pure-rand.mjs\"|g" fast-check.mjs > fast-check.mjs.tmp && mv fast-check.mjs.tmp fast-check.mjs
 
 # Verify the replacement was successful
 if grep -q 'from"./pure-rand.mjs"' fast-check.mjs; then
@@ -49,4 +60,5 @@ echo "✓ Libraries updated successfully!"
 echo "  - fast-check: ${FAST_CHECK_VERSION}"
 echo "  - pure-rand: ${PURE_RAND_VERSION}"
 echo ""
-echo "You can run tests to verify: npm test"
+echo "Run tests to verify:"
+echo "  SE_MANAGER_PATH=\$(pwd)/../../../.github/selenium-manager-offline.sh npx jasmine-browser-runner runSpecs --config=\$(pwd)/../../support/jasmine-browser.agent.mjs"

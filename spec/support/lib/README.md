@@ -38,8 +38,11 @@ The script will:
 After updating, run the test suite to verify everything works:
 
 ```bash
-npm test
+cd ../../..  # Navigate to repository root
+SE_MANAGER_PATH=$(pwd)/.github/selenium-manager-offline.sh npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.agent.mjs
 ```
+
+**Note**: Do NOT use `npm test` as it starts an interactive server that will hang. Use the command above for the Copilot Agent sandbox environment.
 
 ## Version Compatibility
 
