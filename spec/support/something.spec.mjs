@@ -6,8 +6,7 @@ import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
-// Temporarily commented out for sandbox environment that blocks CDN access
-// import * as fc from 'https://cdn.jsdelivr.net/npm/fast-check@3.15.0/+esm';
+import * as fc from './lib/fast-check.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
 import layoutFileTwo from './layout2.json' with { "type": "json" };
 import layoutFileThree from './layout3.json' with { "type": "json" };
@@ -3024,8 +3023,6 @@ describe("LayoutController", function() {
                 expect(mockEvent.preventDefault).toHaveBeenCalled();
             });
 
-            // Temporarily commented out - requires fast-check from CDN
-            /*
             // Feature: send-to-back-improvements, Property 3: Single component sent to back
             it("should send single component to back (z-index 0) when PageDown is pressed", function() {
                 const layoutController = window.layoutController;
@@ -3138,7 +3135,6 @@ describe("LayoutController", function() {
                     { numRuns: 100 }
                 );
             });
-            */
         });
     });
 

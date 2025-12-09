@@ -2,7 +2,7 @@ import { ComponentGroup } from '../../src/model/componentGroup.js';
 import { LayoutController } from '../../src/controller/layoutController.js';
 import { Pose } from '../../src/model/pose.js';
 import { PolarVector } from '../../src/model/polarVector.js';
-import * as fc from 'https://cdn.jsdelivr.net/npm/fast-check@3.15.0/+esm';
+import * as fc from './lib/fast-check.mjs';
 import { Component } from '../../src/model/component.js';
 
 describe('ComponentGroup', () => {
