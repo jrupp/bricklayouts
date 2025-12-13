@@ -9,6 +9,7 @@ import { Connection } from "./connection.js";
  * @property {Boolean} visible The visibility of the layer
  * @property {Number} [opacity] The opacity of the layer (0-100), defaults to 100
  * @property {Array<SerializedComponent>} components
+ * @property {Array<Object>} [groups] Permanent ComponentGroups in this layer
  */
 let SerializedLayoutLayer;
 export { SerializedLayoutLayer };
@@ -139,13 +140,25 @@ export class LayoutLayer extends Container {
      * @returns {SerializedLayoutLayer}
      */
     serialize() {
-        return {
-            components: this.children.filter(/** @param {Container} child */(child) => child instanceof Component)
-                                    .map(/** @param {Component} child */(child) => child.serialize()),
-            name: this.label,
-            visible: this.visible,
-            opacity: Math.round(this.alpha * 100)
-        };
+      const serialized = {
+        components: this.children.filter(/** @param {Container} child */(child) => child instanceof Component)
+          .map(/** @param {Component} child */(child) => child.serialize()),
+        name: this.label,
+        visible: this.visible,
+        opacity: Math.round(this.alpha * 100)
+      };
+      const permanentGroups = new Map();
+
+      this.children.forEach(child => {
+        if (child instanceof Component && child.group && !child.group.isTemporary) {
+          permanentGroups.set(child.group.uuid, child.group);
+        }
+      });
+      if (permanentGroups.size > 0) {
+        serialized.groups = Array.from(permanentGroups.values()).map(group => group.serialize());
+      }
+
+      return serialized;
     }
 
     /**
@@ -161,6 +174,124 @@ export class LayoutLayer extends Container {
         this.label = data?.name ?? "New Layer";
         this.visible = data?.visible ?? true;
         this.alpha = (data?.opacity ?? 100) / 100;
+
+        if (data.groups && Array.isArray(data.groups)) {
+            this._reconstructGroups(data.groups);
+        }
+    }
+
+    /**
+     * Reconstructs permanent ComponentGroups from serialized groups data
+     * Handles nested groups and missing group references gracefully
+     * @param {Array<Object>} groupsData Array of serialized group objects
+     * @private
+     */
+    _reconstructGroups(groupsData) {
+        // Create a temporary Map for group lookup during deserialization
+        this._groupLookupMap = new Map();
+        
+        // Arrays to handle nested groups
+        const topLevelGroups = [];
+        const nestedGroups = [];
+        
+        // Separate top-level and nested groups
+        groupsData.forEach(groupData => {
+            if (groupData.group) {
+                // This is a nested group - defer creation
+                nestedGroups.push(groupData);
+            } else {
+                // This is a top-level group - create immediately
+                topLevelGroups.push(groupData);
+            }
+        });
+        
+        // Create top-level groups first
+        topLevelGroups.forEach(groupData => {
+            const group = new ComponentGroup(false); // permanent group
+            group.uuid = groupData.uuid;
+            group.parent = this;
+            this._groupLookupMap.set(groupData.uuid, group);
+        });
+        
+        // Process nested groups in dependency order
+        let remainingNestedGroups = [...nestedGroups];
+        let processedInLastIteration = true;
+        
+        while (remainingNestedGroups.length > 0 && processedInLastIteration) {
+            const initialLength = remainingNestedGroups.length;
+            
+            for (let i = remainingNestedGroups.length - 1; i >= 0; i--) {
+                const groupData = remainingNestedGroups[i];
+                const parentGroup = this._groupLookupMap.get(groupData.group);
+                
+                if (parentGroup) {
+                    // Parent exists, create this nested group
+                    const nestedGroup = new ComponentGroup(false); // permanent group
+                    nestedGroup.uuid = groupData.uuid;
+                    nestedGroup.parent = this;
+                    nestedGroup.group = parentGroup;
+                    
+                    this._groupLookupMap.set(groupData.uuid, nestedGroup);
+                    remainingNestedGroups.splice(i, 1);
+                }
+            }
+            
+            // Check if we processed any groups this iteration
+            processedInLastIteration = remainingNestedGroups.length < initialLength;
+        }
+        
+        // Handle any remaining nested groups with missing parents
+        remainingNestedGroups.forEach(groupData => {
+            console.warn(`Group ${groupData.uuid} references missing parent group ${groupData.group}, treating as top-level group`);
+            const group = new ComponentGroup(false); // permanent group
+            group.uuid = groupData.uuid;
+            group.parent = this;
+            this._groupLookupMap.set(groupData.uuid, group);
+        });
+    }
+
+    /**
+     * Gets the group lookup map for component deserialization
+     * @returns {Map<String, ComponentGroup>|null} The group lookup map or null if no groups
+     */
+    getGroupLookupMap() {
+        return this._groupLookupMap || null;
+    }
+
+    /**
+     * Cleans up the temporary group lookup map after deserialization
+     * Also removes any empty groups that have no components or sub-groups
+     */
+    cleanupGroupDeserialization() {
+        if (!this._groupLookupMap) return;
+        
+        // Check for empty groups and log warnings
+        const emptyGroups = [];
+        this._groupLookupMap.forEach((group, uuid) => {
+            // Count components in this group
+            const componentCount = this.children.filter(child => 
+                child instanceof Component && child.group === group
+            ).length;
+            
+            // Count sub-groups in this group
+            const subGroupCount = Array.from(this._groupLookupMap.values()).filter(
+                otherGroup => otherGroup.group === group
+            ).length;
+            
+            if (componentCount === 0 && subGroupCount === 0) {
+                emptyGroups.push(group);
+            }
+        });
+        
+        // Remove empty groups
+        emptyGroups.forEach(group => {
+            console.warn(`Destroying orphaned group ${group.uuid} with no components`);
+            this._groupLookupMap.delete(group.uuid);
+            group.destroy();
+        });
+        
+        // Clean up the temporary lookup map
+        this._groupLookupMap = null;
     }
 
     /**
@@ -178,10 +309,22 @@ export class LayoutLayer extends Container {
             data?.opacity == undefined || (data?.opacity >= 0 && data?.opacity <= 100),
             data?.components,
             Array.isArray(data?.components),
+            data?.groups === undefined || Array.isArray(data?.groups),
         ]
 
         if (validations.some(v => !v)) {
             return false;
+        }
+
+        if (data.groups) {
+            const groupsValid = data.groups.every(group => {
+                return group && 
+                       typeof group.uuid === 'string' &&
+                       (group.group === undefined || typeof group.group === 'string');
+            });
+            if (!groupsValid) {
+                return false;
+            }
         }
 
         return data.components.every(component => Component._validateImportData(component));

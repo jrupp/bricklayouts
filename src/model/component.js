@@ -21,6 +21,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [text] The text to display on the component, if applicable
  * @property {String} [font] The font to use for the text, if applicable
  * @property {Number} [font_size] The font size to use for the text, if applicable
+ * @property {String} [group] The UUID of the ComponentGroup this component belongs to
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -796,6 +797,19 @@ export class Component extends Container {
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
     });
+
+    if (data.group && layer) {
+      const groupLookupMap = layer.getGroupLookupMap();
+      if (groupLookupMap) {
+        const group = groupLookupMap.get(data.group);
+        if (group) {
+          group.addComponent(newComponent);
+        } else {
+          console.warn(`Component ${newComponent.uuid} references missing group ${data.group}, treating as ungrouped`);
+        }
+      }
+    }
+
     return newComponent;
   }
 
@@ -804,7 +818,7 @@ export class Component extends Container {
    * @returns {SerializedComponent}
    */
   serialize() {
-    return {
+    const serialized = {
       type: this.baseData.alias,
       pose: this.getPose().serialize(),
       connections: this.connections.map((connection) => connection.serialize()),
@@ -819,6 +833,12 @@ export class Component extends Container {
       font: this.#font,
       font_size: this.#fontSize
     };
+
+    if (this.group && !this.group.isTemporary) {
+      serialized.group = this.group.uuid;
+    }
+
+    return serialized;
   }
 
   /**
@@ -849,8 +869,9 @@ export class Component extends Container {
       data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),
       data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
       data?.font_size === undefined || (typeof data?.font_size === 'number' && data?.font_size > 0),
-      data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1)
-    ]
+      data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1),
+      data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0)
+    ];
     return validations.every(v => v);
   }
 
@@ -864,7 +885,7 @@ export class Component extends Container {
     }
     if (!this.isDragging) {
       if (this.group && !this.group.isTemporary) {
-        LayoutController.selectComponentGroup(this.group);
+        LayoutController.selectComponent(this.group);
       } else {
         LayoutController.selectComponent(this);
       }

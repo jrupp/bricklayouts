@@ -390,6 +390,8 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolBringFront')?.addEventListener('click', () => this.bringSelectedComponentToFront());
     this.selectionToolbar?.querySelector('#selToolSendBack')?.addEventListener('click', () => this.sendSelectedComponentToBack());
+    this.selectionToolbar?.querySelector('#selToolMenuGroup')?.addEventListener('click', () => this.makeGroupPermanent());
+    this.selectionToolbar?.querySelector('#selToolMenuUngroup')?.addEventListener('click', () => this.ungroupComponents());
   }
 
   /**
@@ -1579,6 +1581,7 @@ export class LayoutController {
         let newComp = Component.deserialize(this.trackData.bundles[0].assets.find((a) => a.alias == component.type), component, this.layers[index]);
         this.layers[index].addChild(newComp);
       });
+      this.layers[index].cleanupGroupDeserialization();
       // Clear between layers
       Connection.connectionDB.clear();
     });
@@ -1702,6 +1705,8 @@ export class LayoutController {
       let a = event.getLocalPosition(LayoutController.dragTarget.parent);
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
+      a.x += LayoutController.dragTarget.dragStartOffset.x;
+      a.y += LayoutController.dragTarget.dragStartOffset.y;
       // Snap to grid if enabled
       let gridSize = LayoutController.getInstance().config.snapToSize;
       if (gridSize > 0) {
@@ -1709,8 +1714,6 @@ export class LayoutController {
         a.y = Math.round(a.y / gridSize) * gridSize;
       }
       // TODO: Check for nearby connections and snap to them
-      a.x += LayoutController.dragTarget.dragStartOffset.x;
-      a.y += LayoutController.dragTarget.dragStartOffset.y;
       LayoutController.dragTarget.position.set(a.x, a.y);
     }
   }
@@ -1771,7 +1774,7 @@ export class LayoutController {
       } else if (LayoutController.isSelecting) {
         LayoutController.isSelecting = false;
         LayoutController.getInstance().selectBox.visible = false;
-        // Select components within selection box
+        // Select components within selection box using permanent group-aware processing
         const selectionBox = LayoutController.getInstance().selectBox;
         const layer = LayoutController.getInstance().currentLayer;
         let min = layer.toLocal({x: selectionBox.bounds.minX, y: selectionBox.bounds.minY});
@@ -1782,15 +1785,11 @@ export class LayoutController {
           maxX: max.x,
           maxY: max.y
         });
-        if (a.length === 1) {
-          LayoutController.selectComponent(a[0].component);
-        } else if (a.length > 1) {
-          // Create a temporary group component
-          let group = new ComponentGroup(true);
-          a.forEach((item) => {
-            group.addComponent(item.component);
-          });
-          LayoutController.selectComponent(group);
+        // Extract components from search results and process through permanent group logic
+        const components = a.map(item => item.component);
+        const selectionTarget = LayoutController.getInstance().processSelectionBoxResults(components);
+        if (selectionTarget) {
+          LayoutController.selectComponent(selectionTarget);
         }
       } else if (LayoutController.selectedComponent) {
         LayoutController.selectComponent(null);
@@ -2030,6 +2029,101 @@ export class LayoutController {
     }
     LayoutController.selectedComponent.rotate();
     this._positionSelectionToolbar();
+  }
+
+  /**
+   * Convert a temporary ComponentGroup to permanent.
+   */
+  makeGroupPermanent() {
+    this.hideFileMenu();
+    const selected = LayoutController.selectedComponent;
+    if (!selected || !selected.isTemporary) {
+      return;
+    }
+    selected.isTemporary = false;
+    this._showSelectionToolbar();
+  }
+
+  /**
+   * Ungroup a permanent ComponentGroup.
+   */
+  ungroupComponents() {
+    this.hideFileMenu();
+    const selected = LayoutController.selectedComponent;
+    if (!selected || selected.isTemporary) {
+      return;
+    }
+    selected.isTemporary = true;
+    this._showSelectionToolbar();
+  }
+
+  /**
+   * Processes selection box results to respect permanent group boundaries.
+   * Analyzes components found in selection box and determines appropriate selection strategy.
+   * @param {Array<Component>} components - Components found in selection box
+   * @returns {Component|ComponentGroup|null} - The appropriate selection target
+   */
+  processSelectionBoxResults(components) {
+    if (!components || components.length === 0) {
+      return null;
+    }
+
+    if (components.length === 1) {
+      const component = components[0];
+      return component.group && !component.group.isTemporary ? component.group : component;
+    }
+
+    // Collect unique permanent ComponentGroups that have components in the selection
+    const affectedPermanentGroups = new Set();
+    const individualComponents = [];
+
+    components.forEach(component => {
+      if (component.group && !component.group.isTemporary) {
+        affectedPermanentGroups.add(component.group);
+      } else {
+        individualComponents.push(component);
+      }
+    });
+
+    const permanentGroupsArray = Array.from(affectedPermanentGroups);
+
+    // Case 1: Only one permanent group affected and no individual components
+    // Select the permanent group directly without creating a temporary group
+    if (permanentGroupsArray.length === 1 && individualComponents.length === 0) {
+      return permanentGroupsArray[0];
+    }
+
+    // Case 2: Multiple permanent groups or mix of permanent groups and individual components
+    // Create a temporary group containing the permanent groups and individual components
+    if (permanentGroupsArray.length > 0 || individualComponents.length > 1) {
+      const tempGroup = new ComponentGroup(true);
+      
+      // Add permanent groups to temporary group
+      permanentGroupsArray.forEach(permanentGroup => {
+        tempGroup.addComponent(permanentGroup);
+      });
+      
+      // Add individual components to temporary group
+      individualComponents.forEach(component => {
+        tempGroup.addComponent(component);
+      });
+      
+      return tempGroup;
+    }
+
+    // Case 3: Only individual components (no permanent groups)
+    // This follows existing logic - single component or temporary group
+    if (individualComponents.length === 1) {
+      return individualComponents[0];
+    } else if (individualComponents.length > 1) {
+      const tempGroup = new ComponentGroup(true);
+      individualComponents.forEach(component => {
+        tempGroup.addComponent(component);
+      });
+      return tempGroup;
+    }
+
+    return null;
   }
 
   /**
@@ -2452,6 +2546,18 @@ export class LayoutController {
       this.selectionToolbar.classList.add('rotatable');
     } else {
       this.selectionToolbar.classList.remove('rotatable');
+    }
+    if (comp instanceof ComponentGroup) {
+      if (comp.isTemporary) {
+        this.selectionToolbar.classList.add('ungrouped');
+        this.selectionToolbar.classList.remove('grouped');
+      } else {
+        this.selectionToolbar.classList.add('grouped');
+        this.selectionToolbar.classList.remove('ungrouped');
+      }
+    } else {
+      this.selectionToolbar.classList.remove('grouped');
+      this.selectionToolbar.classList.remove('ungrouped');
     }
     this.selectionToolbar.classList.remove('hidden');
   }

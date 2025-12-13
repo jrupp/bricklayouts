@@ -45,6 +45,12 @@ export class ComponentGroup {
   #uuid;
 
   /**
+   * Reference to parent ComponentGroup if this group is nested
+   * @type {ComponentGroup|null}
+   */
+  group = null;
+
+  /**
    * @type {Pose}
    * The offset position from the mouse to this Group's position when dragging.
    */
@@ -72,6 +78,7 @@ export class ComponentGroup {
   }
 
   destroy() {
+    if (this.destroyed) return;
     this.destroyed = true;
     this.parent = null;
     let layoutController = LayoutController.getInstance();
@@ -88,12 +95,43 @@ export class ComponentGroup {
   /**
    * Adds a component to the group.
    * @param {Component} component
+   * @throws {Error} If the component is on a different layer than the group (for permanent groups only)
+   * @throws {Error} If the component already belongs to another ComponentGroup
+   * @throws {Error} If trying to add the same permanent ComponentGroup to a temporary group multiple times
    */
   addComponent(component) {
     if (this.destroyed) return;
+
+    if (component instanceof ComponentGroup) {
+      if (component === this) {
+        console.warn?.('Cannot add group to itself.', component);
+        return;
+      }
+      const alreadyExists = this.#components.some(existingComponent => 
+        existingComponent instanceof ComponentGroup && 
+        existingComponent.uuid === component.uuid
+      );
+
+      if (alreadyExists) {
+        console.warn(`Prevented adding ComponentGroup ${component.uuid} to another group multiple times`);
+        return;
+      }
+    }
+
+    if (component.group) {
+      console.warn?.('Component already belongs to a group.', component);
+      return;
+    }
+
     if (!this.parent) {
       this.parent = component.parent ?? component.layer;
     }
+
+    const componentLayer = component.parent ?? component.layer;
+    if (componentLayer !== this.parent) {
+      throw new Error('Cannot add component from different layer to a ComponentGroup. All components in a group must be on the same layer.');
+    }
+
     this.#components.push(component);
     component.group = this;
     component.connections.forEach(connection => {
@@ -145,18 +183,15 @@ export class ComponentGroup {
   bringToFront() {
     if (this.destroyed) return;
     if (!this.parent) return;
-    
-    // Cache current z-indices to avoid repeated indexOf calls during sort
-    const componentsWithIndices = this.#components.map(comp => ({
+
+    const allComponents = this.getAllComponents();
+    const componentsWithIndices = allComponents.map(comp => ({
       component: comp,
       index: this.parent.getChildIndex(comp)
     }));
-    
-    // Sort by current z-order (lowest index first)
-    componentsWithIndices.sort((a, b) => a.index - b.index);
-    
-    // Move components in order to the front
     const targetIndex = this.parent.children.length - 2;
+
+    componentsWithIndices.sort((a, b) => a.index - b.index);
     componentsWithIndices.forEach(({ component }) => {
       this.parent.setChildIndex(component, targetIndex);
     });
@@ -165,17 +200,14 @@ export class ComponentGroup {
   sendToBack() {
     if (this.destroyed) return;
     if (!this.parent) return;
-    
-    // Cache current z-indices to avoid repeated indexOf calls during sort
-    const componentsWithIndices = this.#components.map(comp => ({
+
+    const allComponents = this.getAllComponents();
+    const componentsWithIndices = allComponents.map(comp => ({
       component: comp,
       index: this.parent.getChildIndex(comp)
     }));
-    
-    // Sort by current z-order (highest index first)
+
     componentsWithIndices.sort((a, b) => b.index - a.index);
-    
-    // Move components in reverse order to preserve relative ordering
     componentsWithIndices.forEach(({ component }) => {
       this.parent.setChildIndex(component, 0);
     });
@@ -203,41 +235,56 @@ export class ComponentGroup {
    * @returns {ComponentGroup} The cloned component group.
    */
   clone(layer, connectTo = null) {
-    // Create a new group with the same temporary status
     const newGroup = new ComponentGroup(this.#temporary);
-    
+
     if (layer) {
       newGroup.parent = layer;
     }
 
-    // Map from old component UUID to new component
+    // Map from old component UUID to new component (including nested components)
     const componentMap = new Map();
-    
+
+    // Helper function to recursively map all components
+    const mapAllComponents = (oldItem, newItem) => {
+      if (oldItem instanceof ComponentGroup) {
+        componentMap.set(oldItem.uuid, newItem);
+        // Map all components within the nested group
+        const oldComponents = oldItem.getAllComponents();
+        const newComponents = newItem.getAllComponents();
+        for (let i = 0; i < oldComponents.length; i++) {
+          componentMap.set(oldComponents[i].uuid, newComponents[i]);
+        }
+      } else {
+        componentMap.set(oldItem.uuid, newItem);
+      }
+    };
+
     // Clone all components in the group
     for (const component of this.#components) {
       const newComponent = component.clone(layer);
-      componentMap.set(component.uuid, newComponent);
+      mapAllComponents(component, newComponent);
       newGroup.addComponent(newComponent);
     }
-    
-    // Re-establish connections between cloned components
-    for (const oldComponent of this.#components) {
+
+    // Re-establish connections between cloned components (only for regular Components)
+    const allOldComponents = this.getAllComponents();
+    for (const oldComponent of allOldComponents) {
       const newComponent = componentMap.get(oldComponent.uuid);
-      
+
       for (let i = 0; i < oldComponent.connections.length; i++) {
         const oldConnection = oldComponent.connections[i];
-        
+
         // If this connection was connected to another component in the group
         if (oldConnection.otherConnection) {
           const otherComponent = oldConnection.otherConnection.component;
-          
+
           // Check if the other component is in this group
           if (this.connections.has(oldConnection.otherConnection.uuid)) {
             const newOtherComponent = componentMap.get(otherComponent.uuid);
             const otherConnectionIndex = oldConnection.otherConnection.connectionIndex;
-            
+
             // Connect the cloned connections (only if not already connected)
-            if (!newComponent.connections[i].otherConnection) {
+            if (newOtherComponent && !newComponent.connections[i].otherConnection) {
               newComponent.connections[i].connectTo(newOtherComponent.connections[otherConnectionIndex]);
             }
           }
@@ -285,34 +332,34 @@ export class ComponentGroup {
           // Get the pose of the connection we're connecting to
           let conPose = connection.getPose();
           conPose.turnAngle(Math.PI);
-          
+
           // Calculate the target position based on the group connection's offset
           let targetPose = groupConnection.offsetVector.getStartPosition(conPose);
-          
+
           // Get current pose of the group connection
           let currentGroupConPose = groupConnection.component.getPose();
-          
+
           // Calculate the angle difference needed to align
           let angleOffset = targetPose.angle - currentGroupConPose.angle;
-          
+
           // Rotate the group to align the connection angles
           if (angleOffset !== 0) {
             newGroup.rotate(angleOffset, false);
           }
-          
+
           // After rotation, recalculate the group connection pose
           currentGroupConPose = groupConnection.component.getPose();
-          
+
           // Calculate position offset needed after rotation
           let posX = Math.fround(targetPose.x - currentGroupConPose.x);
           let posY = Math.fround(targetPose.y - currentGroupConPose.y);
-          
+
           // Move the group to align positions
           let currentPos = newGroup.#components[0]?.parent ? newGroup.getLocalPosition() : newGroup.getGlobalPosition();
           newGroup.deleteCollisionTree();
           newGroup.move(currentPos.x + posX, currentPos.y + posY);
           newGroup.insertCollisionTree();
-          
+
           // Connect the connections
           groupConnection.connectTo(connection);
         }
@@ -334,6 +381,16 @@ export class ComponentGroup {
   }
 
   /**
+   * @returns {Array<Component>} The components in the group.
+   */
+  get components() {
+    if (this.destroyed) {
+      return [];
+    }
+    return [...this.#components];
+  }
+
+  /**
    * Get the first Component that is connected to this group.
    * @returns {Component|null} The first Component that is connected to this group, or null.
    */
@@ -341,7 +398,25 @@ export class ComponentGroup {
     const connection = Array.from(this.connections.values()).find((connection) => connection.otherConnection && !this.connections.has(connection.otherConnection.uuid));
     return connection?.otherConnection?.component ?? null;
   }
-  
+
+  /**
+   * Recursively collect all individual components from this group and any nested groups.
+   * @returns {Array<Component>} Array of all individual components (not ComponentGroups)
+   */
+  getAllComponents() {
+    const allComponents = [];
+
+    this.#components.forEach(component => {
+      if (component instanceof ComponentGroup) {
+        allComponents.push(...component.getAllComponents());
+      } else {
+        allComponents.push(component);
+      }
+    });
+
+    return allComponents;
+  }
+
   /**
    * Gets the global Bounds of the group.
    * @returns {Bounds}
@@ -479,9 +554,17 @@ export class ComponentGroup {
     const deltaY = y - localPosition.y;
 
     this.#components.forEach(component => {
-      const compLocalPos = component.position;
-      if (!compLocalPos) return;
-      component.position.set(compLocalPos.x + deltaX, compLocalPos.y + deltaY);
+      if (component instanceof ComponentGroup) {
+        const componentPos = component.components[0]?.parent ? component.getLocalPosition() : component.getGlobalPosition();
+        if (componentPos) {
+          component.move(componentPos.x + deltaX, componentPos.y + deltaY);
+        }
+      } else {
+        const compLocalPos = component.position;
+        if (compLocalPos) {
+          component.position.set(compLocalPos.x + deltaX, compLocalPos.y + deltaY);
+        }
+      }
     });
   }
 
@@ -490,6 +573,11 @@ export class ComponentGroup {
    * @param {FederatedPointerEvent} e 
    */
   onStartDrag(e) {
+    if (this.group) {
+      this.group.onStartDrag(e);
+      return;
+    }
+
     LayoutController.dragTarget = this;
     LayoutController.dragDistance = 0;
     LayoutController.dragWithAlt = e.altKey; // Track if Alt key is pressed for duplication
@@ -539,15 +627,24 @@ export class ComponentGroup {
     if (!center) return;
     this.deleteCollisionTree();
     this.#components.forEach(component => {
-      const pose = component.getPose().rotateAround(center.x, center.y, angle);
-      component.position.set(pose.x, pose.y);
-      component.sprite.rotation = pose.angle;
-      component.connections.forEach(connection => {
-        if (checkConnections && !connection.otherConnection) {
-          component.layer.findMatchingConnection(connection, true);
+      if (component instanceof ComponentGroup) {
+        const componentCenter = component.getLocalPosition();
+        if (componentCenter) {
+          const rotatedCenter = new Pose(componentCenter.x, componentCenter.y, 0).rotateAround(center.x, center.y, angle);
+          component.move(rotatedCenter.x, rotatedCenter.y);
+          component._rotateComponents(angle, checkConnections);
         }
-        connection.updateCircle();
-      });
+      } else {
+        const pose = component.getPose().rotateAround(center.x, center.y, angle);
+        component.position.set(pose.x, pose.y);
+        component.sprite.rotation = pose.angle;
+        component.connections.forEach(connection => {
+          if (checkConnections && !connection.otherConnection) {
+            component.layer.findMatchingConnection(connection, true);
+          }
+          connection.updateCircle();
+        });
+      }
     });
     if (!this.isDragging) {
       this.insertCollisionTree();
@@ -555,9 +652,44 @@ export class ComponentGroup {
   }
 
   /**
+   * Internal method to rotate components without checking canRotate().
+   * Used when rotating nested groups as part of a parent group rotation.
+   * @param {Number} angle The angle to rotate by in radians
+   * @param {Boolean} checkConnections Whether to check connections
+   */
+  _rotateComponents(angle, checkConnections = true) {
+    const center = this.getLocalPosition();
+    if (!center) return;
+
+    this.#components.forEach(component => {
+      if (component instanceof ComponentGroup) {
+        const componentCenter = component.getLocalPosition();
+        if (componentCenter) {
+          const rotatedCenter = new Pose(componentCenter.x, componentCenter.y, 0).rotateAround(center.x, center.y, angle);
+          component.move(rotatedCenter.x, rotatedCenter.y);
+          component._rotateComponents(angle, checkConnections);
+        }
+      } else {
+        const pose = component.getPose().rotateAround(center.x, center.y, angle);
+        component.position.set(pose.x, pose.y);
+        component.sprite.rotation = pose.angle;
+        component.connections.forEach(connection => {
+          if (checkConnections && !connection.otherConnection) {
+            component.layer.findMatchingConnection(connection, true);
+          }
+          connection.updateCircle();
+        });
+      }
+    });
+  }
+
+  /**
    * @returns {number} The number of components in the group.
    */
   get size() {
+    if (this.destroyed) {
+      return 0;
+    }
     return this.#components.length;
   }
 
@@ -576,16 +708,20 @@ export class ComponentGroup {
    */
   deleteCollisionTree() {
     this.#components.forEach(component => {
-      let bbox = component.sprite.getLocalBounds();
-      let item = {
-        id: component.uuid,
-        minX: bbox.minX + component.position.x,
-        minY: bbox.minY + component.position.y,
-        maxX: bbox.maxX + component.position.x,
-        maxY: bbox.maxY + component.position.y,
-        component: component
-      };
-      component.layer.tree.remove(item, (a,b) => {return a.id === b.id});
+      if (component instanceof ComponentGroup) {
+        component.deleteCollisionTree();
+      } else {
+        let bbox = component.sprite.getLocalBounds();
+        let item = {
+          id: component.uuid,
+          minX: bbox.minX + component.position.x,
+          minY: bbox.minY + component.position.y,
+          maxX: bbox.maxX + component.position.x,
+          maxY: bbox.maxY + component.position.y,
+          component: component
+        };
+        component.layer.tree.remove(item, (a,b) => {return a.id === b.id});
+      }
     });
   }
 
@@ -595,20 +731,40 @@ export class ComponentGroup {
   insertCollisionTree() {
     let load = [];
     this.#components.forEach(component => {
-      let bbox = component.sprite.getLocalBounds();
-      let item = {
-        id: component.uuid,
-        minX: bbox.minX + component.position.x,
-        minY: bbox.minY + component.position.y,
-        maxX: bbox.maxX + component.position.x,
-        maxY: bbox.maxY + component.position.y,
-        component: component
-      };
-      load.push(item);
+      if (component instanceof ComponentGroup) {
+        component.insertCollisionTree();
+      } else {
+        let bbox = component.sprite.getLocalBounds();
+        let item = {
+          id: component.uuid,
+          minX: bbox.minX + component.position.x,
+          minY: bbox.minY + component.position.y,
+          maxX: bbox.maxX + component.position.x,
+          maxY: bbox.maxY + component.position.y,
+          component: component
+        };
+        load.push(item);
+      }
     });
     if (load.length > 0) {
-      this.#components[0].layer.tree.load(load);
+      this.parent.tree.load(load);
     }
+  }
+
+  /**
+   * Serializes the ComponentGroup to a plain object
+   * @returns {Object} Serialized ComponentGroup with uuid and optional group property for nested groups
+   */
+  serialize() {
+    const serialized = {
+      uuid: this.#uuid
+    };
+
+    if (this.group) {
+      serialized.group = this.group.uuid;
+    }
+
+    return serialized;
   }
 
   /**
@@ -617,5 +773,13 @@ export class ComponentGroup {
    */
   get uuid() {
     return this.#uuid;
+  }
+
+  /**
+   * Set the UUID for this ComponentGroup (used during deserialization)
+   * @param {String} value
+   */
+  set uuid(value) {
+    this.#uuid = value;
   }
 }
