@@ -664,7 +664,7 @@ describe('ComponentGroup', () => {
       };
     });
 
-    for (let a in [true, false]) {
+    for (let a of [true, false]) {
       it(`should remove all components from the collision tree ${a == true ? 'temp' : 'perm'}`, () => {
         const group = new ComponentGroup(a);
 
@@ -784,7 +784,7 @@ describe('ComponentGroup', () => {
       };
     });
 
-    for (let a in [true, false]) {
+    for (let a of [true, false]) {
       it(`should insert all components into the collision tree ${a == true ? 'temp' : 'perm'}`, () => {
         const group = new ComponentGroup(a);
 
