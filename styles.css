@@ -75,7 +75,10 @@ canvas {
 }
 
 #selToolMenuRotate,
-#selToolRotate {
+#selToolRotate,
+#selGroupDivider,
+#selToolMenuGroup,
+#selToolMenuUngroup {
 	display: none;
 }
 
@@ -84,6 +87,12 @@ canvas {
 }
 
 #selectionToolbar.rotatable li#selToolMenuRotate {
+	display: flex;
+}
+
+#selectionToolbar:is(.grouped, .ungrouped) hr#selGroupDivider,
+#selectionToolbar.ungrouped li#selToolMenuGroup,
+#selectionToolbar.grouped li#selToolMenuUngroup {
 	display: flex;
 }
 

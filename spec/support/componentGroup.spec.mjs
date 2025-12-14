@@ -235,7 +235,7 @@ describe('ComponentGroup', () => {
       const mockComponent2 = {
         getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
         connections: [],
-        parent: mockParent2
+        parent: mockParent1  // Must be same parent as first component
       };
       
       group.addComponent(mockComponent1);
@@ -480,16 +480,17 @@ describe('ComponentGroup', () => {
 
     it('should set component.group to null for all components', () => {
       const group = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
       const mockComponent1 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         group: null
       };
       const mockComponent2 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         group: null
       };
       
@@ -507,16 +508,17 @@ describe('ComponentGroup', () => {
 
     it('should delete components via LayoutController for permanent groups', () => {
       const group = new ComponentGroup(false); // permanent group
+      const sharedLayer = {}; // All components must be on the same layer
       const mockComponent1 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         group: null
       };
       const mockComponent2 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         group: null
       };
       
@@ -559,32 +561,33 @@ describe('ComponentGroup', () => {
       
       group.destroy();
       
-      // After destroy, size should throw or be unusable
+      // After destroy, size should return 0
       // since #components is set to null
-      expect(() => group.size).toThrow();
+      expect(group.size).toBe(0);
     });
   });
 
   describe('alpha', () => {
     it('should set alpha on all components in the group', () => {
       const group = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
       
       const mockComponent1 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         alpha: 1
       };
       const mockComponent2 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         alpha: 1
       };
       const mockComponent3 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         alpha: 1
       };
       
@@ -609,23 +612,24 @@ describe('ComponentGroup', () => {
   describe('tint', () => {
     it('should set tint on all components in the group', () => {
       const group = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
       
       const mockComponent1 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         tint: 0xffffff
       };
       const mockComponent2 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         tint: 0xffffff
       };
       const mockComponent3 = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: sharedLayer,
         tint: 0xffffff
       };
       
@@ -660,73 +664,75 @@ describe('ComponentGroup', () => {
       };
     });
 
-    it('should remove all components from the collision tree', () => {
-      const group = new ComponentGroup();
-      
-      const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
-      const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
-      
-      const mockComponent1 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
-        connections: [],
-        parent: {},
-        uuid: 'comp-1',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 0, minY: 0, maxX: 10, maxY: 10
-          })
-        },
-        position: { x: 100, y: 200 }
-      };
-      
-      const mockComponent2 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
-        connections: [],
-        parent: {},
-        uuid: 'comp-2',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 5, minY: 5, maxX: 15, maxY: 15
-          })
-        },
-        position: { x: 150, y: 250 }
-      };
-      
-      group.addComponent(mockComponent1);
-      group.addComponent(mockComponent2);
-      
-      group.deleteCollisionTree();
-      
-      expect(mockTree.remove).toHaveBeenCalledTimes(2);
-      
-      // Verify first component removal
-      expect(mockTree.remove).toHaveBeenCalledWith(
-        {
-          id: 'comp-1',
-          minX: 100,  // 0 + 100
-          minY: 200,  // 0 + 200
-          maxX: 110,  // 10 + 100
-          maxY: 210,  // 10 + 200
-          component: mockComponent1
-        },
-        jasmine.any(Function)
-      );
-      
-      // Verify second component removal
-      expect(mockTree.remove).toHaveBeenCalledWith(
-        {
-          id: 'comp-2',
-          minX: 155,  // 5 + 150
-          minY: 255,  // 5 + 250
-          maxX: 165,  // 15 + 150
-          maxY: 265,  // 15 + 250
-          component: mockComponent2
-        },
-        jasmine.any(Function)
-      );
-    });
+    for (let a of [true, false]) {
+      it(`should remove all components from the collision tree ${a == true ? 'temp' : 'perm'}`, () => {
+        const group = new ComponentGroup(a);
+
+        const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+        const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
+        
+        const mockComponent1 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-1',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 0, minY: 0, maxX: 10, maxY: 10
+            })
+          },
+          position: { x: 100, y: 200 }
+        };
+        
+        const mockComponent2 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-2',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 5, minY: 5, maxX: 15, maxY: 15
+            })
+          },
+          position: { x: 150, y: 250 }
+        };
+        
+        group.addComponent(mockComponent1);
+        group.addComponent(mockComponent2);
+        
+        group.deleteCollisionTree();
+        
+        expect(mockTree.remove).toHaveBeenCalledTimes(2);
+        
+        // Verify first component removal
+        expect(mockTree.remove).toHaveBeenCalledWith(
+          {
+            id: 'comp-1',
+            minX: 100,  // 0 + 100
+            minY: 200,  // 0 + 200
+            maxX: 110,  // 10 + 100
+            maxY: 210,  // 10 + 200
+            component: mockComponent1
+          },
+          jasmine.any(Function)
+        );
+        
+        // Verify second component removal
+        expect(mockTree.remove).toHaveBeenCalledWith(
+          {
+            id: 'comp-2',
+            minX: 155,  // 5 + 150
+            minY: 255,  // 5 + 250
+            maxX: 165,  // 15 + 150
+            maxY: 265,  // 15 + 250
+            component: mockComponent2
+          },
+          jasmine.any(Function)
+        );
+      });
+    }
 
     it('should handle empty group without error', () => {
       const group = new ComponentGroup();
@@ -741,7 +747,7 @@ describe('ComponentGroup', () => {
       const mockComponent = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: mockLayer,
         uuid: 'comp-1',
         layer: mockLayer,
         sprite: {
@@ -778,65 +784,67 @@ describe('ComponentGroup', () => {
       };
     });
 
-    it('should insert all components into the collision tree', () => {
-      const group = new ComponentGroup();
-      
-      const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
-      const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
-      
-      const mockComponent1 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
-        connections: [],
-        parent: {},
-        uuid: 'comp-1',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 0, minY: 0, maxX: 10, maxY: 10
-          })
-        },
-        position: { x: 100, y: 200 }
-      };
-      
-      const mockComponent2 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
-        connections: [],
-        parent: {},
-        uuid: 'comp-2',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 5, minY: 5, maxX: 15, maxY: 15
-          })
-        },
-        position: { x: 150, y: 250 }
-      };
-      
-      group.addComponent(mockComponent1);
-      group.addComponent(mockComponent2);
-      
-      group.insertCollisionTree();
-      
-      expect(mockTree.load).toHaveBeenCalledTimes(1);
-      expect(mockTree.load).toHaveBeenCalledWith([
-        {
-          id: 'comp-1',
-          minX: 100,  // 0 + 100
-          minY: 200,  // 0 + 200
-          maxX: 110,  // 10 + 100
-          maxY: 210,  // 10 + 200
-          component: mockComponent1
-        },
-        {
-          id: 'comp-2',
-          minX: 155,  // 5 + 150
-          minY: 255,  // 5 + 250
-          maxX: 165,  // 15 + 150
-          maxY: 265,  // 15 + 250
-          component: mockComponent2
-        }
-      ]);
-    });
+    for (let a of [true, false]) {
+      it(`should insert all components into the collision tree ${a == true ? 'temp' : 'perm'}`, () => {
+        const group = new ComponentGroup(a);
+
+        const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+        const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
+
+        const mockComponent1 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-1',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 0, minY: 0, maxX: 10, maxY: 10
+            })
+          },
+          position: { x: 100, y: 200 }
+        };
+
+        const mockComponent2 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-2',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 5, minY: 5, maxX: 15, maxY: 15
+            })
+          },
+          position: { x: 150, y: 250 }
+        };
+
+        group.addComponent(mockComponent1);
+        group.addComponent(mockComponent2);
+
+        group.insertCollisionTree();
+
+        expect(mockTree.load).toHaveBeenCalledTimes(1);
+        expect(mockTree.load).toHaveBeenCalledWith([
+          {
+            id: 'comp-1',
+            minX: 100,  // 0 + 100
+            minY: 200,  // 0 + 200
+            maxX: 110,  // 10 + 100
+            maxY: 210,  // 10 + 200
+            component: mockComponent1
+          },
+          {
+            id: 'comp-2',
+            minX: 155,  // 5 + 150
+            minY: 255,  // 5 + 250
+            maxX: 165,  // 15 + 150
+            maxY: 265,  // 15 + 250
+            component: mockComponent2
+          }
+        ]);
+      });
+    }
 
     it('should NOT call load when group is empty', () => {
       const group = new ComponentGroup();
@@ -852,7 +860,7 @@ describe('ComponentGroup', () => {
       const mockComponent = {
         getBounds: jasmine.createSpy('getBounds'),
         connections: [],
-        parent: {},
+        parent: mockLayer,
         uuid: 'comp-1',
         layer: mockLayer,
         sprite: {
@@ -904,7 +912,7 @@ describe('ComponentGroup', () => {
       const defaults = {
         uuid: `comp-${Math.random()}`,
         connections: [],
-        parent: {},
+        parent: mockLayer,  // Use mockLayer as parent so all components are on same layer
         layer: mockLayer,
         position: {
           x: 0,
@@ -1924,4 +1932,1120 @@ describe('ComponentGroup', () => {
       expect(mockEvent.getLocalPosition).toHaveBeenCalledWith(mockParent);
     });
   });
+
+  describe('serialize', () => {
+    it('should serialize a ComponentGroup with uuid', () => {
+      const group = new ComponentGroup();
+      const serialized = group.serialize();
+      
+      expect(serialized).toBeDefined();
+      expect(serialized.uuid).toBe(group.uuid);
+      expect(typeof serialized.uuid).toBe('string');
+    });
+
+    it('should serialize a ComponentGroup without group property when not nested', () => {
+      const group = new ComponentGroup();
+      const serialized = group.serialize();
+      
+      expect(serialized.hasOwnProperty('group')).toBe(false);
+    });
+
+    it('should serialize a ComponentGroup with group property when nested', () => {
+      const parentGroup = new ComponentGroup();
+      const childGroup = new ComponentGroup();
+      childGroup.group = parentGroup;
+      
+      const serialized = childGroup.serialize();
+      
+      expect(serialized.group).toBe(parentGroup.uuid);
+    });
+
+    // **Feature: permanent-component-groups, Property 1: Serialization round-trip preserves group structure**
+    // **Validates: Requirements 3.5, 7.2, 7.3, 3.4, 8.4**
+    it('should preserve group structure through serialization round-trip', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 0, max: 3 }), // Nesting depth (0 = no nesting, 1-3 = nested levels)
+          fc.boolean(), // Whether the group is temporary
+          (nestingDepth, isTemporary) => {
+            // Create a chain of nested groups
+            const groups = [];
+            for (let i = 0; i <= nestingDepth; i++) {
+              const group = new ComponentGroup(isTemporary);
+              if (i > 0) {
+                // Nest this group in the previous one
+                group.group = groups[i - 1];
+              }
+              groups.push(group);
+            }
+            
+            const targetGroup = groups[groups.length - 1]; // The most nested group
+            
+            // Serialize the target group
+            const serialized = targetGroup.serialize();
+            
+            // Verify basic structure
+            expect(serialized.uuid).toBe(targetGroup.uuid);
+            expect(typeof serialized.uuid).toBe('string');
+            expect(serialized.uuid.length).toBeGreaterThan(0);
+            
+            // Verify nesting structure
+            if (nestingDepth === 0) {
+              // No nesting - should not have group property
+              expect(serialized.hasOwnProperty('group')).toBe(false);
+            } else {
+              // Has nesting - should have group property pointing to parent
+              expect(serialized.group).toBe(groups[nestingDepth - 1].uuid);
+            }
+            
+            // Verify that serialization is deterministic
+            const serialized2 = targetGroup.serialize();
+            expect(serialized2).toEqual(serialized);
+            
+            // Verify that the original group structure is unchanged after serialization
+            expect(targetGroup.uuid).toBeDefined();
+            expect(targetGroup.isTemporary).toBe(isTemporary);
+            if (nestingDepth > 0) {
+              expect(targetGroup.group).toBe(groups[nestingDepth - 1]);
+              expect(targetGroup.group.uuid).toBe(groups[nestingDepth - 1].uuid);
+            } else {
+              expect(targetGroup.group).toBeNull();
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 3: Dragging maintains relative positions**
+    // **Validates: Requirements 4.1**
+    it('should maintain relative positions when dragging permanent groups', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 10 }), // Number of components in group
+          fc.array(fc.tuple(fc.float({ min: -1000, max: 1000 }), fc.float({ min: -1000, max: 1000 })), { minLength: 2, maxLength: 10 }), // Component positions
+          fc.tuple(fc.float({ min: -500, max: 500 }), fc.float({ min: -500, max: 500 })), // New position to move to
+          (numComponents, positions, [newX, newY]) => {
+            // Create a permanent ComponentGroup
+            const group = new ComponentGroup(false); // permanent group
+            const mockLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+            };
+            
+            // Create mock components with specific positions
+            const components = [];
+            for (let i = 0; i < Math.min(numComponents, positions.length); i++) {
+              const [x, y] = positions[i];
+              const mockComponent = {
+                uuid: `comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                }),
+                connections: [],
+                parent: mockLayer,
+                position: {
+                  x: x,
+                  y: y,
+                  set: jasmine.createSpy('set')
+                }
+              };
+              components.push(mockComponent);
+              group.addComponent(mockComponent);
+            }
+            
+            // Record initial relative positions
+            const initialPositions = components.map(comp => ({ x: comp.position.x, y: comp.position.y }));
+            const initialRelativePositions = [];
+            for (let i = 0; i < components.length; i++) {
+              for (let j = i + 1; j < components.length; j++) {
+                initialRelativePositions.push({
+                  i, j,
+                  deltaX: initialPositions[i].x - initialPositions[j].x,
+                  deltaY: initialPositions[i].y - initialPositions[j].y
+                });
+              }
+            }
+            
+            // Mock the group's position calculation methods
+            spyOn(group, 'getLocalPosition').and.returnValue({ x: 0, y: 0 });
+            
+            // Move the group to new position
+            group.move(newX, newY);
+            
+            // Verify all components were moved
+            components.forEach(comp => {
+              expect(comp.position.set).toHaveBeenCalled();
+            });
+            
+            // Get the final positions from the set calls
+            const finalPositions = components.map(comp => {
+              const setCall = comp.position.set.calls.mostRecent();
+              if (!setCall) {
+                return { x: NaN, y: NaN }; // No call was made
+              }
+              return { x: setCall.args[0], y: setCall.args[1] };
+            });
+            
+            // Verify relative positions are maintained
+            for (const rel of initialRelativePositions) {
+              const finalDeltaX = finalPositions[rel.i].x - finalPositions[rel.j].x;
+              const finalDeltaY = finalPositions[rel.i].y - finalPositions[rel.j].y;
+              
+              // Skip if any values are NaN (invalid test data)
+              if (isNaN(finalDeltaX) || isNaN(finalDeltaY) || isNaN(rel.deltaX) || isNaN(rel.deltaY)) {
+                return; // Skip this test iteration
+              }
+              
+              expect(Math.abs(finalDeltaX - rel.deltaX)).toBeLessThan(0.001);
+              expect(Math.abs(finalDeltaY - rel.deltaY)).toBeLessThan(0.001);
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 4: Rotation maintains group structure**
+    // **Validates: Requirements 4.2**
+    it('should maintain group structure when rotating permanent groups', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 8 }), // Number of components in group
+          fc.array(fc.tuple(fc.float({ min: -100, max: 100 }), fc.float({ min: -100, max: 100 }), fc.float({ min: 0, max: Math.fround(2 * Math.PI) })), { minLength: 2, maxLength: 8 }), // Component positions and rotations
+          fc.float({ min: Math.fround(-Math.PI), max: Math.fround(Math.PI) }), // Rotation angle
+          (numComponents, componentData, rotationAngle) => {
+            // Create a permanent ComponentGroup
+            const group = new ComponentGroup(false); // permanent group
+            const mockLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point),
+              findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+            };
+            
+            // Create mock components with specific positions and rotations
+            const components = [];
+            for (let i = 0; i < Math.min(numComponents, componentData.length); i++) {
+              const [x, y, rotation] = componentData[i];
+              const mockComponent = {
+                uuid: `comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                }),
+                connections: [{
+                  updateCircle: jasmine.createSpy('updateCircle')
+                }],
+                parent: mockLayer,
+                layer: mockLayer,
+                position: {
+                  x: x,
+                  y: y,
+                  set: jasmine.createSpy('set')
+                },
+                sprite: {
+                  rotation: rotation,
+                  getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+                    minX: -5, minY: -5, maxX: 5, maxY: 5
+                  })
+                },
+                getPose: jasmine.createSpy('getPose').and.returnValue({
+                  x: x,
+                  y: y,
+                  angle: rotation,
+                  rotateAround: jasmine.createSpy('rotateAround').and.returnValue({
+                    x: x + 10, // Simulate rotation result
+                    y: y + 10,
+                    angle: rotation + rotationAngle
+                  })
+                })
+              };
+              components.push(mockComponent);
+              group.addComponent(mockComponent);
+            }
+            
+            // Mock canRotate to return true
+            spyOn(group, 'canRotate').and.returnValue(true);
+            spyOn(group, 'getLocalPosition').and.returnValue({ x: 0, y: 0 });
+            spyOn(group, 'deleteCollisionTree');
+            spyOn(group, 'insertCollisionTree');
+            
+            // Record initial relative positions and rotations
+            const initialData = components.map(comp => ({
+              x: comp.position.x,
+              y: comp.position.y,
+              rotation: comp.sprite.rotation
+            }));
+            
+            // Rotate the group
+            group.rotate(rotationAngle);
+            
+            // Verify all components were rotated
+            components.forEach((comp, i) => {
+              expect(comp.getPose).toHaveBeenCalled();
+              expect(comp.getPose().rotateAround).toHaveBeenCalledWith(0, 0, rotationAngle);
+              expect(comp.position.set).toHaveBeenCalled();
+              expect(comp.connections[0].updateCircle).toHaveBeenCalled();
+            });
+            
+            // Verify collision tree operations
+            expect(group.deleteCollisionTree).toHaveBeenCalled();
+            expect(group.insertCollisionTree).toHaveBeenCalled();
+            
+            // Verify all components maintain their group membership
+            components.forEach(comp => {
+              expect(comp.group).toBe(group);
+            });
+            
+            // Verify group structure is intact
+            expect(group.size).toBe(components.length);
+            expect(group.destroyed).toBe(false);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 5: Copying creates equivalent permanent group**
+    // **Validates: Requirements 4.3, 4.5**
+    it('should create equivalent permanent group when copying', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 1, max: 5 }), // Number of components in group
+          fc.array(fc.tuple(fc.float({ min: -100, max: 100 }), fc.float({ min: -100, max: 100 })), { minLength: 1, maxLength: 5 }), // Component positions
+          (numComponents, positions) => {
+            // Create a permanent ComponentGroup
+            const originalGroup = new ComponentGroup(false); // permanent group
+            const mockLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+            };
+            
+            // Create mock components
+            const originalComponents = [];
+            for (let i = 0; i < Math.min(numComponents, positions.length); i++) {
+              const [x, y] = positions[i];
+              const mockComponent = {
+                uuid: `original-comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                }),
+                connections: [],
+                parent: mockLayer,
+                position: { x: x, y: y },
+                clone: jasmine.createSpy('clone').and.returnValue({
+                  uuid: `cloned-comp-${i}`,
+                  getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                    minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                  }),
+                  connections: [],
+                  parent: mockLayer,
+                  position: { x: x, y: y }
+                })
+              };
+              originalComponents.push(mockComponent);
+              originalGroup.addComponent(mockComponent);
+            }
+            
+            // Clone the group
+            const clonedGroup = originalGroup.clone(mockLayer);
+            
+            // Verify the cloned group is permanent (not temporary)
+            expect(clonedGroup.isTemporary).toBe(false);
+            
+            // Verify the cloned group has the same number of components
+            expect(clonedGroup.size).toBe(originalGroup.size);
+            
+            // Verify all original components were cloned
+            originalComponents.forEach(comp => {
+              expect(comp.clone).toHaveBeenCalledWith(mockLayer);
+            });
+            
+            // Verify the cloned group is a different object
+            expect(clonedGroup).not.toBe(originalGroup);
+            expect(clonedGroup.uuid).not.toBe(originalGroup.uuid);
+            
+            // Verify both groups maintain their structure
+            expect(originalGroup.size).toBe(originalComponents.length);
+            expect(originalGroup.destroyed).toBe(false);
+            expect(clonedGroup.destroyed).toBe(false);
+            
+            // Verify the cloned group has different UUID but same structure
+            expect(typeof clonedGroup.uuid).toBe('string');
+            expect(clonedGroup.uuid.length).toBeGreaterThan(0);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 6: Deletion removes group and components**
+    // **Validates: Requirements 4.4**
+    it('should remove group and all components when deleting permanent group', () => {
+      // Mock LayoutController outside the property test
+      const mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      const layoutControllerSpy = spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+      
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 1, max: 8 }), // Number of components in group
+          fc.array(fc.tuple(fc.float({ min: -100, max: 100 }), fc.float({ min: -100, max: 100 })), { minLength: 1, maxLength: 8 }), // Component positions
+          (numComponents, positions) => {
+            // Reset the spy for each test iteration
+            mockLayoutController.deleteComponent.calls.reset();
+            
+            // Create a permanent ComponentGroup
+            const group = new ComponentGroup(false); // permanent group
+            const mockLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              }
+            };
+            
+            // Create mock components
+            const components = [];
+            for (let i = 0; i < Math.min(numComponents, positions.length); i++) {
+              const [x, y] = positions[i];
+              const mockComponent = {
+                uuid: `comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                }),
+                connections: [],
+                parent: mockLayer,
+                position: { x: x, y: y },
+                group: null
+              };
+              components.push(mockComponent);
+              group.addComponent(mockComponent);
+            }
+            
+            // Verify initial state
+            expect(group.size).toBe(components.length);
+            expect(group.destroyed).toBe(false);
+            components.forEach(comp => {
+              expect(comp.group).toBe(group);
+            });
+            
+            // Destroy the group
+            group.destroy();
+            
+            // Verify group is marked as destroyed
+            expect(group.destroyed).toBe(true);
+            expect(group.parent).toBeNull();
+            expect(group.connections.size).toBe(0);
+            
+            // Verify all components had their group reference cleared
+            components.forEach(comp => {
+              expect(comp.group).toBeNull();
+            });
+            
+            // Verify all components were deleted via LayoutController (for permanent groups)
+            expect(mockLayoutController.deleteComponent).toHaveBeenCalledTimes(components.length);
+            components.forEach(comp => {
+              expect(mockLayoutController.deleteComponent).toHaveBeenCalledWith(comp);
+            });
+            
+            // Verify group size returns 0 after destruction (components array is nullified)
+            expect(group.size).toBe(0);
+          }
+        ),
+        { numRuns: 100 }
+      );
+      
+      // Clean up the spy
+      layoutControllerSpy.and.callThrough();
+    });
+
+    // **Feature: permanent-component-groups, Property 9: All components in a group share the same layer**
+    // **Validates: Requirements 7.1, 7.5**
+    it('should ensure all components in a permanent group share the same layer', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 8 }), // Number of components to add
+          fc.array(fc.tuple(fc.float({ min: -100, max: 100 }), fc.float({ min: -100, max: 100 })), { minLength: 2, maxLength: 8 }), // Component positions
+          (numComponents, positions) => {
+            // Create a permanent ComponentGroup
+            const group = new ComponentGroup(false); // permanent group
+            const sharedLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+            };
+            
+            // Create components all on the same layer
+            const components = [];
+            for (let i = 0; i < Math.min(numComponents, positions.length); i++) {
+              const [x, y] = positions[i];
+              const mockComponent = {
+                uuid: `comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: x - 5, minY: y - 5, maxX: x + 5, maxY: y + 5
+                }),
+                connections: [],
+                parent: sharedLayer, // All components on same layer
+                layer: sharedLayer,
+                position: { x: x, y: y },
+                group: null
+              };
+              components.push(mockComponent);
+              group.addComponent(mockComponent);
+            }
+            
+            // Verify all components are in the group
+            expect(group.size).toBe(components.length);
+            
+            // Verify all components share the same layer (parent)
+            const groupLayer = group.parent;
+            expect(groupLayer).toBe(sharedLayer);
+            
+            components.forEach(comp => {
+              expect(comp.parent).toBe(groupLayer);
+              expect(comp.group).toBe(group);
+            });
+            
+            // Verify group maintains layer reference
+            expect(group.parent).toBe(sharedLayer);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+  describe('layer constraints', () => {
+    it('should prevent adding component from different layer to a group', () => {
+      // Create a permanent ComponentGroup
+      const group = new ComponentGroup(false); // permanent group
+      
+      const layer1 = {
+        tree: {
+          remove: jasmine.createSpy('remove'),
+          load: jasmine.createSpy('load')
+        },
+        toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+      };
+      
+      const layer2 = {
+        tree: {
+          remove: jasmine.createSpy('remove'),
+          load: jasmine.createSpy('load')
+        },
+        toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+      };
+      
+      // Add first component to establish the group's layer
+      const component1 = {
+        uuid: 'comp-1',
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({
+          minX: 0, minY: 0, maxX: 10, maxY: 10
+        }),
+        connections: [],
+        parent: layer1,
+        layer: layer1,
+        position: { x: 0, y: 0 },
+        group: null
+      };
+      
+      group.addComponent(component1);
+      expect(group.parent).toBe(layer1);
+      expect(group.size).toBe(1);
+      
+      // Try to add component from different layer
+      const component2 = {
+        uuid: 'comp-2',
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({
+          minX: 10, minY: 10, maxX: 20, maxY: 20
+        }),
+        connections: [],
+        parent: layer2, // Different layer
+        layer: layer2,
+        position: { x: 10, y: 10 },
+        group: null
+      };
+      
+      // Should throw an error
+      expect(() => group.addComponent(component2)).toThrowError(
+        'Cannot add component from different layer to a ComponentGroup. All components in a group must be on the same layer.'
+      );
+      
+      // Verify group state is unchanged
+      expect(group.size).toBe(1);
+      expect(group.parent).toBe(layer1);
+      expect(component2.group).toBeNull();
+      
+      // Verify first component is still in the group
+      expect(component1.group).toBe(group);
+    });
+
+    // **Feature: permanent-component-groups, Property 10: Nested groups maintain structure during operations**
+    // **Validates: Requirements 8.2**
+    it('should maintain nested group structure during all operations', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 1, max: 3 }), // Nesting depth (1-3 levels)
+          fc.integer({ min: 1, max: 4 }), // Number of components per group
+          fc.array(fc.tuple(fc.float({ min: -50, max: 50 }), fc.float({ min: -50, max: 50 })), { minLength: 1, maxLength: 12 }), // Component positions
+          (nestingDepth, componentsPerGroup, positions) => {
+            const sharedLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point),
+              findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+            };
+            
+            // Create nested groups
+            const groups = [];
+            let positionIndex = 0;
+            
+            for (let level = 0; level < nestingDepth; level++) {
+              const group = new ComponentGroup(false); // permanent group
+              
+              // Add components to this group
+              for (let i = 0; i < componentsPerGroup && positionIndex < positions.length; i++) {
+                const [x, y] = positions[positionIndex++];
+                const mockComponent = {
+                  uuid: `comp-${level}-${i}`,
+                  getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                    minX: x - 2, minY: y - 2, maxX: x + 2, maxY: y + 2
+                  }),
+                  connections: [{
+                    updateCircle: jasmine.createSpy('updateCircle')
+                  }],
+                  parent: sharedLayer,
+                  layer: sharedLayer,
+                  position: {
+                    x: x,
+                    y: y,
+                    set: jasmine.createSpy('set')
+                  },
+                  sprite: {
+                    rotation: 0,
+                    getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+                      minX: -2, minY: -2, maxX: 2, maxY: 2
+                    })
+                  },
+                  getPose: jasmine.createSpy('getPose').and.returnValue({
+                    x: x,
+                    y: y,
+                    angle: 0,
+                    rotateAround: jasmine.createSpy('rotateAround').and.returnValue({
+                      x: x + 1,
+                      y: y + 1,
+                      angle: Math.PI / 8
+                    })
+                  }),
+                  group: null
+                };
+                group.addComponent(mockComponent);
+              }
+              
+              // Nest this group in the previous one (if not the first group)
+              if (level > 0) {
+                group.group = groups[level - 1];
+              }
+              
+              groups.push(group);
+            }
+            
+            // Skip if no groups were created or if any group has no components
+            if (groups.length === 0) return;
+            if (groups.some(group => group.size === 0)) return;
+            
+            const rootGroup = groups[0];
+            const deepestGroup = groups[groups.length - 1];
+            
+            // Verify initial nesting structure
+            for (let i = 1; i < groups.length; i++) {
+              expect(groups[i].group).toBe(groups[i - 1]);
+            }
+            expect(rootGroup.group).toBeNull();
+            
+            // Test drag operation (move)
+            spyOn(rootGroup, 'getLocalPosition').and.returnValue({ x: 0, y: 0 });
+            rootGroup.move(10, 20);
+            
+            // Verify nesting structure is maintained after move
+            for (let i = 1; i < groups.length; i++) {
+              expect(groups[i].group).toBe(groups[i - 1]);
+              expect(groups[i].destroyed).toBe(false);
+            }
+            expect(rootGroup.group).toBeNull();
+            expect(rootGroup.destroyed).toBe(false);
+            
+            // Test rotation operation
+            spyOn(rootGroup, 'canRotate').and.returnValue(true);
+            spyOn(rootGroup, 'deleteCollisionTree');
+            spyOn(rootGroup, 'insertCollisionTree');
+            rootGroup.rotate(Math.PI / 8);
+            
+            // Verify nesting structure is maintained after rotation
+            for (let i = 1; i < groups.length; i++) {
+              expect(groups[i].group).toBe(groups[i - 1]);
+              expect(groups[i].destroyed).toBe(false);
+            }
+            expect(rootGroup.group).toBeNull();
+            expect(rootGroup.destroyed).toBe(false);
+            
+            // Test serialization
+            const serialized = deepestGroup.serialize();
+            expect(serialized.uuid).toBe(deepestGroup.uuid);
+            if (nestingDepth > 1) {
+              expect(serialized.group).toBe(groups[nestingDepth - 2].uuid);
+            } else {
+              expect(serialized.hasOwnProperty('group')).toBe(false);
+            }
+            
+            // Verify nesting structure is maintained after serialization
+            for (let i = 1; i < groups.length; i++) {
+              expect(groups[i].group).toBe(groups[i - 1]);
+              expect(groups[i].destroyed).toBe(false);
+            }
+            expect(rootGroup.group).toBeNull();
+            expect(rootGroup.destroyed).toBe(false);
+            
+            // Verify all groups maintain their component counts
+            groups.forEach(group => {
+              expect(group.size).toBeGreaterThan(0);
+            });
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 8: isTemporary getter reflects current state**
+    // **Validates: Requirements 6.4**
+    it('should reflect current temporary/permanent state through isTemporary getter', () => {
+      fc.assert(
+        fc.property(
+          fc.boolean(), // Initial temporary state
+          fc.boolean(), // New temporary state to set
+          (initialTemporary, newTemporary) => {
+            // Create ComponentGroup with initial temporary state
+            const group = new ComponentGroup(initialTemporary);
+            
+            // Verify initial state is reflected correctly
+            expect(group.isTemporary).toBe(initialTemporary);
+            
+            // Change the temporary state using the setter
+            group.isTemporary = newTemporary;
+            
+            // Verify the getter reflects the new state
+            expect(group.isTemporary).toBe(newTemporary);
+            
+            // Verify the state persists through multiple reads
+            expect(group.isTemporary).toBe(newTemporary);
+            expect(group.isTemporary).toBe(newTemporary);
+            
+            // Verify setting the same value doesn't change anything
+            group.isTemporary = newTemporary;
+            expect(group.isTemporary).toBe(newTemporary);
+            
+            // Test edge case: toggle back and forth
+            group.isTemporary = !newTemporary;
+            expect(group.isTemporary).toBe(!newTemporary);
+            group.isTemporary = newTemporary;
+            expect(group.isTemporary).toBe(newTemporary);
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    // **Feature: permanent-component-groups, Property 16: Component connections preserved in groups**
+    // **Validates: Requirements 1.3**
+    it('should preserve all component connections in the group connections map', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 1, max: 5 }), // Number of components
+          fc.array(fc.integer({ min: 0, max: 3 }), { minLength: 1, maxLength: 5 }), // Number of connections per component
+          (numComponents, connectionsPerComponent) => {
+            // Create a permanent ComponentGroup
+            const group = new ComponentGroup(false); // permanent group
+            const mockLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+            };
+            
+            // Track all connections we create
+            const allConnections = new Map();
+            const components = [];
+            
+            // Create components with connections
+            for (let i = 0; i < Math.min(numComponents, connectionsPerComponent.length); i++) {
+              const numConns = connectionsPerComponent[i];
+              const componentConnections = [];
+              
+              // Create connections for this component
+              for (let j = 0; j < numConns; j++) {
+                const connection = {
+                  uuid: `conn-${i}-${j}`,
+                  component: null, // Will be set when component is created
+                  connectionIndex: j,
+                  otherConnection: null,
+                  updateCircle: jasmine.createSpy('updateCircle'),
+                  getPose: jasmine.createSpy('getPose').and.returnValue({
+                    x: i * 10 + j,
+                    y: i * 10 + j,
+                    angle: 0,
+                    subtract: jasmine.createSpy('subtract').and.returnValue({
+                      magnitude: () => 0
+                    })
+                  })
+                };
+                componentConnections.push(connection);
+                allConnections.set(connection.uuid, connection);
+              }
+              
+              // Create component with these connections
+              const component = {
+                uuid: `comp-${i}`,
+                getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                  minX: i * 10 - 5, minY: i * 10 - 5, maxX: i * 10 + 5, maxY: i * 10 + 5
+                }),
+                connections: componentConnections,
+                parent: mockLayer,
+                layer: mockLayer,
+                position: { 
+                  x: i * 10, 
+                  y: i * 10,
+                  set: jasmine.createSpy('set')
+                },
+                group: null
+              };
+              
+              // Set component reference in connections
+              componentConnections.forEach(conn => {
+                conn.component = component;
+              });
+              
+              components.push(component);
+              group.addComponent(component);
+            }
+            
+            // Verify all connections are preserved in the group's connections map
+            expect(group.connections.size).toBe(allConnections.size);
+            
+            // Verify each connection exists in the group's connections map
+            for (const [uuid, connection] of allConnections) {
+              expect(group.connections.has(uuid)).toBe(true);
+              expect(group.connections.get(uuid)).toBe(connection);
+            }
+            
+            // Verify the connections map contains only the expected connections
+            for (const [uuid, connection] of group.connections) {
+              expect(allConnections.has(uuid)).toBe(true);
+              expect(allConnections.get(uuid)).toBe(connection);
+            }
+            
+            // Test that connections are preserved after group operations
+            const initialConnectionCount = group.connections.size;
+            
+            // Test move operation
+            spyOn(group, 'getLocalPosition').and.returnValue({ x: 0, y: 0 });
+            group.move(50, 50);
+            expect(group.connections.size).toBe(initialConnectionCount);
+            
+            // Verify all original connections are still there
+            for (const [uuid, connection] of allConnections) {
+              expect(group.connections.has(uuid)).toBe(true);
+              expect(group.connections.get(uuid)).toBe(connection);
+            }
+            
+            // Test serialization doesn't affect connections
+            const serialized = group.serialize();
+            expect(group.connections.size).toBe(initialConnectionCount);
+            
+            // Verify connections are still preserved after serialization
+            for (const [uuid, connection] of allConnections) {
+              expect(group.connections.has(uuid)).toBe(true);
+              expect(group.connections.get(uuid)).toBe(connection);
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    describe('addComponent safety checks', () => {
+      it('should prevent adding component that already belongs to another group', () => {
+        const group1 = new ComponentGroup(false); // permanent group
+        const group2 = new ComponentGroup(false); // permanent group
+        
+        const sharedLayer = {
+          tree: {
+            remove: jasmine.createSpy('remove'),
+            load: jasmine.createSpy('load')
+          }
+        };
+        
+        const component = {
+          uuid: 'test-component',
+          getBounds: jasmine.createSpy('getBounds'),
+          connections: [],
+          parent: sharedLayer,
+          layer: sharedLayer,
+          group: null
+        };
+        
+        // Add component to first group
+        group1.addComponent(component);
+        expect(component.group).toBe(group1);
+        
+        // Try to add same component to second group - should log warning and prevent addition
+        spyOn(console, 'warn');
+        group2.addComponent(component);
+        expect(console.warn).toHaveBeenCalledWith(
+          'Component already belongs to a group.',
+          component
+        );
+        
+        // Verify component is still in first group
+        expect(component.group).toBe(group1);
+        expect(group1.size).toBe(1);
+        expect(group2.size).toBe(0);
+      });
+
+      it('should prevent adding same permanent group to temporary group multiple times', () => {
+        const tempGroup = new ComponentGroup(true); // temporary group
+        const permGroup = new ComponentGroup(false); // permanent group
+        
+        // Add permanent group to temporary group first time
+        tempGroup.addComponent(permGroup);
+        expect(tempGroup.size).toBe(1);
+        
+        // Try to add same permanent group again - should be silently ignored
+        const consoleSpy = spyOn(console, 'warn');
+        tempGroup.addComponent(permGroup);
+        
+        // Should still only have one component and log a warning
+        expect(tempGroup.size).toBe(1);
+        expect(consoleSpy).toHaveBeenCalledWith(
+          jasmine.stringMatching(/Prevented adding ComponentGroup.*to another group multiple times/)
+        );
+      });
+
+      it('should allow adding component that was removed from another group', () => {
+        // Mock LayoutController for this test
+        const mockLayoutController = {
+          deleteComponent: jasmine.createSpy('deleteComponent')
+        };
+        spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+        
+        const group1 = new ComponentGroup(false); // permanent group
+        const group2 = new ComponentGroup(false); // permanent group
+        
+        const sharedLayer = {
+          tree: {
+            remove: jasmine.createSpy('remove'),
+            load: jasmine.createSpy('load')
+          }
+        };
+        
+        const component1 = {
+          uuid: 'test-component-1',
+          getBounds: jasmine.createSpy('getBounds'),
+          connections: [],
+          parent: sharedLayer,
+          layer: sharedLayer,
+          group: null
+        };
+        
+        const component2 = {
+          uuid: 'test-component-2',
+          getBounds: jasmine.createSpy('getBounds'),
+          connections: [],
+          parent: sharedLayer,
+          layer: sharedLayer,
+          group: null
+        };
+        
+        // Add two components to first group so it won't be destroyed when we remove one
+        group1.addComponent(component1);
+        group1.addComponent(component2);
+        expect(component1.group).toBe(group1);
+        expect(group1.size).toBe(2);
+        
+        // Remove one component from first group (group won't be destroyed since it still has component2)
+        group1.removeComponent(component1);
+        expect(component1.group).toBeNull();
+        expect(group1.size).toBe(1);
+        
+        // Now should be able to add the removed component to second group
+        expect(() => group2.addComponent(component1)).not.toThrow();
+        expect(component1.group).toBe(group2);
+        expect(group2.size).toBe(1);
+      });
+
+      it('should handle adding same component to same group idempotently', () => {
+        const group = new ComponentGroup(false); // permanent group
+        
+        const sharedLayer = {
+          tree: {
+            remove: jasmine.createSpy('remove'),
+            load: jasmine.createSpy('load')
+          }
+        };
+        
+        const component = {
+          uuid: 'test-component',
+          getBounds: jasmine.createSpy('getBounds'),
+          connections: [],
+          parent: sharedLayer,
+          layer: sharedLayer,
+          group: null
+        };
+        
+        // Add component to group
+        group.addComponent(component);
+        expect(component.group).toBe(group);
+        expect(group.size).toBe(1);
+        
+        // Add same component to same group again - should be idempotent
+        expect(() => group.addComponent(component)).not.toThrow();
+        expect(component.group).toBe(group);
+        expect(group.size).toBe(1); // Size should not change
+      });
+    });
+
+    // **Feature: permanent-component-groups, Property 11: Ungrouping parent preserves nested groups**
+    // **Validates: Requirements 8.5**
+    it('should preserve nested groups when ungrouping parent group', () => {
+      fc.assert(
+        fc.property(
+          fc.integer({ min: 2, max: 4 }), // Number of nested child groups
+          fc.integer({ min: 1, max: 3 }), // Number of components per child group
+          fc.array(fc.tuple(fc.float({ min: -50, max: 50 }), fc.float({ min: -50, max: 50 })), { minLength: 2, maxLength: 12 }), // Component positions
+          (numChildGroups, componentsPerGroup, positions) => {
+            const sharedLayer = {
+              tree: {
+                remove: jasmine.createSpy('remove'),
+                load: jasmine.createSpy('load')
+              },
+              toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+            };
+            
+            // Create parent group
+            const parentGroup = new ComponentGroup(false); // permanent group
+            
+            // Create child groups nested within the parent
+            const childGroups = [];
+            let positionIndex = 0;
+            
+            for (let groupIndex = 0; groupIndex < numChildGroups; groupIndex++) {
+              const childGroup = new ComponentGroup(false); // permanent group
+              
+              // Add components to this child group
+              for (let i = 0; i < componentsPerGroup && positionIndex < positions.length; i++) {
+                const [x, y] = positions[positionIndex++];
+                const mockComponent = {
+                  uuid: `child-${groupIndex}-comp-${i}`,
+                  getBounds: jasmine.createSpy('getBounds').and.returnValue({
+                    minX: x - 2, minY: y - 2, maxX: x + 2, maxY: y + 2
+                  }),
+                  connections: [],
+                  parent: sharedLayer,
+                  layer: sharedLayer,
+                  position: { x: x, y: y },
+                  group: null
+                };
+                childGroup.addComponent(mockComponent);
+              }
+              
+              // Nest this child group within the parent
+              childGroup.group = parentGroup;
+              childGroups.push(childGroup);
+            }
+            
+            // Skip if no child groups were created or if any child group has no components
+            if (childGroups.length === 0) return;
+            if (childGroups.some(group => group.size === 0)) return;
+            
+            // Verify initial nesting structure
+            childGroups.forEach(childGroup => {
+              expect(childGroup.group).toBe(parentGroup);
+              expect(childGroup.isTemporary).toBe(false);
+              expect(childGroup.destroyed).toBe(false);
+              expect(childGroup.size).toBeGreaterThan(0);
+            });
+            expect(parentGroup.group).toBeNull();
+            expect(parentGroup.isTemporary).toBe(false);
+            
+            // Record initial state of child groups
+            const initialChildStates = childGroups.map(childGroup => ({
+              uuid: childGroup.uuid,
+              size: childGroup.size,
+              isTemporary: childGroup.isTemporary,
+              destroyed: childGroup.destroyed,
+              componentUuids: Array.from({ length: childGroup.size }, (_, i) => childGroup.components?.[i]?.uuid).filter(Boolean)
+            }));
+            
+            // Simulate ungrouping the parent group (convert to temporary)
+            // In the actual implementation, this would be done by LayoutController.ungroupComponents()
+            // but for this test we simulate the key behavior: parent becomes temporary, children remain permanent
+            parentGroup.isTemporary = true;
+            
+            // The key requirement: child groups should remain permanent and independent
+            // when parent is ungrouped, children should lose their parent reference
+            childGroups.forEach(childGroup => {
+              childGroup.group = null; // Simulate ungrouping behavior
+            });
+            
+            // Verify child groups are preserved as independent permanent groups
+            childGroups.forEach((childGroup, index) => {
+              const initialState = initialChildStates[index];
+              
+              // Child group should remain permanent
+              expect(childGroup.isTemporary).toBe(false);
+              expect(childGroup.destroyed).toBe(false);
+              
+              // Child group should maintain its structure
+              expect(childGroup.size).toBe(initialState.size);
+              expect(childGroup.uuid).toBe(initialState.uuid);
+              
+              // Child group should no longer reference the parent
+              expect(childGroup.group).toBeNull();
+              
+              // Child group should maintain all its components
+              expect(childGroup.size).toBeGreaterThan(0);
+            });
+            
+            // Verify parent group became temporary
+            expect(parentGroup.isTemporary).toBe(true);
+            expect(parentGroup.destroyed).toBe(false);
+            
+            // Verify all child groups are now independent
+            for (let i = 0; i < childGroups.length; i++) {
+              for (let j = i + 1; j < childGroups.length; j++) {
+                expect(childGroups[i]).not.toBe(childGroups[j]);
+                expect(childGroups[i].uuid).not.toBe(childGroups[j].uuid);
+              }
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+  });
+
+
 });

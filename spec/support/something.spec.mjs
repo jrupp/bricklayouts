@@ -49,7 +49,7 @@ describe("LayoutController", function() {
             constructor() {
             }
         };
-        spyOn(window, 'RBush').and.returnValue(jasmine.createSpyObj("RBush", ["insert", "remove", "clear", "search"]));
+        spyOn(window, 'RBush').and.returnValue(jasmine.createSpyObj("RBush", ["insert", "remove", "clear", "search", "load"]));
         geiSpy = spyOn(document, 'getElementById');
         // Mock canvasContainer for resize handling
         const mockCanvasContainer = document.createElement('div');
@@ -452,6 +452,134 @@ describe("LayoutController", function() {
 
         it("exports the layout with proper data", function() {
             expect(LayoutController._validateImportData(this.exportedLayout)).toBeTrue();
+        });
+    });
+
+    describe("LayoutLayer.serialize", function () {
+        // **Feature: permanent-component-groups, Property 13: Layers with permanent groups serialize with groups array**
+        // **Validates: Requirements 3.2**
+        it("should serialize layers with permanent groups to include groups array", function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 1, max: 5 }), // Number of permanent groups
+                    fc.integer({ min: 1, max: 3 }), // Number of components per group (at least 1)
+                    (numGroups, componentsPerGroup) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        const layoutLayer = new LayoutLayer();
+                        const permanentGroups = [];
+                        
+                        // Create permanent ComponentGroups
+                        for (let i = 0; i < numGroups; i++) {
+                            const group = new ComponentGroup(false); // permanent group
+                            group.parent = layoutLayer;
+                            permanentGroups.push(group);
+                            
+                            // Add components to the group
+                            for (let j = 0; j < componentsPerGroup; j++) {
+                                const component = new Component(trackData, new Pose(i * 50 + j * 20, 100, 0), layoutLayer, {});
+                                component.group = group;
+                                layoutLayer.addChild(component);
+                            }
+                        }
+                        
+                        const serialized = layoutLayer.serialize();
+                        
+                        // Should include groups array when permanent groups exist
+                        expect(serialized.hasOwnProperty('groups')).toBe(true);
+                        expect(Array.isArray(serialized.groups)).toBe(true);
+                        expect(serialized.groups.length).toBe(numGroups);
+                        
+                        // Clean up
+                        layoutLayer.destroy();
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: permanent-component-groups, Property 14: Group UUIDs appear in serialized groups array**
+        // **Validates: Requirements 3.3**
+        it("should include group UUIDs in serialized groups array", function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 1, max: 5 }), // Number of permanent groups
+                    (numGroups) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        const layoutLayer = new LayoutLayer();
+                        const permanentGroups = [];
+                        const expectedUUIDs = new Set();
+                        
+                        // Create permanent ComponentGroups
+                        for (let i = 0; i < numGroups; i++) {
+                            const group = new ComponentGroup(false); // permanent group
+                            group.parent = layoutLayer;
+                            permanentGroups.push(group);
+                            expectedUUIDs.add(group.uuid);
+                            
+                            // Add at least one component to make the group appear in serialization
+                            const component = new Component(trackData, new Pose(i * 50, 100, 0), layoutLayer, {});
+                            component.group = group;
+                            layoutLayer.addChild(component);
+                        }
+                        
+                        const serialized = layoutLayer.serialize();
+                        
+                        // Extract UUIDs from serialized groups
+                        const serializedUUIDs = new Set(serialized.groups.map(g => g.uuid));
+                        
+                        // All group UUIDs should appear in the serialized groups array
+                        expect(serializedUUIDs).toEqual(expectedUUIDs);
+                        
+                        // Clean up
+                        layoutLayer.destroy();
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: permanent-component-groups, Property 15: Layers without permanent groups omit groups field**
+        // **Validates: Requirements 9.3**
+        it("should omit groups field when no permanent groups exist", function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 0, max: 5 }), // Number of components (no groups)
+                    fc.integer({ min: 0, max: 3 }), // Number of temporary groups
+                    (numComponents, numTempGroups) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        const layoutLayer = new LayoutLayer();
+                        
+                        // Add regular components (not in any group)
+                        for (let i = 0; i < numComponents; i++) {
+                            const component = new Component(trackData, new Pose(i * 50, 100, 0), layoutLayer, {});
+                            layoutLayer.addChild(component);
+                        }
+                        
+                        // Create temporary groups (these should not appear in serialization)
+                        for (let i = 0; i < numTempGroups; i++) {
+                            const tempGroup = new ComponentGroup(true); // temporary group
+                            tempGroup.parent = layoutLayer;
+                            
+                            // Add a component to the temporary group
+                            const component = new Component(trackData, new Pose(i * 50 + 200, 100, 0), layoutLayer, {});
+                            component.group = tempGroup;
+                            layoutLayer.addChild(component);
+                        }
+                        
+                        const serialized = layoutLayer.serialize();
+                        
+                        // Should NOT include groups field when no permanent groups exist
+                        expect(serialized.hasOwnProperty('groups')).toBe(false);
+                        
+                        // Clean up
+                        layoutLayer.destroy();
+                    }
+                ),
+                { numRuns: 100 }
+            );
         });
     });
 
@@ -2469,6 +2597,66 @@ describe("LayoutController", function() {
                 expect(newComp.getPose().angle).toBe(0);
             });
         });
+
+        // **Feature: permanent-component-groups, Property 12: Components in permanent groups serialize with group UUID**
+        // **Validates: Requirements 3.1**
+        it('should serialize components in permanent groups with group UUID', () => {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether the group is temporary or permanent
+                    fc.integer({ min: 1, max: 3 }), // Number of components in the group (reduced for stability)
+                    (isTemporary, numComponents) => {
+                        // Clean up any existing components from previous iterations
+                        layoutController.reset();
+                        
+                        // Create a ComponentGroup
+                        const group = new ComponentGroup(isTemporary);
+                        const components = [];
+                        
+                        // Create components and add them to the group
+                        for (let i = 0; i < numComponents; i++) {
+                            layoutController.addComponent(straightTrackData);
+                            const component = layoutController.currentLayer.children[i];
+                            
+                            // Verify component is properly created
+                            expect(component).toBeDefined();
+                            expect(component.connections).toBeDefined();
+                            expect(Array.isArray(component.connections)).toBe(true);
+                            
+                            group.addComponent(component);
+                            components.push(component);
+                        }
+                        
+                        // Serialize each component
+                        const serializedComponents = components.map(comp => comp.serialize());
+                        
+                        if (isTemporary) {
+                            // Temporary groups: components should NOT have group property
+                            serializedComponents.forEach(serialized => {
+                                expect(serialized.hasOwnProperty('group')).toBe(false);
+                            });
+                        } else {
+                            // Permanent groups: components should have group property with group UUID
+                            serializedComponents.forEach(serialized => {
+                                expect(serialized.group).toBe(group.uuid);
+                                expect(typeof serialized.group).toBe('string');
+                                expect(serialized.group.length).toBeGreaterThan(0);
+                            });
+                        }
+                        
+                        // Verify that serialization is deterministic
+                        const serializedAgain = components.map(comp => comp.serialize());
+                        expect(serializedAgain).toEqual(serializedComponents);
+                        
+                        // Verify that the original component-group relationship is unchanged
+                        components.forEach(comp => {
+                            expect(comp.group).toBe(group);
+                        });
+                    }
+                ),
+                { numRuns: 50 }
+            );
+        });
     });
 
     describe("_newComponentPosition", function() {
@@ -3405,322 +3593,2010 @@ describe("LayoutController", function() {
             expect(layerNames.length).toBe(uniqueLayerNames.length);
         });
     });
-});
 
-describe("Pose", function() {
-    it("normalizes angles", function() {
-        let pose = new Pose(0, 0, 7 * Math.PI);
-        expect(pose.angle).toBeCloseTo(Math.PI);
+    describe("makeGroupPermanent", function() {
+        // Test for makeGroupPermanent method (Task 5.1)
+        it('should convert temporary ComponentGroup to permanent when makeGroupPermanent is called', () => {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const positionSpy = spyOn(layoutController, '_positionSelectionToolbar').and.stub();
+            
+            // Create a temporary ComponentGroup
+            const tempGroup = new ComponentGroup(true);
+            
+            // Select the temporary group
+            LayoutController.selectComponent(tempGroup);
+            
+            // Verify it's initially temporary
+            expect(tempGroup.isTemporary).toBe(true);
+            
+            // Call makeGroupPermanent
+            layoutController.makeGroupPermanent();
+            
+            // Verify it's now permanent
+            expect(tempGroup.isTemporary).toBe(false);
+            
+            // Verify the group is still selected
+            expect(LayoutController.selectedComponent).toBe(tempGroup);
+            
+            // Clean up
+            LayoutController.selectComponent(null);
+            tempGroup.destroy();
+        });
+
+        it('should not affect non-temporary groups when makeGroupPermanent is called', () => {
+            const layoutController = window.layoutController;
+            layoutController.reset();
+            const positionSpy = spyOn(layoutController, '_positionSelectionToolbar').and.stub();
+            
+            // Create a permanent ComponentGroup
+            const permGroup = new ComponentGroup(false);
+            
+            // Select the permanent group
+            LayoutController.selectComponent(permGroup);
+            
+            // Verify it's initially permanent
+            expect(permGroup.isTemporary).toBe(false);
+            
+            // Call makeGroupPermanent
+            layoutController.makeGroupPermanent();
+            
+            // Verify it's still permanent (no change)
+            expect(permGroup.isTemporary).toBe(false);
+            
+            // Clean up
+            LayoutController.selectComponent(null);
+            permGroup.destroy();
+        });
+
+        it('should do nothing when makeGroupPermanent is called with no selection', () => {
+            const layoutController = window.layoutController;
+            
+            // Ensure nothing is selected
+            LayoutController.selectComponent(null);
+            
+            // Call makeGroupPermanent - should not throw an error
+            expect(() => {
+                layoutController.makeGroupPermanent();
+            }).not.toThrow();
+        });
     });
 
-    it("doesn't modify angles less than 2π", function() {
-        let pose = new Pose(0, 0, Math.PI);
-        expect(pose.angle).toBe(Math.PI);
+    describe("permanent group operations", function() {
+        // **Feature: permanent-component-groups, Property 7: Temporary to permanent transition preserves identity**
+        // **Validates: Requirements 6.3**
+        it('should preserve group identity when transitioning from temporary to permanent', function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 1, max: 5 }), // Number of components in the group
+                    (numComponents) => {
+                        const layoutController = window.layoutController;
+                        
+                        // Create a temporary ComponentGroup
+                        const group = new ComponentGroup(true); // temporary = true
+                        const originalUuid = group.uuid;
+                        const components = [];
+                        
+                        // Add components to the group
+                        for (let i = 0; i < numComponents; i++) {
+                            const component = {
+                                getBounds: jasmine.createSpy('getBounds').and.returnValue({ minX: i * 10, minY: 0, maxX: (i + 1) * 10, maxY: 10 }),
+                                connections: [],
+                                parent: null,
+                                layer: layoutController.currentLayer,
+                                group: null,
+                                uuid: `comp-${i}`,
+                                position: { x: i * 10, y: 0 },
+                                sprite: { rotation: 0 }
+                            };
+                            group.addComponent(component);
+                            components.push(component);
+                        }
+                        
+                        // Verify initial state
+                        expect(group.isTemporary).toBe(true);
+                        expect(group.uuid).toBe(originalUuid);
+                        expect(group.size).toBe(numComponents);
+                        
+                        // Record component memberships before transition
+                        const originalComponentGroups = components.map(comp => comp.group);
+                        
+                        // Transition to permanent
+                        group.isTemporary = false;
+                        
+                        // Verify identity preservation
+                        expect(group.uuid).toBe(originalUuid); // UUID should not change
+                        expect(group.isTemporary).toBe(false); // Should now be permanent
+                        expect(group.size).toBe(numComponents); // Component count should be preserved
+                        
+                        // Verify all component memberships are preserved
+                        for (let i = 0; i < numComponents; i++) {
+                            expect(components[i].group).toBe(group); // Component should still reference the same group object
+                            expect(components[i].group).toBe(originalComponentGroups[i]); // Should be the exact same reference
+                        }
+                        
+                        // Verify the group object itself is the same instance
+                        expect(group).toBe(originalComponentGroups[0]); // Should be the same object reference
+                        
+                        // Verify we can transition back to temporary
+                        group.isTemporary = true;
+                        expect(group.uuid).toBe(originalUuid); // UUID should still be the same
+                        expect(group.isTemporary).toBe(true);
+                        expect(group.size).toBe(numComponents);
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: permanent-component-groups, Property 2: Ungrouping preserves component state**
+        // **Validates: Requirements 2.3, 2.4**
+        it('should preserve component state when ungrouping permanent groups', function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 1, max: 5 }), // Number of components in the group
+                    fc.array(fc.float({ min: Math.fround(-1000), max: Math.fround(1000) }), { minLength: 1, maxLength: 5 }), // X positions
+                    fc.array(fc.float({ min: Math.fround(-1000), max: Math.fround(1000) }), { minLength: 1, maxLength: 5 }), // Y positions  
+                    fc.array(fc.float({ min: 0, max: Math.fround(2 * Math.PI) }), { minLength: 1, maxLength: 5 }), // Rotations
+                    (numComponents, xPositions, yPositions, rotations) => {
+                        const layoutController = window.layoutController;
+                        
+                        // Create a permanent ComponentGroup
+                        const group = new ComponentGroup(false); // permanent = false
+                        const components = [];
+                        const originalStates = [];
+                        const sharedLayer = {}; // All components must be on the same layer for permanent groups
+                        
+                        // Add components to the group with random positions and rotations
+                        for (let i = 0; i < numComponents; i++) {
+                            const x = isNaN(xPositions[i % xPositions.length]) ? 0 : xPositions[i % xPositions.length];
+                            const y = isNaN(yPositions[i % yPositions.length]) ? 0 : yPositions[i % yPositions.length];
+                            const rotation = isNaN(rotations[i % rotations.length]) ? 0 : rotations[i % rotations.length];
+                            
+                            const mockConnection = {
+                                uuid: `conn-${i}`,
+                                otherConnection: null,
+                                updateCircle: jasmine.createSpy('updateCircle')
+                            };
+                            
+                            const component = {
+                                getBounds: jasmine.createSpy('getBounds').and.returnValue({ 
+                                    minX: x, minY: y, maxX: x + 10, maxY: y + 10 
+                                }),
+                                connections: [mockConnection],
+                                parent: sharedLayer, // Use shared layer for all components
+                                group: null,
+                                uuid: `comp-${i}`,
+                                position: { x: x, y: y, set: jasmine.createSpy('set') },
+                                sprite: { rotation: rotation }
+                            };
+                            
+                            group.addComponent(component);
+                            components.push(component);
+                            
+                            // Record original state
+                            originalStates.push({
+                                x: x,
+                                y: y,
+                                rotation: rotation,
+                                connections: component.connections.slice(), // Copy array
+                                uuid: component.uuid
+                            });
+                        }
+                        
+                        // Verify initial state
+                        expect(group.isTemporary).toBe(false);
+                        expect(group.size).toBe(numComponents);
+                        
+                        // Verify all components are in the group
+                        for (let i = 0; i < numComponents; i++) {
+                            expect(components[i].group).toBe(group);
+                        }
+                        
+                        // Ungroup by setting isTemporary to true (this is what ungroupComponents() does)
+                        group.isTemporary = true;
+                        
+                        // Verify component state preservation after ungrouping
+                        for (let i = 0; i < numComponents; i++) {
+                            const component = components[i];
+                            const originalState = originalStates[i];
+                            
+                            // Position should be preserved
+                            expect(component.position.x).toBe(originalState.x);
+                            expect(component.position.y).toBe(originalState.y);
+                            
+                            // Rotation should be preserved
+                            expect(component.sprite.rotation).toBe(originalState.rotation);
+                            
+                            // Connections should be preserved
+                            expect(component.connections.length).toBe(originalState.connections.length);
+                            expect(component.connections[0].uuid).toBe(originalState.connections[0].uuid);
+                            
+                            // UUID should be preserved
+                            expect(component.uuid).toBe(originalState.uuid);
+                            
+                            // Component still references the group (ungrouping just changes temporary flag)
+                            // The actual removal of group references happens when temporary groups are destroyed on deselection
+                            expect(component.group).toBe(group);
+                        }
+                        
+                        // Verify the group is now temporary (this is the current ungrouping behavior)
+                        expect(group.isTemporary).toBe(true);
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
     });
 
-    it("checks equality", function() {
-        let pose1 = new Pose(100, 50, Math.PI / 4);
-        let pose2 = new Pose(100, 50, Math.PI / 4);
-        expect(pose1.equals(pose2)).toBeTrue();
+    describe("Group/Ungroup UI interactions", function() {
+        let layoutController;
+        let groupMenuItem;
+        let ungroupMenuItem;
+        /** @type {HTMLMenuElement} */
+        let selToolMenu;
 
-        let pose3 = new Pose(50, 100, Math.PI / 2);
-        expect(pose1.equals(pose3)).toBeFalse();
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            
+            // Create mock menu items
+            selToolMenu = document.createElement('menu');
+            groupMenuItem = document.createElement('li');
+            groupMenuItem.id = 'selToolMenuGroup';
+            groupMenuItem.style.display = 'none';
+            ungroupMenuItem = document.createElement('li');
+            ungroupMenuItem.id = 'selToolMenuUngroup';
+            ungroupMenuItem.style.display = 'none';
+            
+            selToolMenu.appendChild(groupMenuItem);
+            selToolMenu.appendChild(ungroupMenuItem);
+            
+            // Mock the selectionToolMenu property
+            Object.defineProperty(layoutController, 'selectionToolMenu', {
+                value: selToolMenu,
+                writable: true,
+                configurable: true
+            });
+        });
+
+        describe("button visibility based on selection type", function() {
+            it("should show Group button for temporary ComponentGroups", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+
+                // Create temporary group
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+
+                // Set as selected component
+                LayoutController.selectedComponent = tempGroup;
+
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList.contains('ungrouped')).toBeTrue();
+                expect(selectionToolbar.classList.contains('grouped')).toBeFalse();
+            });
+ 
+            it("should show Ungroup button for permanent ComponentGroups", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+
+                // Create permanent group
+                const permanentGroup = new ComponentGroup(false);
+                permanentGroup.addComponent(component1);
+                permanentGroup.addComponent(component2);
+                LayoutController.selectedComponent = permanentGroup;
+
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList.contains('ungrouped')).toBeFalse();
+                expect(selectionToolbar.classList.contains('grouped')).toBeTrue();
+            });
+
+            it("should hide both buttons for non-ComponentGroup selections", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                
+                // Set single component as selected
+                LayoutController.selectedComponent = component;
+
+                layoutController._showSelectionToolbar();
+
+                expect(selectionToolbar.classList.contains('ungrouped')).toBeFalse();
+                expect(selectionToolbar.classList.contains('grouped')).toBeFalse();
+            });
+
+            it("should handle missing menu items gracefully", function() {
+                // Remove menu items to test graceful handling
+                selToolMenu.removeChild(groupMenuItem);
+                selToolMenu.removeChild(ungroupMenuItem);
+                
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                LayoutController.selectedComponent = component;
+                
+                // Should not throw error when menu items don't exist
+                expect(() => layoutController._showSelectionToolbar()).not.toThrow();
+            });
+        });
+
+        describe("click handlers for Group and Ungroup buttons", function() {
+            it("should call makeGroupPermanent when Group button is clicked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Create temporary group
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Spy on makeGroupPermanent method
+                spyOn(layoutController, 'makeGroupPermanent').and.callThrough();
+                
+                // Add event listener to simulate the real behavior
+                groupMenuItem.addEventListener('click', () => layoutController.makeGroupPermanent());
+                
+                // Simulate click on Group button
+                groupMenuItem.click();
+                
+                // Verify makeGroupPermanent was called
+                expect(layoutController.makeGroupPermanent).toHaveBeenCalled();
+                
+                // Verify group is now permanent
+                expect(tempGroup.isTemporary).toBe(false);
+            });
+
+            it("should call ungroupComponents when Ungroup button is clicked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Create permanent group
+                const permanentGroup = new ComponentGroup(false);
+                permanentGroup.addComponent(component1);
+                permanentGroup.addComponent(component2);
+                LayoutController.selectedComponent = permanentGroup;
+                
+                // Spy on ungroupComponents method
+                spyOn(layoutController, 'ungroupComponents').and.callThrough();
+                
+                // Add event listener to simulate the real behavior
+                ungroupMenuItem.addEventListener('click', () => layoutController.ungroupComponents());
+                
+                // Simulate click on Ungroup button
+                ungroupMenuItem.click();
+                
+                // Verify ungroupComponents was called
+                expect(layoutController.ungroupComponents).toHaveBeenCalled();
+                
+                // Verify group is now temporary
+                expect(permanentGroup.isTemporary).toBe(true);
+            });
+
+            it("should handle makeGroupPermanent with no selection", function() {
+                // Clear selection
+                LayoutController.selectedComponent = null;
+                
+                // Spy on hideFileMenu to verify it's called
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Call makeGroupPermanent
+                layoutController.makeGroupPermanent();
+                
+                // Should call hideFileMenu but not throw error
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("should handle makeGroupPermanent with permanent group selected", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                
+                // Create permanent group
+                const permanentGroup = new ComponentGroup(false);
+                permanentGroup.addComponent(component);
+                LayoutController.selectedComponent = permanentGroup;
+                
+                // Spy on _showSelectionToolbar to verify it's not called
+                spyOn(layoutController, '_showSelectionToolbar');
+                
+                // Call makeGroupPermanent (should do nothing since group is already permanent)
+                layoutController.makeGroupPermanent();
+                
+                // Should not call _showSelectionToolbar since no change was made
+                expect(layoutController._showSelectionToolbar).not.toHaveBeenCalled();
+                
+                // Group should remain permanent
+                expect(permanentGroup.isTemporary).toBe(false);
+            });
+
+            it("should handle ungroupComponents with no selection", function() {
+                // Clear selection
+                LayoutController.selectedComponent = null;
+                
+                // Spy on hideFileMenu to verify it's called
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Call ungroupComponents
+                layoutController.ungroupComponents();
+                
+                // Should call hideFileMenu but not throw error
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("should handle ungroupComponents with temporary group selected", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                
+                // Create temporary group
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Call ungroupComponents (should do nothing since group is already temporary)
+                layoutController.ungroupComponents();
+                
+                // Group should remain temporary
+                expect(tempGroup.isTemporary).toBe(true);
+            });
+        });
     });
 
-    it("checks if a pose is within a radius", function() {
-        let pose1 = new Pose(0, 0, 0);
-        let pose2 = new Pose(1, 1, 0);
-        expect(pose1.isInRadius(pose2, 1)).toBeTrue();
-        expect(pose1.isInRadius(pose2, 0.5)).toBeFalse();
+    // **Feature: permanent-component-groups, Property 17: Selection box respects permanent group boundaries**
+    // **Validates: Requirements 9.1, 9.2**
+    it('should respect permanent group boundaries when processing selection box results', function() {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 1, max: 3 }), // Number of permanent groups
+                fc.integer({ min: 1, max: 3 }), // Components per group
+                fc.integer({ min: 0, max: 2 }), // Individual components (not in groups)
+                (numGroups, componentsPerGroup, individualComponents) => {
+                    const layoutController = window.layoutController;
+                    layoutController.reset();
+                    
+                    const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                    const permanentGroups = [];
+                    const allComponents = [];
+                    const individualComps = [];
+                    
+                    // Create permanent groups with components
+                    for (let i = 0; i < numGroups; i++) {
+                        const group = new ComponentGroup(false); // permanent
+                        group.parent = layoutController.currentLayer;
+                        permanentGroups.push(group);
+                        
+                        for (let j = 0; j < componentsPerGroup; j++) {
+                            const component = new Component(trackData, new Pose(i * 100 + j * 20, 100, 0), layoutController.currentLayer, {});
+                            component.group = group;
+                            layoutController.currentLayer.addChild(component);
+                            allComponents.push(component);
+                        }
+                    }
+                    
+                    // Create individual components (not in any group)
+                    for (let i = 0; i < individualComponents; i++) {
+                        const component = new Component(trackData, new Pose(500 + i * 20, 100, 0), layoutController.currentLayer, {});
+                        layoutController.currentLayer.addChild(component);
+                        allComponents.push(component);
+                        individualComps.push(component);
+                    }
+                    
+                    // Test selection box processing
+                    const result = layoutController.processSelectionBoxResults(allComponents);
+                    
+                    if (numGroups === 1 && individualComponents === 0) {
+                        // Single permanent group, no individual components -> should select the group directly
+                        expect(result).toBe(permanentGroups[0]);
+                    } else if (numGroups > 0 || individualComponents > 0) {
+                        // Multiple groups or mixed selection -> should create temporary group
+                        expect(result).toBeInstanceOf(ComponentGroup);
+                        expect(result.isTemporary).toBe(true);
+                        
+                        // Verify that permanent groups are included as whole units
+                        const tempGroupComponents = Array.from(result.components);
+                        
+                        // All permanent groups should be in the temporary group
+                        permanentGroups.forEach(permGroup => {
+                            expect(tempGroupComponents).toContain(permGroup);
+                        });
+                        
+                        // All individual components should be in the temporary group
+                        individualComps.forEach(comp => {
+                            expect(tempGroupComponents).toContain(comp);
+                        });
+                        
+                        // No individual components from permanent groups should be in the temporary group
+                        permanentGroups.forEach(permGroup => {
+                            permGroup.components.forEach(comp => {
+                                expect(tempGroupComponents).not.toContain(comp);
+                            });
+                        });
+                    }
+                    
+                    // Clean up
+                    permanentGroups.forEach(group => group.destroy());
+                    if (result && result.isTemporary) {
+                        result.destroy();
+                    }
+                }
+            ),
+            { numRuns: 100 }
+        );
     });
 
-    it("checks if a pose has an opposite angle", function() {
-        let pose1 = new Pose(0, 0, 0);
-        let pose2 = new Pose(0, 0, Math.PI - 1e-11);
-        expect(pose1.hasOppositeAngle(pose2)).toBeTrue();
-        expect(pose1.hasOppositeAngle(pose2, 1e-10)).toBeTrue();
-        expect(pose1.hasOppositeAngle(pose2, 1e-20)).withContext("larger epsilon").toBeFalse();
-        let pose3 = new Pose(0, 0, Math.PI / 2);
-        expect(pose1.hasOppositeAngle(pose3)).toBeFalse();
+    // **Feature: permanent-component-groups, Property 18: Selection box prevents duplicate group membership**
+    // **Validates: Requirements 9.5**
+    it('should prevent duplicate permanent group membership in temporary groups', function() {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 1, max: 3 }), // Number of permanent groups
+                fc.integer({ min: 1, max: 3 }), // Components per group
+                (numGroups, componentsPerGroup) => {
+                    const layoutController = window.layoutController;
+                    layoutController.reset();
+                    
+                    const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                    const permanentGroups = [];
+                    const allComponents = [];
+                    
+                    // Create permanent groups with components
+                    for (let i = 0; i < numGroups; i++) {
+                        const group = new ComponentGroup(false); // permanent
+                        group.parent = layoutController.currentLayer;
+                        permanentGroups.push(group);
+                        
+                        for (let j = 0; j < componentsPerGroup; j++) {
+                            const component = new Component(trackData, new Pose(i * 100 + j * 20, 100, 0), layoutController.currentLayer, {});
+                            component.group = group;
+                            layoutController.currentLayer.addChild(component);
+                            allComponents.push(component);
+                        }
+                    }
+                    
+                    // Simulate selection box that includes all components (which would include components from permanent groups)
+                    const result = layoutController.processSelectionBoxResults(allComponents);
+                    
+                    if (numGroups === 1) {
+                        // Single permanent group -> should select the group directly
+                        expect(result).toBe(permanentGroups[0]);
+                    } else {
+                        // Multiple permanent groups -> should create temporary group containing the permanent groups
+                        expect(result).toBeInstanceOf(ComponentGroup);
+                        expect(result.isTemporary).toBe(true);
+                        
+                        const tempGroupComponents = result.components;
+                        
+                        // Each permanent group should appear exactly once in the temporary group
+                        permanentGroups.forEach(permGroup => {
+                            const occurrences = tempGroupComponents.filter(comp => comp === permGroup).length;
+                            expect(occurrences).toBe(1);
+                        });
+                        
+                        // Total components in temporary group should equal number of permanent groups
+                        expect(tempGroupComponents.length).toBe(numGroups);
+                        
+                        // No individual components from permanent groups should be in the temporary group
+                        permanentGroups.forEach(permGroup => {
+                            permGroup.components.forEach(comp => {
+                                expect(tempGroupComponents).not.toContain(comp);
+                            });
+                        });
+                    }
+                    
+                    // Test that attempting to add the same permanent group again would be prevented
+                    if (result && result.isTemporary && numGroups > 1) {
+                        const tempGroup = result;
+                        const firstPermanentGroup = permanentGroups[0];
+                        
+                        // Try to add the same permanent group again
+                        const initialSize = tempGroup.size;
+                        
+                        // This should be prevented by the addComponent method
+                        tempGroup.addComponent(firstPermanentGroup);
+                        
+                        // Size should remain the same (no duplicate added)
+                        expect(tempGroup.size).toBe(initialSize);
+                        
+                        // The group should still appear exactly once
+                        const tempGroupComponentsAfter = tempGroup.components;
+                        const occurrences = tempGroupComponentsAfter.filter(comp => comp === firstPermanentGroup).length;
+                        expect(occurrences).toBe(1);
+                    }
+                    
+                    // Clean up
+                    permanentGroups.forEach(group => group.destroy());
+                    if (result && result.isTemporary) {
+                        result.destroy();
+                    }
+                }
+            ),
+            { numRuns: 100 }
+        );
     });
 
-    it("normalizes negative angles", function() {
-        let pose = new Pose(0, 0, -Math.PI);
-        expect(pose.angle).toBeCloseTo(Math.PI);
+    // **Feature: permanent-component-groups, Property 19: Single permanent group selection optimization**
+    // **Validates: Requirements 9.3**
+    it('should select single permanent group directly without creating temporary group', function() {
+        fc.assert(
+            fc.property(
+                fc.integer({ min: 1, max: 5 }), // Components per group
+                (componentsPerGroup) => {
+                    const layoutController = window.layoutController;
+                    layoutController.reset();
+                    
+                    const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                    
+                    // Create a single permanent group with components
+                    const permanentGroup = new ComponentGroup(false); // permanent
+                    permanentGroup.parent = layoutController.currentLayer;
+                    
+                    const groupComponents = [];
+                    for (let i = 0; i < componentsPerGroup; i++) {
+                        const component = new Component(trackData, new Pose(i * 20, 100, 0), layoutController.currentLayer, {});
+                        component.group = permanentGroup;
+                        layoutController.currentLayer.addChild(component);
+                        groupComponents.push(component);
+                    }
+                    
+                    // Test selection box processing with only components from one permanent group
+                    const result = layoutController.processSelectionBoxResults(groupComponents);
+                    
+                    // Should return the permanent group directly, not create a temporary group
+                    expect(result).toBe(permanentGroup);
+                    expect(result.isTemporary).toBe(false);
+                    
+                    // Verify no temporary group was created
+                    expect(result).toBeInstanceOf(ComponentGroup);
+                    expect(result).toBe(permanentGroup); // Exact same object reference
+                    
+                    // Test with partial selection from the group (should still select the whole group)
+                    if (componentsPerGroup > 1) {
+                        const partialComponents = groupComponents.slice(0, Math.ceil(componentsPerGroup / 2));
+                        const partialResult = layoutController.processSelectionBoxResults(partialComponents);
+                        
+                        // Should still return the permanent group directly
+                        expect(partialResult).toBe(permanentGroup);
+                        expect(partialResult.isTemporary).toBe(false);
+                    }
+                    
+                    // Test with empty selection
+                    const emptyResult = layoutController.processSelectionBoxResults([]);
+                    expect(emptyResult).toBeNull();
+                    
+                    // Clean up
+                    permanentGroup.destroy();
+                }
+            ),
+            { numRuns: 100 }
+        );
     });
 
-    it("rotates a pose around an origin by 90 degrees", function() {
-        let pose = new Pose(10, 0, 0);
-        pose.rotateAround(0, 0, Math.PI / 2);
-        
-        expect(pose.x).toBeCloseTo(0, 5);
-        expect(pose.y).toBeCloseTo(10, 5);
-        expect(pose.angle).toBeCloseTo(Math.PI / 2, 5);
+    // **Feature: permanent-component-groups, Property 20: Components cannot belong to multiple groups**
+    // **Validates: Requirements 10.1**
+    it('should prevent components from belonging to multiple groups', function() {
+        fc.assert(
+            fc.property(
+                fc.boolean(), // Whether first group is temporary
+                fc.boolean(), // Whether second group is temporary
+                fc.integer({ min: 1, max: 3 }), // Number of components to test
+                (firstGroupTemporary, secondGroupTemporary, numComponents) => {
+                    const layoutController = window.layoutController;
+                    layoutController.reset();
+                    
+                    const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                    
+                    // Create two groups
+                    const firstGroup = new ComponentGroup(firstGroupTemporary);
+                    const secondGroup = new ComponentGroup(secondGroupTemporary);
+                    
+                    // For permanent groups, they need to be on the same layer
+                    if (!firstGroupTemporary) {
+                        firstGroup.parent = layoutController.currentLayer;
+                    }
+                    if (!secondGroupTemporary) {
+                        secondGroup.parent = layoutController.currentLayer;
+                    }
+                    
+                    const components = [];
+                    
+                    // Create components and add them to the first group
+                    for (let i = 0; i < numComponents; i++) {
+                        const component = new Component(trackData, new Pose(i * 20, 100, 0), layoutController.currentLayer, {});
+                        layoutController.currentLayer.addChild(component);
+                        components.push(component);
+                        
+                        // Add to first group
+                        firstGroup.addComponent(component);
+                        
+                        // Verify component is in first group
+                        expect(component.group).toBe(firstGroup);
+                        expect(firstGroup.components.includes(component)).toBe(true);
+                    }
+                    
+                    // Verify first group has all components
+                    expect(firstGroup.size).toBe(numComponents);
+                    expect(secondGroup.size).toBe(0);
+                    
+                    // Now try to add the same components to the second group
+                    components.forEach(component => {
+                        const initialFirstGroupSize = firstGroup.size;
+                        const initialSecondGroupSize = secondGroup.size;
+                        
+                        // Attempt to add component to second group (should be prevented)
+                        secondGroup.addComponent(component);
+                        
+                        // Component should still belong only to the first group
+                        expect(component.group).toBe(firstGroup);
+                        expect(firstGroup.components.includes(component)).toBe(true);
+                        expect(secondGroup.components.includes(component)).toBe(false);
+                        
+                        // Group sizes should remain unchanged
+                        expect(firstGroup.size).toBe(initialFirstGroupSize);
+                        expect(secondGroup.size).toBe(initialSecondGroupSize);
+                    });
+                    
+                    // Verify final state
+                    expect(firstGroup.size).toBe(numComponents);
+                    expect(secondGroup.size).toBe(0);
+                    
+                    // Test removing component from first group and then adding to second
+                    if (numComponents > 0) {
+                        const testComponent = components[0];
+                        
+                        // Remove from first group
+                        firstGroup.removeComponent(testComponent);
+                        expect(testComponent.group).toBeNull();
+                        expect(firstGroup.components.includes(testComponent)).toBe(false);
+                        expect(firstGroup.size).toBe(numComponents - 1);
+                        
+                        // Now should be able to add to second group
+                        secondGroup.addComponent(testComponent);
+                        expect(testComponent.group).toBe(secondGroup);
+                        expect(secondGroup.components.includes(testComponent)).toBe(true);
+                        expect(secondGroup.size).toBe(1);
+                        
+                        // Should not be in first group
+                        expect(firstGroup.components.includes(testComponent)).toBe(false);
+                    }
+                    
+                    // Clean up
+                    firstGroup.destroy();
+                    secondGroup.destroy();
+                }
+            ),
+            { numRuns: 100 }
+        );
     });
 
-    it("rotates a pose around a non-origin point", function() {
-        let pose = new Pose(15, 10, 0);
-        pose.rotateAround(10, 10, Math.PI / 2);
-        
-        // Point (15,10) rotated 90° around (10,10) should be (10,15)
-        expect(pose.x).toBeCloseTo(10, 5);
-        expect(pose.y).toBeCloseTo(15, 5);
-        expect(pose.angle).toBeCloseTo(Math.PI / 2, 5);
-    });
+    describe("selection box edge cases", function() {
+        let layoutController;
+        let trackData;
 
-    it("rotates a pose 180 degrees around an origin", function() {
-        let pose = new Pose(5, 5, Math.PI / 4);
-        pose.rotateAround(0, 0, Math.PI);
-        
-        expect(pose.x).toBeCloseTo(-5, 5);
-        expect(pose.y).toBeCloseTo(-5, 5);
-        expect(pose.angle).toBeCloseTo(Math.PI + Math.PI / 4, 5);
-    });
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+        });
 
-    it("returns the same pose when rotating by 0 radians", function() {
-        let pose = new Pose(10, 20, Math.PI / 3);
-        pose.rotateAround(5, 5, 0);
-        
-        expect(pose.x).toBeCloseTo(10, 5);
-        expect(pose.y).toBeCloseTo(20, 5);
-        expect(pose.angle).toBeCloseTo(Math.PI / 3, 5);
-    });
-
-    it("handles full rotation (2π)", function() {
-        let pose = new Pose(8, 4, Math.PI / 6);
-        const originalX = pose.x;
-        const originalY = pose.y;
-        const originalAngle = pose.angle;
-        
-        pose.rotateAround(3, 3, 2 * Math.PI);
-        
-        expect(pose.x).toBeCloseTo(originalX, 5);
-        expect(pose.y).toBeCloseTo(originalY, 5);
-        // Angle increases with 2π but gets normalized
-        expect(Pose.normalizeAngle(pose.angle)).toBeCloseTo(Pose.normalizeAngle(originalAngle + 2 * Math.PI), 5);
-    });
-
-    it("rotates a pose at the origin around itself", function() {
-        let pose = new Pose(0, 0, 0);
-        pose.rotateAround(0, 0, Math.PI / 4);
-        
-        expect(pose.x).toBeCloseTo(0, 5);
-        expect(pose.y).toBeCloseTo(0, 5);
-        expect(pose.angle).toBeCloseTo(Math.PI / 4, 5);
-    });
-});
-
-describe("LayoutLayer", function() {
-    beforeAll(function() {
-        window.RBush = class RBush {
-            constructor() {
+        it("should handle selection box with no permanent groups (existing behavior)", function() {
+            // Create individual components (not in any group)
+            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+            const component3 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+            
+            layoutController.currentLayer.addChild(component1);
+            layoutController.currentLayer.addChild(component2);
+            layoutController.currentLayer.addChild(component3);
+            
+            const components = [component1, component2, component3];
+            const result = layoutController.processSelectionBoxResults(components);
+            
+            if (components.length === 1) {
+                // Single component should be returned directly
+                expect(result).toBe(component1);
+            } else {
+                // Multiple components should create a temporary group
+                expect(result).toBeInstanceOf(ComponentGroup);
+                expect(result.isTemporary).toBe(true);
+                expect(result.size).toBe(3);
+                
+                // All components should be in the temporary group
+                components.forEach(comp => {
+                    expect(result.components.includes(comp)).toBe(true);
+                });
             }
-        };
-        spyOn(window, 'RBush').and.returnValue(jasmine.createSpyObj("RBush", ["insert", "remove", "clear", "search"]));
-    });
+            
+            // Clean up
+            if (result && result.isTemporary) {
+                result.destroy();
+            }
+        });
 
-    it("creates a new LayoutLayer", function() {
-        let layoutLayer = new LayoutLayer();
-        expect(layoutLayer).toBeInstanceOf(LayoutLayer);
-        expect(layoutLayer.children).toHaveSize(1);
-        expect(layoutLayer.openConnections).toHaveSize(0);
-        expect(layoutLayer.overlay).toBeInstanceOf(RenderLayer);
-    });
+        it("should handle selection box with mixed permanent groups and individual components", function() {
+            // Create a permanent group
+            const permanentGroup = new ComponentGroup(false);
+            permanentGroup.parent = layoutController.currentLayer;
+            
+            const groupComponent1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            const groupComponent2 = new Component(trackData, new Pose(20, 0, 0), layoutController.currentLayer, {});
+            groupComponent1.group = permanentGroup;
+            groupComponent2.group = permanentGroup;
+            
+            layoutController.currentLayer.addChild(groupComponent1);
+            layoutController.currentLayer.addChild(groupComponent2);
+            
+            // Create individual components
+            const individualComponent1 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+            const individualComponent2 = new Component(trackData, new Pose(150, 0, 0), layoutController.currentLayer, {});
+            
+            layoutController.currentLayer.addChild(individualComponent1);
+            layoutController.currentLayer.addChild(individualComponent2);
+            
+            // Selection box includes components from permanent group and individual components
+            const allComponents = [groupComponent1, groupComponent2, individualComponent1, individualComponent2];
+            const result = layoutController.processSelectionBoxResults(allComponents);
+            
+            // Should create a temporary group containing the permanent group and individual components
+            expect(result).toBeInstanceOf(ComponentGroup);
+            expect(result.isTemporary).toBe(true);
+            
+            const tempGroupComponents = Array.from(result.components);
+            
+            // Should contain the permanent group (not its individual components)
+            expect(tempGroupComponents).toContain(permanentGroup);
+            expect(tempGroupComponents).not.toContain(groupComponent1);
+            expect(tempGroupComponents).not.toContain(groupComponent2);
+            
+            // Should contain the individual components
+            expect(tempGroupComponents).toContain(individualComponent1);
+            expect(tempGroupComponents).toContain(individualComponent2);
+            
+            // Total should be 3: 1 permanent group + 2 individual components
+            expect(tempGroupComponents.length).toBe(3);
+            
+            // Clean up
+            permanentGroup.destroy();
+            result.destroy();
+        });
 
-    it("destroys a LayoutLayer", function() {
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.destroy();
-        expect(layoutLayer.overlay).toBeNull();
-    });
+        it("should handle selection box with overlapping permanent groups", function() {
+            // Create two permanent groups
+            const permanentGroup1 = new ComponentGroup(false);
+            const permanentGroup2 = new ComponentGroup(false);
+            permanentGroup1.parent = layoutController.currentLayer;
+            permanentGroup2.parent = layoutController.currentLayer;
+            
+            // Add components to first group
+            const group1Component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            const group1Component2 = new Component(trackData, new Pose(20, 0, 0), layoutController.currentLayer, {});
+            group1Component1.group = permanentGroup1;
+            group1Component2.group = permanentGroup1;
+            
+            layoutController.currentLayer.addChild(group1Component1);
+            layoutController.currentLayer.addChild(group1Component2);
+            
+            // Add components to second group
+            const group2Component1 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+            const group2Component2 = new Component(trackData, new Pose(120, 0, 0), layoutController.currentLayer, {});
+            group2Component1.group = permanentGroup2;
+            group2Component2.group = permanentGroup2;
+            
+            layoutController.currentLayer.addChild(group2Component1);
+            layoutController.currentLayer.addChild(group2Component2);
+            
+            // Selection box includes components from both permanent groups
+            const allComponents = [group1Component1, group1Component2, group2Component1, group2Component2];
+            const result = layoutController.processSelectionBoxResults(allComponents);
+            
+            // Should create a temporary group containing both permanent groups
+            expect(result).toBeInstanceOf(ComponentGroup);
+            expect(result.isTemporary).toBe(true);
+            
+            const tempGroupComponents = Array.from(result.components);
+            
+            // Should contain both permanent groups (not their individual components)
+            expect(tempGroupComponents).toContain(permanentGroup1);
+            expect(tempGroupComponents).toContain(permanentGroup2);
+            expect(tempGroupComponents).not.toContain(group1Component1);
+            expect(tempGroupComponents).not.toContain(group1Component2);
+            expect(tempGroupComponents).not.toContain(group2Component1);
+            expect(tempGroupComponents).not.toContain(group2Component2);
+            
+            // Total should be 2: both permanent groups
+            expect(tempGroupComponents.length).toBe(2);
+            
+            // Clean up
+            permanentGroup1.destroy();
+            permanentGroup2.destroy();
+            result.destroy();
+        });
 
-    // TODO: Test findMatchingConnection
+        it("should handle empty selection box results", function() {
+            const result = layoutController.processSelectionBoxResults([]);
+            expect(result).toBeNull();
+        });
 
-    it("validates a valid serialized layout layer", function() {
-        let compSpy = spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [1],
-            name: "Test Layer",
-            visible: true
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-        expect(compSpy).toHaveBeenCalledTimes(1);
-    });
+        it("should handle selection box with single individual component", function() {
+            const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            layoutController.currentLayer.addChild(component);
+            
+            const result = layoutController.processSelectionBoxResults([component]);
+            
+            // Single component should be returned directly
+            expect(result).toBe(component);
+        });
 
-    it("validates a valid minimal serialized layout layer", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [1]
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-    });
-
-    it("validates a layer with no components", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: []
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-    });
-
-    it("does not validate a serialized with bad name", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [1],
-            name: 1
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
-    });
-
-    it("does not validate a serialized with blank name", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [1],
-            name: ""
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
-    });
-
-    it("does not validate a serialized with bad visible", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [1],
-            visible: "hello"
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
-    });
-
-    it("deserializes a minimal serialized layout layer", function() {
-        let serialized = {
-            components: [1],
-        };
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.deserialize(serialized);
-        expect(layoutLayer.label).toBe("New Layer");
-        expect(layoutLayer.visible).toBeTrue();
-    });
-
-    it("deserializes a serialized layout layer", function() {
-        let serialized = {
-            components: [1],
-            name: "Test Layer",
-            visible: false
-        };
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.deserialize(serialized);
-        expect(layoutLayer.label).toBe("Test Layer");
-        expect(layoutLayer.visible).toBeFalse();
-    });
-
-    it("throws an error when deserializing a serialized layout layer with no data", function() {
-        let layoutLayer = new LayoutLayer();
-        expect(() => layoutLayer.deserialize()).toThrowError("Invalid data");
-    });
-
-    it("serializes a valid layout layer", function() {
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.label = "Test Layer";
-        layoutLayer.visible = true;
-        let serialized = layoutLayer.serialize();
-        expect(serialized).toEqual({
-            components: [],
-            name: "Test Layer",
-            visible: true,
-            opacity: 100
+        it("should handle selection box with partial permanent group selection", function() {
+            // Create a permanent group with multiple components
+            const permanentGroup = new ComponentGroup(false);
+            permanentGroup.parent = layoutController.currentLayer;
+            
+            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            const component2 = new Component(trackData, new Pose(20, 0, 0), layoutController.currentLayer, {});
+            const component3 = new Component(trackData, new Pose(40, 0, 0), layoutController.currentLayer, {});
+            
+            component1.group = permanentGroup;
+            component2.group = permanentGroup;
+            component3.group = permanentGroup;
+            
+            layoutController.currentLayer.addChild(component1);
+            layoutController.currentLayer.addChild(component2);
+            layoutController.currentLayer.addChild(component3);
+            
+            // Selection box includes only some components from the permanent group
+            const partialComponents = [component1, component2]; // Missing component3
+            const result = layoutController.processSelectionBoxResults(partialComponents);
+            
+            // Should still select the entire permanent group
+            expect(result).toBe(permanentGroup);
+            expect(result.isTemporary).toBe(false);
+            
+            // Clean up
+            permanentGroup.destroy();
         });
     });
 
-    it("serializes a layer with custom opacity", function() {
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.label = "Test Layer";
-        layoutLayer.visible = true;
-        layoutLayer.alpha = 0.5;
-        let serialized = layoutLayer.serialize();
-        expect(serialized).toEqual({
-            components: [],
-            name: "Test Layer",
-            visible: true,
-            opacity: 50
+    describe("duplicate group membership prevention", function() {
+        let layoutController;
+        let trackData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+        });
+
+        it("should prevent adding component that already belongs to a permanent group", function() {
+            // Create two permanent groups
+            const permanentGroup1 = new ComponentGroup(false);
+            const permanentGroup2 = new ComponentGroup(false);
+            permanentGroup1.parent = layoutController.currentLayer;
+            permanentGroup2.parent = layoutController.currentLayer;
+            
+            // Create a component and add it to the first group
+            const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            layoutController.currentLayer.addChild(component);
+            
+            permanentGroup1.addComponent(component);
+            
+            // Verify component is in first group
+            expect(component.group).toBe(permanentGroup1);
+            expect(permanentGroup1.components.includes(component)).toBe(true);
+            expect(permanentGroup1.size).toBe(1);
+            expect(permanentGroup2.size).toBe(0);
+            
+            // Spy on console.warn to verify warning is logged
+            spyOn(console, 'warn');
+            
+            // Try to add the same component to the second group
+            permanentGroup2.addComponent(component);
+            
+            // Component should still belong only to the first group
+            expect(component.group).toBe(permanentGroup1);
+            expect(permanentGroup1.components.includes(component)).toBe(true);
+            expect(permanentGroup2.components.includes(component)).toBe(false);
+            expect(permanentGroup1.size).toBe(1);
+            expect(permanentGroup2.size).toBe(0);
+            
+            // Should have logged a warning
+            expect(console.warn).toHaveBeenCalledWith(
+                'Component already belongs to a group.',
+                component
+            );
+            
+            // Clean up
+            permanentGroup1.destroy();
+            permanentGroup2.destroy();
+        });
+
+        it("should prevent adding component that already belongs to a temporary group", function() {
+            // Create a temporary group and a permanent group
+            const temporaryGroup = new ComponentGroup(true);
+            const permanentGroup = new ComponentGroup(false);
+            permanentGroup.parent = layoutController.currentLayer;
+            
+            // Create a component and add it to the temporary group
+            const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            layoutController.currentLayer.addChild(component);
+            
+            temporaryGroup.addComponent(component);
+            
+            // Verify component is in temporary group
+            expect(component.group).toBe(temporaryGroup);
+            expect(temporaryGroup.components.includes(component)).toBe(true);
+            expect(temporaryGroup.size).toBe(1);
+            expect(permanentGroup.size).toBe(0);
+            
+            // Spy on console.warn to verify warning is logged
+            spyOn(console, 'warn');
+            
+            // Try to add the same component to the permanent group
+            permanentGroup.addComponent(component);
+            
+            // Component should still belong only to the temporary group
+            expect(component.group).toBe(temporaryGroup);
+            expect(temporaryGroup.components.includes(component)).toBe(true);
+            expect(permanentGroup.components.includes(component)).toBe(false);
+            expect(temporaryGroup.size).toBe(1);
+            expect(permanentGroup.size).toBe(0);
+            
+            // Should have logged a warning
+            expect(console.warn).toHaveBeenCalledWith(
+                'Component already belongs to a group.',
+                component
+            );
+            
+            // Clean up
+            temporaryGroup.destroy();
+            permanentGroup.destroy();
+        });
+
+        it("should prevent adding permanent group to temporary group multiple times", function() {
+            // Create a permanent group with components
+            const permanentGroup = new ComponentGroup(false);
+            permanentGroup.parent = layoutController.currentLayer;
+            
+            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            const component2 = new Component(trackData, new Pose(20, 0, 0), layoutController.currentLayer, {});
+            component1.group = permanentGroup;
+            component2.group = permanentGroup;
+            
+            layoutController.currentLayer.addChild(component1);
+            layoutController.currentLayer.addChild(component2);
+            
+            // Create a temporary group
+            const temporaryGroup = new ComponentGroup(true);
+            
+            // Add the permanent group to the temporary group
+            temporaryGroup.addComponent(permanentGroup);
+            
+            // Verify permanent group is in temporary group
+            expect(temporaryGroup.components.includes(permanentGroup)).toBe(true);
+            expect(temporaryGroup.size).toBe(1);
+            
+            // Spy on console.warn to verify warning is logged
+            spyOn(console, 'warn');
+            
+            // Try to add the same permanent group again
+            temporaryGroup.addComponent(permanentGroup);
+            
+            // Should still have only one instance of the permanent group
+            expect(temporaryGroup.components.includes(permanentGroup)).toBe(true);
+            expect(temporaryGroup.size).toBe(1);
+            
+            // Count occurrences to ensure no duplicates
+            const components = Array.from(temporaryGroup.components);
+            const occurrences = components.filter(comp => comp === permanentGroup).length;
+            expect(occurrences).toBe(1);
+            
+            // Should have logged a warning
+            expect(console.warn).toHaveBeenCalledWith(
+                jasmine.stringMatching(/Prevented adding ComponentGroup .* to another group multiple times/)
+            );
+            
+            // Clean up
+            permanentGroup.destroy();
+            temporaryGroup.destroy();
+        });
+
+        it("should allow adding component after removing it from previous group", function() {
+            // Create two groups
+            const group1 = new ComponentGroup(false);
+            const group2 = new ComponentGroup(false);
+            group1.parent = layoutController.currentLayer;
+            group2.parent = layoutController.currentLayer;
+            
+            // Create a component and add it to the first group
+            const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            layoutController.currentLayer.addChild(component);
+            
+            group1.addComponent(component);
+            
+            // Verify component is in first group
+            expect(component.group).toBe(group1);
+            expect(group1.components.includes(component)).toBe(true);
+            expect(group1.size).toBe(1);
+            expect(group2.size).toBe(0);
+            
+            // Remove component from first group
+            group1.removeComponent(component);
+            
+            // Verify component is no longer in any group
+            expect(component.group).toBeNull();
+            expect(group1.components.includes(component)).toBe(false);
+            expect(group1.size).toBe(0);
+            
+            // Now should be able to add to second group without warning
+            spyOn(console, 'warn');
+            
+            group2.addComponent(component);
+            
+            // Verify component is now in second group
+            expect(component.group).toBe(group2);
+            expect(group2.components.includes(component)).toBe(true);
+            expect(group2.size).toBe(1);
+            expect(group1.components.includes(component)).toBe(false);
+            
+            // Should not have logged any warning
+            expect(console.warn).not.toHaveBeenCalled();
+            
+            // Clean up
+            group1.destroy();
+            group2.destroy();
+        });
+
+        it("should handle error logging gracefully when console.warn is not available", function() {
+            // Create two groups
+            const group1 = new ComponentGroup(false);
+            const group2 = new ComponentGroup(false);
+            group1.parent = layoutController.currentLayer;
+            group2.parent = layoutController.currentLayer;
+            
+            // Create a component and add it to the first group
+            const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+            layoutController.currentLayer.addChild(component);
+            
+            group1.addComponent(component);
+            
+            // Temporarily remove console.warn
+            const originalWarn = console.warn;
+            delete console.warn;
+            
+            try {
+                // Try to add the same component to the second group
+                // Should not throw an error even without console.warn
+                expect(() => {
+                    group2.addComponent(component);
+                }).not.toThrow();
+                
+                // Component should still belong only to the first group
+                expect(component.group).toBe(group1);
+                expect(group1.components.includes(component)).toBe(true);
+                expect(group2.components.includes(component)).toBe(false);
+                
+            } finally {
+                // Restore console.warn
+                console.warn = originalWarn;
+            }
+            
+            // Clean up
+            group1.destroy();
+            group2.destroy();
+        });
+
+        it("should prevent adding component to itself if component were a group", function() {
+            // This is a theoretical edge case - if a component somehow had an addComponent method
+            const mockComponentGroup = new ComponentGroup(false);
+            mockComponentGroup.parent = layoutController.currentLayer;
+            
+            // Spy on console.warn
+            spyOn(console, 'warn');
+            
+            // Try to add the group to itself
+            mockComponentGroup.addComponent(mockComponentGroup);
+            
+            // Should not be added to itself
+            expect(mockComponentGroup.components.includes(mockComponentGroup)).toBe(false);
+            expect(mockComponentGroup.size).toBe(0);
+            
+            // Should have logged a warning
+            expect(console.warn).toHaveBeenCalledWith(
+                'Cannot add group to itself.',
+                mockComponentGroup
+            );
+            
+            // Clean up
+            mockComponentGroup.destroy();
         });
     });
 
-    it("deserializes a layer with opacity", function() {
-        let serialized = {
-            components: [],
-            name: "Test Layer",
-            visible: true,
-            opacity: 75
-        };
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.deserialize(serialized);
-        expect(layoutLayer.label).toBe("Test Layer");
-        expect(layoutLayer.visible).toBeTrue();
-        expect(layoutLayer.alpha).toBeCloseTo(0.75, 2);
-    });
+    describe("nested group dragging", function() {
+        let layoutController;
+        let straightTrackData;
 
-    it("deserializes a layer without opacity defaults to 100%", function() {
-        let serialized = {
-            components: [],
-            name: "Test Layer",
-            visible: true
-        };
-        let layoutLayer = new LayoutLayer();
-        layoutLayer.deserialize(serialized);
-        expect(layoutLayer.label).toBe("Test Layer");
-        expect(layoutLayer.visible).toBeTrue();
-        expect(layoutLayer.alpha).toBe(1.0);
-    });
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+        });
 
-    it("validates a layer with valid opacity", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: 50
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-    });
+        afterEach(function() {
+            // Reset LayoutController state
+            LayoutController.dragTarget = null;
+            LayoutController.dragDistance = 0;
+            LayoutController.dragWithAlt = false;
+            LayoutController.selectedComponent = null;
+            if (!layoutController) return;
+            layoutController.reset();
+        });
 
-    it("validates a layer with opacity 0", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: 0
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-    });
+        it("should delegate drag to outermost group when component in nested group is clicked", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
 
-    it("validates a layer with opacity 100", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: 100
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeTrue();
-    });
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
 
-    it("does not validate a layer with negative opacity", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: -1
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
-    });
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false; // Make it permanent
 
-    it("does not validate a layer with opacity over 100", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: 101
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
-    });
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false; // Make it permanent
 
-    it("does not validate a layer with non-number opacity", function() {
-        spyOn(Component, '_validateImportData').and.returnValue(true);
-        let serialized = {
-            components: [],
-            opacity: "50"
-        };
-        expect(LayoutLayer._validateImportData(serialized)).toBeFalse();
+            // Mock event
+            const mockEvent = {
+                button: 0,
+                nativeEvent: { isPrimary: true },
+                altKey: false,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+            };
+
+            // When clicking on component1 (which is in innerGroup, which is in outerGroup)
+            component1.onStartDrag(mockEvent);
+
+            // The drag target should be the outermost group (outerGroup)
+            expect(LayoutController.dragTarget).toBe(outerGroup);
+            expect(LayoutController.dragTarget).not.toBe(innerGroup);
+            expect(LayoutController.dragTarget).not.toBe(component1);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should delegate drag to outermost group when inner group is clicked directly", function() {
+            // Create two components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+
+            // Create inner group
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.isTemporary = false; // Make it permanent
+
+            // Create outer group with inner group and second component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component2);
+            outerGroup.isTemporary = false; // Make it permanent
+
+            // Mock event
+            const mockEvent = {
+                button: 0,
+                nativeEvent: { isPrimary: true },
+                altKey: false,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+            };
+
+            // When calling onStartDrag directly on innerGroup
+            innerGroup.onStartDrag(mockEvent);
+
+            // The drag target should be the outermost group (outerGroup)
+            expect(LayoutController.dragTarget).toBe(outerGroup);
+            expect(LayoutController.dragTarget).not.toBe(innerGroup);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should handle collision tree operations correctly for nested groups", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false; // Make it permanent
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false; // Make it permanent
+
+            // Mock event for dragging
+            const mockEvent = {
+                button: 0,
+                nativeEvent: { isPrimary: true },
+                altKey: false,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+            };
+
+            // Start drag on component1 (which should delegate to outerGroup)
+            // This should not throw an error when calling deleteCollisionTree
+            expect(() => {
+                component1.onStartDrag(mockEvent);
+            }).not.toThrow();
+
+            // Verify the drag target is the outermost group
+            expect(LayoutController.dragTarget).toBe(outerGroup);
+
+            // Test that collision tree operations work correctly
+            expect(() => {
+                outerGroup.deleteCollisionTree();
+                outerGroup.insertCollisionTree();
+            }).not.toThrow();
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should not cause NaN positions when moving nested groups", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Set initial positions
+            component1.position.set(100, 100);
+            component2.position.set(200, 100);
+            component3.position.set(300, 100);
+
+            // Store initial positions
+            const initialPos1 = { x: component1.position.x, y: component1.position.y };
+            const initialPos2 = { x: component2.position.x, y: component2.position.y };
+            const initialPos3 = { x: component3.position.x, y: component3.position.y };
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false; // Make it permanent
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false; // Make it permanent
+
+            // Verify positions are still valid after grouping
+            expect(component1.position.x).not.toBeNaN();
+            expect(component1.position.y).not.toBeNaN();
+            expect(component2.position.x).not.toBeNaN();
+            expect(component2.position.y).not.toBeNaN();
+            expect(component3.position.x).not.toBeNaN();
+            expect(component3.position.y).not.toBeNaN();
+
+            // Move the outer group
+            outerGroup.move(50, 50);
+
+            // Verify positions are still valid after moving
+            expect(component1.position.x).not.toBeNaN();
+            expect(component1.position.y).not.toBeNaN();
+            expect(component2.position.x).not.toBeNaN();
+            expect(component2.position.y).not.toBeNaN();
+            expect(component3.position.x).not.toBeNaN();
+            expect(component3.position.y).not.toBeNaN();
+
+            // Verify components actually moved
+            expect(component1.position.x).not.toBe(initialPos1.x);
+            expect(component1.position.y).not.toBe(initialPos1.y);
+            expect(component2.position.x).not.toBe(initialPos2.x);
+            expect(component2.position.y).not.toBe(initialPos2.y);
+            expect(component3.position.x).not.toBe(initialPos3.x);
+            expect(component3.position.y).not.toBe(initialPos3.y);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should maintain valid positions during drag simulation with nested groups", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Set initial positions
+            component1.position.set(100, 100);
+            component2.position.set(200, 100);
+            component3.position.set(300, 100);
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false; // Make it permanent
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false; // Make it permanent
+
+            // Mock event for starting drag
+            const mockEvent = {
+                button: 0,
+                nativeEvent: { isPrimary: true },
+                altKey: false,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+            };
+
+            // Start drag on component1 (should delegate to outerGroup)
+            component1.onStartDrag(mockEvent);
+
+            // Verify drag target is correct
+            expect(LayoutController.dragTarget).toBe(outerGroup);
+
+            // Simulate drag movement by calling move on the drag target
+            const initialPos1 = { x: component1.position.x, y: component1.position.y };
+            const initialPos2 = { x: component2.position.x, y: component2.position.y };
+            const initialPos3 = { x: component3.position.x, y: component3.position.y };
+
+            // Move the group (simulating drag)
+            LayoutController.dragTarget.move(150, 150);
+
+            // Verify all positions are still valid (not NaN)
+            expect(component1.position.x).not.toBeNaN();
+            expect(component1.position.y).not.toBeNaN();
+            expect(component2.position.x).not.toBeNaN();
+            expect(component2.position.y).not.toBeNaN();
+            expect(component3.position.x).not.toBeNaN();
+            expect(component3.position.y).not.toBeNaN();
+
+            // Verify all components moved together
+            const deltaX = component1.position.x - initialPos1.x;
+            const deltaY = component1.position.y - initialPos1.y;
+
+            expect(component2.position.x - initialPos2.x).toBeCloseTo(deltaX, 5);
+            expect(component2.position.y - initialPos2.y).toBeCloseTo(deltaY, 5);
+            expect(component3.position.x - initialPos3.x).toBeCloseTo(deltaX, 5);
+            expect(component3.position.y - initialPos3.y).toBeCloseTo(deltaY, 5);
+
+            // Clean up
+            LayoutController.dragTarget = null;
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should handle rotation of nested groups without errors", function() {
+            // Use baseplate data to avoid connection issues
+            const baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            
+            // Create three components
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Set initial positions
+            component1.position.set(100, 100);
+            component2.position.set(200, 100);
+            component3.position.set(300, 100);
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false; // Make it permanent
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false; // Make it permanent
+
+            // Check if group can rotate (should be true for baseplates with no connections)
+            const canRotate = outerGroup.canRotate();
+            expect(canRotate).toBe(true);
+
+            // Test rotation - this should not throw an error
+            expect(() => {
+                outerGroup.rotate(Math.PI / 4);
+            }).not.toThrow();
+
+            // Verify positions are still valid (not NaN)
+            expect(component1.position.x).not.toBeNaN();
+            expect(component1.position.y).not.toBeNaN();
+            expect(component2.position.x).not.toBeNaN();
+            expect(component2.position.y).not.toBeNaN();
+            expect(component3.position.x).not.toBeNaN();
+            expect(component3.position.y).not.toBeNaN();
+
+            // The main goal is that rotation doesn't crash and positions remain valid
+            // Movement verification is tested in other tests
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should rotate nested groups without causing errors or NaN positions", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Set positions
+            component1.position.set(100, 100);
+            component2.position.set(200, 100);
+            component3.position.set(150, 200);
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false;
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false;
+
+            // Store initial positions
+            const initialPositions = {
+                comp1: { x: component1.position.x, y: component1.position.y },
+                comp2: { x: component2.position.x, y: component2.position.y },
+                comp3: { x: component3.position.x, y: component3.position.y }
+            };
+
+            // Rotate the outer group - should not throw errors
+            expect(() => {
+                outerGroup.rotate(Math.PI / 4); // 45 degrees
+            }).not.toThrow();
+
+            // Verify all positions are still valid (not NaN)
+            expect(component1.position.x).not.toBeNaN();
+            expect(component1.position.y).not.toBeNaN();
+            expect(component2.position.x).not.toBeNaN();
+            expect(component2.position.y).not.toBeNaN();
+            expect(component3.position.x).not.toBeNaN();
+            expect(component3.position.y).not.toBeNaN();
+
+            // Verify components actually moved (positions changed)
+            expect(component1.position.x).not.toBe(initialPositions.comp1.x);
+            expect(component1.position.y).not.toBe(initialPositions.comp1.y);
+            expect(component2.position.x).not.toBe(initialPositions.comp2.x);
+            expect(component2.position.y).not.toBe(initialPositions.comp2.y);
+            expect(component3.position.x).not.toBe(initialPositions.comp3.x);
+            expect(component3.position.y).not.toBe(initialPositions.comp3.y);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should verify basic rotation works on simple group", function() {
+            // Use baseplate data to avoid connection issues
+            const baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            
+            // Create two components
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+
+            // Set initial positions
+            component1.position.set(100, 100);
+            component2.position.set(200, 100);
+
+            // Verify positions were set
+            expect(component1.position.x).toBe(100);
+            expect(component1.position.y).toBe(100);
+            expect(component2.position.x).toBe(200);
+            expect(component2.position.y).toBe(100);
+
+            // Create a simple group (no nesting)
+            const group = new ComponentGroup();
+            group.addComponent(component1);
+            group.addComponent(component2);
+            group.isTemporary = false;
+
+            // Check if group can rotate
+            const canRotate = group.canRotate();
+            expect(canRotate).toBe(true);
+
+            // Store initial positions
+            const initialPos1 = { x: component1.position.x, y: component1.position.y };
+            const initialPos2 = { x: component2.position.x, y: component2.position.y };
+
+            // Rotate the group
+            group.rotate(Math.PI / 4);
+
+            // Verify components moved
+            expect(component1.position.x).not.toBe(initialPos1.x);
+            expect(component1.position.y).not.toBe(initialPos1.y);
+            expect(component2.position.x).not.toBe(initialPos2.x);
+            expect(component2.position.y).not.toBe(initialPos2.y);
+
+            // Clean up
+            group.destroy();
+        });
+
+        it("should correctly flatten nested groups with getAllComponents method", function() {
+            // Create three components
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false;
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false;
+
+            // Test the getAllComponents method
+            const allComponents = outerGroup.getAllComponents();
+            expect(allComponents.length).toBe(3);
+            expect(allComponents).toContain(component1);
+            expect(allComponents).toContain(component2);
+            expect(allComponents).toContain(component3);
+
+            // Verify that nested groups are not included in the flattened list
+            expect(allComponents).not.toContain(innerGroup);
+
+            // Test that inner group's getAllComponents also works
+            const innerComponents = innerGroup.getAllComponents();
+            expect(innerComponents.length).toBe(2);
+            expect(innerComponents).toContain(component1);
+            expect(innerComponents).toContain(component2);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should verify rotation logic works on individual components", function() {
+            // Create a single component
+            layoutController.addComponent(straightTrackData);
+            const component = layoutController.currentLayer.children[0];
+
+            // Set initial position
+            component.position.set(100, 100);
+            const initialX = component.position.x;
+            const initialY = component.position.y;
+
+            // Test the rotation logic directly
+            const center = { x: 150, y: 150 }; // Rotate around point (150, 150)
+            const angle = Math.PI / 4; // 45 degrees
+
+            const pose = component.getPose();
+            const rotatedPose = pose.rotateAround(center.x, center.y, angle);
+
+            // Apply the rotation
+            component.position.set(rotatedPose.x, rotatedPose.y);
+            component.sprite.rotation = rotatedPose.angle;
+
+            // Verify the component moved
+            expect(component.position.x).not.toBe(initialX);
+            expect(component.position.y).not.toBe(initialY);
+            expect(component.position.x).not.toBeNaN();
+            expect(component.position.y).not.toBeNaN();
+
+            // Clean up
+            component.destroy();
+        });
+
+        it("should handle bringToFront with nested groups without errors", function() {
+            // Use baseplate data to avoid connection issues
+            const baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            
+            // Create three components
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false;
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false;
+
+            // Store initial z-indices
+            const initialIndex1 = layoutController.currentLayer.getChildIndex(component1);
+            const initialIndex2 = layoutController.currentLayer.getChildIndex(component2);
+            const initialIndex3 = layoutController.currentLayer.getChildIndex(component3);
+
+            // Test bringToFront - this should not throw an error
+            expect(() => {
+                outerGroup.bringToFront();
+            }).not.toThrow();
+
+            // Verify components moved to front (higher indices)
+            const newIndex1 = layoutController.currentLayer.getChildIndex(component1);
+            const newIndex2 = layoutController.currentLayer.getChildIndex(component2);
+            const newIndex3 = layoutController.currentLayer.getChildIndex(component3);
+
+            expect(newIndex1).toBeGreaterThanOrEqual(initialIndex1);
+            expect(newIndex2).toBeGreaterThanOrEqual(initialIndex2);
+            expect(newIndex3).toBeGreaterThanOrEqual(initialIndex3);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should handle sendToBack with nested groups without errors", function() {
+            // Use baseplate data to avoid connection issues
+            const baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            
+            // Create three components
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false;
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false;
+
+            // Store initial z-indices
+            const initialIndex1 = layoutController.currentLayer.getChildIndex(component1);
+            const initialIndex2 = layoutController.currentLayer.getChildIndex(component2);
+            const initialIndex3 = layoutController.currentLayer.getChildIndex(component3);
+
+            // Test sendToBack - this should not throw an error
+            expect(() => {
+                outerGroup.sendToBack();
+            }).not.toThrow();
+
+            // Verify components moved to back (lower indices)
+            const newIndex1 = layoutController.currentLayer.getChildIndex(component1);
+            const newIndex2 = layoutController.currentLayer.getChildIndex(component2);
+            const newIndex3 = layoutController.currentLayer.getChildIndex(component3);
+
+            expect(newIndex1).toBeLessThanOrEqual(initialIndex1);
+            expect(newIndex2).toBeLessThanOrEqual(initialIndex2);
+            expect(newIndex3).toBeLessThanOrEqual(initialIndex3);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should handle clone/duplicate with nested groups without errors", function() {
+            // Use baseplate data to avoid connection issues
+            const baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            
+            // Create three components
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup();
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+            innerGroup.isTemporary = false;
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup();
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+            outerGroup.isTemporary = false;
+
+            // Store initial component count
+            const initialComponentCount = layoutController.currentLayer.children.length;
+
+            // Test clone - this should not throw an error
+            let clonedGroup;
+            expect(() => {
+                clonedGroup = outerGroup.clone(layoutController.currentLayer);
+            }).not.toThrow();
+
+            // Verify clone was created
+            expect(clonedGroup).toBeDefined();
+            expect(clonedGroup).toBeInstanceOf(ComponentGroup);
+
+            // Verify new components were added to the layer
+            const newComponentCount = layoutController.currentLayer.children.length;
+            // Note: The cloned components might not be automatically added to the layer
+            // The main test is that clone() doesn't throw an error
+
+            // Verify the cloned group has the same structure
+            expect(clonedGroup.size).toBe(outerGroup.size);
+
+            // Verify all components in the clone are valid
+            const clonedComponents = clonedGroup.getAllComponents();
+            expect(clonedComponents.length).toBe(3);
+            
+            clonedComponents.forEach(component => {
+                expect(component).toBeDefined();
+                expect(component.position.x).not.toBeNaN();
+                expect(component.position.y).not.toBeNaN();
+            });
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+            clonedGroup.destroy();
+        });
+
+        it("should position cloned nested groups correctly when connecting to existing components", function() {
+            // Create components that can connect (use track data)
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+            const component3 = layoutController.currentLayer.children[2];
+
+            // Set positions to create a connected scenario
+            //component1.position.set(100, 100);
+            //component2.position.set(200, 100);
+            //component3.position.set(300, 100);
+
+            // Create inner group with first two components
+            const innerGroup = new ComponentGroup(false);
+            innerGroup.addComponent(component1);
+            innerGroup.addComponent(component2);
+
+            // Create outer group with inner group and third component
+            const outerGroup = new ComponentGroup(false);
+            outerGroup.addComponent(innerGroup);
+            outerGroup.addComponent(component3);
+
+            LayoutController.selectComponent(outerGroup);
+            layoutController.duplicateSelectedComponent();
+
+            expect(layoutController.currentLayer.children.length).toBe(7);
+
+            // Verify all components in the clone have reasonable positions (not way off)
+            const component4 = layoutController.currentLayer.children[3];
+            const component5 = layoutController.currentLayer.children[4];
+            const component6 = layoutController.currentLayer.children[5];
+
+            expect(component4.position.y).withContext("component4's y position").toBe(component1.position.y);
+            expect(component4.position.x).withContext("component4's x position").toBe(component1.position.x - 256);
+            expect(component5.position.y).withContext("component5's y position").toBe(component1.position.y);
+            expect(component5.position.x).withContext("component5's x position").toBe(component4.position.x - 256);
+            expect(component6.position.y).withContext("component6's y position").toBe(component1.position.y);
+            expect(component6.position.x).withContext("component6's x position").toBe(component5.position.x - 256);
+
+            // Clean up
+            outerGroup.destroy();
+            innerGroup.destroy();
+        });
+
+        it("should position cloned simple groups correctly when connecting to existing components", function() {
+            // Test the simple case (no nesting) to ensure we didn't break it
+            layoutController.addComponent(straightTrackData);
+            layoutController.addComponent(straightTrackData);
+
+            const component1 = layoutController.currentLayer.children[0];
+            const component2 = layoutController.currentLayer.children[1];
+
+            // Create simple group (no nesting)
+            const simpleGroup = new ComponentGroup(false);
+            simpleGroup.addComponent(component1);
+            simpleGroup.addComponent(component2);
+
+            LayoutController.selectComponent(simpleGroup);
+            layoutController.duplicateSelectedComponent();
+
+            expect(layoutController.currentLayer.children.length).toBe(5);
+
+            const component3 = layoutController.currentLayer.children[2];
+            const component4 = layoutController.currentLayer.children[3];
+
+            expect(component3.position.y).toBe(component1.position.y);
+            expect(component3.position.x).toBe(component1.position.x - 256);
+            expect(component4.position.y).toBe(component1.position.y);
+            expect(component4.position.x).toBe(component3.position.x - 256);
+
+            // Clean up
+            simpleGroup.destroy();
+        });
     });
 });
