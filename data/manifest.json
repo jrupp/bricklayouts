@@ -605,6 +605,13 @@
                             "next": 0
                         }
                     ]
+                },
+                {
+                    "alias": "10275",
+                    "name": "Elf Club House",
+                    "category": "structures",
+                    "src": "10275.png",
+                    "make": 1
                 }
             ]
         }
