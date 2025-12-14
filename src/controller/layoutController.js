@@ -361,6 +361,9 @@ export class LayoutController {
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => { LayoutController.selectComponent(null); });
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
+    document.getElementById('buttonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
+    document.getElementById('mobileButtonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
+    document.getElementById('confirmNewLayout')?.addEventListener('click', this.onConfirmNewLayout.bind(this));
     document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
     document.getElementById('mobileButtonExport')?.addEventListener('click', this.exportLayout.bind(this));
@@ -1300,6 +1303,7 @@ export class LayoutController {
     LayoutController.boundBrowserDragMove = null;
     LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
+    this.readOnly = false;
     this.newLayer();
   }
 
@@ -1317,6 +1321,69 @@ export class LayoutController {
       this.#currentLayer.eventMode = 'passive';
       this.#currentLayer.interactiveChildren = true;
     }
+  }
+
+  /**
+   * Exit read-only mode and restore interactive functionality.
+   * This undoes the UI changes made when entering read-only mode in init().
+   */
+  exitReadOnlyMode() {
+    this.readOnly = false;
+    
+    // Re-enable layer add buttons
+    document.getElementById('layerAdd')?.parentElement?.classList.remove('hidden');
+    document.getElementById('mobileLayerAdd')?.classList.remove('hidden');
+    
+    // Re-enable remove and rotate buttons
+    const buttonRemove = document.getElementById('buttonRemove');
+    if (buttonRemove) buttonRemove.disabled = false;
+    
+    const buttonRotate = document.getElementById('buttonRotate');
+    if (buttonRotate) buttonRotate.disabled = false;
+    
+    // Remove readonly class from layer lists
+    document.getElementById('layerList')?.classList.remove('readonly');
+    document.getElementById('mobileLayerList')?.classList.remove('readonly');
+    
+    // Update current layer interactivity
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'passive';
+      this.#currentLayer.interactiveChildren = true;
+    }
+  }
+
+  /**
+   * Handle the "New Layout" button click.
+   * Shows confirmation dialog if not in read-only mode.
+   * If in read-only mode, resets layout and updates URL.
+   */
+  onNewLayoutClick() {
+    if (this.readOnly) {
+      // In read-only mode, just reset and update URL
+      this.reset();
+      this.exitReadOnlyMode();
+      // Use History API to change URL to root
+      window.history.pushState({}, '', window.location.origin);
+    } else {
+      // Not in read-only mode, show confirmation dialog
+      const dialog = document.getElementById('newLayoutConfirmDialog');
+      if (dialog) {
+        dialog.showModal();
+      }
+    }
+    this.hideFileMenu();
+  }
+
+  /**
+   * Handle the confirmation of creating a new layout.
+   * Called when user confirms they want to create a new layout.
+   */
+  onConfirmNewLayout() {
+    const dialog = document.getElementById('newLayoutConfirmDialog');
+    if (dialog) {
+      dialog.close();
+    }
+    this.reset();
   }
 
   /**

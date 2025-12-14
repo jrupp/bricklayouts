@@ -65,9 +65,12 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonNewLayout').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonImport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonExport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonNewLayout').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('confirmNewLayout').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
@@ -90,6 +93,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
         let p = document.createElement('div');
         let p2 = document.createElement('div');
         let p3 = document.createElement('div');
@@ -5597,6 +5601,139 @@ describe("LayoutController", function() {
 
             // Clean up
             simpleGroup.destroy();
+        });
+    });
+
+    describe("New Layout Feature", () => {
+        let layoutController;
+
+        beforeAll(function() {
+            layoutController = window.layoutController;
+        });
+
+        describe("reset() method", () => {
+            it("should set readOnly to false when called", () => {
+                // Set readOnly to true initially
+                layoutController.readOnly = true;
+                
+                // Call reset
+                layoutController.reset();
+                
+                // Verify readOnly is now false
+                expect(layoutController.readOnly).toBe(false);
+            });
+        });
+
+        describe("exitReadOnlyMode() method", () => {
+            it("should set readOnly to false", () => {
+                layoutController.readOnly = true;
+                
+                layoutController.exitReadOnlyMode();
+                
+                expect(layoutController.readOnly).toBe(false);
+            });
+
+            it("should run without errors", () => {
+                // Verify it runs without errors
+                expect(() => layoutController.exitReadOnlyMode()).not.toThrow();
+            });
+        });
+
+        describe("onNewLayoutClick() method", () => {
+            it("should reset layout and exit read-only mode when in read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode').and.callThrough();
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(layoutController.reset).toHaveBeenCalled();
+                expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+
+            it("should show confirmation dialog when not in read-only mode", () => {
+                layoutController.readOnly = false;
+                
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Get the dialog and spy on its method
+                const dialog = document.getElementById('newLayoutConfirmDialog');
+                spyOn(dialog, 'showModal');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(dialog.showModal).toHaveBeenCalled();
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("should not show confirmation dialog when in read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset');
+                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Get the dialog and spy on its method
+                const dialog = document.getElementById('newLayoutConfirmDialog');
+                spyOn(dialog, 'showModal');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(dialog.showModal).not.toHaveBeenCalled();
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+        });
+
+        describe("onConfirmNewLayout() method", () => {
+            it("should close dialog and reset layout", () => {
+                // Get the dialog and spy on its method
+                const dialog = document.getElementById('newLayoutConfirmDialog');
+                spyOn(dialog, 'close');
+                spyOn(layoutController, 'reset');
+                
+                layoutController.onConfirmNewLayout();
+                
+                expect(dialog.close).toHaveBeenCalled();
+                expect(layoutController.reset).toHaveBeenCalled();
+            });
+        });
+
+        describe("URL change behavior", () => {
+            it("should change URL to root when exiting read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset');
+                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
         });
     });
 });
