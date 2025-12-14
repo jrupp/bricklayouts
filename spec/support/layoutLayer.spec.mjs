@@ -313,7 +313,16 @@ describe("LayoutLayer", function() {
             
             layoutLayer.deserialize(layerData);
             
-            // Now simulate component deserialization with missing group reference
+            // Mock TrackData for a component
+            const mockTrackData = {
+                alias: "railStraight9V",
+                name: "Straight Rail",
+                category: "track",
+                type: "track",
+                connections: []
+            };
+            
+            // Component data with missing group reference
             let componentData = {
                 type: "railStraight9V",
                 pose: [0, 0, 0],
@@ -321,20 +330,14 @@ describe("LayoutLayer", function() {
                 group: "missing-group-uuid"
             };
             
-            // Directly test the group assignment logic that happens in Component.deserialize
-            const groupLookupMap = layoutLayer.getGroupLookupMap();
-            expect(groupLookupMap).not.toBeNull();
-            
-            const group = groupLookupMap.get(componentData.group);
-            if (group) {
-                // Group exists - this shouldn't happen in this test
-                fail('Expected group to be missing');
-            } else {
-                console.warn(`Component test-component-uuid references missing group ${componentData.group}, treating as ungrouped`);
-            }
+            // Actually call Component.deserialize to test the real code
+            const component = Component.deserialize(mockTrackData, componentData, layoutLayer);
             
             // Should warn about missing group UUID
-            expect(console.warn).toHaveBeenCalledWith('Component test-component-uuid references missing group missing-group-uuid, treating as ungrouped');
+            expect(console.warn).toHaveBeenCalledWith(`Component ${component.uuid} references missing group missing-group-uuid, treating as ungrouped`);
+            
+            // Component should not be assigned to any group
+            expect(component.group).toBeNull();
             
             // Clean up
             layoutLayer.cleanupGroupDeserialization();
