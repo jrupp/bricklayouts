@@ -664,73 +664,75 @@ describe('ComponentGroup', () => {
       };
     });
 
-    it('should remove all components from the collision tree', () => {
-      const group = new ComponentGroup(true); // Use temporary group to avoid layer constraints
-      
-      const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
-      const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
-      
-      const mockComponent1 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
-        connections: [],
-        parent: mockLayer,
-        uuid: 'comp-1',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 0, minY: 0, maxX: 10, maxY: 10
-          })
-        },
-        position: { x: 100, y: 200 }
-      };
-      
-      const mockComponent2 = {
-        getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
-        connections: [],
-        parent: mockLayer,
-        uuid: 'comp-2',
-        layer: mockLayer,
-        sprite: {
-          getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
-            minX: 5, minY: 5, maxX: 15, maxY: 15
-          })
-        },
-        position: { x: 150, y: 250 }
-      };
-      
-      group.addComponent(mockComponent1);
-      group.addComponent(mockComponent2);
-      
-      group.deleteCollisionTree();
-      
-      expect(mockTree.remove).toHaveBeenCalledTimes(2);
-      
-      // Verify first component removal
-      expect(mockTree.remove).toHaveBeenCalledWith(
-        {
-          id: 'comp-1',
-          minX: 100,  // 0 + 100
-          minY: 200,  // 0 + 200
-          maxX: 110,  // 10 + 100
-          maxY: 210,  // 10 + 200
-          component: mockComponent1
-        },
-        jasmine.any(Function)
-      );
-      
-      // Verify second component removal
-      expect(mockTree.remove).toHaveBeenCalledWith(
-        {
-          id: 'comp-2',
-          minX: 155,  // 5 + 150
-          minY: 255,  // 5 + 250
-          maxX: 165,  // 15 + 150
-          maxY: 265,  // 15 + 250
-          component: mockComponent2
-        },
-        jasmine.any(Function)
-      );
-    });
+    for (let a in [true, false]) {
+      it(`should remove all components from the collision tree ${a == true ? 'temp' : 'perm'}`, () => {
+        const group = new ComponentGroup(a);
+
+        const mockBounds1 = { minX: 0, minY: 0, maxX: 10, maxY: 10 };
+        const mockBounds2 = { minX: 5, minY: 5, maxX: 15, maxY: 15 };
+        
+        const mockComponent1 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds1),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-1',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 0, minY: 0, maxX: 10, maxY: 10
+            })
+          },
+          position: { x: 100, y: 200 }
+        };
+        
+        const mockComponent2 = {
+          getBounds: jasmine.createSpy('getBounds').and.returnValue(mockBounds2),
+          connections: [],
+          parent: mockLayer,
+          uuid: 'comp-2',
+          layer: mockLayer,
+          sprite: {
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 5, minY: 5, maxX: 15, maxY: 15
+            })
+          },
+          position: { x: 150, y: 250 }
+        };
+        
+        group.addComponent(mockComponent1);
+        group.addComponent(mockComponent2);
+        
+        group.deleteCollisionTree();
+        
+        expect(mockTree.remove).toHaveBeenCalledTimes(2);
+        
+        // Verify first component removal
+        expect(mockTree.remove).toHaveBeenCalledWith(
+          {
+            id: 'comp-1',
+            minX: 100,  // 0 + 100
+            minY: 200,  // 0 + 200
+            maxX: 110,  // 10 + 100
+            maxY: 210,  // 10 + 200
+            component: mockComponent1
+          },
+          jasmine.any(Function)
+        );
+        
+        // Verify second component removal
+        expect(mockTree.remove).toHaveBeenCalledWith(
+          {
+            id: 'comp-2',
+            minX: 155,  // 5 + 150
+            minY: 255,  // 5 + 250
+            maxX: 165,  // 15 + 150
+            maxY: 265,  // 15 + 250
+            component: mockComponent2
+          },
+          jasmine.any(Function)
+        );
+      });
+    }
 
     it('should handle empty group without error', () => {
       const group = new ComponentGroup();
