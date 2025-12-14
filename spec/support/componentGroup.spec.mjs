@@ -2996,7 +2996,7 @@ describe('ComponentGroup', () => {
               size: childGroup.size,
               isTemporary: childGroup.isTemporary,
               destroyed: childGroup.destroyed,
-              componentUuids: Array.from({ length: childGroup.size }, (_, i) => childGroup._components?.[i]?.uuid).filter(Boolean)
+              componentUuids: Array.from({ length: childGroup.size }, (_, i) => childGroup.components?.[i]?.uuid).filter(Boolean)
             }));
             
             // Simulate ungrouping the parent group (convert to temporary)
