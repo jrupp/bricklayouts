@@ -729,6 +729,7 @@ export class ComponentGroup {
    * Insert all of the Components into the collision tree, using a bulk load.
    */
   insertCollisionTree() {
+    if (!this.parent) return;
     let load = [];
     this.#components.forEach(component => {
       if (component instanceof ComponentGroup) {
