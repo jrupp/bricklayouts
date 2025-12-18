@@ -1,5 +1,5 @@
 import { LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
-import { Component } from "../../src/model/component.js";
+import { Component, DEFAULT_CIRCLE_PERCENTAGE } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
@@ -1097,14 +1097,14 @@ describe("LayoutController", function() {
             expect(layoutController.layers[0].children).toHaveSize(2);
             expect(layoutController.layers[0].children[0]).toBeInstanceOf(Component);
             expect(layoutController.layers[0].children[0].shape).toBe('circle');
-            expect(layoutController.layers[0].children[0].circlePercentage).toBe(80); // Default fallback
+            expect(layoutController.layers[0].children[0].circlePercentage).toBe(DEFAULT_CIRCLE_PERCENTAGE);
             expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "shape"}), false, {
                 color: "#237841", 
                 width: 1600, 
                 units: "studs", 
                 shape: "circle", 
                 opacity: jasmine.any(Number),
-                circlePercentage: 80
+                circlePercentage: DEFAULT_CIRCLE_PERCENTAGE
             });
         });
     });
@@ -1363,7 +1363,7 @@ describe("LayoutController", function() {
             
             expect(j.getPropertyValue).toHaveBeenCalledOnceWith('color');
             expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
-            expect(component.circlePercentage).toBe(80); // Should use default fallback
+            expect(component.circlePercentage).toBe(DEFAULT_CIRCLE_PERCENTAGE);
         });
     });
 

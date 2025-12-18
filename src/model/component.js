@@ -82,6 +82,13 @@ export const ColorNameToHex = Object.freeze({
 export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(ColorNameToHex).map(([name, hex]) => [hex.toLowerCase(), name])));
 
 /**
+ * Default percentage value for partial circles.
+ * Valid range for circlePercentage is 5-95.
+ * @type {number}
+ */
+export const DEFAULT_CIRCLE_PERCENTAGE = 80;
+
+/**
  * Any thing that can be placed on the layout.
  */
 export class Component extends Container {
