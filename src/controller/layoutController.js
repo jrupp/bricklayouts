@@ -1084,8 +1084,8 @@ export class LayoutController {
     percentageConfiguration.classList.add('hidden');
     circleTypeFull.classList.add('active');
     circleTypePartial.classList.remove('active');
-    circlePercentageSlider.value = 80;
-    circlePreview.value = 80;
+    circlePercentageSlider.value = DEFAULT_CIRCLE_PERCENTAGE;
+    circlePreview.value = DEFAULT_CIRCLE_PERCENTAGE;
 
     let color = "black";
     if (type === DataTypes.TEXT) {
