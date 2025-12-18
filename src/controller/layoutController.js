@@ -1,5 +1,5 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
-import { Component, ComponentOptions, HexToColorName } from '../model/component.js';
+import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -1084,8 +1084,8 @@ export class LayoutController {
     percentageConfiguration.classList.add('hidden');
     circleTypeFull.classList.add('active');
     circleTypePartial.classList.remove('active');
-    circlePercentageSlider.value = 80;
-    circlePreview.value = 80;
+    circlePercentageSlider.value = DEFAULT_CIRCLE_PERCENTAGE;
+    circlePreview.value = DEFAULT_CIRCLE_PERCENTAGE;
 
     let color = "black";
     if (type === DataTypes.TEXT) {
@@ -1248,7 +1248,7 @@ export class LayoutController {
             if (percentage >= 5 && percentage <= 95) {
               options.circlePercentage = percentage;
             } else {
-              options.circlePercentage = 80; // Default fallback
+              options.circlePercentage = DEFAULT_CIRCLE_PERCENTAGE;
             }
           }
         }
@@ -1337,7 +1337,7 @@ export class LayoutController {
             if (percentage >= 5 && percentage <= 95) {
               LayoutController.selectedComponent.circlePercentage = percentage;
             } else {
-              LayoutController.selectedComponent.circlePercentage = 80; // Default fallback
+              LayoutController.selectedComponent.circlePercentage = DEFAULT_CIRCLE_PERCENTAGE;
             }
           } else {
             LayoutController.selectedComponent.circlePercentage = null;

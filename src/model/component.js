@@ -82,6 +82,15 @@ export const ColorNameToHex = Object.freeze({
 export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(ColorNameToHex).map(([name, hex]) => [hex.toLowerCase(), name])));
 
 /**
+ * Default percentage value for partial circles when creating or editing circle components.
+ * This represents what portion of a circle is drawn, with 100 being a full circle.
+ * Valid range for circlePercentage is 5-95; this default of 80 provides a clearly visible
+ * partial circle while still showing enough of the arc to be recognizable as circular.
+ * @type {number}
+ */
+export const DEFAULT_CIRCLE_PERCENTAGE = 80;
+
+/**
  * Any thing that can be placed on the layout.
  */
 export class Component extends Container {
