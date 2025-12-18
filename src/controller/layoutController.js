@@ -1042,7 +1042,6 @@ export class LayoutController {
     const circlePreview = document.getElementById('circlePreview');
     const circleTypeFull = document.getElementById('circleTypeFull');
     const circleTypePartial = document.getElementById('circleTypePartial');
-    
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
