@@ -1432,6 +1432,10 @@ export class LayoutController {
     document.getElementById('layerList')?.classList.remove('readonly');
     document.getElementById('mobileLayerList')?.classList.remove('readonly');
     
+    // Show component browser and repopulate it
+    document.getElementById('componentMenu')?.classList.remove('hidden');
+    this.createComponentBrowser();
+    
     // Update current layer interactivity
     if (this.#currentLayer) {
       this.#currentLayer.eventMode = 'passive';
@@ -1470,7 +1474,13 @@ export class LayoutController {
     if (dialog) {
       dialog.close();
     }
+    const wasReadOnly = this.readOnly;
     this.reset();
+    // If we were in read-only mode, also exit read-only mode and update URL
+    if (wasReadOnly) {
+      this.exitReadOnlyMode();
+      window.history.pushState({}, '', window.location.origin);
+    }
   }
 
   /**

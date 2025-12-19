@@ -6152,6 +6152,31 @@ describe("LayoutController", function() {
                 expect(dialog.close).toHaveBeenCalled();
                 expect(layoutController.reset).toHaveBeenCalled();
             });
+
+            it("should exit read-only mode and update URL when coming from read-only mode", () => {
+                // Set up read-only mode
+                layoutController.readOnly = true;
+                
+                // Get the dialog and spy on its method
+                const dialog = document.getElementById('newLayoutConfirmDialog');
+                spyOn(dialog, 'close');
+                spyOn(layoutController, 'reset').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onConfirmNewLayout();
+                
+                expect(dialog.close).toHaveBeenCalled();
+                expect(layoutController.reset).toHaveBeenCalled();
+                expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
         });
 
         describe("URL change behavior", () => {
