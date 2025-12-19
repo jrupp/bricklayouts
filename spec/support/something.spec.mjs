@@ -6051,12 +6051,23 @@ describe("LayoutController", function() {
         });
 
         describe("reset() method", () => {
-            it("should preserve readOnly state when called", () => {
+            it("should set readOnly to false by default", () => {
                 // Set readOnly to true initially
                 layoutController.readOnly = true;
                 
-                // Call reset
+                // Call reset without parameters
                 layoutController.reset();
+                
+                // Verify readOnly is now false (default behavior)
+                expect(layoutController.readOnly).toBe(false);
+            });
+
+            it("should preserve readOnly state when preserveReadOnly is true", () => {
+                // Set readOnly to true initially
+                layoutController.readOnly = true;
+                
+                // Call reset with preserveReadOnly = true
+                layoutController.reset(true);
                 
                 // Verify readOnly is still true (preserved)
                 expect(layoutController.readOnly).toBe(true);
@@ -6064,8 +6075,8 @@ describe("LayoutController", function() {
                 // Set readOnly to false
                 layoutController.readOnly = false;
                 
-                // Call reset again
-                layoutController.reset();
+                // Call reset with preserveReadOnly = true again
+                layoutController.reset(true);
                 
                 // Verify readOnly is still false (preserved)
                 expect(layoutController.readOnly).toBe(false);

@@ -1355,8 +1355,9 @@ export class LayoutController {
 
   /**
    * Reset the layout to a blank state.
+   * @param {boolean} preserveReadOnly - If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
-  reset() {
+  reset(preserveReadOnly = false) {
     Connection.connectionDB.clear();
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
@@ -1390,8 +1391,10 @@ export class LayoutController {
     LayoutController.boundBrowserDragMove = null;
     LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
-    // Don't change readOnly state - it should be managed separately
-    // this.readOnly = false;
+    // Preserve readOnly state only if explicitly requested
+    if (!preserveReadOnly) {
+      this.readOnly = false;
+    }
     this.newLayer();
   }
 
@@ -1476,15 +1479,11 @@ export class LayoutController {
       dialog.close();
     }
     const wasReadOnly = this.readOnly;
-    this.reset();
-    // If we were in read-only mode, exit read-only mode and update URL
+    this.reset(); // This will set readOnly = false by default
+    // If we were in read-only mode, also restore UI and update URL
     if (wasReadOnly) {
       this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
-    } else {
-      // If we weren't in read-only mode, we still need to ensure we're not in read-only mode after reset
-      // Since reset() no longer changes readOnly, explicitly ensure it's false
-      this.readOnly = false;
     }
   }
 
@@ -1735,7 +1734,8 @@ export class LayoutController {
    * @param {SerializedLayout} data 
    */
   _importLayout(data) {
-    this.reset();
+    // Preserve readOnly state when importing - it may have been set by init() for shared layouts
+    this.reset(true);
     if (data.config) {
       this.config.deserializeWorkspaceSettings(data.config);
       this.checkBackgroundColorChange();
