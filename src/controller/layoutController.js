@@ -1390,7 +1390,8 @@ export class LayoutController {
     LayoutController.boundBrowserDragMove = null;
     LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
-    this.readOnly = false;
+    // Don't change readOnly state - it should be managed separately
+    // this.readOnly = false;
     this.newLayer();
   }
 
@@ -1476,10 +1477,14 @@ export class LayoutController {
     }
     const wasReadOnly = this.readOnly;
     this.reset();
-    // If we were in read-only mode, also exit read-only mode and update URL
+    // If we were in read-only mode, exit read-only mode and update URL
     if (wasReadOnly) {
       this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
+    } else {
+      // If we weren't in read-only mode, we still need to ensure we're not in read-only mode after reset
+      // Since reset() no longer changes readOnly, explicitly ensure it's false
+      this.readOnly = false;
     }
   }
 
