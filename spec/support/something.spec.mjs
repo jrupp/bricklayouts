@@ -59,6 +59,9 @@ describe("LayoutController", function() {
         Object.defineProperty(mockCanvasContainer, 'clientHeight', { value: 600, writable: true });
         geiSpy.withArgs('canvasContainer').and.returnValue(mockCanvasContainer);
         geiSpy.withArgs('componentBrowser').and.returnValue(document.createElement('div'));
+        const componentMenu = document.createElement('div');
+        componentMenu.classList = { add: jasmine.createSpy('add'), remove: jasmine.createSpy('remove'), contains: jasmine.createSpy('contains') };
+        geiSpy.withArgs('componentMenu').and.returnValue(componentMenu);
         geiSpy.withArgs('categories').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('searchText').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('searchClearButton').and.returnValue(document.createElement('span'));
