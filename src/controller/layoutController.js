@@ -1,5 +1,5 @@
 import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
-import { Component, ComponentOptions, HexToColorName } from '../model/component.js';
+import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -876,10 +876,16 @@ export class LayoutController {
     shapeSelectRectangle.addEventListener('click', () => {
       document.getElementById('componentShape').value = 'rectangle';
       componentHeightNode.parentElement.parentElement.parentElement.classList.remove('hidden');
+      document.getElementById('circleTypeSelector').classList.add('hidden');
+      document.getElementById('percentageConfiguration').classList.add('hidden');
     });
     shapeSelectCircle.addEventListener('click', () => {
       document.getElementById('componentShape').value = 'circle';
       componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
+      document.getElementById('circleTypeSelector').classList.remove('hidden');
+      document.getElementById('circleTypeFull').classList.add('active');
+      document.getElementById('circleTypePartial').classList.remove('active');
+      document.getElementById('percentageConfiguration').classList.add('hidden');
     });
     componentWidthNode.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -963,6 +969,30 @@ export class LayoutController {
     componentBorderColor.addEventListener('change', (event) => {
       componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', event.currentTarget.value);
     });
+
+    const circleTypeFull = document.getElementById('circleTypeFull');
+    const circleTypePartial = document.getElementById('circleTypePartial');
+    const percentageConfiguration = document.getElementById('percentageConfiguration');
+    const circlePercentageSlider = document.getElementById('circlePercentageSlider');
+    const circlePreview = document.getElementById('circlePreview');
+
+    circleTypeFull.addEventListener('click', () => {
+      circleTypeFull.classList.add('active');
+      circleTypePartial.classList.remove('active');
+      percentageConfiguration.classList.add('hidden');
+    });
+
+    circleTypePartial.addEventListener('click', () => {
+      circleTypePartial.classList.add('active');
+      circleTypeFull.classList.remove('active');
+      percentageConfiguration.classList.remove('hidden');
+      window.ui();
+    });
+
+    circlePercentageSlider.addEventListener('input', (event) => {
+      const percentage = parseInt(event.target.value);
+      circlePreview.value = percentage;
+    });
   }
 
   /**
@@ -1009,6 +1039,12 @@ export class LayoutController {
     const componentBorderColor = document.getElementById('componentBorderColor');
     const componentShapeSelect = document.getElementById('componentShapeSelect');
     const componentShape = document.getElementById('componentShape');
+    const circleTypeSelector = document.getElementById('circleTypeSelector');
+    const percentageConfiguration = document.getElementById('percentageConfiguration');
+    const circlePercentageSlider = document.getElementById('circlePercentageSlider');
+    const circlePreview = document.getElementById('circlePreview');
+    const circleTypeFull = document.getElementById('circleTypeFull');
+    const circleTypePartial = document.getElementById('circleTypePartial');
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
@@ -1029,8 +1065,12 @@ export class LayoutController {
       componentTextNode.value = LayoutController.selectedComponent.text ?? '';
     }
     document.getElementById('componentWidthError').innerText = '';
+    document.getElementById('componentSizeUnitsError').innerText = '';
     document.getElementById('componentHeightError').innerText = '';
     document.getElementById('componentTextError').innerText = '';
+    document.getElementById('componentFontSizeError').innerText = '';
+    document.getElementById('componentFontError').innerText = '';
+    document.getElementById('componentColorError').innerText = '';
     document.getElementById('componentColorFilter').value = '';
     componentSizeUnits.selectedIndex = 0;
     this.filterComponentColors();
@@ -1043,6 +1083,13 @@ export class LayoutController {
     componentBorderColor.previousElementSibling?.style.setProperty('--component-border-color', '#000000');
     document.getElementById('componentOpacity').value = 100;
     document.getElementById('componentBorder').checked = false;
+    circleTypeSelector.classList.add('hidden');
+    percentageConfiguration.classList.add('hidden');
+    circleTypeFull.classList.add('active');
+    circleTypePartial.classList.remove('active');
+    circlePercentageSlider.value = DEFAULT_CIRCLE_PERCENTAGE;
+    circlePreview.value = DEFAULT_CIRCLE_PERCENTAGE;
+
     let color = "black";
     if (type === DataTypes.TEXT) {
       componentTextNode.parentElement.classList.remove('hidden');
@@ -1097,6 +1144,19 @@ export class LayoutController {
           componentShape.value = LayoutController.selectedComponent.shape ?? 'rectangle';
           if (componentShape.value === 'circle') {
             componentHeightNode.parentElement.parentElement.parentElement.classList.add('hidden');
+            circleTypeSelector.classList.remove('hidden');
+            const existingPercentage = LayoutController.selectedComponent.circlePercentage;
+            if (existingPercentage !== null && existingPercentage !== undefined) {
+              circleTypeFull.classList.remove('active');
+              circleTypePartial.classList.add('active');
+              percentageConfiguration.classList.remove('hidden');
+              circlePercentageSlider.value = existingPercentage;
+              circlePreview.value = existingPercentage;
+            } else {
+              circleTypeFull.classList.add('active');
+              circleTypePartial.classList.remove('active');
+              percentageConfiguration.classList.add('hidden');
+            }
           }
           componentHeightNode.value = Math.round(LayoutController.selectedComponent.componentHeight / multiplier).toString();
           componentWidthNode.value = Math.round(LayoutController.selectedComponent.componentWidth / multiplier).toString();
@@ -1182,6 +1242,19 @@ export class LayoutController {
           options.opacity = opacity / 100;
         }
         options.shape = componentShape;
+
+        if (componentShape === 'circle') {
+          const circleTypePartial = document.getElementById('circleTypePartial');
+          if (circleTypePartial.classList.contains('active')) {
+            const circlePercentageSlider = document.getElementById('circlePercentageSlider');
+            let percentage = parseInt(circlePercentageSlider.value);
+            if (percentage >= 5 && percentage <= 95) {
+              options.circlePercentage = percentage;
+            } else {
+              options.circlePercentage = DEFAULT_CIRCLE_PERCENTAGE;
+            }
+          }
+        }
       }
     } else {
       if (componentText.length === 0) {
@@ -1258,6 +1331,20 @@ export class LayoutController {
         let opacity = parseInt(document.getElementById('componentOpacity').value);
         if (opacity >= 0 && opacity <= 100) {
           LayoutController.selectedComponent.opacity = opacity / 100;
+        }
+        if (LayoutController.selectedComponent.shape === 'circle') {
+          const circleTypePartial = document.getElementById('circleTypePartial');
+          if (circleTypePartial.classList.contains('active')) {
+            const circlePercentageSlider = document.getElementById('circlePercentageSlider');
+            let percentage = parseInt(circlePercentageSlider.value);
+            if (percentage >= 5 && percentage <= 95) {
+              LayoutController.selectedComponent.circlePercentage = percentage;
+            } else {
+              LayoutController.selectedComponent.circlePercentage = DEFAULT_CIRCLE_PERCENTAGE;
+            }
+          } else {
+            LayoutController.selectedComponent.circlePercentage = null;
+          }
         }
       }
     }
@@ -2321,6 +2408,7 @@ export class LayoutController {
     const layerNameNode = document.getElementById('layerName');
     const layerOpacityNode = document.getElementById('layerOpacity');
     layerNameNode.parentElement.classList.remove('invalid');
+    document.getElementById('layerNameError').innerText = '';
     layerNameNode.value = this.layers[index].label;
     layerNameNode.setAttribute('data-layer', index);
     layerOpacityNode.value = Math.round(this.layers[index].alpha * 100);
@@ -2335,6 +2423,7 @@ export class LayoutController {
     let layerOpacity = parseInt(layerOpacityNode.value, 10);
     let index = parseInt(layerNameNode.getAttribute('data-layer'));
     if (layerName.length === 0) {
+      document.getElementById('layerNameError').innerText = "Layer name cannot be empty";
       layerNameNode.parentElement.classList.add('invalid');
       layerNameNode.focus();
       return;

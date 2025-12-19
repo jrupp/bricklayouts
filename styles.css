@@ -512,6 +512,10 @@ a.buylink {
 	inline-size: auto;
 }
 
+.slider > .tooltip {
+	font-size: 1.2rem !important;
+}
+
 .tooltip {
 	font-size: 1rem !important;
 }
@@ -520,12 +524,24 @@ a.buylink {
 	font-size: 1.4rem !important;
 }
 
-.field .error {
+.field output.invalid {
 	display: none;
 }
 
-.field.invalid span.error {
+.field.invalid output.invalid {
 	display: inline;
+}
+
+.field>nav {
+	gap: 0.75rem;
+}
+
+.field>i.large:first-child {
+	inset: calc(var(--_middle) - 0.875rem) auto auto 1rem;
+}
+
+.field>i.extra {
+	inset: calc(var(--_middle) - 1rem) 1rem auto auto;
 }
 
 #editLayerDialog .field.invalid,
@@ -547,6 +563,37 @@ div.hidden {
 
 nav.hidden {
 	display: none;
+}
+
+#circleTypeSelector a {
+	transition: background-color 0.2s ease;
+}
+
+#circleTypeSelector a.active {
+	box-sizing: content-box;
+	border: 0.0625rem solid var(--outline);
+	box-shadow: none;
+}
+
+/* Circle Preview Styling */
+#circlePreview {
+	--_size: 4rem;
+	width: var(--_size);
+	height: var(--_size);
+	transition: all 0.2s ease;
+}
+
+[data-dark-mode=true] #circleTypeSelector a:hover {
+	background-color: var(--surface-container-high);
+}
+
+[data-dark-mode=true] #circleTypeSelector a.active {
+	background-color: var(--primary-container);
+	color: var(--on-primary-container);
+}
+
+[data-dark-mode=true] #percentageConfiguration .field .label {
+	color: var(--on-surface-variant);
 }
 
 #saveComponentDialog,
@@ -949,20 +996,18 @@ i + span.label {
 	opacity: 1;
 }
 
-#categoryDiv {
+#categoryDiv,
+#categoryDiv + .search {
 	width: 50%;
 	margin: 0;
-}
-
-#categories {
-	font-size: revert;
-	padding-left: 0.5rem;
+	color: var(--on-surface-variant) !important;
 }
 
 #categories ~ i {
-	inset: 45% 0.5rem auto auto;
+	inset: calc(var(--_middle) - 1rem) 0.5rem auto auto;
 }
 
+#categories,
 #searchText {
 	font-size: revert;
 	padding-left: 0.5rem;
@@ -972,13 +1017,8 @@ i + span.label {
 	padding-left: 0.5rem;
 }
 
-.search {
-	width: 50%;
-	margin: 0;
-}
-
 #searchText ~ i {
-	inset: 50% 0.5rem auto auto;
+	inset: calc(var(--_middle) - .75rem) 0.5rem auto auto;
 }
 
 .searchIcon {
@@ -1053,6 +1093,10 @@ i + span.label {
 		width: 100%;
 	}
 
+	#circlePreview {
+		--_size: 3.5rem;
+	}
+
 	#selToolMenu {
 		min-inline-size: 16rem;
 		inline-size: 100%;
@@ -1096,5 +1140,9 @@ i + span.label {
 @media (max-width: 28rem) {
 	button[data-tab=appearance] {
 		font-size: 1rem !important;
+	}
+
+	#circlePreview {
+		--_size: 3rem;
 	}
 }

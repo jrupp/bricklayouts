@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="darkmode.css">
     <link rel="stylesheet" href="src/tabulator.min.css" media="print" onload="this.media='all'; this.onload=null;">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.11.31/dist/cdn/beer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.13.1/dist/cdn/beer.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"></script>
 </head>
 <body>
@@ -320,7 +320,7 @@
                 </select>
                 <i class="extra">arrow_drop_down</i>
             </div>
-            <div class="field border small fill search">
+            <div class="field border small fill search no-margin">
                 <input type="text" id="searchText" placeholder="Search...">
                 <i class="searchIcon">search</i>
                 <i id="searchClearButton" class="searchClear">close</i>
@@ -518,16 +518,18 @@
                     <i class="large no-round">layers</i>
                     <input id="layerName" type="text" placeholder=" " autofocus>
                     <label>Layer Name</label>
-                    <span class="error" id="layerNameError">Error goes here</span>
+                    <output class="invalid" id="layerNameError">Error goes here</output>
                 </div>
                 <div class="field prefix middle-align large-space border medium vertical-margin" id="layerOpacityField">
-                    <i class="large no-round">opacity</i>
-                    <span class="absolute label">Opacity</span>
-                    <label class="slider">
-                        <input type="range" value="100" min="0" max="100" step="10" id="layerOpacity">
-                        <span></span>
-                        <div class="tooltip"></div>
-                    </label>
+                    <nav>
+                        <i class="large no-round">opacity</i>
+                        <span class="absolute label">Opacity</span>
+                        <label class="slider">
+                            <input type="range" value="100" min="0" max="100" step="10" id="layerOpacity">
+                            <span></span>
+                            <div class="tooltip"></div>
+                        </label>
+                    </nav>
                 </div>
             </div>
             <hr style="background-color: var(--outline)">
@@ -600,7 +602,7 @@
                             <i class="large no-round">width</i>
                             <input id="componentWidth" type="number" min="1" placeholder=" " autofocus>
                             <label>Component Width</label>
-                            <span class="error" id="componentWidthError">Error goes here</span>
+                            <output class="invalid" id="componentWidthError">Error goes here</output>
                         </div>
                     </div>
                     <div class="s4">
@@ -614,7 +616,7 @@
                             </select>
                             <label>Units</label>
                             <i class="extra">arrow_drop_down</i>
-                            <span class="error" id="componentSizeUnitsError">Error goes here</span>
+                            <output class="invalid" id="componentSizeUnitsError">Error goes here</output>
                         </div>
                     </div>
                 </div>
@@ -624,7 +626,7 @@
                             <i class="large no-round">height</i>
                             <input id="componentHeight" type="number" min="1" placeholder=" ">
                             <label>Component Height</label>
-                            <span class="error" id="componentHeightError">Error goes here</span>
+                            <output class="invalid" id="componentHeightError">Error goes here</output>
                         </div>
                     </div>
                 </div>
@@ -632,7 +634,7 @@
                     <i class="large no-round">text_fields</i>
                     <input id="componentText" type="text" placeholder=" " value="" autofocus>
                     <label>Text</label>
-                    <span class="error" id="componentTextError">Error goes here</span>
+                    <output class="invalid" id="componentTextError">Error goes here</output>
                 </div>
                 <div class="row vertical-margin hidden" id="componentFontOptions">
                     <div class="max">
@@ -658,7 +660,7 @@
                             </select>
                             <label>Font Size</label>
                             <i class="extra">arrow_drop_down</i>
-                            <span class="error" id="componentFontSizeError">Error goes here</span>
+                            <output class="invalid" id="componentFontSizeError">Error goes here</output>
                         </div>
                     </div>
                     <div class="max">
@@ -670,7 +672,7 @@
                             </select>
                             <label>Font</label>
                             <i class="extra">arrow_drop_down</i>
-                            <span class="error" id="componentFontError">Error goes here</span>
+                            <output class="invalid" id="componentFontError">Error goes here</output>
                         </div>
                     </div>
                 </div>
@@ -678,11 +680,41 @@
                     <i class="fill"></i>
                     <input id="componentColorName" type="text" placeholder=" " value="Green" readonly>
                     <label class="active">Component Color</label>
-                    <menu class="max" id="componentColorMenu">
+                    <menu class="max no-padding" id="componentColorMenu">
                         <li><div class="field large prefix suffix"><i class="front" data-ui="#componentColorMenu">arrow_back</i><input id="componentColorFilter" placeholder="Search..."><i class="searchIcon">search</i><i id="componentColorClear" class="searchClear front">close</i></div></li>
                     </menu>
                     <i class="extra">arrow_drop_down</i>
-                    <span class="error" id="componentColorError">Error goes here</span>
+                    <output class="invalid" id="componentColorError">Error goes here</output>
+                </div>
+                <nav id="circleTypeSelector" class="tabbed small border vertical-margin hidden">
+                    <a id="circleTypeFull" class="active">
+                        <i>circle</i>
+                        <span>Full Circle</span>
+                    </a>
+                    <a id="circleTypePartial">
+                        <i><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4V12H20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12V10H14L14,2Z" /></svg></i>
+                        <span>Partial Circle</span>
+                    </a>
+                </nav>
+                <div id="percentageConfiguration" class="grid vertical-margin hidden">
+                    <div class="s9">
+                        <div class="field prefix middle-align large-space border medium no-margin">
+                            <nav>
+                                <i class="large no-round">tune</i>
+                                <span class="absolute label">Circle Percentage</span>
+                                <label class="slider">
+                                    <input type="range" value="80" min="5" max="95" step="5" id="circlePercentageSlider">
+                                    <span></span>
+                                    <div class="tooltip"></div>
+                                </label>
+                            </nav>
+                        </div>
+                    </div>
+                    <div class="s3">
+                        <div class="center-align middle-align" style="height: 100%;">
+                            <progress class="circle large" style="mask-image: none; transform: rotate(90deg);" value="80" max="100" id="circlePreview"></progress>
+                        </div>
+                    </div>
                 </div>
                  <div class="grid vertical-margin" id="componentShapeOptions">
                     <div class="s3">
@@ -709,13 +741,15 @@
                     </div>
                     <div class="s12">
                         <div class="field prefix middle-align large-space border medium no-margin" id="componentOpacityField">
-                            <i class="large no-round">opacity</i>
-                            <span class="absolute label">Opacity</span>
-                            <label class="slider">
-                                <input type="range" value="100" min="0" max="100" step="1" id="componentOpacity">
-                                <span></span>
-                                <div class="tooltip"></div>
-                            </label>
+                            <nav>
+                                <i class="large no-round">opacity</i>
+                                <span class="absolute label">Opacity</span>
+                                <label class="slider">
+                                    <input type="range" value="100" min="0" max="100" step="1" id="componentOpacity">
+                                    <span></span>
+                                    <div class="tooltip"></div>
+                                </label>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -769,15 +803,17 @@
                 <div class="page config-page" data-tab="general">
                     <h6>General Settings</h6>
                     <div class="field middle-align small tiny-margin extra-text">
-                        <span>Default Zoom Level</span>
-                        <label class="slider auto-width">
-                            <input type="range" id="defaultZoom" min="0.1" max="1.0" value="0.5" step="0.1">
-                            <span></span>
-                            <div class="tooltip"></div>
-                        </label>
+                        <nav class="no-padding left-padding">
+                            <span>Default Zoom Level</span>
+                            <label class="slider auto-width">
+                                <input type="range" id="defaultZoom" min="0.1" max="1.0" value="0.5" step="0.1">
+                                <span></span>
+                                <div class="tooltip"></div>
+                            </label>
+                        </nav>
                     </div>
-                    <div class="field suffix middle-align border round small tiny-margin extra-text">
-                        <span class="right-padding no-wrap">Snap to</span>
+                    <div class="field suffix middle-align horizontal border round small tiny-margin extra-text">
+                        <span class="no-wrap">Snap to</span>
                         <select id="snapToWhat">
                             <option value="0">Nothing</option>
                             <option value="8">1/2 stud</option>
@@ -805,28 +841,32 @@
                 </div>
                 <div class="page config-page" data-tab="grid">
                     <h6>Grid Settings</h6>
-                    <div class="field middle-align small tiny-margin extra-text">
-                        <span class="right-padding">Enable Grid?</span>
+                    <div class="field middle-align horizontal small tiny-margin extra-text">
+                        <span>Enable Grid?</span>
                         <label class="switch">
                             <input type="checkbox" id="gridEnabled" checked>
                             <span></span>
                         </label>
                     </div>
                     <div class="field middle-align small tiny-margin extra-text">
-                        <span>Grid Size (in studs)</span>
-                        <label class="slider auto-width">
-                            <input type="range" id="gridSize" min="8" max="192" value="96" step="8">
-                            <span></span>
-                            <div class="tooltip"></div>
-                        </label>
+                        <nav class="no-padding left-padding">
+                            <span>Grid Size (in studs)</span>
+                            <label class="slider auto-width">
+                                <input type="range" id="gridSize" min="8" max="192" value="96" step="8">
+                                <span></span>
+                                <div class="tooltip"></div>
+                            </label>
+                        </nav>
                     </div>
                     <div class="field middle-align small tiny-margin extra-text">
-                        <span>Grid Subdivisions</span>
-                        <label class="slider auto-width">
-                            <input type="range" id="gridSubdivisions" min="1" max="8" value="3" step="1">
-                            <span></span>
-                            <div class="tooltip"></div>
-                        </label>
+                        <nav class="no-padding left-padding">
+                            <span>Grid Subdivisions</span>
+                            <label class="slider auto-width">
+                                <input type="range" id="gridSubdivisions" min="1" max="8" value="3" step="1">
+                                <span></span>
+                                <div class="tooltip"></div>
+                            </label>
+                        </nav>
                     </div>
                     <div id="colorfield"
                         class="field label prefix middle-align large-space border round medium vertical-margin">

@@ -22,6 +22,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [font] The font to use for the text, if applicable
  * @property {Number} [font_size] The font size to use for the text, if applicable
  * @property {String} [group] The UUID of the ComponentGroup this component belongs to
+ * @property {Number} [circle_percentage] The percentage of circle to display for partial circles (5-95)
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -38,6 +39,7 @@ export { SerializedComponent };
  * @property {string} text The text to display on the component
  * @property {string} font The font to use for the text
  * @property {number} fontSize The font size to use for the text
+ * @property {number} circlePercentage The percentage of circle to display for partial circles (5-95)
  */
 let ComponentOptions;
 export { ComponentOptions };
@@ -78,6 +80,15 @@ export const ColorNameToHex = Object.freeze({
  * @see ColorNameToHex
  */
 export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(ColorNameToHex).map(([name, hex]) => [hex.toLowerCase(), name])));
+
+/**
+ * Default percentage value for partial circles when creating or editing circle components.
+ * This represents what portion of a circle is drawn, with 100 being a full circle.
+ * Valid range for circlePercentage is 5-95; this default of 80 provides a clearly visible
+ * partial circle while still showing enough of the arc to be recognizable as circular.
+ * @type {number}
+ */
+export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
 /**
  * Any thing that can be placed on the layout.
@@ -148,6 +159,14 @@ export class Component extends Container {
    * This is used for shapes components only.
    */
   #opacity;
+
+  /**
+   * @type {?Number}
+   * The percentage of circle to display for partial circles.
+   * null or undefined indicates a full circle.
+   * Valid range: 5-95
+   */
+  #circlePercentage;
 
   /** @type {String} */
   #uuid;
@@ -224,6 +243,11 @@ export class Component extends Container {
       this.#outlineColor = undefined;
       if (options.outlineColor) {
         this.#outlineColor = new Color(options.outlineColor);
+      }
+      if (options.circlePercentage === null || options.circlePercentage === undefined) {
+        this.#circlePercentage = null;
+      } else {
+        this.#circlePercentage = Math.min(Math.max(options.circlePercentage, 5), 95);
       }
       this.sprite = new Graphics();
       this._drawShape();
@@ -364,7 +388,8 @@ export class Component extends Container {
       opacity: this.#opacity,
       text: this.#text,
       font: this.#font,
-      fontSize: this.#fontSize
+      fontSize: this.#fontSize,
+      circlePercentage: this.#circlePercentage
     };
     if (connectTo) {
       let newComp = Component.fromComponent(this.baseData, connectTo, layer, options);
@@ -519,7 +544,11 @@ export class Component extends Container {
   _drawShape() {
     this.sprite.clear();
     if (this.#shape === 'circle') {
-      this.sprite.circle(0, 0, this.#width / 2);
+      if (this.#circlePercentage !== null && this.#circlePercentage !== undefined) {
+        this.sprite.arc(0, 0, this.#width / 2, 0, (2 * Math.PI) * (this.#circlePercentage / 100), false).lineTo(0, 0);
+      } else {
+        this.sprite.circle(0, 0, this.#width / 2);
+      }
     } else {
       this.sprite.rect(0 - this.#width / 2, 0 - this.#height / 2, this.#width, this.#height);
     }
@@ -718,6 +747,30 @@ export class Component extends Container {
   }
 
   /**
+   * Get the circle percentage of this Component.
+   * @returns {?Number} The circle percentage of this Component
+   */
+  get circlePercentage() {
+    return this.#circlePercentage;
+  }
+
+  /**
+   * Set the circle percentage of this Component.
+   * @param {?Number} value The new circle percentage to set (5-95, or null for full circle)
+   */
+  set circlePercentage(value) {
+    if (this.baseData.type !== DataTypes.SHAPE || this.#shape !== 'circle') {
+      return;
+    }
+    if (value === null || value === undefined) {
+      this.#circlePercentage = null;
+    } else {
+      this.#circlePercentage = Math.min(Math.max(value, 5), 95);
+    }
+    this._drawShape();
+  }
+
+  /**
    * Remove this Component from the collision tree.
    */
   deleteCollisionTree() {
@@ -793,6 +846,9 @@ export class Component extends Container {
     if (data.font_size !== undefined) {
       options.fontSize = data.font_size;
     }
+    if (data.circle_percentage !== undefined) {
+      options.circlePercentage = data.circle_percentage;
+    }
     const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
@@ -834,6 +890,10 @@ export class Component extends Container {
       font_size: this.#fontSize
     };
 
+    if (this.#circlePercentage !== null && this.#circlePercentage !== undefined) {
+      serialized.circle_percentage = this.#circlePercentage;
+    }
+
     if (this.group && !this.group.isTemporary) {
       serialized.group = this.group.uuid;
     }
@@ -870,7 +930,8 @@ export class Component extends Container {
       data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
       data?.font_size === undefined || (typeof data?.font_size === 'number' && data?.font_size > 0),
       data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1),
-      data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0)
+      data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0),
+      data?.circle_percentage === undefined || (typeof data?.circle_percentage === 'number' && data?.circle_percentage >= 5 && data?.circle_percentage <= 95)
     ];
     return validations.every(v => v);
   }
