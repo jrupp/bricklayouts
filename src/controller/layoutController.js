@@ -1355,7 +1355,7 @@ export class LayoutController {
 
   /**
    * Reset the layout to a blank state.
-   * @param {boolean} preserveReadOnly - If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
+   * @param {Boolean} preserveReadOnly If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
   reset(preserveReadOnly = false) {
     Connection.connectionDB.clear();
@@ -1391,7 +1391,6 @@ export class LayoutController {
     LayoutController.boundBrowserDragMove = null;
     LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
-    // Preserve readOnly state only if explicitly requested
     if (!preserveReadOnly) {
       this.readOnly = false;
     }
@@ -1420,31 +1419,24 @@ export class LayoutController {
    */
   exitReadOnlyMode() {
     this.readOnly = false;
-    
-    // Re-enable layer add buttons
-    document.getElementById('layerAdd')?.parentElement?.classList.remove('hidden');
-    document.getElementById('mobileLayerAdd')?.classList.remove('hidden');
-    
-    // Re-enable remove and rotate buttons
+
     const buttonRemove = document.getElementById('buttonRemove');
     if (buttonRemove) buttonRemove.disabled = false;
-    
+
     const buttonRotate = document.getElementById('buttonRotate');
     if (buttonRotate) buttonRotate.disabled = false;
-    
-    // Remove readonly class from layer lists
+
+    document.getElementById('layerAdd')?.parentElement?.classList.remove('hidden');
+    document.getElementById('mobileLayerAdd')?.classList.remove('hidden');
     document.getElementById('layerList')?.classList.remove('readonly');
     document.getElementById('mobileLayerList')?.classList.remove('readonly');
-    
-    // Show component browser and repopulate it
-    document.getElementById('componentMenu')?.classList.remove('hidden');
-    this.createComponentBrowser();
-    
-    // Update current layer interactivity
     if (this.#currentLayer) {
       this.#currentLayer.eventMode = 'passive';
       this.#currentLayer.interactiveChildren = true;
     }
+
+    document.getElementById('componentMenu')?.classList.remove('hidden');
+    this.createComponentBrowser();
   }
 
   /**
@@ -1454,17 +1446,11 @@ export class LayoutController {
    */
   onNewLayoutClick() {
     if (this.readOnly) {
-      // In read-only mode, just reset and update URL
       this.reset();
       this.exitReadOnlyMode();
-      // Use History API to change URL to root
       window.history.pushState({}, '', window.location.origin);
     } else {
-      // Not in read-only mode, show confirmation dialog
-      const dialog = document.getElementById('newLayoutConfirmDialog');
-      if (dialog) {
-        dialog.showModal();
-      }
+      ui("#newLayoutConfirmDialog");
     }
     this.hideFileMenu();
   }
@@ -1472,15 +1458,12 @@ export class LayoutController {
   /**
    * Handle the confirmation of creating a new layout.
    * Called when user confirms they want to create a new layout.
+   * @see {@link LayoutController.onNewLayoutClick} 
    */
   onConfirmNewLayout() {
-    const dialog = document.getElementById('newLayoutConfirmDialog');
-    if (dialog) {
-      dialog.close();
-    }
+    ui("#newLayoutConfirmDialog");
     const wasReadOnly = this.readOnly;
-    this.reset(); // This will set readOnly = false by default
-    // If we were in read-only mode, also restore UI and update URL
+    this.reset();
     if (wasReadOnly) {
       this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
@@ -1734,7 +1717,6 @@ export class LayoutController {
    * @param {SerializedLayout} data 
    */
   _importLayout(data) {
-    // Preserve readOnly state when importing - it may have been set by init() for shared layouts
     this.reset(true);
     if (data.config) {
       this.config.deserializeWorkspaceSettings(data.config);
@@ -2466,7 +2448,7 @@ export class LayoutController {
       const layerVisible = layer.visible ? '' : '_off';
       let itemHtml = "";
       if (this.readOnly === false) {
-        itemHtml += "<i class=\"instant\">menu</i>";
+        itemHtml += "<i class=\"instant\">drag_indicator</i>";
       }
       itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate" data-layer="${index}">${layer.label}</div>`;
       if (this.readOnly === false) {

@@ -6126,16 +6126,10 @@ describe("LayoutController", function() {
 
             it("should show confirmation dialog when not in read-only mode", () => {
                 layoutController.readOnly = false;
-                
                 spyOn(layoutController, 'hideFileMenu');
-                
-                // Get the dialog and spy on its method
-                const dialog = document.getElementById('newLayoutConfirmDialog');
-                spyOn(dialog, 'showModal');
-                
+                let uiSpy = spyOn(window, 'ui').and.stub();
                 layoutController.onNewLayoutClick();
-                
-                expect(dialog.showModal).toHaveBeenCalled();
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.hideFileMenu).toHaveBeenCalled();
             });
 
@@ -6165,38 +6159,31 @@ describe("LayoutController", function() {
 
         describe("onConfirmNewLayout() method", () => {
             it("should close dialog and reset layout", () => {
-                // Get the dialog and spy on its method
-                const dialog = document.getElementById('newLayoutConfirmDialog');
-                spyOn(dialog, 'close');
+                let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset');
-                
                 layoutController.onConfirmNewLayout();
-                
-                expect(dialog.close).toHaveBeenCalled();
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
             });
 
             it("should exit read-only mode and update URL when coming from read-only mode", () => {
                 // Set up read-only mode
                 layoutController.readOnly = true;
-                
-                // Get the dialog and spy on its method
-                const dialog = document.getElementById('newLayoutConfirmDialog');
-                spyOn(dialog, 'close');
+                let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset').and.callThrough();
                 spyOn(layoutController, 'exitReadOnlyMode');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
                 
                 layoutController.onConfirmNewLayout();
-                
-                expect(dialog.close).toHaveBeenCalled();
+
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
                 expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
                 expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });

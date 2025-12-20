@@ -34,7 +34,6 @@ function listenOnDevicePixelRatio() {
 }
 listenOnDevicePixelRatio();
 const layoutController = LayoutController.getInstance(app);
-window.layoutController = layoutController;
 await layoutController.init();
 layoutController.initWindowEvents();
 new ConfigurationController();

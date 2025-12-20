@@ -186,6 +186,7 @@ canvas {
 #selectionToolbar,
 #exportloading,
 #notfound,
+#newLayoutConfirmDialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -237,6 +238,7 @@ canvas {
 [data-dark-mode=true] #selectionToolbar,
 [data-dark-mode=true] #exportloading,
 [data-dark-mode=true] #notfound,
+[data-dark-mode=true] #newLayoutConfirmDialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -470,6 +472,7 @@ canvas {
 #buttonMenu menu,
 #editLayerDialog,
 #newCustomComponentDialog,
+#newLayoutConfirmDialog,
 #partInventoryDialog {
 	z-index: 1100;
 }
