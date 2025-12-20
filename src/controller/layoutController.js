@@ -1856,14 +1856,14 @@ export class LayoutController {
       let a = event.getLocalPosition(LayoutController.dragTarget.parent);
       a.x += LayoutController.dragTarget.dragStartPos.x;
       a.y += LayoutController.dragTarget.dragStartPos.y;
-      a.x += LayoutController.dragTarget.dragStartOffset.x;
-      a.y += LayoutController.dragTarget.dragStartOffset.y;
       // Snap to grid if enabled
       let gridSize = LayoutController.getInstance().config.snapToSize;
       if (gridSize > 0) {
         a.x = Math.round(a.x / gridSize) * gridSize;
         a.y = Math.round(a.y / gridSize) * gridSize;
       }
+      a.x += LayoutController.dragTarget.dragStartOffset.x;
+      a.y += LayoutController.dragTarget.dragStartOffset.y;
       // TODO: Check for nearby connections and snap to them
       LayoutController.dragTarget.position.set(a.x, a.y);
     }
