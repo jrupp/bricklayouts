@@ -59,6 +59,9 @@ describe("LayoutController", function() {
         Object.defineProperty(mockCanvasContainer, 'clientHeight', { value: 600, writable: true });
         geiSpy.withArgs('canvasContainer').and.returnValue(mockCanvasContainer);
         geiSpy.withArgs('componentBrowser').and.returnValue(document.createElement('div'));
+        const componentMenu = document.createElement('div');
+        componentMenu.classList = { add: jasmine.createSpy('add'), remove: jasmine.createSpy('remove'), contains: jasmine.createSpy('contains') };
+        geiSpy.withArgs('componentMenu').and.returnValue(componentMenu);
         geiSpy.withArgs('categories').and.returnValue(document.createElement('select'));
         geiSpy.withArgs('searchText').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('searchClearButton').and.returnValue(document.createElement('span'));
@@ -67,9 +70,12 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonNewLayout').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonImport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonExport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonNewLayout').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('confirmNewLayout').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
@@ -92,6 +98,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
         let p = document.createElement('div');
         let p2 = document.createElement('div');
         let p3 = document.createElement('div');
@@ -6039,6 +6046,174 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("New Layout Feature", () => {
+        let layoutController;
+
+        beforeAll(function() {
+            layoutController = window.layoutController;
+        });
+
+        afterAll(function() {
+            layoutController.reset();
+        });
+
+        describe("reset() method", () => {
+            it("should set readOnly to false by default", () => {
+                // Set readOnly to true initially
+                layoutController.readOnly = true;
+                
+                // Call reset without parameters
+                layoutController.reset();
+                
+                // Verify readOnly is now false (default behavior)
+                expect(layoutController.readOnly).toBe(false);
+            });
+
+            it("should preserve readOnly state when preserveReadOnly is true", () => {
+                // Set readOnly to true initially
+                layoutController.readOnly = true;
+                
+                // Call reset with preserveReadOnly = true
+                layoutController.reset(true);
+                
+                // Verify readOnly is still true (preserved)
+                expect(layoutController.readOnly).toBe(true);
+                
+                // Set readOnly to false
+                layoutController.readOnly = false;
+                
+                // Call reset with preserveReadOnly = true again
+                layoutController.reset(true);
+                
+                // Verify readOnly is still false (preserved)
+                expect(layoutController.readOnly).toBe(false);
+            });
+        });
+
+        describe("exitReadOnlyMode() method", () => {
+            it("should set readOnly to false", () => {
+                layoutController.readOnly = true;
+                
+                layoutController.exitReadOnlyMode();
+                
+                expect(layoutController.readOnly).toBe(false);
+            });
+
+            it("should run without errors", () => {
+                // Verify it runs without errors
+                expect(() => layoutController.exitReadOnlyMode()).not.toThrow();
+            });
+        });
+
+        describe("onNewLayoutClick() method", () => {
+            it("should reset layout and exit read-only mode when in read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode').and.callThrough();
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(layoutController.reset).toHaveBeenCalled();
+                expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+
+            it("should show confirmation dialog when not in read-only mode", () => {
+                layoutController.readOnly = false;
+                spyOn(layoutController, 'hideFileMenu');
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                layoutController.onNewLayoutClick();
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("should not show confirmation dialog when in read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset');
+                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Get the dialog and spy on its method
+                const dialog = document.getElementById('newLayoutConfirmDialog');
+                spyOn(dialog, 'showModal');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(dialog.showModal).not.toHaveBeenCalled();
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+        });
+
+        describe("onConfirmNewLayout() method", () => {
+            it("should close dialog and reset layout", () => {
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                spyOn(layoutController, 'reset');
+                layoutController.onConfirmNewLayout();
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
+                expect(layoutController.reset).toHaveBeenCalled();
+            });
+
+            it("should exit read-only mode and update URL when coming from read-only mode", () => {
+                // Set up read-only mode
+                layoutController.readOnly = true;
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                spyOn(layoutController, 'reset').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode');
+
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onConfirmNewLayout();
+
+                expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
+                expect(layoutController.reset).toHaveBeenCalled();
+                expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+        });
+
+        describe("URL change behavior", () => {
+            it("should change URL to root when exiting read-only mode", () => {
+                layoutController.readOnly = true;
+                
+                spyOn(layoutController, 'reset');
+                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'hideFileMenu');
+                
+                // Mock window.history
+                const originalPushState = window.history.pushState;
+                spyOn(window.history, 'pushState');
+                
+                layoutController.onNewLayoutClick();
+                
+                expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
+                
+                // Restore original pushState
+                window.history.pushState = originalPushState;
+            });
+        });
+    });
     describe("Circle Type Selector visibility", function() {
         // **Feature: partial-circles, Property 1: Circle Type Selector visibility management**
         // **Validates: Requirements 1.1, 3.1, 6.1, 6.2, 6.3, 6.4**

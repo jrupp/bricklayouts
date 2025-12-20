@@ -361,6 +361,9 @@ export class LayoutController {
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => { LayoutController.selectComponent(null); });
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
+    document.getElementById('buttonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
+    document.getElementById('mobileButtonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
+    document.getElementById('confirmNewLayout')?.addEventListener('click', this.onConfirmNewLayout.bind(this));
     document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
     document.getElementById('mobileButtonExport')?.addEventListener('click', this.exportLayout.bind(this));
@@ -1352,8 +1355,9 @@ export class LayoutController {
 
   /**
    * Reset the layout to a blank state.
+   * @param {Boolean} preserveReadOnly If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
-  reset() {
+  reset(preserveReadOnly = false) {
     Connection.connectionDB.clear();
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
@@ -1387,6 +1391,9 @@ export class LayoutController {
     LayoutController.boundBrowserDragMove = null;
     LayoutController.boundBrowserDragEnd = null;
     LayoutController.eventCache.clear();
+    if (!preserveReadOnly) {
+      this.readOnly = false;
+    }
     this.newLayer();
   }
 
@@ -1403,6 +1410,63 @@ export class LayoutController {
     if (this.#currentLayer && this.readOnly === false) {
       this.#currentLayer.eventMode = 'passive';
       this.#currentLayer.interactiveChildren = true;
+    }
+  }
+
+  /**
+   * Exit read-only mode and restore interactive functionality.
+   * This undoes the UI changes made when entering read-only mode in init().
+   */
+  exitReadOnlyMode() {
+    this.readOnly = false;
+
+    const buttonRemove = document.getElementById('buttonRemove');
+    if (buttonRemove) buttonRemove.disabled = false;
+
+    const buttonRotate = document.getElementById('buttonRotate');
+    if (buttonRotate) buttonRotate.disabled = false;
+
+    document.getElementById('layerAdd')?.parentElement?.classList.remove('hidden');
+    document.getElementById('mobileLayerAdd')?.classList.remove('hidden');
+    document.getElementById('layerList')?.classList.remove('readonly');
+    document.getElementById('mobileLayerList')?.classList.remove('readonly');
+    if (this.#currentLayer) {
+      this.#currentLayer.eventMode = 'passive';
+      this.#currentLayer.interactiveChildren = true;
+    }
+
+    document.getElementById('componentMenu')?.classList.remove('hidden');
+    this.createComponentBrowser();
+  }
+
+  /**
+   * Handle the "New Layout" button click.
+   * Shows confirmation dialog if not in read-only mode.
+   * If in read-only mode, resets layout and updates URL.
+   */
+  onNewLayoutClick() {
+    if (this.readOnly) {
+      this.reset();
+      this.exitReadOnlyMode();
+      window.history.pushState({}, '', window.location.origin);
+    } else {
+      ui("#newLayoutConfirmDialog");
+    }
+    this.hideFileMenu();
+  }
+
+  /**
+   * Handle the confirmation of creating a new layout.
+   * Called when user confirms they want to create a new layout.
+   * @see {@link LayoutController.onNewLayoutClick} 
+   */
+  onConfirmNewLayout() {
+    ui("#newLayoutConfirmDialog");
+    const wasReadOnly = this.readOnly;
+    this.reset();
+    if (wasReadOnly) {
+      this.exitReadOnlyMode();
+      window.history.pushState({}, '', window.location.origin);
     }
   }
 
@@ -1653,7 +1717,7 @@ export class LayoutController {
    * @param {SerializedLayout} data 
    */
   _importLayout(data) {
-    this.reset();
+    this.reset(true);
     if (data.config) {
       this.config.deserializeWorkspaceSettings(data.config);
       this.checkBackgroundColorChange();
@@ -2384,7 +2448,7 @@ export class LayoutController {
       const layerVisible = layer.visible ? '' : '_off';
       let itemHtml = "";
       if (this.readOnly === false) {
-        itemHtml += "<i class=\"instant\">menu</i>";
+        itemHtml += "<i class=\"instant\">drag_indicator</i>";
       }
       itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate" data-layer="${index}">${layer.label}</div>`;
       if (this.readOnly === false) {
