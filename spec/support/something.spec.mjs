@@ -6053,6 +6053,10 @@ describe("LayoutController", function() {
             layoutController = window.layoutController;
         });
 
+        afterAll(function() {
+            layoutController.reset();
+        });
+
         describe("reset() method", () => {
             it("should set readOnly to false by default", () => {
                 // Set readOnly to true initially
