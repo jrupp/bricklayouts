@@ -23,6 +23,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {Number} [font_size] The font size to use for the text, if applicable
  * @property {String} [group] The UUID of the ComponentGroup this component belongs to
  * @property {Number} [circle_percentage] The percentage of circle to display for partial circles (5-95)
+ * @property {Number} [locked] The locked state of the component (1 if locked, omitted if unlocked)
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -168,6 +169,12 @@ export class Component extends Container {
    */
   #circlePercentage;
 
+  /**
+   * @type {Boolean}
+   * Whether this component is locked to prevent editing operations.
+   */
+  #locked;
+
   /** @type {String} */
   #uuid;
 
@@ -225,6 +232,7 @@ export class Component extends Container {
     this.isDragging = false;
 
     this.#uuid = crypto.randomUUID();
+    this.#locked = false;
 
     if (this.baseData.type === DataTypes.TRACK) {
       this.sprite = new Sprite(Assets.get(baseData.alias));
@@ -501,6 +509,9 @@ export class Component extends Container {
    * Checks for open connections and rotates accordingly.
    */
   rotate() {
+    if (this.#locked) {
+      return;
+    }
     const currentConnections = this.getUsedConnections();
     if (currentConnections.length > 1) {
       return;
@@ -747,6 +758,22 @@ export class Component extends Container {
   }
 
   /**
+   * Get the locked state of this Component.
+   * @returns {Boolean} True if this Component is locked, false otherwise
+   */
+  get locked() {
+    return this.#locked;
+  }
+
+  /**
+   * Set the locked state of this Component.
+   * @param {Boolean} value The new locked state to set
+   */
+  set locked(value) {
+    this.#locked = Boolean(value);
+  }
+
+  /**
    * Get the circle percentage of this Component.
    * @returns {?Number} The circle percentage of this Component
    */
@@ -866,6 +893,10 @@ export class Component extends Container {
       }
     }
 
+    if (data?.locked === 1) {
+      newComponent.locked = true;
+    }
+
     return newComponent;
   }
 
@@ -896,6 +927,10 @@ export class Component extends Container {
 
     if (this.group && !this.group.isTemporary) {
       serialized.group = this.group.uuid;
+    }
+
+    if (this.#locked) {
+      serialized.locked = 1;
     }
 
     return serialized;
@@ -931,7 +966,8 @@ export class Component extends Container {
       data?.font_size === undefined || (typeof data?.font_size === 'number' && data?.font_size > 0),
       data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1),
       data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0),
-      data?.circle_percentage === undefined || (typeof data?.circle_percentage === 'number' && data?.circle_percentage >= 5 && data?.circle_percentage <= 95)
+      data?.circle_percentage === undefined || (typeof data?.circle_percentage === 'number' && data?.circle_percentage >= 5 && data?.circle_percentage <= 95),
+      data?.locked === undefined || data?.locked === 1
     ];
     return validations.every(v => v);
   }
@@ -959,6 +995,9 @@ export class Component extends Container {
    * @param {FederatedPointerEvent} e 
    */
   onStartDrag(e) {
+    if (this.#locked) {
+      return;
+    }
     if (e.button != 0 || !e.nativeEvent.isPrimary || LayoutController._instance.isSpaceDown) {
       return;
     }

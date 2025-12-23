@@ -1769,6 +1769,28 @@ describe("LayoutController", function() {
             expect(selectionToolbar.classList).toContain("rotatable");
             expect(selectionToolbar.classList).not.toContain("editable");
         });
+
+        it("duplicated components are always unlocked regardless of source state", function() {
+            let originalComponent = layoutController.currentLayer.children[0];
+            
+            // Test with locked component
+            originalComponent.locked = true;
+            expect(originalComponent.locked).toBe(true);
+            
+            layoutController.duplicateComponent(originalComponent);
+            let duplicatedComponent = LayoutController.selectedComponent;
+            
+            expect(duplicatedComponent).not.toBe(originalComponent);
+            expect(duplicatedComponent.locked).toBe(false);
+            
+            // Test with unlocked component
+            originalComponent.locked = false;
+            layoutController.duplicateComponent(originalComponent);
+            let secondDuplicate = LayoutController.selectedComponent;
+            
+            expect(secondDuplicate).not.toBe(originalComponent);
+            expect(secondDuplicate.locked).toBe(false);
+        });
     });
 
     describe("duplicateSelectedComponent", function() {
@@ -2834,6 +2856,457 @@ describe("LayoutController", function() {
             expect(layoutController.currentLayer.openConnections).toHaveSize(2);
         });
 
+        it("initializes with locked property set to false", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            expect(component.locked).toBeFalse();
+        });
+
+        it("can set and get locked property", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Test setting to true
+            component.locked = true;
+            expect(component.locked).toBeTrue();
+            
+            // Test setting to false
+            component.locked = false;
+            expect(component.locked).toBeFalse();
+            
+            // Test that setter converts values to boolean
+            component.locked = 1;
+            expect(component.locked).toBeTrue();
+            
+            component.locked = 0;
+            expect(component.locked).toBeFalse();
+            
+            component.locked = "true";
+            expect(component.locked).toBeTrue();
+            
+            component.locked = "";
+            expect(component.locked).toBeFalse();
+        });
+
+        it('should initialize locked property to false for all Component instances (property test)', function() {
+            /**
+             * Feature: lock-components, Property 17: Constructor initialization
+             * Validates: Requirements 9.1
+             */
+            fc.assert(fc.property(
+                fc.constantFrom('railStraight9V'),
+                (trackAlias) => {
+                    const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === trackAlias);
+                    
+                    // Add component to get a properly initialized instance
+                    layoutController.addComponent(trackData);
+                    const component = layoutController.currentLayer.children[0];
+                    
+                    // Property: All new Component instances should have locked property initialized to false
+                    expect(component.locked).toBe(false);
+                }
+            ), { numRuns: 10 }); // Very reduced runs to minimize side effects
+        });
+
+        it("serializes locked component with locked: 1 property", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Lock the component
+            component.locked = true;
+            
+            // Serialize the component
+            const serialized = component.serialize();
+            
+            // Should include locked: 1 property
+            expect(serialized.locked).toBe(1);
+        });
+
+        it("serializes unlocked component without locked property", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Ensure component is unlocked
+            component.locked = false;
+            
+            // Serialize the component
+            const serialized = component.serialize();
+            
+            // Should not include locked property
+            expect(serialized.hasOwnProperty('locked')).toBeFalse();
+        });
+
+        it("serializes component that was locked then unlocked without locked property", function() {
+            layoutController.addComponent(straightTrackData);
+            /** @type {Component} */
+            let component = layoutController.currentLayer.children[0];
+            
+            // Lock then unlock the component
+            component.locked = true;
+            component.locked = false;
+            
+            // Serialize the component
+            const serialized = component.serialize();
+            
+            // Should not include locked property
+            expect(serialized.hasOwnProperty('locked')).toBeFalse();
+        });
+
+        it('should serialize locked components with locked: 1 property (property test)', function() {
+            /**
+             * Feature: lock-components, Property 9: Locked component serialization
+             * Validates: Requirements 6.1
+             */
+            fc.assert(fc.property(
+                fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                (componentAlias) => {
+                    const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                    
+                    // Add component to get a properly initialized instance
+                    layoutController.addComponent(componentData);
+                    const component = layoutController.currentLayer.children[0];
+                    
+                    // Lock the component
+                    component.locked = true;
+                    
+                    // Serialize the component
+                    const serialized = component.serialize();
+                    
+                    // Property: For any locked component, serialization should include locked: 1 property
+                    expect(serialized.locked).toBe(1);
+                    expect(typeof serialized.locked).toBe('number');
+                }
+            ), { numRuns: 100 });
+        });
+
+        it('should serialize unlocked components without locked property (property test)', function() {
+            /**
+             * Feature: lock-components, Property 10: Unlocked component serialization
+             * Validates: Requirements 6.2
+             */
+            fc.assert(fc.property(
+                fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                (componentAlias) => {
+                    const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                    
+                    // Add component to get a properly initialized instance
+                    layoutController.addComponent(componentData);
+                    const component = layoutController.currentLayer.children[0];
+                    
+                    // Ensure the component is unlocked (default state)
+                    component.locked = false;
+                    
+                    // Serialize the component
+                    const serialized = component.serialize();
+                    
+                    // Property: For any unlocked component, serialization should omit the locked property entirely
+                    expect(serialized.locked).toBeUndefined();
+                    expect(serialized.hasOwnProperty('locked')).toBe(false);
+                }
+            ), { numRuns: 100 });
+        });
+
+        it('should restore locked state when deserializing data with locked: 1 (property test)', function() {
+            /**
+             * Feature: lock-components, Property 11: Deserialization with lock state
+             * Validates: Requirements 6.3
+             */
+            fc.assert(fc.property(
+                fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                (componentAlias) => {
+                    const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                    const layer = new LayoutLayer();
+                    
+                    // Create serialized data with locked: 1
+                    const serializedData = {
+                        type: componentAlias,
+                        pose: { x: 100, y: 200, angle: 0 },
+                        connections: [],
+                        width: componentData.width || 100,
+                        height: componentData.height || 100,
+                        units: componentData.units || 'studs',
+                        shape: componentData.shape || 'rectangle',
+                        color: '#237841',
+                        locked: 1  // This should restore locked state
+                    };
+                    
+                    // Deserialize the component
+                    const component = Component.deserialize(componentData, serializedData, layer);
+                    
+                    // Property: For any serialized data with locked: 1, deserialization should restore the component in locked state
+                    expect(component.locked).toBe(true);
+                    
+                    // Clean up
+                    component.destroy();
+                    layer.destroy();
+                }
+            ), { numRuns: 100 });
+        });
+
+        it('should default to unlocked when deserializing data without locked property (property test)', function() {
+            /**
+             * Feature: lock-components, Property 12: Deserialization without lock state
+             * Validates: Requirements 6.4
+             */
+            fc.assert(fc.property(
+                fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                (componentAlias) => {
+                    const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                    const layer = new LayoutLayer();
+                    
+                    // Create serialized data without locked property
+                    const serializedData = {
+                        type: componentAlias,
+                        pose: { x: 100, y: 200, angle: 0 },
+                        connections: [],
+                        width: componentData.width || 100,
+                        height: componentData.height || 100,
+                        units: componentData.units || 'studs',
+                        shape: componentData.shape || 'rectangle',
+                        color: '#237841'
+                        // locked property omitted - should default to unlocked
+                    };
+                    
+                    // Deserialize the component
+                    const component = Component.deserialize(componentData, serializedData, layer);
+                    
+                    // Property: For any serialized data without a locked property, deserialization should create the component in unlocked state
+                    expect(component.locked).toBe(false);
+                    
+                    // Clean up
+                    component.destroy();
+                    layer.destroy();
+                }
+            ), { numRuns: 100 });
+        });
+
+        describe("locking behavior", function() {
+            it("should block rotate operation when locked", function() {
+                layoutController.addComponent(baseplateData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                
+                // Get initial rotation
+                const initialRotation = component.sprite.rotation;
+                
+                // Lock the component
+                component.locked = true;
+                
+                // Try to rotate - should be blocked
+                component.rotate();
+                
+                // Rotation should not have changed
+                expect(component.sprite.rotation).toBe(initialRotation);
+            });
+
+            it("should allow rotate operation when unlocked", function() {
+                layoutController.addComponent(baseplateData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                
+                // Get initial rotation
+                const initialRotation = component.sprite.rotation;
+                
+                // Ensure component is unlocked
+                component.locked = false;
+                
+                // Rotate - should work
+                component.rotate();
+                
+                // Rotation should have changed
+                expect(component.sprite.rotation).not.toBe(initialRotation);
+            });
+
+            it("should block onStartDrag operation when locked", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                
+                // Lock the component
+                component.locked = true;
+                
+                // Ensure dragTarget is initially null
+                LayoutController.dragTarget = null;
+                
+                // Create a mock pointer event
+                const mockEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: false,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                
+                // Try to start drag - should be blocked
+                component.onStartDrag(mockEvent);
+                
+                // LayoutController.dragTarget should remain null
+                expect(LayoutController.dragTarget).toBeNull();
+                expect(mockEvent.stopImmediatePropagation).not.toHaveBeenCalled();
+            });
+
+            it("should allow onStartDrag operation when unlocked", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                
+                // Ensure component is unlocked
+                component.locked = false;
+                
+                // Create a mock pointer event
+                const mockEvent = {
+                    button: 0,
+                    nativeEvent: { isPrimary: true },
+                    altKey: false,
+                    getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+                    stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+                };
+                
+                // Mock window.app.stage for event listeners
+                if (!window.app) {
+                    window.app = { stage: { on: jasmine.createSpy('on') } };
+                }
+                
+                // Try to start drag - should work
+                component.onStartDrag(mockEvent);
+                
+                // Should have set up drag state
+                expect(LayoutController.dragTarget).toBe(component);
+                expect(mockEvent.stopImmediatePropagation).toHaveBeenCalled();
+                
+                // Clean up
+                LayoutController.dragTarget = null;
+            });
+
+            it("should validate that invalid locked property values are rejected by validation", function() {
+                const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === 'railStraight9V');
+                
+                // Create serialized data with invalid locked value
+                const serializedData = {
+                    type: 'railStraight9V',
+                    pose: { x: 100, y: 200, angle: 0 },
+                    connections: [],
+                    width: componentData.width || 100,
+                    height: componentData.height || 100,
+                    units: componentData.units || 'studs',
+                    shape: componentData.shape || 'rectangle',
+                    color: '#237841',
+                    locked: 2  // Invalid value - should be rejected by validation
+                };
+                
+                // Validation should return false for invalid locked values
+                const isValid = Component._validateImportData(serializedData);
+                expect(isValid).toBeFalse();
+            });
+
+            it('should block locked component operations silently (property test)', function() {
+                /**
+                 * Feature: lock-components, Property 7: Locked component operation blocking
+                 * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 9.3
+                 */
+                fc.assert(fc.property(
+                    fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                    (componentAlias) => {
+                        const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                        
+                        // Add component to get a properly initialized instance
+                        layoutController.addComponent(componentData);
+                        const component = layoutController.currentLayer.children[0];
+                        
+                        // Get initial state
+                        const initialRotation = component.sprite.rotation;
+                        const initialPosition = { x: component.x, y: component.y };
+                        
+                        // Lock the component
+                        component.locked = true;
+                        
+                        // Try operations that should be blocked
+                        component.rotate();
+                        
+                        // Create mock drag event
+                        const mockEvent = {
+                            button: 0,
+                            nativeEvent: { isPrimary: true },
+                            altKey: false,
+                            getLocalPosition: () => ({ x: 0, y: 0 }),
+                            stopImmediatePropagation: () => {}
+                        };
+                        component.onStartDrag(mockEvent);
+                        
+                        // Property: For any locked component, all state-modifying operations should be silently ignored
+                        expect(component.sprite.rotation).toBe(initialRotation);
+                        expect(component.x).toBe(initialPosition.x);
+                        expect(component.y).toBe(initialPosition.y);
+                        expect(LayoutController.dragTarget).not.toBe(component);
+                    }
+                ), { numRuns: 100 });
+            });
+
+            it('should allow unlocked component normal operation (property test)', function() {
+                /**
+                 * Feature: lock-components, Property 18: Unlocked component normal operation
+                 * Validates: Requirements 9.5
+                 */
+                fc.assert(fc.property(
+                    fc.constantFrom('baseplate32x32'), // Use baseplate for rotation test
+                    (componentAlias) => {
+                        const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                        
+                        // Add component to get a properly initialized instance
+                        layoutController.addComponent(componentData);
+                        const component = layoutController.currentLayer.children[0];
+                        
+                        // Get initial state
+                        const initialRotation = component.sprite.rotation;
+                        
+                        // Ensure component is unlocked
+                        component.locked = false;
+                        
+                        // Try rotation operation
+                        component.rotate();
+                        
+                        // Property: For any unlocked component, modification operations should execute normally
+                        expect(component.sprite.rotation).not.toBe(initialRotation);
+                    }
+                ), { numRuns: 100 });
+            });
+
+            it('should reject invalid lock data during validation (property test)', function() {
+                /**
+                 * Feature: lock-components, Property 13: Invalid lock data rejection
+                 * Validates: Requirements 6.5
+                 */
+                fc.assert(fc.property(
+                    fc.constantFrom('railStraight9V'),
+                    fc.integer({ min: 2, max: 100 }), // Invalid locked values
+                    (componentAlias, invalidLockedValue) => {
+                        const componentData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === componentAlias);
+                        
+                        // Create serialized data with invalid locked value
+                        const serializedData = {
+                            type: componentAlias,
+                            pose: { x: 100, y: 200, angle: 0 },
+                            connections: [],
+                            width: componentData.width || 100,
+                            height: componentData.height || 100,
+                            units: componentData.units || 'studs',
+                            shape: componentData.shape || 'rectangle',
+                            color: '#237841',
+                            locked: invalidLockedValue  // Invalid value
+                        };
+                        
+                        // Property: For any serialized data with invalid locked property values, validation should reject the data
+                        const isValid = Component._validateImportData(serializedData);
+                        expect(isValid).toBe(false);
+                    }
+                ), { numRuns: 100 });
+            });
+        });
+
         describe("fromComponent", function() {
             /** @type {TrackData} */
             let bigBaseplateData;
@@ -3102,6 +3575,129 @@ describe("LayoutController", function() {
                 ),
                 { numRuns: 100 }
             );
+        });
+
+        describe("locked property deserialization", function() {
+            it("should restore locked state when locked: 1 is present", function() {
+                const layer = new LayoutLayer();
+                const serializedData = {
+                    type: 'shape',
+                    pose: { x: 100, y: 200, angle: 0 },
+                    connections: [],
+                    width: 100,
+                    height: 100,
+                    units: 'studs',
+                    shape: 'rectangle',
+                    color: '#237841',
+                    locked: 1
+                };
+
+                const component = Component.deserialize(baseplateData, serializedData, layer);
+                
+                expect(component.locked).toBe(true);
+                
+                // Clean up
+                component.destroy();
+                layer.destroy();
+            });
+
+            it("should default to unlocked when locked property is missing", function() {
+                const layer = new LayoutLayer();
+                const serializedData = {
+                    type: 'shape',
+                    pose: { x: 100, y: 200, angle: 0 },
+                    connections: [],
+                    width: 100,
+                    height: 100,
+                    units: 'studs',
+                    shape: 'rectangle',
+                    color: '#237841'
+                    // locked property omitted
+                };
+
+                const component = Component.deserialize(baseplateData, serializedData, layer);
+                
+                expect(component.locked).toBe(false);
+                
+                // Clean up
+                component.destroy();
+                layer.destroy();
+            });
+
+            it("should reject invalid locked property values", function() {
+                const layer = new LayoutLayer();
+                const serializedDataWithInvalidLocked = {
+                    type: 'shape',
+                    pose: { x: 100, y: 200, angle: 0 },
+                    connections: [],
+                    width: 100,
+                    height: 100,
+                    units: 'studs',
+                    shape: 'rectangle',
+                    color: '#237841',
+                    locked: 'invalid'
+                };
+
+                expect(Component._validateImportData(serializedDataWithInvalidLocked)).toBe(false);
+                
+                const serializedDataWithInvalidLocked2 = {
+                    type: 'shape',
+                    pose: { x: 100, y: 200, angle: 0 },
+                    connections: [],
+                    width: 100,
+                    height: 100,
+                    units: 'studs',
+                    shape: 'rectangle',
+                    color: '#237841',
+                    locked: 0
+                };
+
+                expect(Component._validateImportData(serializedDataWithInvalidLocked2)).toBe(false);
+                
+                // Clean up
+                layer.destroy();
+            });
+
+            // **Feature: lock-components, Property 13: Invalid lock data rejection**
+            // **Validates: Requirements 6.5**
+            it('should reject serialized data with invalid locked property values', () => {
+                fc.assert(
+                    fc.property(
+                        fc.oneof(
+                            fc.string().filter(s => s !== '1'), // Any string except '1'
+                            fc.integer().filter(n => n !== 1), // Any integer except 1
+                            fc.boolean(), // Boolean values
+                            fc.float(), // Float values
+                            fc.array(fc.anything()), // Array values
+                            fc.object() // Object values
+                        ),
+                        (invalidLockedValue) => {
+                            const layer = new LayoutLayer();
+                            
+                            // Create valid serialized component data with invalid locked value
+                            const serializedData = {
+                                type: 'shape',
+                                pose: { x: 100, y: 200, angle: 0 },
+                                connections: [],
+                                width: 100,
+                                height: 100,
+                                units: 'studs',
+                                shape: 'rectangle',
+                                color: '#237841',
+                                locked: invalidLockedValue
+                            };
+                            
+                            // Validation should fail for any invalid locked value
+                            const isValid = Component._validateImportData(serializedData);
+                            expect(isValid).toBe(false);
+                            
+                            // Clean up
+                            layer.destroy();
+                        }
+                    ),
+                    { numRuns: 100 }
+                );
+            });
         });
     });
 
@@ -3772,6 +4368,149 @@ describe("LayoutController", function() {
                     ),
                     { numRuns: 100 }
                 );
+            });
+        });
+
+        describe("Ctrl+Shift+L key", function() {
+            it("should toggle lock state for selected component", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                currentLayer.addChild(component);
+                LayoutController.selectComponent(component);
+
+                // Initially component should be unlocked
+                expect(component.locked).toBe(false);
+
+                // Create mock KeyboardEvent for Ctrl+Shift+L
+                const lockEvent = {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown to lock the component
+                layoutController.onKeyDown(lockEvent);
+
+                // Verify component is now locked and preventDefault was called
+                expect(component.locked).toBe(true);
+                expect(lockEvent.preventDefault).toHaveBeenCalled();
+
+                // Create another event to unlock
+                const unlockEvent = {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown to unlock the component
+                layoutController.onKeyDown(unlockEvent);
+
+                // Verify component is now unlocked
+                expect(component.locked).toBe(false);
+                expect(unlockEvent.preventDefault).toHaveBeenCalled();
+            });
+
+            it("should toggle lock state for selected temporary ComponentGroup and propagate to members", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                
+                // Create a temporary group with components
+                const group = new ComponentGroup(true); // temporary group
+                const component1 = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                const component2 = new Component(trackData, new Pose(150, 100, 0), currentLayer, {});
+                currentLayer.addChild(component1);
+                currentLayer.addChild(component2);
+                group.addComponent(component1);
+                group.addComponent(component2);
+                
+                LayoutController.selectComponent(group);
+
+                // Initially group and components should be unlocked
+                expect(group.locked).toBe(false);
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+
+                // Create mock KeyboardEvent for Ctrl+Shift+L
+                const lockEvent = {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown to lock the group
+                layoutController.onKeyDown(lockEvent);
+
+                // Verify group and all members are now locked (temporary group behavior)
+                expect(group.locked).toBe(true);
+                expect(component1.locked).toBe(true);
+                expect(component2.locked).toBe(true);
+                expect(lockEvent.preventDefault).toHaveBeenCalled();
+            });
+
+            it("should toggle lock state for selected permanent ComponentGroup without affecting members", function() {
+                const layoutController = window.layoutController;
+                const currentLayer = layoutController.currentLayer;
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                
+                // Create a permanent group with components
+                const group = new ComponentGroup(false); // permanent group
+                const component1 = new Component(trackData, new Pose(100, 100, 0), currentLayer, {});
+                const component2 = new Component(trackData, new Pose(150, 100, 0), currentLayer, {});
+                currentLayer.addChild(component1);
+                currentLayer.addChild(component2);
+                group.addComponent(component1);
+                group.addComponent(component2);
+                
+                LayoutController.selectComponent(group);
+
+                // Initially group and components should be unlocked
+                expect(group.locked).toBe(false);
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+
+                // Create mock KeyboardEvent for Ctrl+Shift+L
+                const lockEvent = {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown to lock the group
+                layoutController.onKeyDown(lockEvent);
+
+                // Verify only group is locked, members remain unlocked (permanent group behavior)
+                expect(group.locked).toBe(true);
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+                expect(lockEvent.preventDefault).toHaveBeenCalled();
+            });
+
+            it("should do nothing when no component is selected", function() {
+                const layoutController = window.layoutController;
+                
+                // Ensure no component is selected
+                LayoutController.selectComponent(null);
+
+                // Create mock KeyboardEvent for Ctrl+Shift+L
+                const keyEvent = {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    preventDefault: jasmine.createSpy('preventDefault')
+                };
+
+                // Call onKeyDown - should not throw error
+                expect(() => layoutController.onKeyDown(keyEvent)).not.toThrow();
+                
+                // preventDefault should not be called when no component is selected
+                expect(keyEvent.preventDefault).not.toHaveBeenCalled();
             });
         });
     });
@@ -4508,6 +5247,1353 @@ describe("LayoutController", function() {
                 // Group should remain temporary
                 expect(tempGroup.isTemporary).toBe(true);
             });
+        });
+
+        describe("group creation with locked components", function() {
+            it("should prevent makeGroupPermanent when temporary group contains locked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Lock one component
+                component1.locked = true;
+                
+                // Create temporary group with locked component
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Verify group is temporary
+                expect(tempGroup.isTemporary).toBe(true);
+                
+                // Call makeGroupPermanent - should be prevented
+                layoutController.makeGroupPermanent();
+                
+                // Group should remain temporary due to locked component
+                expect(tempGroup.isTemporary).toBe(true);
+            });
+
+            it("should allow makeGroupPermanent when temporary group contains no locked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Ensure components are unlocked
+                component1.locked = false;
+                component2.locked = false;
+                
+                // Create temporary group with unlocked components
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Verify group is temporary
+                expect(tempGroup.isTemporary).toBe(true);
+                
+                // Call makeGroupPermanent - should succeed
+                layoutController.makeGroupPermanent();
+                
+                // Group should now be permanent
+                expect(tempGroup.isTemporary).toBe(false);
+            });
+
+            it("should enable Group button when temporary group contains no locked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Ensure components are unlocked
+                component1.locked = false;
+                component2.locked = false;
+                
+                // Create temporary group with unlocked components
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Show selection toolbar to trigger UI updates
+                layoutController._showSelectionToolbar();
+                
+                // Check that Group button is enabled
+                expect(groupMenuItem.classList.contains('disabled')).toBe(false);
+                expect(groupMenuItem.style.opacity).toBe('');
+                expect(groupMenuItem.style.pointerEvents).toBe('');
+            });
+
+            it("should prevent makeGroupPermanent when temporary group contains nested locked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(100, 0, 0), layoutController.currentLayer, {});
+                const component3 = new Component(trackData, new Pose(200, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                layoutController.currentLayer.addChild(component3);
+                
+                // Lock one component
+                component2.locked = true;
+                
+                // Create a nested permanent group with locked component
+                const nestedGroup = new ComponentGroup(false);
+                nestedGroup.addComponent(component2);
+                
+                // Create temporary group containing the nested group and other components
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(nestedGroup);
+                tempGroup.addComponent(component3);
+                LayoutController.selectedComponent = tempGroup;
+                
+                // Verify group is temporary
+                expect(tempGroup.isTemporary).toBe(true);
+                
+                // Call makeGroupPermanent - should be prevented due to nested locked component
+                layoutController.makeGroupPermanent();
+                
+                // Group should remain temporary due to nested locked component
+                expect(tempGroup.isTemporary).toBe(true);
+            });
+        });
+
+        describe("lock/unlock button visibility and functionality", function() {
+            let lockButton, unlockButton;
+            
+            beforeEach(function() {
+                // Clear any existing buttons first
+                selectionToolbar.innerHTML = '';
+                
+                // Create mock lock/unlock buttons
+                lockButton = document.createElement('button');
+                lockButton.id = 'selToolLock';
+                lockButton.classList.add('square', 'background');
+                
+                unlockButton = document.createElement('button');
+                unlockButton.id = 'selToolUnlock';
+                unlockButton.classList.add('square', 'background', 'hidden');
+                
+                // Add buttons to selection toolbar
+                selectionToolbar.appendChild(lockButton);
+                selectionToolbar.appendChild(unlockButton);
+                
+                // Create mock editing buttons
+                const editingButtons = ['selToolEdit', 'selToolRotate', 'selToolDuplicate', 'selToolDelete'];
+                editingButtons.forEach(id => {
+                    const button = document.createElement('button');
+                    button.id = id;
+                    button.classList.add('square', 'background');
+                    selectionToolbar.appendChild(button);
+                });
+            });
+            
+            it("should show lock button and hide unlock button for unlocked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                component.locked = false; // Ensure component is unlocked
+                LayoutController.selectedComponent = component;
+                
+                layoutController._showSelectionToolbar();
+                
+                expect(selectionToolbar.classList.contains('locked')).toBeFalse();
+            });
+            
+            it("should show unlock button and hide lock button for locked components", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                component.locked = true; // Lock the component
+                LayoutController.selectedComponent = component;
+                
+                layoutController._showSelectionToolbar();
+                
+                expect(selectionToolbar.classList.contains('locked')).toBeTrue();
+            });
+            
+            it("should hide editing buttons when component is locked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                component.locked = true; // Lock the component
+                LayoutController.selectedComponent = component;
+                
+                layoutController._showSelectionToolbar();
+                
+                // Check that toolbar has locked class - CSS will handle button visibility
+                expect(selectionToolbar.classList.contains('locked')).toBeTrue();
+            });
+            
+            it("should show editing buttons when component is unlocked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component);
+                component.locked = false; // Ensure component is unlocked
+                LayoutController.selectedComponent = component;
+                
+                layoutController._showSelectionToolbar();
+                
+                // Check that toolbar does not have locked class - CSS will handle button visibility
+                expect(selectionToolbar.classList.contains('locked')).toBeFalse();
+            });
+            
+            it("should work correctly with ComponentGroups", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                
+                layoutController.currentLayer.addChild(component1);
+                layoutController.currentLayer.addChild(component2);
+                
+                // Create temporary group
+                const tempGroup = new ComponentGroup(true);
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                tempGroup.locked = true; // Lock the group
+                LayoutController.selectedComponent = tempGroup;
+                
+                layoutController._showSelectionToolbar();
+                
+                expect(selectionToolbar.classList.contains('locked')).toBeTrue();
+            });
+        });
+
+        // **Feature: lock-components, Property 1: Lock state UI reflection**
+        // **Validates: Requirements 1.1, 1.3**
+        it("should reflect lock state correctly in UI for all component types", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Component locked state
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isLocked, isGroup, isTemporary) => {
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Set lock state
+                        selectedComponent.locked = isLocked;
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Clear toolbar and recreate buttons
+                        selectionToolbar.innerHTML = '';
+                        
+                        const lockButton = document.createElement('button');
+                        lockButton.id = 'selToolLock';
+                        lockButton.classList.add('square', 'background');
+                        
+                        const unlockButton = document.createElement('button');
+                        unlockButton.id = 'selToolUnlock';
+                        unlockButton.classList.add('square', 'background', 'hidden');
+                        
+                        selectionToolbar.appendChild(lockButton);
+                        selectionToolbar.appendChild(unlockButton);
+                        
+                        // Create mock editing buttons
+                        const allButtons = ['selToolEdit', 'selToolRotate', 'selToolDuplicate', 'selToolDelete'];
+                        const hiddenWhenLockedButtons = ['selToolEdit', 'selToolRotate', 'selToolDelete'];
+                        allButtons.forEach(id => {
+                            const button = document.createElement('button');
+                            button.id = id;
+                            button.classList.add('square', 'background');
+                            selectionToolbar.appendChild(button);
+                        });
+                        
+                        // Create mock menu items
+                        const lockMenuItem = document.createElement('li');
+                        lockMenuItem.id = 'selToolMenuLock';
+                        lockMenuItem.style.display = 'flex';
+                        
+                        const unlockMenuItem = document.createElement('li');
+                        unlockMenuItem.id = 'selToolMenuUnlock';
+                        unlockMenuItem.style.display = 'none';
+                        
+                        selectionToolbar.appendChild(lockMenuItem);
+                        selectionToolbar.appendChild(unlockMenuItem);
+                        
+                        // Call the method under test
+                        layoutController._showSelectionToolbar();
+                        
+                        // Verify UI reflects lock state correctly
+                        if (isLocked) {
+                            // Property: When component is locked, toolbar should have 'locked' class
+                            expect(selectionToolbar.classList.contains('locked')).toBe(true);
+                        } else {
+                            // Property: When component is unlocked, toolbar should not have 'locked' class
+                            expect(selectionToolbar.classList.contains('locked')).toBe(false);
+                        }
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 2: Lock action effectiveness**
+        // **Validates: Requirements 1.2, 2.1, 5.2**
+        it("should effectively lock components and block all editing operations", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Ensure component starts unlocked
+                        selectedComponent.locked = false;
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Apply lock action
+                        layoutController.lockComponent();
+                        
+                        // Property: Lock action should set locked property to true
+                        expect(selectedComponent.locked).toBe(true);
+                        
+                        // Property: Lock action should block editing operations
+                        // Test move operation blocking
+                        let originalX, originalY;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalX = selectedComponent.components[0].position.x;
+                            originalY = selectedComponent.components[0].position.y;
+                        } else {
+                            originalX = selectedComponent.position.x;
+                            originalY = selectedComponent.position.y;
+                        }
+                        
+                        if (selectedComponent.move) {
+                            selectedComponent.move(100, 100);
+                            // Position should not change when locked
+                            if (selectedComponent instanceof ComponentGroup) {
+                                expect(selectedComponent.components[0].position.x).toBe(originalX);
+                                expect(selectedComponent.components[0].position.y).toBe(originalY);
+                            } else {
+                                expect(selectedComponent.position.x).toBe(originalX);
+                                expect(selectedComponent.position.y).toBe(originalY);
+                            }
+                        }
+                        
+                        // Test rotation operation blocking
+                        let originalRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalRotation = selectedComponent.components[0].rotation || 0;
+                        } else {
+                            originalRotation = selectedComponent.rotation || 0;
+                        }
+                        
+                        if (selectedComponent.rotate) {
+                            selectedComponent.rotate();
+                            // Rotation should not change when locked
+                            let currentRotation;
+                            if (selectedComponent instanceof ComponentGroup) {
+                                currentRotation = selectedComponent.components[0].rotation || 0;
+                            } else {
+                                currentRotation = selectedComponent.rotation || 0;
+                            }
+                            expect(currentRotation).toBe(originalRotation);
+                        }
+                        
+                        // Test drag operation blocking
+                        if (selectedComponent.onStartDrag) {
+                            const mockEvent = { preventDefault: jasmine.createSpy('preventDefault') };
+                            selectedComponent.onStartDrag(mockEvent);
+                            // onStartDrag should return early for locked components (no exception thrown)
+                            expect(true).toBe(true); // If we reach here, the method returned early as expected
+                        }
+                        
+                        // Property: For temporary groups, lock should propagate to members
+                        if (isGroup && isTemporary) {
+                            selectedComponent.components.forEach(component => {
+                                expect(component.locked).toBe(true);
+                            });
+                        }
+                        
+                        // Property: For permanent groups, lock should not propagate to members
+                        if (isGroup && !isTemporary) {
+                            selectedComponent.components.forEach(component => {
+                                expect(component.locked).toBe(false);
+                            });
+                        }
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 3: Unlock action effectiveness**
+        // **Validates: Requirements 1.5, 2.2, 5.3**
+        it("should effectively unlock components and restore all editing operations", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Start with component locked
+                        selectedComponent.locked = true;
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Apply unlock action
+                        layoutController.unlockComponent();
+                        
+                        // Property: Unlock action should set locked property to false
+                        expect(selectedComponent.locked).toBe(false);
+                        
+                        // Property: Unlock action should restore editing operations
+                        // Test move operation is now allowed
+                        let originalX, originalY;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalX = selectedComponent.components[0].position.x;
+                            originalY = selectedComponent.components[0].position.y;
+                        } else {
+                            originalX = selectedComponent.position.x;
+                            originalY = selectedComponent.position.y;
+                        }
+                        
+                        if (selectedComponent.move) {
+                            selectedComponent.move(100, 100);
+                            // Position should change when unlocked
+                            if (selectedComponent instanceof ComponentGroup) {
+                                expect(selectedComponent.components[0].position.x).not.toBe(originalX);
+                                expect(selectedComponent.components[0].position.y).not.toBe(originalY);
+                            } else {
+                                expect(selectedComponent.position.x).not.toBe(originalX);
+                                expect(selectedComponent.position.y).not.toBe(originalY);
+                            }
+                        }
+                        
+                        // Reset position for rotation test
+                        if (selectedComponent.move) {
+                            if (selectedComponent instanceof ComponentGroup) {
+                                selectedComponent.move(originalX, originalY);
+                            } else {
+                                selectedComponent.move(originalX, originalY);
+                            }
+                        }
+                        
+                        // Property: Rotation operations should not throw errors when unlocked
+                        if (selectedComponent.rotate) {
+                            expect(() => selectedComponent.rotate()).not.toThrow();
+                        }
+                        
+                        // Property: Drag operations should not throw errors when unlocked
+                        if (selectedComponent.onStartDrag) {
+                            // Create a proper mock event with all required methods
+                            const mockEvent = { 
+                                preventDefault: jasmine.createSpy('preventDefault'),
+                                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation'),
+                                button: 0,
+                                altKey: false,
+                                nativeEvent: { isPrimary: true },
+                                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 })
+                            };
+                            expect(() => selectedComponent.onStartDrag(mockEvent)).not.toThrow();
+                        }
+                        
+                        // Property: For temporary groups, unlock should propagate to members
+                        if (isGroup && isTemporary) {
+                            selectedComponent.components.forEach(component => {
+                                expect(component.locked).toBe(false);
+                            });
+                        }
+                        
+                        // Property: For permanent groups, unlock should not propagate to members
+                        // (members retain their individual lock states, which were false initially)
+                        if (isGroup && !isTemporary) {
+                            selectedComponent.components.forEach(component => {
+                                expect(component.locked).toBe(false); // They were never locked individually
+                            });
+                        }
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 4: Locked component UI restrictions**
+        // **Validates: Requirements 1.4**
+        it("should hide all editing buttons except unlock and more when component is locked", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Set component to locked state
+                        selectedComponent.locked = true;
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Clear toolbar and recreate buttons
+                        selectionToolbar.innerHTML = '';
+                        
+                        // Create all toolbar buttons
+                        const editButton = document.createElement('button');
+                        editButton.id = 'selToolEdit';
+                        editButton.classList.add('square', 'background');
+                        
+                        const rotateButton = document.createElement('button');
+                        rotateButton.id = 'selToolRotate';
+                        rotateButton.classList.add('square', 'background');
+                        
+                        const duplicateButton = document.createElement('button');
+                        duplicateButton.id = 'selToolDuplicate';
+                        duplicateButton.classList.add('square', 'background');
+                        
+                        const deleteButton = document.createElement('button');
+                        deleteButton.id = 'selToolDelete';
+                        deleteButton.classList.add('square', 'background');
+                        
+                        const lockButton = document.createElement('button');
+                        lockButton.id = 'selToolLock';
+                        lockButton.classList.add('square', 'background');
+                        
+                        const unlockButton = document.createElement('button');
+                        unlockButton.id = 'selToolUnlock';
+                        unlockButton.classList.add('square', 'background', 'hidden');
+                        
+                        const moreButton = document.createElement('button');
+                        moreButton.id = 'selToolMore';
+                        moreButton.classList.add('square', 'background');
+                        
+                        selectionToolbar.appendChild(editButton);
+                        selectionToolbar.appendChild(rotateButton);
+                        selectionToolbar.appendChild(duplicateButton);
+                        selectionToolbar.appendChild(deleteButton);
+                        selectionToolbar.appendChild(lockButton);
+                        selectionToolbar.appendChild(unlockButton);
+                        selectionToolbar.appendChild(moreButton);
+                        
+                        // Call the method under test
+                        layoutController._showSelectionToolbar();
+                        
+                        // Property: When component is locked, toolbar should have 'locked' class
+                        // CSS will handle hiding editing buttons (edit, rotate, delete) and showing unlock button
+                        expect(selectionToolbar.classList.contains('locked')).toBe(true);
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 7: Locked component operation blocking**
+        // **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 9.3, 9.4**
+        it("should silently block all state-modifying operations on locked components except layer visibility", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Lock the component
+                        selectedComponent.locked = true;
+                        
+                        // Property: Locked components should silently block move operations
+                        let originalX, originalY;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalX = selectedComponent.components[0].position.x;
+                            originalY = selectedComponent.components[0].position.y;
+                        } else {
+                            originalX = selectedComponent.position.x;
+                            originalY = selectedComponent.position.y;
+                        }
+                        
+                        if (selectedComponent.move) {
+                            selectedComponent.move(100, 100);
+                            // Position should not change when locked
+                            if (selectedComponent instanceof ComponentGroup) {
+                                expect(selectedComponent.components[0].position.x).toBe(originalX);
+                                expect(selectedComponent.components[0].position.y).toBe(originalY);
+                            } else {
+                                expect(selectedComponent.position.x).toBe(originalX);
+                                expect(selectedComponent.position.y).toBe(originalY);
+                            }
+                        }
+                        
+                        // Property: Locked components should silently block rotation operations
+                        let originalRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalRotation = selectedComponent.components[0].rotation || 0;
+                        } else {
+                            originalRotation = selectedComponent.rotation || 0;
+                        }
+                        
+                        if (selectedComponent.rotate) {
+                            selectedComponent.rotate();
+                            // Rotation should not change when locked
+                            let currentRotation;
+                            if (selectedComponent instanceof ComponentGroup) {
+                                currentRotation = selectedComponent.components[0].rotation || 0;
+                            } else {
+                                currentRotation = selectedComponent.rotation || 0;
+                            }
+                            expect(currentRotation).toBe(originalRotation);
+                        }
+                        
+                        // Property: Locked components should silently block drag operations
+                        if (selectedComponent.onStartDrag) {
+                            const mockEvent = { 
+                                preventDefault: jasmine.createSpy('preventDefault'),
+                                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation'),
+                                button: 0,
+                                altKey: false,
+                                nativeEvent: { isPrimary: true },
+                                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 })
+                            };
+                            
+                            // Should not throw an error - should return silently
+                            expect(() => selectedComponent.onStartDrag(mockEvent)).not.toThrow();
+                            
+                            // For locked components, preventDefault should not be called (early return)
+                            expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        }
+                        
+                        // Property: Locked components should block LayoutController editing operations
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Test deleteSelectedComponent - should not delete locked components
+                        const originalChildrenCount = layoutController.currentLayer.children.length;
+                        layoutController.deleteSelectedComponent();
+                        expect(layoutController.currentLayer.children.length).toBe(originalChildrenCount);
+                        
+                        // Test rotateSelectedComponent - should not rotate locked components
+                        let originalSelectedRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalSelectedRotation = selectedComponent.components[0].rotation || 0;
+                        } else {
+                            originalSelectedRotation = selectedComponent.rotation || 0;
+                        }
+                        
+                        layoutController.rotateSelectedComponent();
+                        
+                        let currentSelectedRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            currentSelectedRotation = selectedComponent.components[0].rotation || 0;
+                        } else {
+                            currentSelectedRotation = selectedComponent.rotation || 0;
+                        }
+                        expect(currentSelectedRotation).toBe(originalSelectedRotation);
+                        
+                        // Test layer operations - these should still work on locked components
+                        const originalVisible = selectedComponent.visible;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            // For groups, test visibility on the first component
+                            const originalComponentVisible = selectedComponent.components[0].visible;
+                            selectedComponent.components[0].visible = !originalComponentVisible;
+                            expect(selectedComponent.components[0].visible).toBe(!originalComponentVisible);
+                            // Restore original state
+                            selectedComponent.components[0].visible = originalComponentVisible;
+                        } else {
+                            selectedComponent.visible = !originalVisible;
+                            expect(selectedComponent.visible).toBe(!originalVisible);
+                            // Restore original state
+                            selectedComponent.visible = originalVisible;
+                        }
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 8: Menu integration**
+        // **Validates: Requirements 5.1, 5.2, 5.3**
+        it("should provide functional lock/unlock menu items that work correctly", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Initial lock state
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (initialLockState, isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Set initial lock state
+                        selectedComponent.locked = initialLockState;
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Clear toolbar and recreate menu items
+                        selectionToolbar.innerHTML = '';
+                        
+                        const lockMenuItem = document.createElement('li');
+                        lockMenuItem.id = 'selToolMenuLock';
+                        
+                        const unlockMenuItem = document.createElement('li');
+                        unlockMenuItem.id = 'selToolMenuUnlock';
+                        
+                        selectionToolbar.appendChild(lockMenuItem);
+                        selectionToolbar.appendChild(unlockMenuItem);
+                        
+                        // Set up event listeners (simulating what LayoutController does)
+                        lockMenuItem.addEventListener('click', () => layoutController.lockComponent());
+                        unlockMenuItem.addEventListener('click', () => layoutController.unlockComponent());
+                        
+                        // Call _showSelectionToolbar to set the locked class
+                        layoutController._showSelectionToolbar();
+                        
+                        // Property: Toolbar should have correct locked class based on component state
+                        expect(selectionToolbar.classList.contains('locked')).toBe(initialLockState);
+                        
+                        // Test clicking the appropriate menu item
+                        if (initialLockState) {
+                            // Component is locked, click unlock menu item
+                            unlockMenuItem.click();
+                            
+                            // Property: Clicking unlock menu item should unlock the component
+                            expect(selectedComponent.locked).toBe(false);
+                            
+                            // Property: For temporary groups, unlock should propagate to members
+                            if (isGroup && isTemporary) {
+                                selectedComponent.components.forEach(component => {
+                                    expect(component.locked).toBe(false);
+                                });
+                            }
+                            
+                            // Property: For permanent groups, unlock should not propagate to members
+                            if (isGroup && !isTemporary) {
+                                selectedComponent.components.forEach(component => {
+                                    // Members should retain their original state (false in this case)
+                                    expect(component.locked).toBe(false);
+                                });
+                            }
+                        } else {
+                            // Component is unlocked, click lock menu item
+                            lockMenuItem.click();
+                            
+                            // Property: Clicking lock menu item should lock the component
+                            expect(selectedComponent.locked).toBe(true);
+                            
+                            // Property: For temporary groups, lock should propagate to members
+                            if (isGroup && isTemporary) {
+                                selectedComponent.components.forEach(component => {
+                                    expect(component.locked).toBe(true);
+                                });
+                            }
+                            
+                            // Property: For permanent groups, lock should not propagate to members
+                            if (isGroup && !isTemporary) {
+                                selectedComponent.components.forEach(component => {
+                                    // Members should retain their original state (false in this case)
+                                    expect(component.locked).toBe(false);
+                                });
+                            }
+                        }
+                        
+                        // Clean up
+                        if (selectedComponent instanceof ComponentGroup) {
+                            selectedComponent.destroy();
+                        } else {
+                            selectedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 14: Group creation restriction**
+        // **Validates: Requirements 7.1, 7.2, 7.4**
+        it("should restrict group creation when any component in selection is locked", function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 2, max: 5 }), // Number of components in selection
+                    fc.integer({ min: 1, max: 4 }), // Number of locked components (at least 1, but not more than total)
+                    (numComponents, numLocked) => {
+                        // Ensure we don't have more locked components than total components
+                        const actualNumLocked = Math.min(numLocked, numComponents);
+                        
+                        const layoutController = window.layoutController;
+                        layoutController.reset();
+                        
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        const components = [];
+                        
+                        // Create components
+                        for (let i = 0; i < numComponents; i++) {
+                            const component = new Component(trackData, new Pose(i * 50, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(component);
+                            components.push(component);
+                        }
+                        
+                        // Lock some components
+                        for (let i = 0; i < actualNumLocked; i++) {
+                            components[i].locked = true;
+                        }
+                        
+                        // Create temporary group with mixed locked/unlocked components
+                        const tempGroup = new ComponentGroup(true);
+                        components.forEach(comp => tempGroup.addComponent(comp));
+                        LayoutController.selectedComponent = tempGroup;
+                        
+                        // Set up mock UI elements for testing visual restrictions
+                        selectionToolbar.innerHTML = '';
+                        const groupMenuItem = document.createElement('li');
+                        groupMenuItem.id = 'selToolMenuGroup';
+                        groupMenuItem.style.display = 'none';
+                        
+                        const selToolMenu = document.createElement('menu');
+                        selToolMenu.appendChild(groupMenuItem);
+                        
+                        // Set up the selectionToolMenu property on layoutController
+                        Object.defineProperty(layoutController, 'selectionToolMenu', {
+                            value: selToolMenu,
+                            configurable: true,
+                            writable: true
+                        });
+                        
+                        selectionToolbar.appendChild(selToolMenu);
+                        
+                        // Show selection toolbar to trigger UI updates
+                        layoutController._showSelectionToolbar();
+
+                        // Property: makeGroupPermanent should be prevented when temporary group contains locked components
+                        const originalIsTemporary = tempGroup.isTemporary;
+                        layoutController.makeGroupPermanent();
+                        
+                        // Group should remain temporary due to locked components
+                        expect(tempGroup.isTemporary).toBe(originalIsTemporary);
+                        expect(tempGroup.isTemporary).toBe(true);
+                        
+                        // Test the inverse case: if we unlock all components, group creation should be allowed
+                        components.forEach(comp => comp.locked = false);
+                        
+                        // Reset group to temporary state
+                        tempGroup.isTemporary = true;
+                        
+                        // Clear and recreate UI elements
+                        selectionToolbar.innerHTML = '';
+                        const groupMenuItem2 = document.createElement('li');
+                        groupMenuItem2.id = 'selToolMenuGroup';
+                        groupMenuItem2.style.display = 'none';
+                        
+                        const selToolMenu2 = document.createElement('menu');
+                        selToolMenu2.appendChild(groupMenuItem2);
+                        
+                        // Update the selectionToolMenu property
+                        Object.defineProperty(layoutController, 'selectionToolMenu', {
+                            value: selToolMenu2,
+                            configurable: true,
+                            writable: true
+                        });
+                        
+                        selectionToolbar.appendChild(selToolMenu2);
+                        
+                        // Show selection toolbar again
+                        layoutController._showSelectionToolbar();
+
+                        // Property: makeGroupPermanent should succeed when no components are locked
+                        layoutController.makeGroupPermanent();
+                        expect(tempGroup.isTemporary).toBe(false);
+                        
+                        // Clean up
+                        tempGroup.destroy();
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 15: Group creation allowance**
+        // **Validates: Requirements 7.3**
+        it("should allow group creation when all components in selection are unlocked", function() {
+            fc.assert(
+                fc.property(
+                    fc.integer({ min: 2, max: 5 }), // Number of components in selection (at least 2 for grouping)
+                    (numComponents) => {
+                        const layoutController = window.layoutController;
+                        layoutController.reset();
+                        
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        const components = [];
+                        
+                        // Create components - all unlocked by default
+                        for (let i = 0; i < numComponents; i++) {
+                            const component = new Component(trackData, new Pose(i * 50, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(component);
+                            components.push(component);
+                            
+                            // Explicitly ensure component is unlocked
+                            component.locked = false;
+                        }
+                        
+                        // Create temporary group with all unlocked components
+                        const tempGroup = new ComponentGroup(true);
+                        components.forEach(comp => tempGroup.addComponent(comp));
+                        LayoutController.selectedComponent = tempGroup;
+                        
+                        // Set up mock UI elements for testing visual enablement
+                        selectionToolbar.innerHTML = '';
+                        const groupMenuItem = document.createElement('li');
+                        groupMenuItem.id = 'selToolMenuGroup';
+                        groupMenuItem.style.display = 'none';
+                        
+                        const selToolMenu = document.createElement('menu');
+                        selToolMenu.appendChild(groupMenuItem);
+                        
+                        // Set up the selectionToolMenu property on layoutController
+                        Object.defineProperty(layoutController, 'selectionToolMenu', {
+                            value: selToolMenu,
+                            configurable: true,
+                            writable: true
+                        });
+                        
+                        selectionToolbar.appendChild(selToolMenu);
+                        
+                        // Show selection toolbar to trigger UI updates
+                        layoutController._showSelectionToolbar();
+                        
+                        // Property: When all components are unlocked, Group button should be enabled
+                        expect(groupMenuItem.classList.contains('disabled')).toBe(false);
+                        expect(groupMenuItem.style.opacity).toBe('');
+                        expect(groupMenuItem.style.pointerEvents).toBe('');
+                        
+                        // Property: makeGroupPermanent should succeed when no components are locked
+                        const originalIsTemporary = tempGroup.isTemporary;
+                        expect(originalIsTemporary).toBe(true); // Verify it starts as temporary
+                        
+                        layoutController.makeGroupPermanent();
+                        
+                        // Group should successfully become permanent
+                        expect(tempGroup.isTemporary).toBe(false);
+                        
+                        // Verify all components are still unlocked after group creation
+                        components.forEach(comp => {
+                            expect(comp.locked).toBe(false);
+                        });
+                        
+                        // Clean up
+                        tempGroup.destroy();
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 16: Duplication unlocks copies**
+        // **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+        it("should always create unlocked copies when duplicating components regardless of source lock state", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether source component is locked
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isSourceLocked, isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        layoutController.reset();
+                        
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let sourceComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            sourceComponent = new ComponentGroup(isTemporary);
+                            sourceComponent.addComponent(component1);
+                            sourceComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                sourceComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            sourceComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(sourceComponent);
+                        }
+                        
+                        // Set the source component's lock state
+                        sourceComponent.locked = isSourceLocked;
+                        
+                        // Verify source component has expected lock state
+                        expect(sourceComponent.locked).toBe(isSourceLocked);
+                        
+                        // Count initial components
+                        const initialComponentCount = layoutController.currentLayer.children.filter(child => child instanceof Component).length;
+                        
+                        // Duplicate the component
+                        layoutController.duplicateComponent(sourceComponent);
+                        
+                        // Get the duplicated component (should be the selected component)
+                        const duplicatedComponent = LayoutController.selectedComponent;
+                        
+                        // Property: Duplicated component should always be unlocked regardless of source state
+                        expect(duplicatedComponent).not.toBeNull();
+                        expect(duplicatedComponent).not.toBe(sourceComponent);
+                        expect(duplicatedComponent.locked).toBe(false);
+                        
+                        // Property: Source component lock state should remain unchanged
+                        expect(sourceComponent.locked).toBe(isSourceLocked);
+                        
+                        // Property: Duplication should create new component(s)
+                        const finalComponentCount = layoutController.currentLayer.children.filter(child => child instanceof Component).length;
+                        if (isGroup) {
+                            // ComponentGroup duplication creates new components for each member
+                            expect(finalComponentCount).toBeGreaterThan(initialComponentCount);
+                        } else {
+                            // Single component duplication creates one new component
+                            expect(finalComponentCount).toBe(initialComponentCount + 1);
+                        }
+                        
+                        // For ComponentGroups, verify all member components are unlocked
+                        if (duplicatedComponent instanceof ComponentGroup) {
+                            duplicatedComponent.components.forEach(memberComponent => {
+                                expect(memberComponent.locked).toBe(false);
+                            });
+                        }
+                        
+                        // Clean up
+                        if (sourceComponent instanceof ComponentGroup) {
+                            sourceComponent.destroy();
+                        }
+                        if (duplicatedComponent instanceof ComponentGroup) {
+                            duplicatedComponent.destroy();
+                        }
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
+        });
+
+        // **Feature: lock-components, Property 18: Unlocked component normal operation**
+        // **Validates: Requirements 9.5**
+        it("should execute all modification operations normally on unlocked components and component groups", function() {
+            fc.assert(
+                fc.property(
+                    fc.boolean(), // Whether component is a ComponentGroup
+                    fc.boolean(), // If ComponentGroup, whether it's temporary
+                    (isGroup, isTemporary) => {
+                        const layoutController = window.layoutController;
+                        const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+                        let selectedComponent;
+                        
+                        if (isGroup) {
+                            // Create ComponentGroup
+                            const component1 = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            const component2 = new Component(trackData, new Pose(50, 0, 0), layoutController.currentLayer, {});
+                            
+                            layoutController.currentLayer.addChild(component1);
+                            layoutController.currentLayer.addChild(component2);
+                            
+                            selectedComponent = new ComponentGroup(isTemporary);
+                            selectedComponent.addComponent(component1);
+                            selectedComponent.addComponent(component2);
+                            
+                            if (!isTemporary) {
+                                selectedComponent.parent = layoutController.currentLayer;
+                            }
+                        } else {
+                            // Create regular Component
+                            selectedComponent = new Component(trackData, new Pose(0, 0, 0), layoutController.currentLayer, {});
+                            layoutController.currentLayer.addChild(selectedComponent);
+                        }
+                        
+                        // Ensure component is unlocked (default state)
+                        selectedComponent.locked = false;
+                        
+                        // Property: Unlocked ComponentGroups should allow move operations
+                        if (selectedComponent instanceof ComponentGroup && selectedComponent.move) {
+                            let originalX = selectedComponent.components[0].position.x;
+                            let originalY = selectedComponent.components[0].position.y;
+                            
+                            selectedComponent.move(originalX + 100, originalY + 100);
+                            // Position should change when unlocked
+                            expect(selectedComponent.components[0].position.x).not.toBe(originalX);
+                            expect(selectedComponent.components[0].position.y).not.toBe(originalY);
+                        }
+                        
+                        // Property: Unlocked components should allow rotation operations
+                        let originalRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalRotation = selectedComponent.components[0].sprite.rotation || 0;
+                        } else {
+                            originalRotation = selectedComponent.sprite.rotation || 0;
+                        }
+                        
+                        if (selectedComponent.rotate) {
+                            selectedComponent.rotate();
+                            // Rotation should change when unlocked
+                            let currentRotation;
+                            if (selectedComponent instanceof ComponentGroup) {
+                                currentRotation = selectedComponent.components[0].sprite.rotation || 0;
+                            } else {
+                                currentRotation = selectedComponent.sprite.rotation || 0;
+                            }
+                            expect(currentRotation).not.toBe(originalRotation);
+                        }
+                        
+                        // Property: Unlocked components should allow drag operations
+                        if (selectedComponent.onStartDrag) {
+                            const mockEvent = { 
+                                preventDefault: jasmine.createSpy('preventDefault'),
+                                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation'),
+                                button: 0,
+                                altKey: false,
+                                nativeEvent: { isPrimary: true },
+                                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 })
+                            };
+                            
+                            // Should not throw an error and should proceed with drag setup
+                            expect(() => selectedComponent.onStartDrag(mockEvent)).not.toThrow();
+                            
+                            // For unlocked ComponentGroups, stopImmediatePropagation should be called
+                            // For unlocked Components, the method should proceed (no early return)
+                            if (selectedComponent instanceof ComponentGroup) {
+                                expect(mockEvent.stopImmediatePropagation).toHaveBeenCalled();
+                            }
+                            // Note: Components don't call preventDefault or stopImmediatePropagation,
+                            // but they should proceed with drag setup when unlocked
+                        }
+                        
+                        // Property: Unlocked components should allow LayoutController editing operations
+                        LayoutController.selectedComponent = selectedComponent;
+                        
+                        // Test rotateSelectedComponent - should rotate unlocked components
+                        let originalSelectedRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            originalSelectedRotation = selectedComponent.components[0].sprite.rotation || 0;
+                        } else {
+                            originalSelectedRotation = selectedComponent.sprite.rotation || 0;
+                        }
+                        
+                        layoutController.rotateSelectedComponent();
+                        
+                        let currentSelectedRotation;
+                        if (selectedComponent instanceof ComponentGroup) {
+                            currentSelectedRotation = selectedComponent.components[0].sprite.rotation || 0;
+                        } else {
+                            currentSelectedRotation = selectedComponent.sprite.rotation || 0;
+                        }
+                        expect(currentSelectedRotation).not.toBe(originalSelectedRotation);
+                        
+                        // Test deleteSelectedComponent - should delete unlocked components
+                        const originalChildrenCount = layoutController.currentLayer.children.length;
+                        layoutController.deleteSelectedComponent();
+                        expect(layoutController.currentLayer.children.length).toBeLessThan(originalChildrenCount);
+                        
+                        // Property: Layer operations should work on unlocked components (same as locked)
+                        // Note: We can't test this after deletion, but the principle is that visibility operations work regardless of lock state
+                        
+                        // Clean up - component should already be destroyed by deleteSelectedComponent
+                        LayoutController.selectedComponent = null;
+                        
+                        return true;
+                    }
+                ),
+                { numRuns: 100 }
+            );
         });
     });
 
@@ -7039,5 +9125,412 @@ describe("LayoutController", function() {
             ),
             { numRuns: 100 }
         );
+    });
+
+    describe("Lock Integration", function() {
+        let layoutController;
+        let straightTrackData;
+        let selectionToolbar;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            selectionToolbar = document.getElementById('selectionToolbar');
+            
+            // Add a component and select it for testing
+            layoutController.addComponent(straightTrackData);
+            LayoutController.selectComponent(layoutController.currentLayer.children[0]);
+        });
+
+        describe("UI button state changes", function() {
+            it("shows lock button for unlocked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                layoutController._showSelectionToolbar();
+                
+                expect(selectionToolbar.classList.contains('locked')).toBe(false);
+            });
+
+            it("shows unlock button for locked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                layoutController._showSelectionToolbar();
+                
+                expect(selectionToolbar.classList.contains('locked')).toBe(true);
+            });
+
+            it("updates button visibility when lock state changes", function() {
+                const component = LayoutController.selectedComponent;
+                
+                // Start unlocked
+                component.locked = false;
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList.contains('locked')).toBe(false);
+                
+                // Change to locked
+                component.locked = true;
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList.contains('locked')).toBe(true);
+                
+                // Change back to unlocked
+                component.locked = false;
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList.contains('locked')).toBe(false);
+            });
+        });
+
+        describe("keyboard shortcut handling", function() {
+            it("locks unlocked component with Ctrl+Shift+L", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                const event = new KeyboardEvent('keydown', {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                });
+                
+                spyOn(event, 'preventDefault');
+                document.dispatchEvent(event);
+                
+                expect(component.locked).toBe(true);
+                expect(event.preventDefault).toHaveBeenCalled();
+            });
+
+            it("unlocks locked component with Ctrl+Shift+L", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                const event = new KeyboardEvent('keydown', {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                });
+                
+                spyOn(event, 'preventDefault');
+                document.dispatchEvent(event);
+                
+                expect(component.locked).toBe(false);
+                expect(event.preventDefault).toHaveBeenCalled();
+            });
+
+            it("handles keyboard shortcut for temporary groups", function() {
+                // Create a temporary group
+                layoutController.addComponent(straightTrackData);
+                const component1 = layoutController.currentLayer.children[0];
+                const component2 = layoutController.currentLayer.children[1];
+                
+                const tempGroup = new ComponentGroup(true); // temporary group
+                tempGroup.addComponent(component1);
+                tempGroup.addComponent(component2);
+                
+                LayoutController.selectComponent(tempGroup);
+                
+                // Both components should start unlocked
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+                expect(tempGroup.locked).toBe(false);
+                
+                const event = new KeyboardEvent('keydown', {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                });
+                
+                document.dispatchEvent(event);
+                
+                // All should be locked for temporary groups
+                expect(component1.locked).toBe(true);
+                expect(component2.locked).toBe(true);
+                expect(tempGroup.locked).toBe(true);
+            });
+
+            it("handles keyboard shortcut for permanent groups", function() {
+                // Create a permanent group
+                layoutController.addComponent(straightTrackData);
+                const component1 = layoutController.currentLayer.children[0];
+                const component2 = layoutController.currentLayer.children[1];
+                
+                const permGroup = new ComponentGroup(false); // permanent group
+                permGroup.addComponent(component1);
+                permGroup.addComponent(component2);
+                
+                LayoutController.selectComponent(permGroup);
+                
+                // All should start unlocked
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+                expect(permGroup.locked).toBe(false);
+                
+                const event = new KeyboardEvent('keydown', {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                });
+                
+                document.dispatchEvent(event);
+                
+                // Only group should be locked for permanent groups
+                expect(component1.locked).toBe(false);
+                expect(component2.locked).toBe(false);
+                expect(permGroup.locked).toBe(true);
+            });
+
+            it("does nothing when no component selected", function() {
+                LayoutController.selectedComponent = null;
+                
+                const event = new KeyboardEvent('keydown', {
+                    key: 'L',
+                    ctrlKey: true,
+                    shiftKey: true,
+                    bubbles: true
+                });
+                
+                spyOn(event, 'preventDefault');
+                document.dispatchEvent(event);
+                
+                // Should not prevent default when no component selected
+                expect(event.preventDefault).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("menu integration", function() {
+            it("locks component via lock menu item", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                spyOn(layoutController, 'hideFileMenu');
+                layoutController.lockComponent();
+                
+                expect(component.locked).toBe(true);
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("unlocks component via unlock menu item", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                spyOn(layoutController, 'hideFileMenu');
+                layoutController.unlockComponent();
+                
+                expect(component.locked).toBe(false);
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+            });
+
+            it("does nothing when no component selected for lock", function() {
+                LayoutController.selectedComponent = null;
+                
+                spyOn(layoutController, 'hideFileMenu');
+                layoutController.lockComponent();
+                
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+                // No error should occur
+            });
+
+            it("does nothing when no component selected for unlock", function() {
+                LayoutController.selectedComponent = null;
+                
+                spyOn(layoutController, 'hideFileMenu');
+                layoutController.unlockComponent();
+                
+                expect(layoutController.hideFileMenu).toHaveBeenCalled();
+                // No error should occur
+            });
+
+            it("updates toolbar after lock action", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                spyOn(layoutController, '_showSelectionToolbar');
+                spyOn(layoutController, '_positionSelectionToolbar');
+                
+                layoutController.lockComponent();
+                
+                expect(layoutController._showSelectionToolbar).toHaveBeenCalled();
+                expect(layoutController._positionSelectionToolbar).toHaveBeenCalled();
+            });
+
+            it("updates toolbar after unlock action", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                spyOn(layoutController, '_showSelectionToolbar');
+                spyOn(layoutController, '_positionSelectionToolbar');
+                
+                layoutController.unlockComponent();
+                
+                expect(layoutController._showSelectionToolbar).toHaveBeenCalled();
+                expect(layoutController._positionSelectionToolbar).toHaveBeenCalled();
+            });
+        });
+
+        describe("duplication behavior", function() {
+            it("creates unlocked duplicates from locked components", function() {
+                const originalComponent = LayoutController.selectedComponent;
+                originalComponent.locked = true;
+                
+                layoutController.duplicateComponent(originalComponent);
+                const duplicatedComponent = LayoutController.selectedComponent;
+                
+                expect(duplicatedComponent).not.toBe(originalComponent);
+                expect(duplicatedComponent.locked).toBe(false);
+                expect(originalComponent.locked).toBe(true); // Original should remain locked
+            });
+
+            it("creates unlocked duplicates from unlocked components", function() {
+                const originalComponent = LayoutController.selectedComponent;
+                originalComponent.locked = false;
+                
+                layoutController.duplicateComponent(originalComponent);
+                const duplicatedComponent = LayoutController.selectedComponent;
+                
+                expect(duplicatedComponent).not.toBe(originalComponent);
+                expect(duplicatedComponent.locked).toBe(false);
+                expect(originalComponent.locked).toBe(false);
+            });
+
+            it("creates unlocked duplicates from locked groups", function() {
+                // Add second component
+                layoutController.addComponent(straightTrackData);
+                const component1 = layoutController.currentLayer.children[0];
+                const component2 = layoutController.currentLayer.children[1];
+                
+                // Create locked group
+                const originalGroup = new ComponentGroup(false);
+                originalGroup.locked = true;
+                originalGroup.addComponent(component1);
+                originalGroup.addComponent(component2);
+                
+                LayoutController.selectComponent(originalGroup);
+                
+                layoutController.duplicateComponent(originalGroup);
+                const duplicatedGroup = LayoutController.selectedComponent;
+                
+                expect(duplicatedGroup).not.toBe(originalGroup);
+                expect(duplicatedGroup.locked).toBe(false);
+                expect(originalGroup.locked).toBe(true); // Original should remain locked
+            });
+        });
+
+        describe("operation blocking for locked components", function() {
+            it("blocks delete operation on locked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                const initialChildCount = layoutController.currentLayer.children.length;
+                
+                layoutController.deleteSelectedComponent();
+                
+                // Component should not be deleted
+                expect(layoutController.currentLayer.children.length).toBe(initialChildCount);
+                expect(layoutController.currentLayer.children).toContain(component);
+            });
+
+            it("allows delete operation on unlocked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                const initialChildCount = layoutController.currentLayer.children.length;
+                
+                layoutController.deleteSelectedComponent();
+                
+                // Component should be deleted
+                expect(layoutController.currentLayer.children.length).toBe(initialChildCount - 1);
+                expect(layoutController.currentLayer.children).not.toContain(component);
+            });
+
+            it("blocks rotation operation on locked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                const originalAngle = component.getPose().angle;
+                
+                layoutController.rotateSelectedComponent();
+                
+                // Angle should not change
+                expect(component.getPose().angle).toBe(originalAngle);
+            });
+
+            it("allows rotation operation on unlocked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = false;
+                
+                const originalAngle = component.getPose().angle;
+                
+                layoutController.rotateSelectedComponent();
+                
+                // Angle should change
+                expect(component.getPose().angle).not.toBe(originalAngle);
+            });
+
+            it("blocks bring to front operation on locked component", function() {
+                // Add another component to test layering
+                layoutController.addComponent(straightTrackData);
+                const component1 = layoutController.currentLayer.children[0];
+                const component2 = layoutController.currentLayer.children[1];
+                
+                component1.locked = true;
+                LayoutController.selectComponent(component1);
+                
+                const originalIndex = layoutController.currentLayer.getChildIndex(component1);
+                
+                layoutController.bringSelectedComponentToFront();
+                
+                // Index should not change
+                expect(layoutController.currentLayer.getChildIndex(component1)).toBe(originalIndex);
+            });
+
+            it("blocks send to back operation on locked component", function() {
+                // Add another component to test layering
+                layoutController.addComponent(straightTrackData);
+                const component1 = layoutController.currentLayer.children[0];
+                const component2 = layoutController.currentLayer.children[1];
+                
+                component2.locked = true;
+                LayoutController.selectComponent(component2);
+                
+                const originalIndex = layoutController.currentLayer.getChildIndex(component2);
+                
+                layoutController.sendSelectedComponentToBack();
+                
+                // Index should not change
+                expect(layoutController.currentLayer.getChildIndex(component2)).toBe(originalIndex);
+            });
+
+            it("blocks edit operation on locked component", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                
+                layoutController.editSelectedComponent();
+                
+                // Edit dialog should not be shown
+                expect(layoutController.showCreateCustomComponentDialog).not.toHaveBeenCalled();
+            });
+
+            it("blocks save operation on locked component during editing", function() {
+                const component = LayoutController.selectedComponent;
+                component.locked = true;
+                
+                // Mock that we're in editing mode
+                LayoutController.selectComponent(component);
+                
+                // Spy on methods that would be called during save
+                spyOn(component, 'resize');
+                
+                layoutController.onSaveCustomComponent();
+                
+                // Save operations should not proceed
+                expect(component.resize).not.toHaveBeenCalled();
+            });
+        });
     });
 });

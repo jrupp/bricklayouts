@@ -100,6 +100,26 @@ canvas {
 	display: none;
 }
 
+#selectionToolbar:not(.locked) > button#selToolUnlock,
+#selectionToolbar.locked > button#selToolLock,
+#selectionToolbar:not(.locked) menu > li#selToolMenuUnlock,
+#selectionToolbar.locked menu > li#selToolMenuLock {
+	display: none;
+}
+
+#selectionToolbar.locked menu > li.hideOnLock {
+	opacity: 0.5;
+	cursor: default;
+	pointer-events: none;
+	background-color: unset;
+}
+
+#selectionToolbar.locked #selToolEdit,
+#selectionToolbar.locked #selToolRotate,
+#selectionToolbar.locked #selToolDelete {
+	display: none;
+}
+
 #selectionToolbar > button {
 	width: 4rem;
 	height: 4rem;
@@ -560,6 +580,7 @@ a.buylink {
 	display: none;
 }
 
+button.hidden,
 div.hidden {
 	display: none;
 }

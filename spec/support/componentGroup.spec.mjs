@@ -2287,6 +2287,71 @@ describe('ComponentGroup', () => {
       );
     });
 
+    // Test that cloned ComponentGroups are always unlocked
+    it('should always create unlocked ComponentGroups when cloning regardless of source state', () => {
+      const mockLayer = {
+        tree: {
+          remove: jasmine.createSpy('remove'),
+          load: jasmine.createSpy('load')
+        },
+        toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+      };
+      
+      // Test with locked permanent group
+      const lockedGroup = new ComponentGroup(false);
+      const mockComponent1 = {
+        uuid: 'comp-1',
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({
+          minX: -5, minY: -5, maxX: 5, maxY: 5
+        }),
+        connections: [],
+        parent: mockLayer,
+        position: { x: 0, y: 0 },
+        clone: jasmine.createSpy('clone').and.returnValue({
+          uuid: 'cloned-comp-1',
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: -5, minY: -5, maxX: 5, maxY: 5
+          }),
+          connections: [],
+          parent: mockLayer,
+          position: { x: 0, y: 0 }
+        })
+      };
+      lockedGroup.addComponent(mockComponent1);
+      lockedGroup.locked = true;
+      
+      expect(lockedGroup.locked).toBe(true);
+      const clonedLockedGroup = lockedGroup.clone(mockLayer);
+      expect(clonedLockedGroup.locked).toBe(false);
+      
+      // Test with unlocked permanent group
+      const unlockedGroup = new ComponentGroup(false);
+      const mockComponent2 = {
+        uuid: 'comp-2',
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({
+          minX: -5, minY: -5, maxX: 5, maxY: 5
+        }),
+        connections: [],
+        parent: mockLayer,
+        position: { x: 0, y: 0 },
+        clone: jasmine.createSpy('clone').and.returnValue({
+          uuid: 'cloned-comp-2',
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: -5, minY: -5, maxX: 5, maxY: 5
+          }),
+          connections: [],
+          parent: mockLayer,
+          position: { x: 0, y: 0 }
+        })
+      };
+      unlockedGroup.addComponent(mockComponent2);
+      unlockedGroup.locked = false;
+      
+      expect(unlockedGroup.locked).toBe(false);
+      const clonedUnlockedGroup = unlockedGroup.clone(mockLayer);
+      expect(clonedUnlockedGroup.locked).toBe(false);
+    });
+
     // **Feature: permanent-component-groups, Property 6: Deletion removes group and components**
     // **Validates: Requirements 4.4**
     it('should remove group and all components when deleting permanent group', () => {
@@ -3045,7 +3110,913 @@ describe('ComponentGroup', () => {
         { numRuns: 100 }
       );
     });
+
+    it('should serialize a locked ComponentGroup with locked property set to 1', () => {
+      const group = new ComponentGroup();
+      group.locked = true;
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.locked).toBe(1);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
+
+    it('should serialize an unlocked ComponentGroup without locked property', () => {
+      const group = new ComponentGroup();
+      group.locked = false; // explicitly set to false
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.hasOwnProperty('locked')).toBe(false);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
+
+    it('should omit locked property when ComponentGroup is unlocked by default', () => {
+      const group = new ComponentGroup();
+      // locked should be false by default
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.hasOwnProperty('locked')).toBe(false);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
   });
 
+  describe('locked property', () => {
+    it('should initialize as false by default', () => {
+      const group = new ComponentGroup();
+      
+      expect(group.locked).toBe(false);
+    });
 
+    it('should allow setting and getting locked state', () => {
+      const group = new ComponentGroup();
+      
+      group.locked = true;
+      expect(group.locked).toBe(true);
+      
+      group.locked = false;
+      expect(group.locked).toBe(false);
+    });
+
+    it('should convert non-boolean values to boolean', () => {
+      const group = new ComponentGroup();
+      
+      group.locked = 1;
+      expect(group.locked).toBe(true);
+      
+      group.locked = 0;
+      expect(group.locked).toBe(false);
+      
+      group.locked = "true";
+      expect(group.locked).toBe(true);
+      
+      group.locked = "";
+      expect(group.locked).toBe(false);
+    });
+  });
+
+  describe('lock propagation', () => {
+    it('should propagate lock state to all member components for temporary groups', () => {
+      const temporaryGroup = new ComponentGroup(true);
+      
+      // Create mock components
+      const component1 = {
+        uuid: 'comp1',
+        locked: false,
+        connections: [],
+        parent: null,
+        layer: null,
+        group: null
+      };
+      
+      const component2 = {
+        uuid: 'comp2',
+        locked: false,
+        connections: [],
+        parent: null,
+        layer: null,
+        group: null
+      };
+      
+      temporaryGroup.addComponent(component1);
+      temporaryGroup.addComponent(component2);
+      
+      // Lock the temporary group
+      temporaryGroup.locked = true;
+      
+      // Verify that all member components are locked
+      expect(temporaryGroup.locked).toBe(true);
+      expect(component1.locked).toBe(true);
+      expect(component2.locked).toBe(true);
+      
+      // Unlock the temporary group
+      temporaryGroup.locked = false;
+      
+      // Verify that all member components are unlocked
+      expect(temporaryGroup.locked).toBe(false);
+      expect(component1.locked).toBe(false);
+      expect(component2.locked).toBe(false);
+    });
+
+    it('should NOT propagate lock state to member components for permanent groups', () => {
+      const permanentGroup = new ComponentGroup(false);
+      
+      // Create mock components
+      const component1 = {
+        uuid: 'comp1',
+        locked: false,
+        connections: [],
+        parent: null,
+        layer: null,
+        group: null
+      };
+      
+      const component2 = {
+        uuid: 'comp2',
+        locked: false,
+        connections: [],
+        parent: null,
+        layer: null,
+        group: null
+      };
+      
+      permanentGroup.addComponent(component1);
+      permanentGroup.addComponent(component2);
+      
+      // Lock the permanent group
+      permanentGroup.locked = true;
+      
+      // Verify that the group is locked but member components are NOT locked
+      expect(permanentGroup.locked).toBe(true);
+      expect(component1.locked).toBe(false);
+      expect(component2.locked).toBe(false);
+      
+      // Unlock the permanent group
+      permanentGroup.locked = false;
+      
+      // Verify that the group is unlocked and member components remain unchanged
+      expect(permanentGroup.locked).toBe(false);
+      expect(component1.locked).toBe(false);
+      expect(component2.locked).toBe(false);
+    });
+  });
+
+  describe('operation blocking when locked', () => {
+    let mockLayer;
+    let mockTree;
+
+    beforeEach(() => {
+      mockTree = {
+        remove: jasmine.createSpy('remove'),
+        load: jasmine.createSpy('load')
+      };
+      mockLayer = {
+        tree: mockTree,
+        toLocal: jasmine.createSpy('toLocal').and.callFake(point => point)
+      };
+    });
+
+    describe('move() operation blocking', () => {
+      it('should block move operation when ComponentGroup is locked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          position: {
+            x: 10,
+            y: 20,
+            set: jasmine.createSpy('set')
+          },
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Lock the group
+        group.locked = true;
+        
+        // Attempt to move - should be blocked
+        group.move(100, 200);
+        
+        // Verify component position was not changed
+        expect(mockComponent.position.set).not.toHaveBeenCalled();
+      });
+
+      it('should allow move operation when ComponentGroup is unlocked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          position: {
+            x: 10,
+            y: 20,
+            set: jasmine.createSpy('set')
+          },
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Ensure group is unlocked
+        group.locked = false;
+        
+        // Attempt to move - should succeed
+        group.move(100, 200);
+        
+        // Verify component position was changed
+        expect(mockComponent.position.set).toHaveBeenCalled();
+      });
+    });
+
+    describe('rotate() operation blocking', () => {
+      it('should block rotate operation when ComponentGroup is locked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          position: {
+            x: 10,
+            y: 20,
+            set: jasmine.createSpy('set')
+          },
+          sprite: {
+            rotation: 0,
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 0, minY: 0, maxX: 10, maxY: 10
+            })
+          },
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          }),
+          getPose: jasmine.createSpy('getPose').and.returnValue({
+            x: 10,
+            y: 20,
+            angle: 0,
+            rotateAround: jasmine.createSpy('rotateAround').and.returnValue({
+              x: 15, y: 25, angle: Math.PI / 4
+            })
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Lock the group
+        group.locked = true;
+        
+        // Attempt to rotate - should be blocked
+        group.rotate(Math.PI / 4);
+        
+        // Verify component was not rotated
+        expect(mockComponent.position.set).not.toHaveBeenCalled();
+        expect(mockComponent.sprite.rotation).toBe(0);
+      });
+
+      it('should allow rotate operation when ComponentGroup is unlocked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock layer with findMatchingConnection
+        const mockLayer = {
+          tree: mockTree,
+          toLocal: jasmine.createSpy('toLocal').and.callFake(point => point),
+          findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+        };
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [{
+            updateCircle: jasmine.createSpy('updateCircle')
+          }],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          position: {
+            x: 10,
+            y: 20,
+            set: jasmine.createSpy('set')
+          },
+          sprite: {
+            rotation: 0,
+            getLocalBounds: jasmine.createSpy('getLocalBounds').and.returnValue({
+              minX: 0, minY: 0, maxX: 10, maxY: 10
+            })
+          },
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          }),
+          getPose: jasmine.createSpy('getPose').and.returnValue({
+            x: 10,
+            y: 20,
+            angle: 0,
+            rotateAround: jasmine.createSpy('rotateAround').and.returnValue({
+              x: 15, y: 25, angle: Math.PI / 4
+            })
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Ensure group is unlocked
+        group.locked = false;
+        
+        // Mock the required methods
+        spyOn(group, 'deleteCollisionTree');
+        spyOn(group, 'insertCollisionTree');
+        
+        // Attempt to rotate - should succeed
+        group.rotate(Math.PI / 4);
+        
+        // Verify component was rotated
+        expect(mockComponent.position.set).toHaveBeenCalled();
+        expect(mockComponent.sprite.rotation).toBe(Math.PI / 4);
+      });
+    });
+
+    describe('onStartDrag() operation blocking', () => {
+      let mockEvent;
+      let mockStage;
+
+      beforeEach(() => {
+        mockStage = {
+          on: jasmine.createSpy('on')
+        };
+        
+        window.app = {
+          stage: mockStage
+        };
+
+        mockEvent = {
+          getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 100, y: 200 }),
+          stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation'),
+          altKey: false
+        };
+
+        LayoutController.dragTarget = null;
+        LayoutController.dragDistance = 0;
+      });
+
+      afterEach(() => {
+        delete window.app;
+      });
+
+      it('should block onStartDrag operation when ComponentGroup is locked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          alpha: 1,
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Lock the group
+        group.locked = true;
+        
+        // Attempt to start drag - should be blocked
+        group.onStartDrag(mockEvent);
+        
+        // Verify drag was not initiated
+        expect(LayoutController.dragTarget).toBeNull();
+        expect(mockComponent.alpha).toBe(1); // Should not change to 0.5
+        expect(mockStage.on).not.toHaveBeenCalled();
+      });
+
+      it('should allow onStartDrag operation when ComponentGroup is unlocked', () => {
+        const group = new ComponentGroup();
+        
+        // Create mock component
+        const mockComponent = {
+          uuid: 'comp1',
+          connections: [],
+          parent: mockLayer,
+          layer: mockLayer,
+          group: null,
+          alpha: 1,
+          getBounds: jasmine.createSpy('getBounds').and.returnValue({
+            minX: 5, minY: 15, maxX: 15, maxY: 25
+          })
+        };
+        
+        group.addComponent(mockComponent);
+        
+        // Ensure group is unlocked
+        group.locked = false;
+        
+        // Mock required methods
+        spyOn(group, 'getPose').and.returnValue({ x: 10, y: 20, angle: 0, subtract: jasmine.createSpy('subtract').and.returnValue({ x: 0, y: 0, angle: 0 }) });
+        spyOn(group, 'deleteCollisionTree');
+        
+        // Attempt to start drag - should succeed
+        group.onStartDrag(mockEvent);
+        
+        // Verify drag was initiated
+        expect(LayoutController.dragTarget).toBe(group);
+        expect(mockComponent.alpha).toBe(0.5); // Should change to 0.5
+        expect(mockStage.on).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('serialization with lock states', () => {
+    it('should serialize locked ComponentGroup with locked property set to 1', () => {
+      const group = new ComponentGroup();
+      group.locked = true;
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.locked).toBe(1);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
+
+    it('should serialize unlocked ComponentGroup without locked property', () => {
+      const group = new ComponentGroup();
+      group.locked = false; // explicitly set to false
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.hasOwnProperty('locked')).toBe(false);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
+
+    it('should omit locked property when ComponentGroup is unlocked by default', () => {
+      const group = new ComponentGroup();
+      // locked should be false by default
+      
+      const serialized = group.serialize();
+      
+      expect(serialized.hasOwnProperty('locked')).toBe(false);
+      expect(serialized.uuid).toBe(group.uuid);
+    });
+
+    it('should handle serialization of nested groups with different lock states', () => {
+      const parentGroup = new ComponentGroup(false);
+      const childGroup = new ComponentGroup(false);
+      
+      // Set different lock states
+      parentGroup.locked = true;
+      childGroup.locked = false;
+      
+      // Add child to parent (this sets childGroup.group = parentGroup)
+      parentGroup.addComponent(childGroup);
+      
+      const parentSerialized = parentGroup.serialize();
+      const childSerialized = childGroup.serialize();
+      
+      // Parent should have locked property
+      expect(parentSerialized.locked).toBe(1);
+      expect(parentSerialized.hasOwnProperty('group')).toBe(false);
+      
+      // Child should not have locked property but should have group reference
+      expect(childSerialized.hasOwnProperty('locked')).toBe(false);
+      expect(childSerialized.group).toBe(parentGroup.uuid);
+    });
+  });
+
+  describe('lock state edge cases', () => {
+    let mockLayoutController;
+    let mockSpy;
+
+    beforeAll(() => {
+      mockLayoutController = {
+        deleteComponent: jasmine.createSpy('deleteComponent')
+      };
+      
+      mockSpy = spyOn(LayoutController, 'getInstance');
+      mockSpy.and.returnValue(mockLayoutController);
+    });
+
+    beforeEach(() => {
+      mockLayoutController.deleteComponent.calls.reset();
+    });
+
+    afterAll(() => {
+      mockLayoutController.deleteComponent = undefined;
+      mockSpy.and.callThrough();
+    });
+
+    it('should maintain lock state when adding/removing components', () => {
+      const group = new ComponentGroup(true); // temporary group
+      
+      // Lock the group first
+      group.locked = true;
+      
+      // Create mock component
+      const mockComponent = {
+        uuid: 'comp1',
+        locked: false, // initially unlocked
+        connections: [],
+        parent: {},
+        layer: {},
+        group: null
+      };
+      
+      // Add component to locked temporary group
+      group.addComponent(mockComponent);
+      
+      // The component should still be unlocked initially since addComponent doesn't propagate lock state
+      // Lock propagation only happens when setting the locked property
+      expect(mockComponent.locked).toBe(false);
+      expect(group.locked).toBe(true);
+      
+      // Now trigger lock propagation by setting the lock state again
+      group.locked = true; // This should propagate to the newly added component
+      
+      // Now the component should be locked due to temporary group propagation
+      expect(mockComponent.locked).toBe(true);
+      expect(group.locked).toBe(true);
+      
+      // Remove component
+      group.removeComponent(mockComponent);
+      
+      // Component should no longer be in group, but group lock state should remain
+      expect(mockComponent.group).toBeNull();
+      // Note: Component lock state after removal is not specified in requirements
+    });
+
+    it('should handle lock state with empty groups', () => {
+      const group = new ComponentGroup();
+      
+      // Lock empty group
+      group.locked = true;
+      expect(group.locked).toBe(true);
+      
+      // Unlock empty group
+      group.locked = false;
+      expect(group.locked).toBe(false);
+      
+      // Operations on empty locked group should not throw
+      group.locked = true;
+      expect(() => group.move(100, 200)).not.toThrow();
+      expect(() => group.rotate(Math.PI / 4)).not.toThrow();
+    });
+
+    it('should preserve lock state during group destruction', () => {
+      const group = new ComponentGroup();
+      
+      // Create mock component
+      const mockComponent = {
+        uuid: 'comp1',
+        connections: [],
+        parent: {},
+        layer: {},
+        group: null
+      };
+      
+      group.addComponent(mockComponent);
+      group.locked = true;
+      
+      expect(group.locked).toBe(true);
+      
+      // Destroy group
+      group.destroy();
+      
+      // Group should still report its lock state even when destroyed
+      expect(group.locked).toBe(true);
+    });
+  });
+
+  describe('Property-Based Tests', () => {
+    it('should initialize locked property to false for all ComponentGroup instances', () => {
+      /**
+       * Feature: lock-components, Property 17: Constructor initialization
+       * Validates: Requirements 9.1, 9.2
+       */
+      fc.assert(fc.property(
+        fc.boolean(), // isTemporary parameter
+        (isTemporary) => {
+          // Create a ComponentGroup instance
+          const instance = new ComponentGroup(isTemporary);
+          
+          // Property: All new ComponentGroup instances should have locked property initialized to false
+          expect(instance.locked).toBe(false);
+        }
+      ), { numRuns: 100 });
+    });
+
+    it('should propagate lock/unlock actions to both group and all member components for temporary groups', () => {
+      /**
+       * Feature: lock-components, Property 5: Temporary group lock propagation
+       * Validates: Requirements 2.3, 3.1, 3.2
+       */
+      fc.assert(fc.property(
+        fc.array(fc.string(), { minLength: 1, maxLength: 5 }), // component UUIDs
+        fc.boolean(), // initial lock state for components
+        fc.boolean(), // target lock state to set on group
+        (componentUuids, initialComponentLockState, targetGroupLockState) => {
+          // Create a temporary ComponentGroup
+          const temporaryGroup = new ComponentGroup(true);
+          
+          // Create mock components with the initial lock state
+          const mockComponents = componentUuids.map(uuid => ({
+            uuid: uuid,
+            locked: initialComponentLockState,
+            connections: [],
+            parent: null,
+            layer: null,
+            group: null
+          }));
+          
+          // Add all components to the temporary group
+          mockComponents.forEach(component => {
+            temporaryGroup.addComponent(component);
+          });
+          
+          // Set the lock state on the temporary group
+          temporaryGroup.locked = targetGroupLockState;
+          
+          // Property: For temporary groups, lock/unlock actions should affect both the group and all member components
+          expect(temporaryGroup.locked).toBe(targetGroupLockState);
+          mockComponents.forEach(component => {
+            expect(component.locked).toBe(targetGroupLockState);
+          });
+        }
+      ), { numRuns: 100 });
+    });
+
+    it('should apply lock/unlock actions only to the group itself for permanent groups', () => {
+      /**
+       * Feature: lock-components, Property 6: Permanent group lock isolation
+       * Validates: Requirements 2.4, 3.3, 3.4, 3.5
+       */
+      fc.assert(fc.property(
+        fc.array(fc.string(), { minLength: 1, maxLength: 5 }), // component UUIDs
+        fc.boolean(), // initial lock state for components
+        fc.boolean(), // target lock state to set on group
+        (componentUuids, initialComponentLockState, targetGroupLockState) => {
+          // Create a permanent ComponentGroup
+          const permanentGroup = new ComponentGroup(false);
+          
+          // Create mock components with the initial lock state
+          const mockComponents = componentUuids.map(uuid => ({
+            uuid: uuid,
+            locked: initialComponentLockState,
+            connections: [],
+            parent: null,
+            layer: null,
+            group: null
+          }));
+          
+          // Add all components to the permanent group
+          mockComponents.forEach(component => {
+            permanentGroup.addComponent(component);
+          });
+          
+          // Set the lock state on the permanent group
+          permanentGroup.locked = targetGroupLockState;
+          
+          // Property: For permanent groups, lock/unlock actions should affect only the group itself, not its member components
+          expect(permanentGroup.locked).toBe(targetGroupLockState);
+          mockComponents.forEach(component => {
+            expect(component.locked).toBe(initialComponentLockState); // Should remain unchanged
+          });
+        }
+      ), { numRuns: 100 });
+    });
+  });
+
+  describe('hasLockedComponents', () => {
+    it('should return false when no components are locked', () => {
+      const group = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
+      const mockComponent1 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: false
+      };
+      const mockComponent2 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: false
+      };
+      
+      group.addComponent(mockComponent1);
+      group.addComponent(mockComponent2);
+      
+      expect(group.hasLockedComponents()).toBe(false);
+    });
+
+    it('should return true when at least one component is locked', () => {
+      const group = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
+      const mockComponent1 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: false
+      };
+      const mockComponent2 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: true
+      };
+      
+      group.addComponent(mockComponent1);
+      group.addComponent(mockComponent2);
+      
+      expect(group.hasLockedComponents()).toBe(true);
+    });
+
+    it('should return true when nested ComponentGroup has locked components', () => {
+      const parentGroup = new ComponentGroup();
+      const nestedGroup = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: true
+      };
+      
+      nestedGroup.addComponent(mockComponent);
+      parentGroup.addComponent(nestedGroup);
+      
+      expect(parentGroup.hasLockedComponents()).toBe(true);
+    });
+
+    it('should return true when nested ComponentGroup itself is locked', () => {
+      const parentGroup = new ComponentGroup();
+      const nestedGroup = new ComponentGroup();
+      const sharedLayer = {}; // All components must be on the same layer
+      
+      const mockComponent = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: false
+      };
+      
+      nestedGroup.addComponent(mockComponent);
+      nestedGroup.locked = true;
+      parentGroup.addComponent(nestedGroup);
+      
+      expect(parentGroup.hasLockedComponents()).toBe(true);
+    });
+  });
+
+  describe('drag prevention with locked components', () => {
+    it('should prevent onStartDrag when any member component is locked', () => {
+      const group = new ComponentGroup(true); // temporary group
+      const sharedLayer = {}; // All components must be on the same layer
+      const mockEvent = {
+        getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: 0, y: 0 }),
+        stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+      };
+      
+      const mockComponent1 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: false
+      };
+      const mockComponent2 = {
+        getBounds: jasmine.createSpy('getBounds'),
+        connections: [],
+        parent: sharedLayer,
+        locked: true // This component is locked
+      };
+      
+      group.addComponent(mockComponent1);
+      group.addComponent(mockComponent2);
+      
+      // Store original dragTarget value
+      const originalDragTarget = LayoutController.dragTarget;
+      
+      group.onStartDrag(mockEvent);
+      
+      // Verify that drag was not initiated - dragTarget should remain unchanged
+      expect(LayoutController.dragTarget).toBe(originalDragTarget);
+      expect(mockEvent.getLocalPosition).not.toHaveBeenCalled();
+      expect(mockEvent.stopImmediatePropagation).not.toHaveBeenCalled();
+    });
+
+    it('should prevent move when any member component is locked', () => {
+      const group = new ComponentGroup();
+      const sharedLayer = { // All components must be on the same layer
+        toLocal: jasmine.createSpy('toLocal').and.returnValue({ x: 10, y: 10 })
+      };
+      const mockComponent1 = {
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({ minX: 0, minY: 0, maxX: 10, maxY: 10 }),
+        connections: [],
+        parent: sharedLayer,
+        locked: false,
+        position: {
+          x: 5,
+          y: 5,
+          set: jasmine.createSpy('set')
+        }
+      };
+      const mockComponent2 = {
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({ minX: 10, minY: 10, maxX: 20, maxY: 20 }),
+        connections: [],
+        parent: sharedLayer,
+        locked: true, // This component is locked
+        position: {
+          x: 15,
+          y: 15,
+          set: jasmine.createSpy('set')
+        }
+      };
+      
+      group.addComponent(mockComponent1);
+      group.addComponent(mockComponent2);
+      
+      group.move(100, 100);
+      
+      // Verify that neither component was moved
+      expect(mockComponent1.position.set).not.toHaveBeenCalled();
+      expect(mockComponent2.position.set).not.toHaveBeenCalled();
+    });
+
+    it('should prevent rotate when any member component is locked', () => {
+      const group = new ComponentGroup();
+      const sharedLayer = { // All components must be on the same layer
+        toLocal: jasmine.createSpy('toLocal').and.returnValue({ x: 10, y: 10 })
+      };
+      const mockComponent1 = {
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({ minX: 0, minY: 0, maxX: 10, maxY: 10 }),
+        connections: [],
+        parent: sharedLayer,
+        locked: false,
+        position: {
+          x: 5,
+          y: 5,
+          set: jasmine.createSpy('set')
+        },
+        sprite: {
+          rotation: 0
+        },
+        getPose: jasmine.createSpy('getPose').and.returnValue({
+          x: 5,
+          y: 5,
+          angle: 0,
+          rotateAround: jasmine.createSpy('rotateAround').and.returnValue({ x: 10, y: 10, angle: Math.PI / 4 })
+        })
+      };
+      const mockComponent2 = {
+        getBounds: jasmine.createSpy('getBounds').and.returnValue({ minX: 10, minY: 10, maxX: 20, maxY: 20 }),
+        connections: [],
+        parent: sharedLayer,
+        locked: true, // This component is locked
+        position: {
+          x: 15,
+          y: 15,
+          set: jasmine.createSpy('set')
+        },
+        sprite: {
+          rotation: 0
+        },
+        getPose: jasmine.createSpy('getPose').and.returnValue({
+          x: 15,
+          y: 15,
+          angle: 0,
+          rotateAround: jasmine.createSpy('rotateAround').and.returnValue({ x: 20, y: 20, angle: Math.PI / 4 })
+        })
+      };
+      
+      group.addComponent(mockComponent1);
+      group.addComponent(mockComponent2);
+      
+      spyOn(group, 'canRotate').and.returnValue(true);
+      spyOn(group, 'deleteCollisionTree');
+      
+      group.rotate();
+      
+      // Verify that rotation was prevented
+      expect(group.deleteCollisionTree).not.toHaveBeenCalled();
+      expect(mockComponent1.position.set).not.toHaveBeenCalled();
+      expect(mockComponent2.position.set).not.toHaveBeenCalled();
+    });
+  });
 });

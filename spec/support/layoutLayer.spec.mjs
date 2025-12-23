@@ -291,6 +291,120 @@ describe("LayoutLayer", function() {
         layoutLayer.cleanupGroupDeserialization();
     });
 
+    it("deserializes ComponentGroup locked state correctly", function() {
+        // Mock LayoutController for ComponentGroup.destroy()
+        const mockLayoutController = jasmine.createSpyObj('LayoutController', ['deleteComponent']);
+        spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+        
+        let serialized = {
+            components: [],
+            name: "Test Layer",
+            visible: true,
+            groups: [
+                { uuid: "unlocked-group" }, // No locked property - should be unlocked
+                { uuid: "locked-group", locked: 1 }, // locked: 1 - should be locked
+                { uuid: "nested-locked-group", group: "unlocked-group", locked: 1 } // Nested locked group
+            ]
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        
+        let groupLookupMap = layoutLayer.getGroupLookupMap();
+        expect(groupLookupMap).not.toBeNull();
+        expect(groupLookupMap.size).toBe(3);
+        
+        // Check unlocked group (Requirements 6.4)
+        let unlockedGroup = groupLookupMap.get("unlocked-group");
+        expect(unlockedGroup).toBeDefined();
+        expect(unlockedGroup.locked).toBeFalse();
+        
+        // Check locked group (Requirements 6.3)
+        let lockedGroup = groupLookupMap.get("locked-group");
+        expect(lockedGroup).toBeDefined();
+        expect(lockedGroup.locked).toBeTrue();
+        
+        // Check nested locked group (Requirements 6.3)
+        let nestedLockedGroup = groupLookupMap.get("nested-locked-group");
+        expect(nestedLockedGroup).toBeDefined();
+        expect(nestedLockedGroup.locked).toBeTrue();
+        expect(nestedLockedGroup.group).toBe(unlockedGroup);
+        
+        // Clean up
+        layoutLayer.cleanupGroupDeserialization();
+    });
+
+    it("handles invalid locked values during ComponentGroup deserialization", function() {
+        // Mock LayoutController for ComponentGroup.destroy()
+        const mockLayoutController = jasmine.createSpyObj('LayoutController', ['deleteComponent']);
+        spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+        
+        let serialized = {
+            components: [],
+            name: "Test Layer",
+            visible: true,
+            groups: [
+                { uuid: "invalid-locked-group", locked: 0 }, // locked: 0 - should be unlocked
+                { uuid: "invalid-locked-string", locked: "true" }, // locked: "true" - should be unlocked
+                { uuid: "invalid-locked-number", locked: 2 } // locked: 2 - should be unlocked
+            ]
+        };
+        let layoutLayer = new LayoutLayer();
+        layoutLayer.deserialize(serialized);
+        
+        let groupLookupMap = layoutLayer.getGroupLookupMap();
+        expect(groupLookupMap).not.toBeNull();
+        expect(groupLookupMap.size).toBe(3);
+        
+        // All groups with invalid locked values should be unlocked (Requirements 6.4)
+        let invalidLockedGroup = groupLookupMap.get("invalid-locked-group");
+        expect(invalidLockedGroup).toBeDefined();
+        expect(invalidLockedGroup.locked).toBeFalse();
+        
+        let invalidLockedString = groupLookupMap.get("invalid-locked-string");
+        expect(invalidLockedString).toBeDefined();
+        expect(invalidLockedString.locked).toBeFalse();
+        
+        let invalidLockedNumber = groupLookupMap.get("invalid-locked-number");
+        expect(invalidLockedNumber).toBeDefined();
+        expect(invalidLockedNumber.locked).toBeFalse();
+        
+        // Clean up
+        layoutLayer.cleanupGroupDeserialization();
+    });
+
+    it("restores locked state for orphaned groups during deserialization", function() {
+        // Mock LayoutController for ComponentGroup.destroy()
+        const mockLayoutController = jasmine.createSpyObj('LayoutController', ['deleteComponent']);
+        spyOn(LayoutController, 'getInstance').and.returnValue(mockLayoutController);
+        
+        let serialized = {
+            components: [],
+            name: "Test Layer",
+            visible: true,
+            groups: [
+                { uuid: "orphan-locked-group", group: "missing-parent", locked: 1 }
+            ]
+        };
+        let layoutLayer = new LayoutLayer();
+        spyOn(console, 'warn');
+        
+        layoutLayer.deserialize(serialized);
+        
+        // Check that orphan group was created as top-level and locked state was restored
+        let groupLookupMap = layoutLayer.getGroupLookupMap();
+        expect(groupLookupMap).not.toBeNull();
+        expect(groupLookupMap.size).toBe(1);
+        
+        let orphanGroup = groupLookupMap.get("orphan-locked-group");
+        expect(orphanGroup).toBeDefined();
+        expect(orphanGroup.group).toBeNull(); // Should be treated as top-level
+        expect(orphanGroup.locked).toBeTrue(); // Should preserve locked state (Requirements 6.3)
+        expect(console.warn).toHaveBeenCalledWith('Group orphan-locked-group references missing parent group missing-parent, treating as top-level group');
+        
+        // Clean up
+        layoutLayer.cleanupGroupDeserialization();
+    });
+
     describe("serialization error handling", function() {
         beforeEach(function() {
             // Mock LayoutController for ComponentGroup.destroy()

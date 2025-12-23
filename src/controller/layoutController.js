@@ -391,6 +391,10 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolMenuDelete')?.addEventListener('click', () => this.deleteSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolEdit')?.addEventListener('click', () => this.editSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolLock')?.addEventListener('click', () => this.lockComponent());
+    this.selectionToolbar?.querySelector('#selToolUnlock')?.addEventListener('click', () => this.unlockComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuLock')?.addEventListener('click', () => this.lockComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuUnlock')?.addEventListener('click', () => this.unlockComponent());
     this.selectionToolbar?.querySelector('#selToolBringFront')?.addEventListener('click', () => this.bringSelectedComponentToFront());
     this.selectionToolbar?.querySelector('#selToolSendBack')?.addEventListener('click', () => this.sendSelectedComponentToBack());
     this.selectionToolbar?.querySelector('#selToolMenuGroup')?.addEventListener('click', () => this.makeGroupPermanent());
@@ -1273,6 +1277,9 @@ export class LayoutController {
   }
 
   onSaveCustomComponent() {
+    if (LayoutController.selectedComponent.locked) {
+      return;
+    }
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
@@ -1559,6 +1566,14 @@ export class LayoutController {
       }
       if (event.key === 'c' && event.ctrlKey) {
         this.copySelectedComponent();
+        event.preventDefault();
+      }
+      if (event.key === 'L' && event.ctrlKey && event.shiftKey) {
+        if (LayoutController.selectedComponent.locked) {
+          this.unlockComponent();
+        } else {
+          this.lockComponent();
+        }
         event.preventDefault();
       }
     }
@@ -2050,6 +2065,9 @@ export class LayoutController {
   bringSelectedComponentToFront() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
+      if (LayoutController.selectedComponent.locked) {
+        return;
+      }
       if (LayoutController.selectedComponent instanceof Component) {
         this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
       } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
@@ -2061,6 +2079,9 @@ export class LayoutController {
   sendSelectedComponentToBack() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
+      if (LayoutController.selectedComponent.locked) {
+        return;
+      }
       if (LayoutController.selectedComponent instanceof Component) {
         this.currentLayer.setChildIndex(LayoutController.selectedComponent, 0);
       } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
@@ -2095,6 +2116,9 @@ export class LayoutController {
    * @param {Component} component - The component to delete.
    */
   deleteComponent(component) {
+    if (component?.locked) {
+      return;
+    }
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
       this._hideSelectionToolbar();
@@ -2112,6 +2136,9 @@ export class LayoutController {
   deleteSelectedComponent() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
+      if (LayoutController.selectedComponent.locked) {
+        return;
+      }
       let nextComp = LayoutController.selectedComponent.getAdjacentComponent();
       this.deleteComponent(LayoutController.selectedComponent);
       if (nextComp) {
@@ -2161,6 +2188,9 @@ export class LayoutController {
   editSelectedComponent() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent && LayoutController.selectedComponent.size === 1) {
+      if (LayoutController.selectedComponent.locked) {
+        return;
+      }
       this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
     }
   }
@@ -2178,7 +2208,36 @@ export class LayoutController {
       }
       return;
     }
+    if (LayoutController.selectedComponent.locked) {
+      return;
+    }
     LayoutController.selectedComponent.rotate();
+    this._positionSelectionToolbar();
+  }
+
+  /**
+   * Lock the selected component to prevent editing operations.
+   */
+  lockComponent() {
+    this.hideFileMenu();
+    if (!LayoutController.selectedComponent) {
+      return;
+    }
+    LayoutController.selectedComponent.locked = true;
+    this._showSelectionToolbar();
+    this._positionSelectionToolbar();
+  }
+
+  /**
+   * Unlock the selected component to allow editing operations.
+   */
+  unlockComponent() {
+    this.hideFileMenu();
+    if (!LayoutController.selectedComponent) {
+      return;
+    }
+    LayoutController.selectedComponent.locked = false;
+    this._showSelectionToolbar();
     this._positionSelectionToolbar();
   }
 
@@ -2191,6 +2250,10 @@ export class LayoutController {
     if (!selected || !selected.isTemporary) {
       return;
     }
+    if (selected.hasLockedComponents()) {
+      return;
+    }
+    
     selected.isTemporary = false;
     this._showSelectionToolbar();
   }
@@ -2690,6 +2753,13 @@ export class LayoutController {
     if (!comp || comp.destroyed) {
       return;
     }
+
+    if (comp.locked || (comp instanceof ComponentGroup && comp.hasLockedComponents())) {
+      this.selectionToolbar.classList.add('locked');
+    } else {
+      this.selectionToolbar.classList.remove('locked');
+    }
+
     if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate"))) {
       this.selectionToolbar.classList.add('editable');
     } else {
