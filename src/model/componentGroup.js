@@ -39,6 +39,12 @@ export class ComponentGroup {
   #temporary = false;
 
   /**
+   * @type {Boolean}
+   * Whether this component group is locked to prevent editing operations.
+   */
+  #locked;
+
+  /**
      * Unique identifier for this ComponentGroup
      * @type {String}
      */
@@ -73,6 +79,7 @@ export class ComponentGroup {
   constructor(temporary = false) {
     this.#uuid = crypto.randomUUID();
     this.#temporary = temporary;
+    this.#locked = false;
     /** @type {Map<String, Connection>} */
     this.connections = new Map();
   }
@@ -516,6 +523,19 @@ export class ComponentGroup {
   }
 
   /**
+   * Check if any member components are locked.
+   * @returns {Boolean} True if any member component is locked, false otherwise
+   */
+  hasLockedComponents() {
+    return this.#components.some(component => {
+      if (component instanceof ComponentGroup) {
+        return component.locked || component.hasLockedComponents();
+      }
+      return component.locked;
+    });
+  }
+
+  /**
    * @returns {Boolean} Whether the group is being dragged.
    */
   get isDragging() {
@@ -542,11 +562,37 @@ export class ComponentGroup {
   }
 
   /**
+   * Get the locked state of this ComponentGroup.
+   * @returns {Boolean} True if this ComponentGroup is locked, false otherwise
+   */
+  get locked() {
+    return this.#locked;
+  }
+
+  /**
+   * Set the locked state of this ComponentGroup.
+   * For temporary groups, this also affects all member components.
+   * For permanent groups, this only affects the group itself.
+   * @param {Boolean} value The new locked state to set
+   */
+  set locked(value) {
+    this.#locked = Boolean(value);
+    if (this.#temporary) {
+      this.#components.forEach(component => {
+        component.locked = this.#locked;
+      });
+    }
+  }
+
+  /**
    * Moves the group to the specified position.
    * @param {number} x 
    * @param {number} y 
    */
   move(x, y) {
+    if (this.#locked || this.hasLockedComponents()) {
+      return;
+    }
     const localPosition = this.#components[0]?.parent ? this.getLocalPosition() : this.getGlobalPosition();
     if (!localPosition) return;
 
@@ -573,6 +619,9 @@ export class ComponentGroup {
    * @param {FederatedPointerEvent} e 
    */
   onStartDrag(e) {
+    if (this.#locked || this.hasLockedComponents()) {
+      return;
+    }
     if (this.group) {
       this.group.onStartDrag(e);
       return;
@@ -619,6 +668,9 @@ export class ComponentGroup {
    * @param {Number} [angle] The angle to rotate by in radians. Defaults to PI/8.
    */
   rotate(angle = Math.PI / 8, checkConnections = true) {
+    if (this.#locked || this.hasLockedComponents()) {
+      return;
+    }
     if (!this.canRotate()) {
       return;
     }
@@ -763,6 +815,10 @@ export class ComponentGroup {
 
     if (this.group) {
       serialized.group = this.group.uuid;
+    }
+
+    if (this.#locked) {
+      serialized.locked = 1;
     }
 
     return serialized;

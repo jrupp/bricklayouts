@@ -210,6 +210,9 @@ export class LayoutLayer extends Container {
             const group = new ComponentGroup(false); // permanent group
             group.uuid = groupData.uuid;
             group.parent = this;
+            if (groupData.locked === 1) {
+                group.locked = true;
+            }
             this._groupLookupMap.set(groupData.uuid, group);
         });
         
@@ -230,7 +233,9 @@ export class LayoutLayer extends Container {
                     nestedGroup.uuid = groupData.uuid;
                     nestedGroup.parent = this;
                     nestedGroup.group = parentGroup;
-                    
+                    if (groupData.locked === 1) {
+                        nestedGroup.locked = true;
+                    }
                     this._groupLookupMap.set(groupData.uuid, nestedGroup);
                     remainingNestedGroups.splice(i, 1);
                 }
@@ -246,6 +251,9 @@ export class LayoutLayer extends Container {
             const group = new ComponentGroup(false); // permanent group
             group.uuid = groupData.uuid;
             group.parent = this;
+            if (groupData.locked === 1) {
+                group.locked = true;
+            }
             this._groupLookupMap.set(groupData.uuid, group);
         });
     }
