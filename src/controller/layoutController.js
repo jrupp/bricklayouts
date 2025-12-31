@@ -399,6 +399,7 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolSendBack')?.addEventListener('click', () => this.sendSelectedComponentToBack());
     this.selectionToolbar?.querySelector('#selToolMenuGroup')?.addEventListener('click', () => this.makeGroupPermanent());
     this.selectionToolbar?.querySelector('#selToolMenuUngroup')?.addEventListener('click', () => this.ungroupComponents());
+    this.selectionToolbar?.querySelector('#selToolMenuSelectAll')?.addEventListener('click', () => this.selectAll());
   }
 
   /**
@@ -1577,6 +1578,11 @@ export class LayoutController {
         event.preventDefault();
       }
     }
+    // Select All (Ctrl+A on Windows/Linux, Cmd+A on Mac)
+    if (event.key === 'a' && (event.ctrlKey || event.metaKey)) {
+      this.selectAll();
+      event.preventDefault();
+    }
     if (event.key === 'v' && event.ctrlKey) {
       this.pasteComponent();
       event.preventDefault();
@@ -2269,6 +2275,38 @@ export class LayoutController {
     }
     selected.isTemporary = true;
     this._showSelectionToolbar();
+  }
+
+  /**
+   * Select all components on the current layer.
+   * Creates a temporary ComponentGroup containing all components.
+   */
+  selectAll() {
+    this.hideFileMenu();
+    
+    // Get all components from the current layer
+    const allComponents = [];
+    this.currentLayer.children.forEach(child => {
+      if (child instanceof Component) {
+        allComponents.push(child);
+      } else if (child instanceof ComponentGroup && !child.isTemporary) {
+        // Include permanent groups as whole units
+        allComponents.push(child);
+      }
+    });
+    
+    // If there are 0 components, do nothing
+    if (allComponents.length === 0) {
+      return;
+    }
+    
+    // Process the selection using the same logic as drag selection
+    const selectionTarget = this.processSelectionBoxResults(allComponents);
+    if (selectionTarget) {
+      LayoutController.selectComponent(selectionTarget);
+      this._showSelectionToolbar();
+      this._positionSelectionToolbar();
+    }
   }
 
   /**
