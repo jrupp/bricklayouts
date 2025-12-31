@@ -2289,9 +2289,6 @@ export class LayoutController {
     this.currentLayer.children.forEach(child => {
       if (child instanceof Component) {
         allComponents.push(child);
-      } else if (child instanceof ComponentGroup && !child.isTemporary) {
-        // Include permanent groups as whole units
-        allComponents.push(child);
       }
     });
     
@@ -2301,6 +2298,7 @@ export class LayoutController {
     }
     
     // Process the selection using the same logic as drag selection
+    // This will automatically handle permanent groups by checking component.group
     const selectionTarget = this.processSelectionBoxResults(allComponents);
     if (selectionTarget) {
       LayoutController.selectComponent(selectionTarget);
