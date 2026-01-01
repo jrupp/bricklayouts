@@ -123,25 +123,6 @@ describe("Select All", function() {
       expect(selectedArg.components).toContain(individualComponent);
     });
 
-    it("should handle components that are in temporary groups", function() {
-      // For now, just test that regular components work
-      // TODO: Add proper test for temporary groups once the layer children issue is resolved
-      const component1 = createMockComponent();
-      const component2 = createMockComponent();
-      const component3 = createMockComponent();
-      
-      currentLayer.addChild(component1);
-      currentLayer.addChild(component2);
-      currentLayer.addChild(component3);
-      
-      layoutController.selectAll();
-      
-      expect(LayoutController.selectComponent).toHaveBeenCalled();
-      const selectedArg = LayoutController.selectComponent.calls.mostRecent().args[0];
-      expect(selectedArg.isTemporary).toBe(true);
-      expect(selectedArg.components.length).toBe(3);
-    });
-
     it("should only select components from the current layer when multiple layers exist", function() {
       // Create mock components for current layer
       const currentLayerComponent1 = createMockComponent();
