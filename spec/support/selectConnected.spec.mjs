@@ -37,6 +37,11 @@ describe("Select Connected", function() {
     LayoutController.selectedComponent = null;
   });
   
+  afterEach(function() {
+    // Clean up static state to prevent test interference
+    LayoutController.selectedComponent = null;
+  });
+  
   // Helper function to create a mock component that can be added to a layer
   function createMockComponent() {
     const mockComponent = new Container();
