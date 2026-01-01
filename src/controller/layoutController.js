@@ -2330,11 +2330,16 @@ export class LayoutController {
       return;
     }
     
+    // Track if we started with a temporary group to reuse it
+    let existingTempGroup = null;
+    
     // Determine the starting point(s) for connection traversal
     let startingItems = [];
     if (selected instanceof ComponentGroup) {
       if (selected.isTemporary) {
         // For temporary groups, start with all components in the group
+        // and remember the group so we can reuse it
+        existingTempGroup = selected;
         startingItems = selected.components;
       } else {
         // For permanent groups, start with the group itself
@@ -2452,10 +2457,23 @@ export class LayoutController {
     // Convert to array for processing
     const componentsArray = Array.from(connectedComponents);
     
-    // Process the selection using the same logic as drag selection
-    const selectionTarget = this.processSelectionBoxResults(componentsArray);
-    if (selectionTarget) {
-      LayoutController.selectComponent(selectionTarget);
+    // If we started with a temporary group, add new components to it
+    if (existingTempGroup) {
+      // Add any new components that aren't already in the group
+      componentsArray.forEach(component => {
+        // Skip if already in the existing group
+        if (!existingTempGroup.components.some(c => c.uuid === component.uuid)) {
+          existingTempGroup.addComponent(component);
+        }
+      });
+      // Select the updated temporary group
+      LayoutController.selectComponent(existingTempGroup);
+    } else {
+      // Process the selection using the same logic as drag selection
+      const selectionTarget = this.processSelectionBoxResults(componentsArray);
+      if (selectionTarget) {
+        LayoutController.selectComponent(selectionTarget);
+      }
     }
   }
 
@@ -2507,6 +2525,10 @@ export class LayoutController {
       
       // Add individual components to temporary group
       individualComponents.forEach(component => {
+        // If component is in a temporary group, remove it first
+        if (component.group && component.group.isTemporary) {
+          component.group.removeComponent(component);
+        }
         tempGroup.addComponent(component);
       });
       
@@ -2520,6 +2542,10 @@ export class LayoutController {
     } else if (individualComponents.length > 1) {
       const tempGroup = new ComponentGroup(true);
       individualComponents.forEach(component => {
+        // If component is in a temporary group, remove it first
+        if (component.group && component.group.isTemporary) {
+          component.group.removeComponent(component);
+        }
         tempGroup.addComponent(component);
       });
       return tempGroup;
