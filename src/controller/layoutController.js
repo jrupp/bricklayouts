@@ -2302,8 +2302,6 @@ export class LayoutController {
     const selectionTarget = this.processSelectionBoxResults(allComponents);
     if (selectionTarget) {
       LayoutController.selectComponent(selectionTarget);
-      this._showSelectionToolbar();
-      this._positionSelectionToolbar();
     }
   }
 
