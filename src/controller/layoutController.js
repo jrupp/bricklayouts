@@ -400,6 +400,7 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolMenuGroup')?.addEventListener('click', () => this.makeGroupPermanent());
     this.selectionToolbar?.querySelector('#selToolMenuUngroup')?.addEventListener('click', () => this.ungroupComponents());
     this.selectionToolbar?.querySelector('#selToolMenuSelectAll')?.addEventListener('click', () => this.selectAll());
+    this.selectionToolbar?.querySelector('#selToolMenuSelectConnected')?.addEventListener('click', () => this.selectConnected());
   }
 
   /**
@@ -1579,8 +1580,13 @@ export class LayoutController {
       }
     }
     // Select All (Ctrl+A on Windows/Linux, Cmd+A on Mac)
-    if (event.key === 'a' && (event.ctrlKey || event.metaKey)) {
+    if (event.key === 'a' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
       this.selectAll();
+      event.preventDefault();
+    }
+    // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
+    if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
+      this.selectConnected();
       event.preventDefault();
     }
     if (event.key === 'v' && event.ctrlKey) {
@@ -2300,6 +2306,154 @@ export class LayoutController {
     // Process the selection using the same logic as drag selection
     // This will automatically handle permanent groups by checking component.group
     const selectionTarget = this.processSelectionBoxResults(allComponents);
+    if (selectionTarget) {
+      LayoutController.selectComponent(selectionTarget);
+    }
+  }
+
+  /**
+   * Select all components that are connected to the currently selected component.
+   * Creates a temporary ComponentGroup containing the selected component and all
+   * components connected to it (following connections recursively).
+   * 
+   * If the selected component is part of a permanent group, adds that group and
+   * follows any external connections from the group.
+   * 
+   * Does nothing if there are no connections or all connections are unconnected.
+   */
+  selectConnected() {
+    this.hideFileMenu();
+    
+    // Get the currently selected component or group
+    const selected = LayoutController.selectedComponent;
+    if (!selected) {
+      return;
+    }
+    
+    // Determine the starting point(s) for connection traversal
+    let startingItems = [];
+    if (selected instanceof ComponentGroup) {
+      if (selected.isTemporary) {
+        // For temporary groups, start with all components in the group
+        startingItems = selected.components;
+      } else {
+        // For permanent groups, start with the group itself
+        startingItems = [selected];
+      }
+    } else {
+      // If a single component is selected, use it
+      startingItems = [selected];
+    }
+    
+    if (startingItems.length === 0) {
+      return;
+    }
+    
+    // Check if there are any actual connections first
+    let hasConnections = false;
+    for (const item of startingItems) {
+      if (item instanceof ComponentGroup) {
+        for (const connection of item.connections.values()) {
+          if (connection.otherConnection) {
+            hasConnections = true;
+            break;
+          }
+        }
+      } else if (item instanceof Component) {
+        for (const connection of item.connections.values()) {
+          if (connection.otherConnection) {
+            hasConnections = true;
+            break;
+          }
+        }
+      }
+      if (hasConnections) break;
+    }
+    
+    // If no connections exist, do nothing
+    if (!hasConnections) {
+      return;
+    }
+    
+    // Collect all connected components
+    const connectedComponents = new Set();
+    const visited = new Set();
+    const queue = [...startingItems];
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      
+      // Skip if already visited
+      if (visited.has(current.uuid)) {
+        continue;
+      }
+      visited.add(current.uuid);
+      
+      if (current instanceof ComponentGroup && !current.isTemporary) {
+        // Add the permanent group itself
+        connectedComponents.add(current);
+        
+        // Follow external connections from the group
+        for (const connection of current.connections.values()) {
+          if (connection.otherConnection) {
+            const otherComponent = connection.otherConnection.component;
+            // Check if the other component is outside the group
+            const isExternal = !current.components.some(comp => comp.uuid === otherComponent.uuid);
+            if (isExternal) {
+              // If the other component is in a permanent group, add the group
+              if (otherComponent.group && !otherComponent.group.isTemporary) {
+                if (!visited.has(otherComponent.group.uuid)) {
+                  queue.push(otherComponent.group);
+                }
+              } else {
+                if (!visited.has(otherComponent.uuid)) {
+                  queue.push(otherComponent);
+                }
+              }
+            }
+          }
+        }
+      } else if (current instanceof Component) {
+        // Check if component is part of a permanent group
+        if (current.group && !current.group.isTemporary) {
+          // Add the permanent group and process it
+          if (!visited.has(current.group.uuid)) {
+            queue.push(current.group);
+          }
+        } else {
+          // Add the individual component
+          connectedComponents.add(current);
+          
+          // Follow all connections
+          for (const connection of current.connections.values()) {
+            if (connection.otherConnection) {
+              const otherComponent = connection.otherConnection.component;
+              // If the other component is in a permanent group, add the group
+              if (otherComponent.group && !otherComponent.group.isTemporary) {
+                if (!visited.has(otherComponent.group.uuid)) {
+                  queue.push(otherComponent.group);
+                }
+              } else {
+                if (!visited.has(otherComponent.uuid)) {
+                  queue.push(otherComponent);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // If no connected components found, do nothing
+    if (connectedComponents.size === 0) {
+      return;
+    }
+    
+    // Convert to array for processing
+    const componentsArray = Array.from(connectedComponents);
+    
+    // Process the selection using the same logic as drag selection
+    const selectionTarget = this.processSelectionBoxResults(componentsArray);
     if (selectionTarget) {
       LayoutController.selectComponent(selectionTarget);
     }
