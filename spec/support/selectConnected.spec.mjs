@@ -26,6 +26,7 @@ describe("Select Connected", function() {
     layoutController = {
       hideFileMenu: jasmine.createSpy('hideFileMenu'),
       _showSelectionToolbar: jasmine.createSpy('_showSelectionToolbar'),
+      _hideSelectionToolbar: jasmine.createSpy('_hideSelectionToolbar'),
       _positionSelectionToolbar: jasmine.createSpy('_positionSelectionToolbar'),
       currentLayer: currentLayer,
       processSelectionBoxResults: LayoutController.prototype.processSelectionBoxResults,
@@ -33,8 +34,9 @@ describe("Select Connected", function() {
     };
     
     // Mock the static LayoutController.selectComponent and selectedComponent
-    spyOn(LayoutController, 'selectComponent');
+    spyOn(LayoutController, 'selectComponent').and.callThrough();
     LayoutController.selectedComponent = null;
+    spyOn(LayoutController, 'getInstance').and.returnValue(layoutController);
   });
   
   afterEach(function() {
@@ -325,11 +327,89 @@ describe("Select Connected", function() {
       
       expect(LayoutController.selectComponent).toHaveBeenCalled();
       const selectedArg = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selectedArg.uuid).toBe(tempGroup.uuid);
+      expect(selectedArg.destroyed).toBeFalse();
       expect(selectedArg.isTemporary).toBe(true);
       expect(selectedArg.components.length).toBe(3);
       expect(selectedArg.components).toContain(comp1);
       expect(selectedArg.components).toContain(comp2);
       expect(selectedArg.components).toContain(comp3);
+    });
+
+    it("should work when a different temporary group is selected", function() {
+      const comp1 = createMockComponent();
+      const comp2 = createMockComponent();
+      currentLayer.addChild(comp1);
+      currentLayer.addChild(comp2);
+      const conn1 = createConnection(comp1, 0);
+      const conn2 = createConnection(comp1, 1);
+      const conn3 = createConnection(comp2, 0);
+      const conn4 = createConnection(comp2, 1);
+      const conn5 = createConnection(comp2, 2);
+      conn2.connectTo(conn3);
+
+      const comp3 = createMockComponent();
+      const comp4 = createMockComponent();
+      const comp5 = createMockComponent();
+      const comp6 = createMockComponent();
+      const comp7 = createMockComponent();
+      const comp8 = createMockComponent();
+      currentLayer.addChild(comp3);
+      currentLayer.addChild(comp4);
+      currentLayer.addChild(comp5);
+      currentLayer.addChild(comp6);
+      currentLayer.addChild(comp7);
+      currentLayer.addChild(comp8);
+
+      // create 2 connections on each of these
+      const conn6 = createConnection(comp3, 0);
+      const conn7 = createConnection(comp3, 1);
+      const conn8 = createConnection(comp4, 0);
+      const conn9 = createConnection(comp4, 1);
+      const conn10 = createConnection(comp5, 0);
+      const conn11 = createConnection(comp5, 1);
+      const conn12 = createConnection(comp6, 0);
+      const conn13 = createConnection(comp6, 1);
+      const conn14 = createConnection(comp7, 0);
+      const conn15 = createConnection(comp7, 1);
+      const conn16 = createConnection(comp8, 0);
+      const conn17 = createConnection(comp8, 1);
+      // connect 3, 4, and 5 in a chain
+      conn7.connectTo(conn8);
+      conn9.connectTo(conn10);
+      // connect 6, 7, and 8 in a chain
+      conn13.connectTo(conn14);
+      conn15.connectTo(conn16);
+
+      // connect back to comp2
+      conn4.connectTo(conn6);
+      conn5.connectTo(conn12);
+
+      // Create a temporary group with comp4, 5, 7 and 8
+      const tempGroup = new ComponentGroup(true);
+      tempGroup.addComponent(comp4);
+      tempGroup.addComponent(comp5);
+      tempGroup.addComponent(comp7);
+      tempGroup.addComponent(comp8);
+
+      LayoutController.selectedComponent = tempGroup;
+
+      layoutController.selectConnected();
+
+      expect(LayoutController.selectComponent).toHaveBeenCalled();
+      const selectedArg = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selectedArg.uuid).toBe(tempGroup.uuid);
+      expect(selectedArg.destroyed).toBeFalse();
+      expect(selectedArg.isTemporary).toBe(true);
+      expect(selectedArg.components.length).toBe(8);
+      expect(selectedArg.components).toContain(comp1);
+      expect(selectedArg.components).toContain(comp2);
+      expect(selectedArg.components).toContain(comp3);
+      expect(selectedArg.components).toContain(comp4);
+      expect(selectedArg.components).toContain(comp5);
+      expect(selectedArg.components).toContain(comp6);
+      expect(selectedArg.components).toContain(comp7);
+      expect(selectedArg.components).toContain(comp8);
     });
 
     it("should work when a permanent group is selected", function() {
