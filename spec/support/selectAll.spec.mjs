@@ -26,6 +26,7 @@ describe("Select All", function() {
     layoutController = {
       hideFileMenu: jasmine.createSpy('hideFileMenu'),
       _showSelectionToolbar: jasmine.createSpy('_showSelectionToolbar'),
+      _hideSelectionToolbar: jasmine.createSpy('_hideSelectionToolbar'),
       _positionSelectionToolbar: jasmine.createSpy('_positionSelectionToolbar'),
       currentLayer: currentLayer,
       layers: [currentLayer, otherLayer],
@@ -33,8 +34,15 @@ describe("Select All", function() {
       selectAll: LayoutController.prototype.selectAll
     };
     
-    // Mock the static LayoutController.selectComponent
-    spyOn(LayoutController, 'selectComponent');
+    // Mock the static LayoutController.selectComponent and selectedComponent
+    spyOn(LayoutController, 'selectComponent').and.callThrough();
+    LayoutController.selectedComponent = null;
+    spyOn(LayoutController, 'getInstance').and.returnValue(layoutController);
+  });
+  
+  afterEach(function() {
+    // Clean up static state to prevent test interference
+    LayoutController.selectedComponent = null;
   });
   
   // Helper function to create a mock component that can be added to a layer
@@ -154,6 +162,50 @@ describe("Select All", function() {
       // Verify other layer components are NOT in the group
       expect(selectedArg.components).not.toContain(otherLayerComponent1);
       expect(selectedArg.components).not.toContain(otherLayerComponent2);
+    });
+
+    it("should select all components even when some are already in a temporary group", function() {
+      // Create components
+      const comp1 = createMockComponent();
+      const comp2 = createMockComponent();
+      const comp3 = createMockComponent();
+      const comp4 = createMockComponent();
+      
+      currentLayer.addChild(comp1);
+      currentLayer.addChild(comp2);
+      currentLayer.addChild(comp3);
+      currentLayer.addChild(comp4);
+      
+      // First, select comp1 and comp2 as a temporary group
+      const tempGroup = new ComponentGroup(true);
+      tempGroup.addComponent(comp1);
+      tempGroup.addComponent(comp2);
+      LayoutController.selectComponent(tempGroup);
+      
+      // Verify the temporary group is selected
+      expect(LayoutController.selectedComponent).toBe(tempGroup);
+      expect(LayoutController.selectedComponent.components.length).toBe(2);
+      
+      // Now call selectAll - it should select ALL 4 components
+      layoutController.selectAll();
+      
+      // Verify selectComponent was NOT called again (we reuse the existing temp group)
+      // The spy was called once during setup, should not be called again
+      expect(LayoutController.selectComponent.calls.count()).toBe(1);
+      
+      // Verify all 4 components are now in the selected group
+      const selectedArg = LayoutController.selectedComponent;
+      expect(selectedArg).toBeDefined();
+      expect(selectedArg).toBe(tempGroup); // Should be the same group object
+      expect(selectedArg.isTemporary).toBe(true);
+      expect(selectedArg.components.length).toBe(4);
+      expect(selectedArg.components).toContain(comp1);
+      expect(selectedArg.components).toContain(comp2);
+      expect(selectedArg.components).toContain(comp3);
+      expect(selectedArg.components).toContain(comp4);
+      
+      // Verify the temporary group was NOT destroyed (it's being reused)
+      expect(tempGroup.destroyed).toBeFalse();
     });
   });
 });
