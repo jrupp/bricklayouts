@@ -2403,7 +2403,7 @@ export class LayoutController {
           if (connection.otherConnection) {
             const otherComponent = connection.otherConnection.component;
             // Check if the other component is outside the group
-            const isExternal = !current.components.some(comp => comp.uuid === otherComponent.uuid);
+            const isExternal = otherComponent.group?.uuid !== current.uuid;
             if (isExternal) {
               // If the other component is in a permanent group, add the group
               if (otherComponent.group && !otherComponent.group.isTemporary) {
