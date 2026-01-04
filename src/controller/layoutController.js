@@ -2525,11 +2525,6 @@ export class LayoutController {
       
       // Add individual components to temporary group
       individualComponents.forEach(component => {
-        // If component is in a temporary group, clear the group reference
-        // We don't use removeComponent to avoid triggering destroy() on the old group
-        if (component.group && component.group.isTemporary) {
-          component.group = null;
-        }
         tempGroup.addComponent(component);
       });
       
@@ -2543,11 +2538,6 @@ export class LayoutController {
     } else if (individualComponents.length > 1) {
       const tempGroup = new ComponentGroup(true);
       individualComponents.forEach(component => {
-        // If component is in a temporary group, clear the group reference
-        // We don't use removeComponent to avoid triggering destroy() on the old group
-        if (component.group && component.group.isTemporary) {
-          component.group = null;
-        }
         tempGroup.addComponent(component);
       });
       return tempGroup;
