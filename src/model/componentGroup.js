@@ -750,6 +750,7 @@ export class ComponentGroup {
    * @param {number} color - The tint color to set.
    */
   set tint(color) {
+    if (this.destroyed) return;
     this.#components.forEach(component => {
       component.tint = color;
     });
