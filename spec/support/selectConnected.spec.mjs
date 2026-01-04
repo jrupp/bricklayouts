@@ -322,11 +322,11 @@ describe("Select Connected", function() {
       tempGroup.connections.set(conn1.uuid, conn1);
       
       LayoutController.selectedComponent = tempGroup;
-      
+
       layoutController.selectConnected();
-      
-      expect(LayoutController.selectComponent).toHaveBeenCalled();
-      const selectedArg = LayoutController.selectComponent.calls.mostRecent().args[0];
+
+      expect(LayoutController.selectComponent).not.toHaveBeenCalled();
+      const selectedArg = LayoutController.selectedComponent;
       expect(selectedArg.uuid).toBe(tempGroup.uuid);
       expect(selectedArg.destroyed).toBeFalse();
       expect(selectedArg.isTemporary).toBe(true);
@@ -396,8 +396,8 @@ describe("Select Connected", function() {
 
       layoutController.selectConnected();
 
-      expect(LayoutController.selectComponent).toHaveBeenCalled();
-      const selectedArg = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(LayoutController.selectComponent).not.toHaveBeenCalled();
+      const selectedArg = LayoutController.selectedComponent;
       expect(selectedArg.uuid).toBe(tempGroup.uuid);
       expect(selectedArg.destroyed).toBeFalse();
       expect(selectedArg.isTemporary).toBe(true);

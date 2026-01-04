@@ -2466,8 +2466,10 @@ export class LayoutController {
           existingTempGroup.addComponent(component);
         }
       });
-      // Select the updated temporary group
-      LayoutController.selectComponent(existingTempGroup);
+      // Update visual selection
+      existingTempGroup.tint = 0xffff00;
+      this._showSelectionToolbar();
+      this._positionSelectionToolbar();
     } else {
       // Process the selection using the same logic as drag selection
       const selectionTarget = this.processSelectionBoxResults(componentsArray);
