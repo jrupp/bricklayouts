@@ -205,7 +205,7 @@ describe("Select All", function() {
       expect(selectedArg.components).toContain(comp4);
       
       // Verify the temporary group was NOT destroyed (it's being reused)
-      expect(tempGroup.destroyed).toBeFalse();
+      expect(tempGroup.destroyed).toBe(false);
     });
   });
 });

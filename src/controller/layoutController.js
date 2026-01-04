@@ -2330,7 +2330,7 @@ export class LayoutController {
       // Add permanent groups to the existing temp group
       permanentGroupsArray.forEach(permanentGroup => {
         // Skip if already in the existing group
-        if (existingTempGroup.uuid !== permanentGroup.group?.uuid) {
+        if (permanentGroup.group?.uuid !== existingTempGroup.uuid) {
           existingTempGroup.addComponent(permanentGroup);
         }
       });
