@@ -1578,15 +1578,15 @@ export class LayoutController {
         }
         event.preventDefault();
       }
+      // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
+      if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
+        this.selectConnected();
+        event.preventDefault();
+      }
     }
     // Select All (Ctrl+A on Windows/Linux, Cmd+A on Mac)
     if (event.key === 'a' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
       this.selectAll();
-      event.preventDefault();
-    }
-    // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
-    if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
-      this.selectConnected();
       event.preventDefault();
     }
     if (event.key === 'v' && event.ctrlKey) {
