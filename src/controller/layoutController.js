@@ -2303,11 +2303,58 @@ export class LayoutController {
       return;
     }
     
-    // Process the selection using the same logic as drag selection
-    // This will automatically handle permanent groups by checking component.group
-    const selectionTarget = this.processSelectionBoxResults(allComponents);
-    if (selectionTarget) {
-      LayoutController.selectComponent(selectionTarget);
+    // Check if we have an existing temporary group selected
+    const selected = LayoutController.selectedComponent;
+    let existingTempGroup = null;
+    if (selected instanceof ComponentGroup && selected.isTemporary) {
+      existingTempGroup = selected;
+    }
+    
+    // If we have an existing temporary group, add new components directly to it
+    // without calling processSelectionBoxResults (which would create a new group)
+    if (existingTempGroup) {
+      // Collect unique permanent ComponentGroups that have components in the selection
+      const affectedPermanentGroups = new Set();
+      const individualComponents = [];
+
+      allComponents.forEach(component => {
+        if (component.group && !component.group.isTemporary) {
+          affectedPermanentGroups.add(component.group);
+        } else {
+          individualComponents.push(component);
+        }
+      });
+
+      const permanentGroupsArray = Array.from(affectedPermanentGroups);
+      
+      // Add permanent groups to the existing temp group
+      permanentGroupsArray.forEach(permanentGroup => {
+        // Skip if already in the existing group
+        if (existingTempGroup.uuid !== permanentGroup.group?.uuid) {
+          existingTempGroup.addComponent(permanentGroup);
+        }
+      });
+      
+      // Add individual components to the existing temp group
+      individualComponents.forEach(component => {
+        // Skip if already in the existing group
+        if (existingTempGroup.uuid !== component.group?.uuid) {
+          existingTempGroup.addComponent(component);
+        }
+      });
+      
+      // Update visual selection
+      existingTempGroup.tint = 0xffff00;
+      this._showSelectionToolbar();
+      this._positionSelectionToolbar();
+    } else {
+      // No existing temporary group, use normal selection flow
+      // Process the selection using the same logic as drag selection
+      // This will automatically handle permanent groups by checking component.group
+      const selectionTarget = this.processSelectionBoxResults(allComponents);
+      if (selectionTarget) {
+        LayoutController.selectComponent(selectionTarget);
+      }
     }
   }
 
