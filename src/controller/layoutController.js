@@ -2323,16 +2323,16 @@ export class LayoutController {
    */
   selectConnected() {
     this.hideFileMenu();
-    
+
     // Get the currently selected component or group
     const selected = LayoutController.selectedComponent;
     if (!selected) {
       return;
     }
-    
+
     // Track if we started with a temporary group to reuse it
     let existingTempGroup = null;
-    
+
     // Determine the starting point(s) for connection traversal
     let startingItems = [];
     if (selected instanceof ComponentGroup) {
@@ -2349,11 +2349,11 @@ export class LayoutController {
       // If a single component is selected, use it
       startingItems = [selected];
     }
-    
+
     if (startingItems.length === 0) {
       return;
     }
-    
+
     // Check if there are any actual connections first
     let hasConnections = false;
     for (const item of startingItems) {
@@ -2374,30 +2374,30 @@ export class LayoutController {
       }
       if (hasConnections) break;
     }
-    
+
     // If no connections exist, do nothing
     if (!hasConnections) {
       return;
     }
-    
+
     // Collect all connected components
     const connectedComponents = new Set();
     const visited = new Set();
     const queue = [...startingItems];
-    
+
     while (queue.length > 0) {
       const current = queue.shift();
-      
+
       // Skip if already visited
       if (visited.has(current.uuid)) {
         continue;
       }
       visited.add(current.uuid);
-      
+
       if (current instanceof ComponentGroup && !current.isTemporary) {
         // Add the permanent group itself
         connectedComponents.add(current);
-        
+
         // Follow external connections from the group
         for (const connection of current.connections.values()) {
           if (connection.otherConnection) {
@@ -2428,7 +2428,7 @@ export class LayoutController {
         } else {
           // Add the individual component
           connectedComponents.add(current);
-          
+
           // Follow all connections
           for (const connection of current.connections.values()) {
             if (connection.otherConnection) {
@@ -2448,15 +2448,15 @@ export class LayoutController {
         }
       }
     }
-    
+
     // If no connected components found, do nothing
     if (connectedComponents.size === 0) {
       return;
     }
-    
+
     // Convert to array for processing
     const componentsArray = Array.from(connectedComponents);
-    
+
     // If we started with a temporary group, add new components to it
     if (existingTempGroup) {
       // Add any new components that aren't already in the group
@@ -2517,17 +2517,12 @@ export class LayoutController {
     // Create a temporary group containing the permanent groups and individual components
     if (permanentGroupsArray.length > 0 || individualComponents.length > 1) {
       const tempGroup = new ComponentGroup(true);
-      
-      // Add permanent groups to temporary group
       permanentGroupsArray.forEach(permanentGroup => {
         tempGroup.addComponent(permanentGroup);
       });
-      
-      // Add individual components to temporary group
       individualComponents.forEach(component => {
         tempGroup.addComponent(component);
       });
-      
       return tempGroup;
     }
 
