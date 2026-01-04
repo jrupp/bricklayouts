@@ -2462,7 +2462,7 @@ export class LayoutController {
       // Add any new components that aren't already in the group
       componentsArray.forEach(component => {
         // Skip if already in the existing group
-        if (!existingTempGroup.components.some(c => c.uuid === component.uuid)) {
+        if (existingTempGroup.uuid !== component.group?.uuid) {
           existingTempGroup.addComponent(component);
         }
       });
