@@ -577,6 +577,26 @@
                     ]
                 },
                 {
+                    "alias": "railCurved9VHalf",
+                    "src": "2867-half.png",
+                    "category": "9V",
+                    "name": "R40 Curve Half",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [66.27216610312355, 0.9711420616236954, 1.0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [59.19374027729642, 1.966071887707878, 1.9375],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "pineTreeSmall",
                     "name": "Small Pine Tree",
                     "make": 0,
