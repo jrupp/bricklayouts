@@ -18,40 +18,56 @@ if (!fs.existsSync(webdriverPath)) {
   process.exit(0);
 }
 
-let content = fs.readFileSync(webdriverPath, 'utf8');
+let content;
+try {
+  content = fs.readFileSync(webdriverPath, 'utf8');
+} catch (err) {
+  console.error('⚠ Failed to read webdriver.js:', err.message);
+  process.exit(0); // Don't fail the install
+}
 
-// Replace the headlessChrome configuration to enable GPU and WebGL
-const oldConfig = `      const caps = webdriver.Capabilities.chrome();
+// Check if already patched by looking for our marker comment
+if (content.includes('// Patched for WebGL support')) {
+  console.log('✓ jasmine-browser-runner already patched for WebGL');
+  process.exit(0);
+}
+
+// Use regex to find and replace the headlessChrome configuration with flexible whitespace
+const oldConfigRegex = /const caps = webdriver\.Capabilities\.chrome\(\);[\s\S]*?caps\.set\('goog:chromeOptions',\s*\{[\s\S]*?args:\s*\[[\s\S]*?'--disable-gpu',[\s\S]*?\],[\s\S]*?\}\);/;
+
+const newConfig = `const caps = webdriver.Capabilities.chrome();
+      // Patched for WebGL support
       caps.set('goog:chromeOptions', {
         args: [
           '--headless=new',
           '--no-sandbox',
           'window-size=1024,768',
-          '--disable-gpu',
-          '--disable-dev-shm-usage', // flag needed to avoid issues within docker https://stackoverflow.com/questions/56218242/headless-chromium-on-docker-fails
-        ],
-      });`;
-
-const newConfig = `      const caps = webdriver.Capabilities.chrome();
-      caps.set('goog:chromeOptions', {
-        args: [
-          '--headless=new',
-          '--no-sandbox',
-          'window-size=1024,768',
-          '--disable-dev-shm-usage', // flag needed to avoid issues within docker https://stackoverflow.com/questions/56218242/headless-chromium-on-docker-fails
+          '--disable-dev-shm-usage',
           '--enable-webgl',
           '--use-gl=angle',
           '--use-angle=swiftshader',
         ],
       });`;
 
-if (content.includes(oldConfig)) {
-  content = content.replace(oldConfig, newConfig);
-  fs.writeFileSync(webdriverPath, content, 'utf8');
-  console.log('✓ Patched jasmine-browser-runner to enable WebGL in headless Chrome');
-} else if (content.includes('--enable-webgl')) {
-  console.log('✓ jasmine-browser-runner already patched for WebGL');
+if (oldConfigRegex.test(content)) {
+  content = content.replace(oldConfigRegex, newConfig);
+  
+  try {
+    fs.writeFileSync(webdriverPath, content, 'utf8');
+    console.log('✓ Patched jasmine-browser-runner to enable WebGL in headless Chrome');
+  } catch (err) {
+    console.error('⚠ Failed to write patched webdriver.js:', err.message);
+    console.error('  Tests may fail in headless Chrome without WebGL support');
+    process.exit(0); // Don't fail the install
+  }
 } else {
-  console.warn('⚠ Could not find expected configuration in webdriver.js - manual patching may be required');
-  process.exit(1);
+  // If we can't find the expected pattern, check if it might already have WebGL flags
+  if (content.includes('--enable-webgl') && content.includes('--use-gl=angle')) {
+    console.log('✓ jasmine-browser-runner appears to have WebGL support already');
+  } else {
+    console.warn('⚠ Could not find expected configuration in webdriver.js');
+    console.warn('  The file format may have changed in a jasmine-browser-runner update');
+    console.warn('  Tests may fail in headless Chrome without WebGL support');
+  }
+  process.exit(0); // Don't fail the install
 }
