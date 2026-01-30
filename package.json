@@ -14,7 +14,7 @@
   },
   "scripts": {
     "start": "http-server . --log-ip -c-1",
-    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/tabulator-tables/dist/css/tabulator.min.css src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs.map src/ && copyfiles -f node_modules/rbush/rbush.min.js src/",
+    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/tabulator-tables/dist/css/tabulator.min.css src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs.map src/ && copyfiles -f node_modules/rbush/rbush.min.js src/ && node scripts/patch-jasmine-webdriver.js",
     "test": "jasmine-browser-runner serve"
   }
 }
