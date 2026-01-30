@@ -632,6 +632,140 @@
                     "category": "structures",
                     "src": "10275.png",
                     "make": 1
+                },
+                {
+                    "alias": "r104SwitchLeft",
+                    "name": "r104 Switch Left",
+                    "category": "9V",
+                    "src": "r104-switch-left.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                336.1800113034682,
+                                0.9895828612048141,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                304.19894805866767,
+                                0.011512769142328448,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                325.74154148836266,
+                                1.8830546744522432,
+                                1.8743333333333333
+                            ],
+                            "next": 2
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r104SwitchRight",
+                    "name": "r104 Switch Right",
+                    "category": "9V",
+                    "src": "r104-switch-right.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                336.1800113034682,
+                                1.0104171387951861,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                304.19894805866767,
+                                1.9884872308576715,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                325.74154148836266,
+                                0.11694532554775691,
+                                0.12566666666666667
+                            ],
+                            "next": 2
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r104b",
+                    "name": "r104B",
+                    "category": "9V",
+                    "src": "r104b.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                168.7601848778319,
+                                0.9697759331610804,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                160.91212752787067,
+                                1.9669911051624909,
+                                1.9368333333333336
+                            ],
+                            "next": 0
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r104a",
+                    "name": "r104A",
+                    "category": "9V",
+                    "src": "r104a.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                168.7601848778319,
+                                0.9697759331610804,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                153.9732224646155,
+                                1.9683242189128436,
+                                1.9381666666666667
+                            ],
+                            "next": 0
+                        }
+                    ],
+                    "type": "track"
                 }
             ]
         }

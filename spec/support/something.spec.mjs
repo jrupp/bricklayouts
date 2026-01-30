@@ -2641,57 +2641,70 @@ describe("LayoutController", function() {
         let straightTrackData;
         /** @type {TrackData} */
         let baseplateData;
+        /** @type {TrackData} */
+        let r104Data;
+        /** @type {TrackData} */
+        let r104aData;
+        /** @type {TrackData} */
+        let r104bData;
+        /** @type {TrackData} */
+        let r104SwitchLeftData;
+        /** @type {TrackData} */
+        let r104SwitchRightData;
+        /** @type {TrackData} */
+        let railCurved9VData;
+        /** @type {TrackData} */
+        let r56Data;
 
         beforeAll(function() {
             layoutController = window.layoutController;
             straightTrackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
             baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            r104Data = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r104");
+            r104aData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r104a");
+            r104bData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r104b");
+            r104SwitchLeftData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r104SwitchLeft");
+            r104SwitchRightData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r104SwitchRight");
+            railCurved9VData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railCurved9V");
+            r56Data = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "r56");
         });
 
         beforeEach(function() {
             layoutController.reset();
         });
 
-        it("checks for open connection on rotate", function() {
-            layoutController._importLayout(layoutFileThree);
-            /** @type {Component} */
-            let curveTrack = layoutController.currentLayer.children.find(/** @param {Component} c */(c) => c.baseData.alias == "railCurved9V");
-            expect(curveTrack).toBeDefined();
-            expect(curveTrack.getOpenConnections()).withContext("List of open connections").toHaveSize(1);
-            curveTrack.rotate();
-            expect(curveTrack.getOpenConnections()).withContext("List of open connections after rotate").toHaveSize(0);
-        });
+        describe("canRotate", function() {
+            it("canRotate when all connections open", function() {
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                expect(component.canRotate()).toBeTrue();
+            });
 
-        it("canRotate when all connections open", function() {
-            layoutController.addComponent(straightTrackData);
-            /** @type {Component} */
-            let component = layoutController.currentLayer.children[0];
-            expect(component.canRotate()).toBeTrue();
-        });
+            it("canRotate when no connections", function() {
+                layoutController.addComponent(baseplateData);
+                /** @type {Component} */
+                let component = layoutController.currentLayer.children[0];
+                expect(component.canRotate()).toBeTrue();
+            });
 
-        it("canRotate when no connections", function() {
-            layoutController.addComponent(baseplateData);
-            /** @type {Component} */
-            let component = layoutController.currentLayer.children[0];
-            expect(component.canRotate()).toBeTrue();
-        });
+            it("canRotate when only one connection used", function() {
+                layoutController.addComponent(straightTrackData);
+                layoutController.addComponent(straightTrackData);
+                /** @type {Component} */
+                let component1 = layoutController.currentLayer.children[0];
+                /** @type {Component} */
+                let component2 = layoutController.currentLayer.children[1];
+                expect(component1.canRotate()).toBeTrue();
+                expect(component2.canRotate()).toBeTrue();
+            });
 
-        it("canRotate when only one connection used", function() {
-            layoutController.addComponent(straightTrackData);
-            layoutController.addComponent(straightTrackData);
-            /** @type {Component} */
-            let component1 = layoutController.currentLayer.children[0];
-            /** @type {Component} */
-            let component2 = layoutController.currentLayer.children[1];
-            expect(component1.canRotate()).toBeTrue();
-            expect(component2.canRotate()).toBeTrue();
-        });
-
-        it("canRotate is false when no open connections", function() {
-            layoutController.addComponent(straightTrackData);
-            layoutController.addComponent(straightTrackData);
-            layoutController.addComponent(straightTrackData);
-            expect(layoutController.currentLayer.children[1].canRotate()).toBeFalse();
+            it("canRotate is false when no open connections", function() {
+                layoutController.addComponent(straightTrackData);
+                layoutController.addComponent(straightTrackData);
+                layoutController.addComponent(straightTrackData);
+                expect(layoutController.currentLayer.children[1].canRotate()).toBeFalse();
+            });
         });
 
         it("rotates component once when 'r' hotkey is pressed", function() {
@@ -2758,6 +2771,115 @@ describe("LayoutController", function() {
             
             // rotateSelectedComponent should not be called
             expect(rotateSpy).not.toHaveBeenCalled();
+        });
+
+        describe("rotate", function() {
+            it("checks for open connection on rotate", function() {
+                layoutController._importLayout(layoutFileThree);
+                /** @type {Component} */
+                let curveTrack = layoutController.currentLayer.children.find(/** @param {Component} c */(c) => c.baseData.alias == "railCurved9V");
+                expect(curveTrack).toBeDefined();
+                expect(curveTrack.getOpenConnections()).withContext("List of open connections").toHaveSize(1);
+                curveTrack.rotate();
+                expect(curveTrack.getOpenConnections()).withContext("List of open connections after rotate").toHaveSize(0);
+            });
+
+            it("swaps r104a to r104b when rotating while connected to r104SwitchLeft", function() {
+                // Create switch and connect r104a to it
+                layoutController.addComponent(r104SwitchLeftData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                // Add r104a connected to the switch's diverging connection
+                layoutController.addComponent(r104aData);
+                const r104aComponent = layoutController.currentLayer.children[1];
+
+                // Connect r104a to the switch at connection 2
+                const switchConnection = switchTrack.connections[2];
+                const curveConnection = r104aComponent.connections[1];
+                curveConnection.connectTo(switchConnection);
+
+                expect(r104aComponent.baseData.alias).toBe("r104a");
+                expect(r104aComponent.getUsedConnections().length).toBe(1);
+
+                r104aComponent.rotate();
+
+                expect(r104aComponent.baseData.alias).toBe("r104b");
+            });
+
+            it("swaps r104b to r104a when rotating while connected to r104SwitchLeft", function() {
+                layoutController.addComponent(r104SwitchLeftData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(r104bData);
+                const r104bComponent = layoutController.currentLayer.children[1];
+
+                const switchConnection = switchTrack.connections[2];
+                const curveConnection = r104bComponent.connections[1];
+                curveConnection.connectTo(switchConnection);
+
+                expect(r104bComponent.baseData.alias).toBe("r104b");
+
+                r104bComponent.rotate();
+
+                expect(r104bComponent.baseData.alias).toBe("r104a");
+            });
+
+            it("swaps r104a to r104b when rotating while connected to r104SwitchRight", function() {
+                layoutController.addComponent(r104SwitchRightData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(r104aData);
+                const r104aComponent = layoutController.currentLayer.children[1];
+
+                const switchConnection = switchTrack.connections[2];
+                const curveConnection = r104aComponent.connections[0];
+                curveConnection.connectTo(switchConnection);
+
+                expect(r104aComponent.baseData.alias).toBe("r104a");
+
+                r104aComponent.rotate();
+
+                expect(r104aComponent.baseData.alias).toBe("r104b");
+            });
+
+            it("does not swap r104 when rotating (only r104a/r104b swap)", function() {
+                layoutController.addComponent(r104SwitchLeftData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(r104Data);
+                const r104Component = layoutController.currentLayer.children[1];
+
+                const switchConnection = switchTrack.connections[2];
+                const curveConnection = r104Component.connections[1];
+                curveConnection.connectTo(switchConnection);
+
+                expect(r104Component.baseData.alias).toBe("r104");
+
+                r104Component.rotate();
+
+                // r104 should not be swapped, only r104a/r104b
+                expect(r104Component.baseData.alias).toBe("r104");
+            });
+
+            it("does not swap when not connected to a switch", function() {
+                layoutController.addComponent(straightTrackData);
+                const straightTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(r104aData);
+                const r104aComponent = layoutController.currentLayer.children[1];
+
+                // Connect to straight track instead of switch
+                const straightConnection = straightTrack.connections[0];
+                const curveConnection = r104aComponent.connections[0];
+                curveConnection.connectTo(straightConnection);
+
+                expect(r104aComponent.baseData.alias).toBe("r104a");
+
+                r104aComponent.rotate();
+
+                // Should not swap since not connected to a switch
+                expect(r104aComponent.baseData.alias).toBe("r104a");
+            });
         });
 
         it("does not insert collision tree when rotating while dragging", function() {
@@ -3360,6 +3482,148 @@ describe("LayoutController", function() {
                 expect(newComp.getPose().y).toBe(component.getPose().y);
                 expect(newComp.getPose().angle).toBe(0);
             });
+
+            it("swaps r104 to r104b when connecting to r104SwitchLeft at connection 2", function() {
+                layoutController.addComponent(r104SwitchLeftData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(straightTrackData);
+                LayoutController.selectComponent(switchTrack);
+                layoutController.addComponent(straightTrackData);
+
+                // Now connection 2 should be the only open connection
+                expect(switchTrack.getOpenConnection().connectionIndex).toBe(2);
+
+                const newComponent = Component.fromComponent(r104Data, switchTrack, layoutController.currentLayer);
+
+                expect(newComponent).toBeDefined();
+                expect(newComponent.baseData.alias).toBe("r104b");
+            });
+
+            it("swaps r104 to r104b when connecting to r104SwitchRight at connection 2", function() {
+                layoutController.addComponent(r104SwitchRightData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                layoutController.addComponent(straightTrackData);
+                LayoutController.selectComponent(switchTrack);
+                layoutController.addComponent(straightTrackData);
+
+                // Now connection 2 should be the only open connection
+                expect(switchTrack.getOpenConnection().connectionIndex).toBe(2);
+
+                const newComponent = Component.fromComponent(r104Data, switchTrack, layoutController.currentLayer);
+
+                expect(newComponent).toBeDefined();
+                expect(newComponent.baseData.alias).toBe("r104b");
+            });
+
+            it("does not swap r104 when connecting to switch at connection 0", function() {
+                layoutController.addComponent(r104SwitchLeftData);
+                const switchTrack = layoutController.currentLayer.children[0];
+
+                // Connection 0 should be open
+                expect(switchTrack.getOpenConnection().connectionIndex).toBe(0);
+
+                const newComponent = Component.fromComponent(r104Data, switchTrack, layoutController.currentLayer);
+
+                expect(newComponent).toBeDefined();
+                expect(newComponent.baseData.alias).toBe("r104");
+            });
+        });
+
+        describe("fromConnection", function() {
+            describe("curve-to-curve handling", function() {
+                it("uses nextConnectionIndex when connecting same curve type", function() {
+                    layoutController.addComponent(r104Data);
+                    const firstCurve = layoutController.currentLayer.children[0];
+                    const openConnection = firstCurve.getOpenConnection();
+
+                    const newCurve = Component.fromConnection(r104Data, openConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    expect(newCurve.baseData.alias).toBe("r104");
+                    // Connection should be made using nextConnectionIndex
+                    expect(newCurve.connections[openConnection.nextConnectionIndex].otherConnection).toBe(openConnection);
+                });
+
+                it("uses nextConnectionIndex when connecting different curve types in CURVE_ALIASES", function() {
+                    layoutController.addComponent(r104Data);
+                    const r104Curve = layoutController.currentLayer.children[0];
+                    const openConnection = r104Curve.getOpenConnection();
+
+                    const newCurve = Component.fromConnection(r56Data, openConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    expect(newCurve.baseData.alias).toBe("r56");
+                    // Should use nextConnectionIndex since both are in CURVE_ALIASES
+                    expect(newCurve.connections[openConnection.nextConnectionIndex].otherConnection).toBe(openConnection);
+                });
+
+                it("uses nextConnectionIndex when connecting railCurved9V to r104", function() {
+                    layoutController.addComponent(r104Data);
+                    const r104Curve = layoutController.currentLayer.children[0];
+                    const openConnection = r104Curve.getOpenConnection();
+
+                    const newCurve = Component.fromConnection(railCurved9VData, openConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    expect(newCurve.baseData.alias).toBe("railCurved9V");
+                });
+            });
+
+            describe("switch-to-curve handling", function() {
+                it("uses connection index 1 when connecting curve to left switch", function() {
+                    layoutController.addComponent(r104SwitchLeftData);
+                    const switchTrack = layoutController.currentLayer.children[0];
+                    // Get connection at index 2 (the diverging route)
+                    const divergingConnection = switchTrack.connections[2];
+
+                    const newCurve = Component.fromConnection(r104Data, divergingConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    // For left switch, conIndex should be 1
+                    expect(newCurve.connections[1].otherConnection).toBe(divergingConnection);
+                });
+
+                it("uses connection index 0 when connecting curve to right switch", function() {
+                    layoutController.addComponent(r104SwitchRightData);
+                    const switchTrack = layoutController.currentLayer.children[0];
+                    // Get connection at index 2 (the diverging route)
+                    const divergingConnection = switchTrack.connections[2];
+
+                    const newCurve = Component.fromConnection(r104Data, divergingConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    // For right switch, conIndex should be 0
+                    expect(newCurve.connections[0].otherConnection).toBe(divergingConnection);
+                });
+
+                it("inverts connection index for railCurved9V on left switch", function() {
+                    layoutController.addComponent(r104SwitchLeftData);
+                    const switchTrack = layoutController.currentLayer.children[0];
+                    const divergingConnection = switchTrack.connections[2];
+
+                    const newCurve = Component.fromConnection(railCurved9VData, divergingConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    expect(newCurve.baseData.alias).toBe("railCurved9V");
+                    // For railCurved9V on left switch: conIndex starts at 1, then inverts to 0
+                    expect(newCurve.connections[0].otherConnection).toBe(divergingConnection);
+                });
+
+                it("inverts connection index for railCurved9V on right switch", function() {
+                    layoutController.addComponent(r104SwitchRightData);
+                    const switchTrack = layoutController.currentLayer.children[0];
+                    const divergingConnection = switchTrack.connections[2];
+
+                    const newCurve = Component.fromConnection(railCurved9VData, divergingConnection, layoutController.currentLayer);
+
+                    expect(newCurve).toBeDefined();
+                    expect(newCurve.baseData.alias).toBe("railCurved9V");
+                    // For railCurved9V on right switch: conIndex starts at 0, then inverts to 1
+                    expect(newCurve.connections[1].otherConnection).toBe(divergingConnection);
+                });
+            });
         });
 
         // **Feature: permanent-component-groups, Property 12: Components in permanent groups serialize with group UUID**
@@ -3697,6 +3961,69 @@ describe("LayoutController", function() {
                     ),
                     { numRuns: 100 }
                 );
+            });
+        });
+
+        describe("_swapToTrackVariant", function() {
+            it("swaps r104a to r104b correctly", function() {
+                layoutController.addComponent(r104aData);
+                const component = layoutController.currentLayer.children[0];
+
+                expect(component.baseData.alias).toBe("r104a");
+
+                component._swapToTrackVariant(r104bData);
+
+                expect(component.baseData.alias).toBe("r104b");
+                expect(component.connections.length).toBe(2);
+            });
+
+            it("swaps r104b to r104a correctly", function() {
+                layoutController.addComponent(r104bData);
+                const component = layoutController.currentLayer.children[0];
+
+                expect(component.baseData.alias).toBe("r104b");
+
+                component._swapToTrackVariant(r104aData);
+
+                expect(component.baseData.alias).toBe("r104a");
+                expect(component.connections.length).toBe(2);
+            });
+
+            it("does nothing when newBaseData is null", function() {
+                layoutController.addComponent(r104aData);
+                const component = layoutController.currentLayer.children[0];
+                const originalAlias = component.baseData.alias;
+
+                component._swapToTrackVariant(null);
+
+                expect(component.baseData.alias).toBe(originalAlias);
+            });
+
+            it("does nothing when connection counts do not match", function() {
+                layoutController.addComponent(r104aData);
+                const component = layoutController.currentLayer.children[0];
+                const originalAlias = component.baseData.alias;
+
+                // r104SwitchLeft has 3 connections, r104a has 2
+                component._swapToTrackVariant(r104SwitchLeftData);
+
+                expect(component.baseData.alias).toBe(originalAlias);
+            });
+
+            it("updates connection offsetVectors after swap", function() {
+                layoutController.addComponent(r104aData);
+                const component = layoutController.currentLayer.children[0];
+
+                const originalVector0 = component.connections[0].offsetVector;
+                const originalVector1 = component.connections[1].offsetVector;
+
+                component._swapToTrackVariant(r104bData);
+
+                // Vectors should now match r104b's vectors
+                expect(component.connections[0].offsetVector).toBe(r104bData.connections[0].vector);
+                expect(component.connections[1].offsetVector).toBe(r104bData.connections[1].vector);
+                expect(component.connections[0].offsetVector).not.toBe(originalVector0);
+                expect(component.connections[1].offsetVector).not.toBe(originalVector1);
             });
         });
     });
