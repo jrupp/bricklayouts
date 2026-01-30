@@ -7,6 +7,8 @@
  * 
  * This script adds the --enable-unsafe-swiftshader flag to the Chrome arguments,
  * which resolves the GPU issue without removing or modifying other flags.
+ * 
+ * See known Chrome bug: https://issues.chromium.org/issues/476172421
  */
 
 const fs = require('fs');
