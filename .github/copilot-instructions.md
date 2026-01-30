@@ -18,7 +18,7 @@ SE_MANAGER_PATH=$(pwd)/.github/selenium-manager-offline.sh npx jasmine-browser-r
 - The wrapper script uses the system-installed chromedriver and Chrome that are already available
 - Use the agent configuration file `spec/support/jasmine-browser.agent.mjs` (for agent sandbox)
 - Tests complete in ~6-7 seconds with 666 specs
-- **Note**: The postinstall script automatically patches jasmine-browser-runner to enable WebGL support in headless Chrome, which is required for PixiJS v8 tests
+- **Note**: In GitHub Actions, a patch is automatically applied to enable WebGL support in headless Chrome, which is required for PixiJS v8 tests. This patch only runs in CI, not during local development.
 
 ### Alternative test commands:
 
@@ -52,9 +52,9 @@ The selenium-webdriver library (used by jasmine-browser-runner) includes a selen
 npm install
 ```
 
-This will also run the `postinstall` script which:
-1. Copies required files from node_modules to src/
-2. Patches jasmine-browser-runner to enable WebGL support in headless Chrome (required for PixiJS v8)
+This will run the `postinstall` script which copies required files from node_modules to src/.
+
+**Note**: The jasmine-browser-runner WebGL patch is only applied in GitHub Actions CI, not during local development. Local developers can run tests normally without needing the patch.
 
 ### Start Development Server
 

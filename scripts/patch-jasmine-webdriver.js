@@ -2,10 +2,11 @@
 /**
  * Patches jasmine-browser-runner to enable GPU in headless Chrome for WebGL support.
  * 
- * PixiJS v8 requires WebGL to be available, but jasmine-browser-runner v3's default
- * headlessChrome configuration includes --disable-gpu which prevents WebGL from working.
- * This script patches the webdriver.js file to remove --disable-gpu and add flags needed
- * for WebGL to work in headless Chrome.
+ * PixiJS v8 requires WebGL to be available, but recent Chrome versions in GitHub Actions
+ * ubuntu-latest runners have issues with GPU when running headless.
+ * 
+ * This script first tries adding just --enable-unsafe-swiftshader flag (simplest fix).
+ * If that flag is already present, it assumes a more comprehensive patch was applied.
  */
 
 const fs = require('fs');
@@ -26,48 +27,34 @@ try {
   process.exit(0); // Don't fail the install
 }
 
-// Check if already patched by looking for our marker comment
-if (content.includes('// Patched for WebGL support')) {
+// Check if already patched by looking for our marker comment or the swiftshader flag
+if (content.includes('// Patched for WebGL support') || content.includes('--enable-unsafe-swiftshader')) {
   console.log('✓ jasmine-browser-runner already patched for WebGL');
   process.exit(0);
 }
 
-// Use regex to find and replace the headlessChrome configuration with flexible whitespace
-const oldConfigRegex = /const caps = webdriver\.Capabilities\.chrome\(\);[\s\S]*?caps\.set\('goog:chromeOptions',\s*\{[\s\S]*?args:\s*\[[\s\S]*?'--disable-gpu',[\s\S]*?\],[\s\S]*?\}\);/;
+// Try the simple fix first: just add --enable-unsafe-swiftshader to the existing args
+// This regex finds the headlessChrome args array and adds the flag after --disable-dev-shm-usage
+const simpleFixRegex = /(if \(browserName === 'headlessChrome'\) \{[\s\S]*?'--disable-dev-shm-usage',.*?\n)(\s+\],)/;
 
-const newConfig = `const caps = webdriver.Capabilities.chrome();
-      // Patched for WebGL support
-      caps.set('goog:chromeOptions', {
-        args: [
-          '--headless=new',
-          '--no-sandbox',
-          'window-size=1024,768',
-          '--disable-dev-shm-usage',
-          '--enable-webgl',
-          '--use-gl=angle',
-          '--use-angle=swiftshader',
-        ],
-      });`;
-
-if (oldConfigRegex.test(content)) {
-  content = content.replace(oldConfigRegex, newConfig);
+if (simpleFixRegex.test(content)) {
+  // Add the swiftshader flag after --disable-dev-shm-usage
+  content = content.replace(
+    simpleFixRegex,
+    "$1          '--enable-unsafe-swiftshader', // Patched for WebGL support\n$2"
+  );
   
   try {
     fs.writeFileSync(webdriverPath, content, 'utf8');
-    console.log('✓ Patched jasmine-browser-runner to enable WebGL in headless Chrome');
+    console.log('✓ Patched jasmine-browser-runner to enable WebGL in headless Chrome (simple fix)');
   } catch (err) {
     console.error('⚠ Failed to write patched webdriver.js:', err.message);
     console.error('  Tests may fail in headless Chrome without WebGL support');
-    process.exit(0); // Don't fail the install
+    process.exit(0);
   }
 } else {
-  // If we can't find the expected pattern, check if it might already have WebGL flags
-  if (content.includes('--enable-webgl') && content.includes('--use-gl=angle')) {
-    console.log('✓ jasmine-browser-runner appears to have WebGL support already');
-  } else {
-    console.warn('⚠ Could not find expected configuration in webdriver.js');
-    console.warn('  The file format may have changed in a jasmine-browser-runner update');
-    console.warn('  Tests may fail in headless Chrome without WebGL support');
-  }
-  process.exit(0); // Don't fail the install
+  console.warn('⚠ Could not find expected configuration in webdriver.js');
+  console.warn('  The file format may have changed in a jasmine-browser-runner update');
+  console.warn('  Tests may fail in headless Chrome without WebGL support');
+  process.exit(0);
 }
