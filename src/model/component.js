@@ -91,6 +91,9 @@ export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(Co
  */
 export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
+const CURVE_ALIASES = new Set(['r104', 'r104a', 'r104b', 'railCurved9V', 'railCurved9VHalf', 'r56', 'r72', 'r88', 'r120']);
+const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V']);
+
 /**
  * Any thing that can be placed on the layout.
  */
@@ -331,8 +334,17 @@ export class Component extends Container {
       let conPose = connection.getPose();
       conPose.turnAngle(Math.PI);
       let conIndex = 0;
-      if (connection.component.baseData.alias === baseData.alias) {
+      if (connection.component.baseData.alias === baseData.alias
+        || (CURVE_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias))
+      ) {
         conIndex = connection.nextConnectionIndex;
+      } else if (SWITCH_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias)) {
+        if (connection.component.baseData.alias.includes("Left")) {
+          conIndex = 1;
+        }
+        if (baseData.alias === "railCurved9V") {
+          conIndex = (conIndex === 1 ? 0 : 1);
+        }
       }
       /** @type {Pose} */
       var newPos = baseData.connections[conIndex].vector.getStartPosition(conPose);
@@ -373,6 +385,12 @@ export class Component extends Container {
     }
     var connection = component.getOpenConnection();
     if (connection) {
+      if (baseData.alias === "r104" && component.baseData.alias.startsWith("r104Switch") && connection.connectionIndex === 2) {
+        const r104bData = LayoutController.getInstance().trackData.bundles[0].assets.find((a) => a.alias === "r104b");
+        if (r104bData) {
+          baseData = r104bData;
+        }
+      }
       return Component.fromConnection(baseData, connection, layer, options);
     }
     return null;
@@ -434,6 +452,27 @@ export class Component extends Container {
     }
     super.destroy();
     this.baseData = null;
+  }
+
+  /**
+   * Swaps this component to a different track variant by updating baseData, sprite, and connections.
+   * Used for swapping between r104a and r104b when connected to r104 switches.
+   * @param {TrackData} newBaseData The new track data to swap to
+   * @private
+   */
+  _swapToTrackVariant(newBaseData) {
+    if (!newBaseData || !newBaseData.connections || newBaseData.connections.length !== this.connections.length) {
+      return;
+    }
+
+    this.baseData = newBaseData;
+    this.sprite.texture = Assets.get(newBaseData.alias);
+
+    // Update each connection's offsetVector to match the new baseData
+    this.connections.forEach((connection, index) => {
+      const newVector = newBaseData.connections[index].vector;
+      connection.offsetVector = newVector;
+    });
   }
 
   /**
@@ -528,6 +567,23 @@ export class Component extends Container {
       if (!nextOpen) {
         return;
       }
+
+      // Swap r104a/r104b when connected to an r104 switch
+      const otherAlias = otherConnection.component.baseData.alias;
+      if (otherAlias.startsWith('r104Switch')) {
+        if (this.baseData.alias === 'r104a') {
+          const r104bData = LayoutController.getInstance().trackData.bundles[0].assets.find((a) => a.alias === 'r104b');
+          if (r104bData) {
+            this._swapToTrackVariant(r104bData);
+          }
+        } else if (this.baseData.alias === 'r104b') {
+          const r104aData = LayoutController.getInstance().trackData.bundles[0].assets.find((a) => a.alias === 'r104a');
+          if (r104aData) {
+            this._swapToTrackVariant(r104aData);
+          }
+        }
+      }
+
       connection.disconnect();
       nextOpen.connectTo(otherConnection);
 
