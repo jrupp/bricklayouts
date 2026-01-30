@@ -5,8 +5,8 @@
  * PixiJS v8 requires WebGL to be available, but recent Chrome versions in GitHub Actions
  * ubuntu-latest runners have issues with GPU when running headless.
  * 
- * This script first tries adding just --enable-unsafe-swiftshader flag (simplest fix).
- * If that flag is already present, it assumes a more comprehensive patch was applied.
+ * This script adds the --enable-unsafe-swiftshader flag to the Chrome arguments,
+ * which resolves the GPU issue without removing or modifying other flags.
  */
 
 const fs = require('fs');
