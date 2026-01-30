@@ -40,7 +40,7 @@ describe("LayoutController", function() {
     beforeAll(async () => {
         if (!window.app) {
             const app = new Application();
-            await app.init();
+            await app.init({ preference: 'webgl' });
             await Assets.init({ basePath: '../__spec__/img/', manifest: "../data/manifest.json" });
             await Assets.loadBundle('track');
             await Assets.load({alias: path.toAbsolute('../data/manifest.json'), src: '../data/manifest.json' });
