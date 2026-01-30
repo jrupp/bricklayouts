@@ -92,7 +92,7 @@ export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(Co
 export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
 const CURVE_ALIASES = new Set(['r104', 'r104a', 'r104b', 'railCurved9V', 'railCurved9VHalf', 'r56', 'r72', 'r88', 'r120']);
-const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V'])
+const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V']);
 
 /**
  * Any thing that can be placed on the layout.
