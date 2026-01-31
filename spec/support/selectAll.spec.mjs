@@ -189,8 +189,10 @@ describe("Select All", function() {
       // Now call selectAll - it should select ALL 4 components
       layoutController.selectAll();
       
-      // Verify selectComponent was called to deselect the old group (null) and select the new one
-      // The spy was called once during setup, once to deselect (null), and once to select new group
+      // Verify selectComponent was called three times:
+      // 1. Initial selection of tempGroup during setup
+      // 2. Deselection (null) to destroy the old temporary group
+      // 3. Selection of new temporary group with all 4 components
       expect(LayoutController.selectComponent.calls.count()).toBe(3);
       
       // Verify all 4 components are now in the selected group
