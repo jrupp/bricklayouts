@@ -2289,29 +2289,23 @@ export class LayoutController {
    */
   selectAll() {
     this.hideFileMenu();
-    
-    // Get all components from the current layer
+
     const allComponents = [];
     this.currentLayer.children.forEach(child => {
       if (child instanceof Component) {
         allComponents.push(child);
       }
     });
-    
-    // If there are 0 components, do nothing
+
     if (allComponents.length === 0) {
       return;
     }
-    
-    // If a temporary group is already selected, deselect it first
-    // This ensures the temporary group is properly destroyed before creating a new selection
+
     const selected = LayoutController.selectedComponent;
     if (selected instanceof ComponentGroup && selected.isTemporary) {
       LayoutController.selectComponent(null);
     }
-    
-    // Process the selection using the same logic as drag selection
-    // This will automatically handle permanent groups by checking component.group
+
     const selectionTarget = this.processSelectionBoxResults(allComponents);
     if (selectionTarget) {
       LayoutController.selectComponent(selectionTarget);
