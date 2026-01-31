@@ -7,6 +7,9 @@ steps:
   - name: Install dependencies
     run: npm install
     
+  - name: Patch jasmine-browser-runner for WebGL support
+    run: node scripts/patch-jasmine-webdriver.js
+    
   - name: Make selenium-manager wrapper executable
     run: chmod +x .github/selenium-manager-offline.sh
 
