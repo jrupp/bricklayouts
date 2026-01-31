@@ -189,14 +189,14 @@ describe("Select All", function() {
       // Now call selectAll - it should select ALL 4 components
       layoutController.selectAll();
       
-      // Verify selectComponent was NOT called again (we reuse the existing temp group)
-      // The spy was called once during setup, should not be called again
-      expect(LayoutController.selectComponent.calls.count()).toBe(1);
+      // Verify selectComponent was called to deselect the old group (null) and select the new one
+      // The spy was called once during setup, once to deselect (null), and once to select new group
+      expect(LayoutController.selectComponent.calls.count()).toBe(3);
       
       // Verify all 4 components are now in the selected group
       const selectedArg = LayoutController.selectedComponent;
       expect(selectedArg).toBeDefined();
-      expect(selectedArg).toBe(tempGroup); // Should be the same group object
+      expect(selectedArg).not.toBe(tempGroup); // Should be a NEW group object
       expect(selectedArg.isTemporary).toBe(true);
       expect(selectedArg.components.length).toBe(4);
       expect(selectedArg.components).toContain(comp1);
@@ -204,8 +204,8 @@ describe("Select All", function() {
       expect(selectedArg.components).toContain(comp3);
       expect(selectedArg.components).toContain(comp4);
       
-      // Verify the temporary group was NOT destroyed (it's being reused)
-      expect(tempGroup.destroyed).toBe(false);
+      // Verify the old temporary group was destroyed and replaced with a new one
+      expect(tempGroup.destroyed).toBe(true);
     });
   });
 });
