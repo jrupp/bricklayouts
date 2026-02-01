@@ -42,6 +42,12 @@ export class InventoryController {
         if (this.#firstTime) {
             this.#firstTime = false;
             this.#loading = true;
+            function linkFormat(cell, formatterParams) {
+                if (!cell.getValue()) {
+                    return "";
+                }
+                return "<a href='" + cell.getValue() + "' target='_blank' class='buylink'>" + formatterParams.label + "</a>";
+            }
             import('../tabulator_esm.min.mjs').then((module) => {
                 this.#tabulator = new module.TabulatorFull('#partInventoryList', {
                     // Use fitData layout on iOS to avoid maximum stack size exceeded errors
@@ -60,7 +66,7 @@ export class InventoryController {
                         { title: 'Qty', field: 'quantity', width: 65, widthShrink: 1 },
                         { title: 'Color', field: 'color', widthGrow: 1 },
                         { title: 'Manufacturer', field: 'make', widthGrow: 2, resizable: false },
-                        { title: 'Buy', field: 'buy', widthGrow: 1, resizable: false, visible: false, print: false, download: false },
+                        { title: 'Buy', field: 'buy', widthGrow: 1, resizable: false, formatter: linkFormat, formatterParams:{label:"Purchase"}, visible: true, print: false, download: false },
                         { title: 'Unique ID', field: 'uniqueId', visible: false, print: false, download: false },
                     ],
                     index: 'uniqueId',
@@ -103,7 +109,20 @@ export class InventoryController {
                             colorName = HexToColorName[colorCode] ?? 'Unknown';
                             colorName = colorName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
                         }
-                        this.#tableData.push({ id: partNumber, name: child.baseData.name, quantity: 1, color: colorName, make: make, buy: '', uniqueId: uniqueId });
+                        let affilUrl = '';
+                        if (child.baseData.affil !== undefined) {
+                            switch (child.baseData.make) {
+                                case 3: // Lancaster
+                                    affilUrl = `https://sovrn.co/${child.baseData.affil}`;
+                                    break;
+                                case 4: // BTD
+                                    affilUrl = `https://bricktraindepot.com/shop/instructions/${child.baseData.affil}`;
+                                    break;
+                                default:
+                                    affilUrl = '';
+                            }
+                        }
+                        this.#tableData.push({ id: partNumber, name: child.baseData.name, quantity: 1, color: colorName, make: make, buy: affilUrl, uniqueId: uniqueId });
                     }
                 }
             });

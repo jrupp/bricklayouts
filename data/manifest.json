@@ -134,7 +134,8 @@
                     "partNumber": "384YCZ6030",
                     "make": 3,
                     "category": "table",
-                    "src": "lancaster-30x60.png"
+                    "src": "lancaster-30x60.png",
+                    "affil": "yht7v3m"
                 },
                 {
                     "alias": "wooden72x30",
@@ -606,9 +607,11 @@
                 {
                     "alias": "waterTower",
                     "name": "Water Tower",
-                    "make": 0,
+                    "partNumber": "CM-INS-002",
+                    "make": 4,
                     "category": "structures",
-                    "src": "watertower.png"
+                    "src": "watertower.png",
+                    "affil": "layout/water-tower-mils-module/"
                 },
                 {
                     "alias": "railRamp9V",
@@ -781,7 +784,8 @@
         { "name": "Other" },
         { "name": "LEGO®" },
         { "name": "BrickTracks" },
-        { "name": "Lancaster" }
+        { "name": "Lancaster" },
+        { "name": "Brick Train Depot" }
     ],
     "other": {
         "ignore": "this"
