@@ -60,3 +60,19 @@ export function isIOSBrowser() {
   // Temporarily removed ' || isIPadOS' until I have time to actually test it on iPadOS
   return isIOSDevice;
 }
+
+/**
+ * Detects if the current platform is macOS.
+ * This is used to determine whether to show certain UI elements like the "⌘" key in shortcuts.
+ * @returns {boolean} True if the current platform is macOS, false otherwise.
+ */
+export function isMac() {
+  // Modern approach: UA Client Hints (Chromium-based browsers)
+  if (navigator.userAgentData) {
+    return navigator.userAgentData.platform === 'macOS';
+  }
+
+  // Fallback: navigator.platform (deprecated but widely supported)
+  return navigator.platform?.toUpperCase().includes('MAC') ?? false;
+}
+

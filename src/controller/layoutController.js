@@ -6,7 +6,7 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue } from '../utils/utils.js';
+import { getOptionIndexByValue, isMac } from '../utils/utils.js';
 import '../FileSaver.min.js';
 
 
@@ -401,6 +401,11 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolMenuUngroup')?.addEventListener('click', () => this.ungroupComponents());
     this.selectionToolbar?.querySelector('#selToolMenuSelectAll')?.addEventListener('click', () => this.selectAll());
     this.selectionToolbar?.querySelector('#selToolMenuSelectConnected')?.addEventListener('click', () => this.selectConnected());
+
+    if (isMac()) {
+      document.querySelectorAll('.ctrl-key').forEach(el => el.textContent = '⌘');
+      document.querySelectorAll('.del-key').forEach(el => el.textContent = '⌫');
+    }
   }
 
   /**
@@ -1543,12 +1548,12 @@ export class LayoutController {
   onKeyDown(event) {
     this.hideFileMenu();
     if (LayoutController.dragTarget || LayoutController.selectedComponent) {
-      if (event.key === 'r' && !event.ctrlKey) {
+      if (event.key === 'r' && !event.ctrlKey && !event.metaKey) {
         this.rotateSelectedComponent();
       }
     }
     if (LayoutController.selectedComponent) {
-      if (event.key === 'Delete') {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
         this.deleteSelectedComponent();
       }
       if (event.key === 'Escape') {
@@ -1562,15 +1567,15 @@ export class LayoutController {
         this.sendSelectedComponentToBack();
         event.preventDefault();
       }
-      if (event.key === 'd' && event.ctrlKey) {
+      if (event.key === 'd' && (event.ctrlKey || event.metaKey)) {
         this.duplicateSelectedComponent();
         event.preventDefault();
       }
-      if (event.key === 'c' && event.ctrlKey) {
+      if (event.key === 'c' && (event.ctrlKey || event.metaKey)) {
         this.copySelectedComponent();
         event.preventDefault();
       }
-      if (event.key === 'L' && event.ctrlKey && event.shiftKey) {
+      if (event.key === 'L' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
         if (LayoutController.selectedComponent.locked) {
           this.unlockComponent();
         } else {
@@ -1589,11 +1594,11 @@ export class LayoutController {
       this.selectAll();
       event.preventDefault();
     }
-    if (event.key === 'v' && event.ctrlKey) {
+    if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
       this.pasteComponent();
       event.preventDefault();
     }
-    if (event.key === '0' && event.ctrlKey) {
+    if (event.key === '0' && (event.ctrlKey || event.metaKey)) {
       this.workspace.scale.set(this.config.defaultZoom);
       this.workspace.position.set(0, 0);
       this._positionSelectionToolbar();
@@ -1619,10 +1624,10 @@ export class LayoutController {
       this._positionSelectionToolbar();
       this.drawGrid();
     }
-    if (event.key === 'l' && event.ctrlKey && this.readOnly === false) {
+    if (event.key === 'l' && (event.ctrlKey || event.metaKey) && this.readOnly === false) {
       this.newLayer();
     }
-    if (event.code === 'Space' && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+    if (event.code === 'Space' && !event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey) {
       if (!this.isSpaceDown) {
         this.isSpaceDown = true;
         this.updateCursor();
