@@ -952,7 +952,7 @@ export class LayoutController {
         event.target.parentElement.classList.remove('invalid');
       }
     });
-    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure", "dark bluish gray", "dark green", "dark pink", "dark red", "green", "light bluish gray", "lilac", "lime", "olive green", "orange", "red", "tan", "white", "yellow"];
+    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure", "dark bluish gray", "dark green", "dark orange", "dark pink", "dark red", "dark tan", "green", "light bluish gray", "lilac", "lime", "medium nougat", "olive green", "orange", "red", "tan", "white", "yellow"];
     const colorMenu = document.getElementById('componentColorMenu');
     colors.forEach((color) => {
       let menuItem = document.createElement('li');

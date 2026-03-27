@@ -684,6 +684,10 @@ i.legolilac {
 i.legotan {
   color: #EED9A4;
 }
+#componentColorSelect[data-color=darktan] > i:first-child,
+i.legodarktan {
+  color: #B89869;
+}
 #componentColorSelect[data-color=olivegreen] > i:first-child,
 i.legoolivegreen {
   color: #ABA953;
@@ -699,6 +703,14 @@ i.legoyellow {
 #componentColorSelect[data-color=orange] > i:first-child,
 i.legoorange {
   color: #FE8A18;
+}
+#componentColorSelect[data-color=darkorange] > i:first-child,
+i.legodarkorange {
+  color: #B35408;
+}
+#componentColorSelect[data-color=mediumnougat] > i:first-child,
+i.legomediumnougat {
+  color: #E3A05B;
 }
 #componentColorSelect[data-color=brown] > i:first-child,
 i.legobrown {
@@ -731,6 +743,8 @@ i.legobrightgreen {
 #componentColorSelect[data-color=blue] .legoblue:before,
 #componentColorSelect[data-color=yellow] .legoyellow:before,
 #componentColorSelect[data-color=orange] .legoorange:before,
+#componentColorSelect[data-color=darkorange] .legodarkorange:before,
+#componentColorSelect[data-color=mediumnougat] .legomediumnougat:before,
 #componentColorSelect[data-color=brown] .legobrown:before,
 #componentColorSelect[data-color=darkred] .legodarkred:before,
 #componentColorSelect[data-color=darkgreen] .legodarkgreen:before,
@@ -742,6 +756,7 @@ i.legobrightgreen {
 #componentColorSelect[data-color=darkazure] .legodarkazure:before,
 #componentColorSelect[data-color=lilac] .legolilac:before,
 #componentColorSelect[data-color=tan] .legotan:before,
+#componentColorSelect[data-color=darktan] .legodarktan:before,
 #componentColorSelect[data-color=olivegreen] .legoolivegreen:before,
 #componentColorSelect[data-color=lime] .legolime:before,
 #componentColorSelect[data-color=red] .legored:before {
