@@ -95,7 +95,7 @@ export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(Co
 export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
 const CURVE_ALIASES = new Set(['r104', 'r104a', 'r104b', 'railCurved9V', 'railCurved9VHalf', 'r56', 'r72', 'r88', 'r120']);
-const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V']);
+const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V', 'r40SwitchRightTB']);
 
 /**
  * Any thing that can be placed on the layout.
@@ -350,6 +350,9 @@ export class Component extends Container {
           conIndex = 1;
         }
         if (baseData.alias === "railCurved9V") {
+          conIndex = (conIndex === 1 ? 0 : 1);
+        }
+        if (connection.component.baseData.alias === "r40SwitchRightTB" && connection.connectionIndex === 2) {
           conIndex = (conIndex === 1 ? 0 : 1);
         }
       }

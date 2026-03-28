@@ -538,6 +538,45 @@
                     ]
                 },
                 {
+                    "alias": "r40SwitchRightTB",
+                    "src": "r40-switch-right-tb.png",
+                    "name": "R40 Turnout Right",
+                    "category": "9V",
+                    "partNumber": "RS-40",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                260.4611295375953,
+                                1.0589980848675284,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                260.4611295375953,
+                                1.9410019151324716,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                116.17372046824566,
+                                0.172303930420626,
+                                0.1875
+                            ],
+                            "next": 2
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
                     "alias": "railStraight9VHalf",
                     "src": "2865-half.png",
                     "category": "9V",
