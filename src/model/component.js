@@ -341,6 +341,10 @@ export class Component extends Container {
         || (CURVE_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias))
       ) {
         conIndex = connection.nextConnectionIndex;
+        // XOR
+        if ((baseData.alias !== "railCurved9V") !== (connection.component.baseData.alias !== "railCurved9V")) {
+          conIndex = (conIndex === 1 ? 0 : 1);
+        }
       } else if (SWITCH_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias)) {
         if (connection.component.baseData.alias.includes("Left")) {
           conIndex = 1;
