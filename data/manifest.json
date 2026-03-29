@@ -184,12 +184,74 @@
                     "height": 512
                 },
                 {
+                    "alias": "baseplate32x32blue",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#0055bf",
+                    "partNumber": "3811",
+                    "make": 1,
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "alias": "wooden30x30",
+                    "name": "Wooden Table 30\"x30\"",
+                    "make": 0,
+                    "category": "table",
+                    "src": "wooden-30x30.png"
+                },
+                {
+                    "alias": "wooden40x40",
+                    "name": "Wooden Table 40\"x40\"",
+                    "make": 0,
+                    "category": "table",
+                    "src": "wooden-40x40.png"
+                },
+                {
                     "alias": "baseplate32x32brightgreen",
                     "name": "Baseplate 32x32",
                     "category": "baseplates",
                     "src": "stud.png",
                     "type": "baseplate",
                     "color": "#10cb31",
+                    "partNumber": "3811",
+                    "make": 1,
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "alias": "baseplate32x32dbg",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#6c6e68",
+                    "partNumber": "3811",
+                    "make": 1,
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "alias": "baseplate32x32lbg",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#a0a5a9",
+                    "partNumber": "3811",
+                    "make": 1,
+                    "width": 512,
+                    "height": 512
+                },
+                {
+                    "alias": "baseplate32x32tan",
+                    "name": "Baseplate 32x32",
+                    "category": "baseplates",
+                    "src": "stud.png",
+                    "type": "baseplate",
+                    "color": "#eed9a4",
                     "partNumber": "3811",
                     "make": 1,
                     "width": 512,
