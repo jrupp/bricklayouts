@@ -683,6 +683,7 @@
                     "category": "9V",
                     "name": "Straight Rail Half",
                     "make": 2,
+                    "partNumber": "STSM-1-2",
                     "color": "#6c6e68",
                     "connections": [
                         {
@@ -703,6 +704,7 @@
                     "category": "9V",
                     "name": "Straight Rail Quarter",
                     "make": 2,
+                    "partNumber": "STSM-1-4",
                     "color": "#6c6e68",
                     "connections": [
                         {
@@ -718,11 +720,54 @@
                     ]
                 },
                 {
+                    "alias": "railStraight9V8th",
+                    "src": "2865-8th.png",
+                    "category": "9V",
+                    "name": "Straight Rail 2/16ths (2 studs)",
+                    "make": 0,
+                    "partNumber": "ST-1-8",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [16, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [16, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "railStraight9VTenth",
+                    "src": "2865-tenth.png",
+                    "category": "9V",
+                    "name": "Straight Rail 1/10th (1.6 studs)",
+                    "make": 2,
+                    "partNumber": "STSM-1-10",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [12.8, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [12.8, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "railCurved9VHalf",
                     "src": "2867-half.png",
                     "category": "9V",
                     "name": "R40 Curve Half",
                     "make": 0,
+                    "partNumber": "CT-40-1-2",
                     "color": "#6c6e68",
                     "connections": [
                         {
@@ -779,6 +824,7 @@
                 {
                     "alias": "r104SwitchLeft",
                     "name": "r104 Switch Left",
+                    "partNumber": "R104SWKIT-L",
                     "category": "9V",
                     "src": "r104-switch-left.png",
                     "make": 2,
@@ -817,6 +863,7 @@
                 {
                     "alias": "r104SwitchRight",
                     "name": "r104 Switch Right",
+                    "partNumber": "R104SWKIT-R",
                     "category": "9V",
                     "src": "r104-switch-right.png",
                     "make": 2,
@@ -855,6 +902,7 @@
                 {
                     "alias": "r104b",
                     "name": "r104B",
+                    "partNumber": "r104B",
                     "category": "9V",
                     "src": "r104b.png",
                     "make": 2,
@@ -884,6 +932,7 @@
                 {
                     "alias": "r104a",
                     "name": "r104A",
+                    "partNumber": "r104A",
                     "category": "9V",
                     "src": "r104a.png",
                     "make": 2,
