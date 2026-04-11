@@ -348,7 +348,7 @@ class AuthenticationModal {
         <i class="extra primary-text">lock</i>
         <p class="bold extra-text">${this._escapeHtml(message)}</p>
         <p class="extra-text">
-          You're email address has not been verified. You must verify your email address to continue to use BrickLayouts.
+          Your email address has not been verified. You must verify your email address to continue to use BrickLayouts.
         </p>
         <div class="field label border small-margin">
           <input type="text" class="extra-text" id="verificationCodeLogin" maxlength="6" pattern="[0-9]{6}"
