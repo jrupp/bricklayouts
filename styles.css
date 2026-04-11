@@ -205,6 +205,16 @@ canvas {
 #exportloading,
 #notfound,
 #newLayoutConfirmDialog,
+#subscriptionDialog,
+#layoutNameDialog,
+#accountMenuButton,
+#fileOpenDialog,
+#deleteLayoutConfirmDialog,
+#renameLayoutDialog,
+#profileModal,
+#authenticationModal,
+#buttonLayoutName,
+#fileOpenMenu,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -257,6 +267,16 @@ canvas {
 [data-dark-mode=true] #exportloading,
 [data-dark-mode=true] #notfound,
 [data-dark-mode=true] #newLayoutConfirmDialog,
+[data-dark-mode=true] #subscriptionDialog,
+[data-dark-mode=true] #layoutNameDialog,
+[data-dark-mode=true] #accountMenuButton,
+[data-dark-mode=true] #fileOpenDialog,
+[data-dark-mode=true] #deleteLayoutConfirmDialog,
+[data-dark-mode=true] #renameLayoutDialog,
+[data-dark-mode=true] #profileModal,
+[data-dark-mode=true] #authenticationModal,
+[data-dark-mode=true] #buttonLayoutName,
+[data-dark-mode=true] #fileOpenMenu,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -473,8 +493,12 @@ canvas {
 	z-index: 1099;
 }
 
+.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog) {
+	z-index: 1101;
+}
+
 #mobileLayersButton {
-	top: 3rem;
+	top: 3.5rem;
 }
 
 #mobileMenu,
@@ -487,12 +511,61 @@ canvas {
 	display: none;
 }
 
+#mobileButtonCloudSave.hidden,
+#buttonCloudSave.hidden {
+	display: none;
+}
+
 #buttonMenu menu,
 #editLayerDialog,
 #newCustomComponentDialog,
 #newLayoutConfirmDialog,
+#subscriptionDialog,
+#layoutNameDialog,
+#fileOpenDialog,
+#profileModal,
+#authenticationModal,
 #partInventoryDialog {
 	z-index: 1100;
+}
+
+#fileOpenMenu {
+	z-index: 1101;
+	transition: all var(--speed2), transform 0s;
+	user-select: none;
+}
+
+#fileOpenMenu.active {
+	transition: all var(--speed2), background-color 0s;
+}
+
+#copyLayoutLink {
+	display: none;
+}
+
+#fileOpenMenu.public #copyLayoutLink {
+	display: flex;
+}
+
+#renameLayoutDialog,
+#deleteLayoutConfirmDialog {
+	z-index: 1102;
+	transform: translate(-50%, 100%);
+}
+
+.cloudFileItem {
+	cursor: pointer;
+	padding: 0.5rem 1rem;
+	user-select: none;
+}
+
+.cloudFileItem:not(:last-child)::before {
+	content: "";
+	position: absolute;
+	background-color: var(--outline-variant);
+	block-size: 0.0625rem;
+	inline-size: auto;
+	inset: auto 0px 0px;
 }
 
 #partInventoryDialog {
@@ -554,6 +627,22 @@ li > .ctrl-key {
 	font-size: 1.4rem !important;
 }
 
+input.extra-text + label {
+	font-size: 1.4rem !important;
+}
+
+input.extra-text ~ output:not(.invalid) {
+	font-size: 1rem !important;
+}
+
+input.extra-text ~ output.invalid {
+    font-size: 1.4rem !important;
+}
+
+.field.label:has(input.extra-text) {
+	margin-bottom: 1rem !important;
+}
+
 .field output.invalid {
 	display: none;
 }
@@ -574,6 +663,7 @@ li > .ctrl-key {
 	inset: calc(var(--_middle) - 1rem) 1rem auto auto;
 }
 
+#layoutNameDialog .field.invalid,
 #editLayerDialog .field.invalid,
 #newCustomComponentDialog .field.invalid {
 	margin-block-end: 2rem !important
@@ -916,8 +1006,81 @@ i.legobrightgreen {
 
 [data-dark-mode=true] .toolbarItem img.icon,
 [data-dark-mode=true] .toolbarItem > i,
+[data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] .componentBrowser img.custom {
 	filter: invert(1);
+}
+
+#toolbarLayoutName {
+    display: inline-block;
+    height: 4rem;
+    padding: 0.5rem;
+    border-radius: 0;
+    line-height: 2;
+	vertical-align: middle;
+    border-left: 1px solid var(--toolbar-item-border);
+	transition: border-left-color var(--speed) var(--easing);
+}
+
+.tooltip.bottom.medium-space:before {
+    content: "▲";
+    position: absolute;
+    top: -1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--inverse-surface);
+}
+
+#toolbarLayoutName > .tooltip {
+	background-color: var(--surface);
+	color: var(--on-surface);
+}
+
+#toolbarLayoutName > .tooltip:before {
+	color: var(--surface) !important;
+}
+
+#buttonLayoutName {
+	color: black;
+	--_padding: 0.5rem;
+	white-space-collapse: preserve;
+}
+
+#buttonLayoutName.hiddenish {
+	height: 0px;
+	max-height: 0px;
+	overflow: hidden;
+}
+
+#buttonLayoutName[disabled] ~ .tooltip {
+	display: none !important;
+}
+
+#inputLayoutName {
+	color: black;
+	background: none;
+	border: none;
+	border-bottom: 2px solid var(--primary);
+	border-radius: 0;
+	font-size: inherit;
+	font-family: inherit;
+	height: auto;
+	line-height: inherit;
+	width: calc(100% - 1rem);
+	left: 0.5rem;
+	position: absolute;
+	outline: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+}
+
+#inputLayoutName.hidden {
+	display: none;
+}
+
+[data-dark-mode=true] #inputLayoutName {
+	color: white;
 }
 
 .button,
@@ -1191,4 +1354,177 @@ i + span.label {
 	#circlePreview {
 		--_size: 3rem;
 	}
+}
+
+/* Account Menu Styles */
+#topRightControls {
+	z-index: 1000;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+#darkMode-container {
+	position: static;
+	top: auto;
+	right: auto;
+}
+
+#accountMenu-container {
+	position: relative;
+}
+
+#accountMenuButton {
+	cursor: pointer;
+}
+
+#accountMenuButton i {
+	--_size: 2.5rem;
+}
+
+#accountMenuButton:hover {
+	background: var(--component-hover);
+}
+
+#accountDropdownMenu {
+	min-width: 12rem;
+	z-index: 1100;
+}
+
+#accountDropdownMenu li {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	cursor: pointer;
+	font-size: 1.4rem;
+	color: var(--on-surface);
+	transition: background-color 0.2s ease;
+}
+
+#accountDropdownMenu li:hover {
+	background: var(--surface-container-high);
+}
+
+#accountDropdownMenu li i {
+	--_size: 2rem;
+	color: var(--on-surface-variant);
+}
+
+[data-dark-mode=true] #accountDropdownMenu {
+	background: var(--surface-container);
+	border-color: var(--outline);
+}
+
+[data-dark-mode=true] #accountDropdownMenu li:hover {
+	background: var(--surface-container-high);
+}
+
+#cloudSnackbar {
+	z-index: 1200;
+	background-color: var(--snackbar) !important;
+	gap: 0.8rem;
+}
+
+#cloudSnackbar.success {
+  --snackbar: #A5D6A7;
+}
+
+#cloudSnackbar.error {
+  --snackbar: var(--error);
+}
+
+#cloudSnackbar.info {
+  --snackbar: var(--secondary);
+}
+
+/* Authentication Modal View Switching */
+#authenticationModal .authModal-title,
+#authenticationModal .authModal-view {
+  display: none;
+}
+
+#authenticationModal.mode-login .authModal-login-title,
+#authenticationModal.mode-login .authModal-login-view {
+  display: block;
+}
+
+#authenticationModal.mode-signup .authModal-signup-title,
+#authenticationModal.mode-signup .authModal-signup-view {
+  display: block;
+}
+
+#authenticationModal.mode-presignup .authModal-signup-title,
+#authenticationModal.mode-presignup .authModal-presignup-view {
+  display: block;
+}
+
+#authenticationModal.mode-success .authModal-success-title,
+#authenticationModal.mode-success .authModal-success-view {
+  display: block;
+}
+
+#authenticationModal.mode-confirm .authModal-confirm-title,
+#authenticationModal.mode-confirm .authModal-confirm-view {
+  display: block;
+}
+
+#authenticationModal.mode-forgotpw .authModal-forgotpw-title,
+#authenticationModal.mode-forgotpw .authModal-forgotpw-view {
+  display: block;
+}
+
+#authenticationModal.mode-resetpw .authModal-resetpw-title,
+#authenticationModal.mode-resetpw .authModal-resetpw-view {
+  display: block;
+}
+
+/* Profile Modal View Switching */
+#profileModal .profileModal-title,
+#profileModal .profileModal-view {
+  display: none;
+}
+
+#profileModal.view-profile .profileModal-title-profile,
+#profileModal.view-profile .profileModal-view-profile {
+  display: block;
+}
+
+#profileModal.view-editProfile .profileModal-title-editProfile,
+#profileModal.view-editProfile .profileModal-view-editProfile {
+  display: block;
+}
+
+#profileModal.view-changePassword .profileModal-title-changePassword,
+#profileModal.view-changePassword .profileModal-view-changePassword {
+  display: block;
+}
+
+#profileModal.view-deleteAccount .profileModal-title-deleteAccount,
+#profileModal.view-deleteAccount .profileModal-view-deleteAccount {
+  display: block;
+}
+
+#profileModal.view-loading .profileModal-view-loading {
+  display: block;
+}
+
+#profileModal.view-error .profileModal-view-error {
+  display: block;
+}
+
+#profileModal.view-verifyEmail .profileModal-title-verifyEmail,
+#profileModal.view-verifyEmail .profileModal-view-verifyEmail {
+  display: block;
+}
+
+#profileModal #verifiedIcon.verified {
+  cursor: default;
+  opacity: 1;
+}
+
+#profileModal.social-user #editProfileBtn,
+#profileModal.social-user .profileModal-passwordBtn {
+  display: none;
 }

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "amazon-cognito-identity-js": "^6.3.12",
     "file-saver": "^2.0.5",
     "pixi.js": "^8.14.0",
     "rbush": "^4.0.1",
@@ -14,7 +15,7 @@
   },
   "scripts": {
     "start": "http-server . --log-ip -c-1",
-    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/tabulator-tables/dist/css/tabulator.min.css src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs.map src/ && copyfiles -f node_modules/rbush/rbush.min.js src/",
+    "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/tabulator-tables/dist/css/tabulator.min.css src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs.map src/ && copyfiles -f node_modules/rbush/rbush.min.js src/ && copyfiles -f node_modules/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js src/",
     "test": "jasmine-browser-runner serve"
   }
 }

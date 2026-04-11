@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="darkmode.css">
     <link rel="stylesheet" href="src/tabulator.min.css" media="print" onload="this.media='all'; this.onload=null;">
-    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@3.13.1/dist/cdn/beer.min.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@4.0.19/dist/cdn/beer.min.js"></script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"></script>
 </head>
 <body>
@@ -51,8 +51,9 @@
                 <i class="extra">menu</i>
                 <menu class="right no-wrap extra-text">
                     <li title="Create a new layout" id="buttonNewLayout"><i><img src="/favicon.svg"></i>New BrickLayout</li>
-                    <li title="Download the current layout" id="buttonDownload"><i>file_save</i>Download Layout</li>
+                    <li title="Save layout to cloud" id="buttonCloudSave" class="hidden"><i>cloud_upload</i>Save to Cloud</li>
                     <li title="Open an existing layout" id="buttonImport"><i>folder_open</i>Open Layout</li>
+                    <li title="Download the current layout" id="buttonDownload"><i>file_save</i>Download Layout</li>
                     <li title="Export the layout as an image" id="buttonExport"><i>download</i>Export Image</li>
                     <li title="View the part inventory" id="buttonPartInventory"><i>inventory</i>Part Inventory</li>
                 </menu>
@@ -63,12 +64,17 @@
             <button id="buttonConfig" class="toolbarItem" title="Configuration">
                 <i class="extra fill">settings</i>
             </button>
-            <button id="buttonRemove" class="toolbarItem" title="Delete component">
+            <button id="buttonRemove" class="toolbarItem m s" title="Delete component">
                 <img class="icon" src="img/icon-delete-black.png" alt="Delete component">
             </button>
-            <button id="buttonRotate" class="toolbarItem" title="Rotate component (R)">
+            <button id="buttonRotate" class="toolbarItem m s" title="Rotate component (R)">
                 <img class="icon" src="img/icon-rotate-black.png" alt="Rotate component (R)">
             </button>
+            <div id="toolbarLayoutName" class="l extra-text">
+                <button id="buttonLayoutName" class="extra-text no-margin">Untitled Layout</button>
+                <input type="text" id="inputLayoutName" class="extra-text no-margin small-padding horizontal-padding hidden" value="Untitled Layout" maxlength="100">
+                <span class="tooltip bottom medium-space extra-text">Click to rename</span>
+            </div>
         </div>
     </div>
     <dialog id="mobileMenu" class="bottom large-padding no-scroll">
@@ -76,6 +82,7 @@
             <ul  class="list border medium-space">
                 <li title="Create a new layout" id="mobileButtonNewLayout" data-ui="#mobileMenu"><i class="extra"><img src="/favicon.svg"></i>New BrickLayout</li>
                 <li title="Download the current layout" id="mobileButtonDownload" data-ui="#mobileMenu"><i class="extra">file_save</i>Download Layout</li>
+                <li title="Save layout to cloud" id="mobileButtonCloudSave" class="hidden" data-ui="#mobileMenu"><i class="extra">cloud_upload</i>Save to Cloud</li>
                 <li title="Open an existing layout" id="mobileButtonImport" data-ui="#mobileMenu"><i class="extra">folder_open</i>Open Layout</li>
                 <li title="Export the layout as an image" id="mobileButtonExport" data-ui="#mobileMenu"><i class="extra">download</i>Export Image</li>
                 <li title="View the part inventory" id="mobileButtonPartInventory" data-ui="#mobileMenu"><i class="extra">inventory</i>Part Inventory</li>
@@ -108,14 +115,75 @@
             </nav>
         </div>
     </dialog>
+    <dialog id="layoutNameDialog" class="no-padding border large-width surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">Save Layout to Cloud</h6>
+                    <button class="circle medium transparent" data-ui="#layoutNameDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div class="small-padding horizontal-padding extra-text">
+                <p class="small-margin">Enter a name for your layout:</p>
+                <div class="field border middle-align large-space medium vertical-margin">
+                    <input type="text" id="layoutNameInput" placeholder="My Layout" maxlength="100" autofocus>
+                    <output class="invalid" id="layoutNameError">Layout name can only contain letters, numbers, hyphens, and spaces.</output>
+                </div>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button id="confirmLayoutName" class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                    <span>Save</span>
+                </button>
+                <button class="border no-border no-round max extra-text"
+                    style="border-end-end-radius: 0.5rem !important;" data-ui="#layoutNameDialog">
+                    <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
+    <dialog id="subscriptionDialog" class="no-padding border large-width surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 class="max">Subscription Required</h6>
+                    <button class="circle medium transparent" data-ui="#subscriptionDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div class="small-padding horizontal-padding extra-text center-align">
+                <i class="extra primary-text">cloud_upload</i>
+                <p id="subscriptionDialogMessage" class="bold">
+                    You've reached the free layout limit.
+                </p>
+                <p>
+                    Free accounts can store one layout in the cloud. Subscription options for
+                    additional cloud storage are coming soon!
+                </p>
+            </div>
+            <hr style="background-color: var(--outline)">
+            <nav class="no-padding no-space no-margin">
+                <button class="border no-border no-round max extra-text"
+                    style="border-end-start-radius: 0.5rem !important; border-end-end-radius: 0.5rem !important;"
+                    data-ui="#subscriptionDialog">
+                    <span>OK</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
     <section id="exportloading" class="hidden max no-padding center-align middle-align responsive primary">
         <div class="absolute center large-width middle padding responsive">
             <h2>Generating...</h2>
             <progress class="tertiary"></progress>
         </div>
     </section>
-    <div id="darkMode-container">
-        <button class="toggle" id="darktoggle" aria-pressed="false" title="Toggle Dark Mode">
+    <div id="topRightControls" class="fixed margin right top">
+        <div id="darkMode-container">
+            <button class="toggle" id="darktoggle" aria-pressed="false" title="Toggle Dark Mode">
             <span class="toggle__content">
                 <svg aria-hidden=true class="toggle__backdrop" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 290 228">
                 <g class="clouds">
@@ -311,7 +379,10 @@
                 </span>
                 </span>
             </span>
-        </button>
+            </button>
+        </div>
+        <div id="accountMenu-container">
+        </div>
     </div>
     <div id="componentMenu">
         <div style="display: flex; flex-direction: row;">
@@ -323,7 +394,7 @@
             <div class="field border small fill search no-margin">
                 <input type="text" id="searchText" placeholder="Search...">
                 <i class="searchIcon">search</i>
-                <i id="searchClearButton" class="searchClear">close</i>
+                <i id="searchClearButton" class="searchClear front">close</i>
             </div>
         </div>
         <div class="componentBrowser" id="componentBrowser"></div>
@@ -864,7 +935,7 @@
                         <input id="backgroundColor" type="color">
                         <input type="text">
                         <label>Background Color</label>
-                        <i id="resetbgcolor">format_color_reset</i>
+                        <i id="resetbgcolor" class="front">format_color_reset</i>
                     </div>
                 </div>
                 <div class="page config-page" data-tab="grid">

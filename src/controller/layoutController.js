@@ -6,7 +6,9 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue, isMac } from '../utils/utils.js';
+import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
+import { SubscriptionDialogController } from './subscriptionDialogController.js';
+import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import '../FileSaver.min.js';
 
 
@@ -54,6 +56,18 @@ let TrackData;
 export { TrackData };
 
 /**
+ * @typedef {Object} LayoutMetadata
+ * @property {String} [name] The user-defined name of the layout.
+ * @property {String} [cloudId] The unique identifier for the layout in cloud storage.
+ * @property {String} [s3Key] The S3 object key where the layout data is stored.
+ * @property {String} [lastSaved] ISO 8601 timestamp of when the layout was last saved to cloud.
+ * @property {String} [source] The source of the layout ('local' or 'cloud').
+ * @property {Number} [version] The version number of the layout in cloud storage.
+ */
+let LayoutMetadata;
+export { LayoutMetadata };
+
+/**
  * @typedef {Object} SerializedLayout
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
@@ -62,6 +76,7 @@ export { TrackData };
  * @property {Number} [zoom] The zoom level of the layout.
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
  * @property {SerializedConfiguration} config The configuration settings for the layout.
+ * @property {LayoutMetadata} [metadata] Optional metadata for cloud storage and naming.
  */
 let SerializedLayout;
 export { SerializedLayout };
@@ -201,6 +216,12 @@ export class LayoutController {
    * @type {DataTypes}
    */
   #customComponentType = "shape";
+
+  /**
+   * Metadata for the current layout (name, cloud references, etc.)
+   * @type {LayoutMetadata}
+   */
+  #layoutMetadata = {};
 
   /**
    * 
@@ -359,6 +380,7 @@ export class LayoutController {
     document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('buttonCloudSave')?.addEventListener('click', this.onCloudSaveClick.bind(this));
     document.getElementById('buttonMenu').addEventListener('click', () => { LayoutController.selectComponent(null); });
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     document.getElementById('buttonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
@@ -366,7 +388,25 @@ export class LayoutController {
     document.getElementById('confirmNewLayout')?.addEventListener('click', this.onConfirmNewLayout.bind(this));
     document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
+    document.getElementById('mobileButtonCloudSave')?.addEventListener('click', this.onCloudSaveClick.bind(this));
     document.getElementById('mobileButtonExport')?.addEventListener('click', this.exportLayout.bind(this));
+    document.getElementById('confirmLayoutName')?.addEventListener('click', this.onConfirmLayoutName.bind(this));
+    const layoutNameInput = document.getElementById('layoutNameInput');
+    layoutNameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onConfirmLayoutName();
+      }
+      if (event.key === 'Escape') {
+        ui("#layoutNameDialog");
+      }
+      event.stopPropagation();
+    });
+    layoutNameInput.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+    document.getElementById('buttonLayoutName').addEventListener('click', this.onLayoutNameClick.bind(this));
     window.addEventListener('keydown', this.onKeyDown.bind(this));
     window.addEventListener('keyup', this.onKeyUp.bind(this));
 
@@ -427,8 +467,8 @@ export class LayoutController {
     // Prevent path traversal by removing any path separators and dots
     filename = filename.replace(/[\/\\\.]/g, '');
 
-    // Keep only alphanumeric characters (letters, numbers)
-    filename = filename.replace(/[^a-zA-Z0-9]/g, '');
+    // Keep only alphanumeric characters (letters, numbers, hyphens)
+    filename = filename.replace(/[^a-zA-Z0-9\-]/g, '');
 
     // Ensure filename is not empty and has reasonable length
     if (!filename || filename.length === 0 || filename.length > 50) {
@@ -445,6 +485,7 @@ export class LayoutController {
       document.getElementById('mobileLayerAdd').classList.add('hidden');
       document.getElementById('buttonRemove').disabled = true;
       document.getElementById('buttonRotate').disabled = true;
+      document.getElementById('buttonLayoutName').disabled = true;
       document.getElementById('layerList').classList.add('readonly');
       document.getElementById('mobileLayerList').classList.add('readonly');
     }
@@ -549,6 +590,31 @@ export class LayoutController {
         // Extract filename from URL path and sanitize it
         const urlPath = window.location.pathname;
         const rawFilename = urlPath.substring(1); // Remove leading slash
+
+        // First, check if this is an 8-character share code for a public layout
+        const publicLayoutLoader = new PublicLayoutLoader();
+        const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
+
+        if (shareCode) {
+          // Try to load as a public layout first
+          try {
+            const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
+            // Public layouts are always read-only (already set above)
+            this._importLayout(publicLayoutData.layoutData);
+            // Set layout name from public layout metadata
+            if (publicLayoutData.layoutName) {
+              this.setLayoutName(publicLayoutData.layoutName);
+            }
+            return;
+          } catch (publicError) {
+            // If public layout loading fails, show not found
+            console.warn('Failed to load public layout:', publicError.message);
+            document.getElementById('notfound').classList.remove('hidden');
+            return;
+          }
+        }
+
+        // Fall back to file-based layout loading for non-share-code URLs
         const sanitizedFilename = this._sanitizeFilename(rawFilename);
         
         if (!sanitizedFilename) {
@@ -1377,6 +1443,9 @@ export class LayoutController {
     this.layers.forEach(layer => layer.destroy());
     this.layers = [];
     this.#currentLayer = null;
+    this.#layoutMetadata = {};
+    const layoutNameButton = document.getElementById('buttonLayoutName');
+    if (layoutNameButton) layoutNameButton.textContent = "Untitled Layout";
     this.workspace.position.set(0, 0);
     this.config.clearWorkspaceSettings();
     this.workspace.scale.set(this.config.defaultZoom);
@@ -1428,6 +1497,81 @@ export class LayoutController {
   }
 
   /**
+   * Gets the current layout metadata.
+   * @returns {LayoutMetadata} The current layout metadata
+   */
+  get layoutMetadata() {
+    return { ...this.#layoutMetadata };
+  }
+
+  /**
+   * Gets the layout name from metadata.
+   * @returns {String|null} The layout name or null if not set
+   */
+  getLayoutName() {
+    return this.#layoutMetadata.name || null;
+  }
+
+  /**
+   * Sets the layout name in metadata.
+   * @param {String} name The layout name (letters, numbers, hyphens, and spaces only)
+   * @returns {Boolean} True if name was set, false if invalid
+   */
+  setLayoutName(name) {
+    if (!isValidLayoutName(name)) {
+      return false;
+    }
+
+    this.#layoutMetadata.name = name.trim();
+    const button = document.getElementById('buttonLayoutName');
+    if (button) button.textContent = this.#layoutMetadata.name || "Untitled Layout";
+    return true;
+  }
+
+  /**
+   * Updates cloud-related metadata after a cloud save operation.
+   * @param {LayoutMetadata} cloudInfo Cloud storage information
+   * @param {String} cloudInfo.cloudId The cloud layout ID
+   * @param {String} [cloudInfo.s3Key] The S3 object key
+   * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
+   * @param {Number} [cloudInfo.version] The version number in cloud storage
+   */
+  updateCloudMetadata(cloudInfo) {
+    if (cloudInfo.cloudId) {
+      this.#layoutMetadata.cloudId = cloudInfo.cloudId;
+    }
+    if (cloudInfo.s3Key) {
+      this.#layoutMetadata.s3Key = cloudInfo.s3Key;
+    }
+    if (cloudInfo.lastSaved) {
+      this.#layoutMetadata.lastSaved = cloudInfo.lastSaved;
+    }
+    if (cloudInfo.version !== undefined) {
+      this.#layoutMetadata.version = cloudInfo.version;
+    }
+    this.#layoutMetadata.source = 'cloud';
+  }
+
+  /**
+   * Clears cloud-related metadata (e.g., when creating a new layout).
+   */
+  clearCloudMetadata() {
+    delete this.#layoutMetadata.cloudId;
+    delete this.#layoutMetadata.s3Key;
+    delete this.#layoutMetadata.lastSaved;
+    delete this.#layoutMetadata.version;
+    this.#layoutMetadata.source = 'local';
+  }
+
+  /**
+   * Checks if the current layout was loaded from cloud storage.
+   * @returns {Boolean} True if layout is from cloud storage
+   */
+  isCloudLayout() {
+    return this.#layoutMetadata.source === 'cloud' && !!this.#layoutMetadata.cloudId;
+  }
+
+  /**
    * Exit read-only mode and restore interactive functionality.
    * This undoes the UI changes made when entering read-only mode in init().
    */
@@ -1440,6 +1584,9 @@ export class LayoutController {
     const buttonRotate = document.getElementById('buttonRotate');
     if (buttonRotate) buttonRotate.disabled = false;
 
+    const buttonLayoutName = document.getElementById('buttonLayoutName');
+    if (buttonLayoutName) buttonLayoutName.disabled = false;
+
     document.getElementById('layerAdd')?.parentElement?.classList.remove('hidden');
     document.getElementById('mobileLayerAdd')?.classList.remove('hidden');
     document.getElementById('layerList')?.classList.remove('readonly');
@@ -1451,6 +1598,8 @@ export class LayoutController {
 
     document.getElementById('componentMenu')?.classList.remove('hidden');
     this.createComponentBrowser();
+
+    this.updateCloudMenuVisibility();
   }
 
   /**
@@ -1486,6 +1635,7 @@ export class LayoutController {
 
   /**
    * Download the current layout as a JSON file.
+   * Uses the layout name for the filename if available.
    */
   downloadLayout() {
     /** @type {SerializedLayout} */
@@ -1498,8 +1648,23 @@ export class LayoutController {
       layers: this.layers.map((layer) => layer.serialize()),
       config: this.config.serializeWorkspaceSettings()
     };
+
+    // Include metadata if layout has a name (exclude cloud-specific fields from download)
+    if (this.#layoutMetadata.name) {
+      layout.metadata = {
+        name: this.#layoutMetadata.name
+      };
+    }
+
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
-    saveAs(blob, 'layout.json');
+
+    // Use layout name for filename if available, converting spaces to underscores
+    let filename = 'layout.json';
+    if (this.#layoutMetadata.name) {
+      filename = this.#layoutMetadata.name.replace(/ /g, '_') + '.json';
+    }
+
+    saveAs(blob, filename);
     this.hideFileMenu();
   }
 
@@ -1697,8 +1862,37 @@ export class LayoutController {
 
   /**
    * Handler for the import button click event.
+   * For authenticated users with cloud access, shows FileDialog.
+   * For unauthenticated users, uses existing local file import.
    */
-  onImportClick() {
+  async onImportClick() {
+    // Check if user is authenticated with cloud access
+    const authManager = await this._getAuthManager();
+    if (authManager && authManager.isAuthenticated && authManager.hasCloudAccess) {
+      try {
+        // Dynamically import FileDialog from private cloud directory
+        const cloudFeatures = authManager.getCloudFeatures();
+        if (cloudFeatures && cloudFeatures.fileDialog) {
+          this.hideFileMenu();
+          await cloudFeatures.fileDialog.showOpenDialog();
+          return;
+        }
+      } catch (error) {
+        console.error('Failed to load cloud file dialog:', error);
+        // Fall through to local file import
+      }
+    }
+
+    // Default to local file import for unauthenticated users or on error
+    this._openLocalFile();
+  }
+
+  /**
+   * Opens a local file using the file input dialog.
+   * This is the original onImportClick functionality.
+   * @private
+   */
+  _openLocalFile() {
     let input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json,application/json';
@@ -1725,6 +1919,11 @@ export class LayoutController {
               // TODO: Show an error message to user
               return;
             }
+            if (this.readOnly) {
+              this.reset();
+              this.exitReadOnlyMode();
+              window.history.pushState({}, '', window.location.origin);
+            }
             this._importLayout(data);
           } catch (e) {
             console.error(e);
@@ -1745,11 +1944,296 @@ export class LayoutController {
   }
 
   /**
+   * Handler for the cloud save button click event.
+   * Saves the current layout to cloud storage.
+   */
+  async onCloudSaveClick() {
+    this.hideFileMenu();
+
+    const authManager = await this._getAuthManager();
+    if (!authManager || !authManager.isAuthenticated) {
+      this._showSnackbar('Please sign in to save layouts to the cloud.', 'error');
+      return;
+    }
+
+    if (!authManager.hasCloudAccess) {
+      this._showSnackbar('Your account does not have cloud storage access.', 'error');
+      return;
+    }
+
+    if (!this.#layoutMetadata.cloudId) {
+      /** @type {Array<string>} */
+      const groups = await authManager.getUserGroups();
+      if (!groups.includes('subscription') && !groups.includes('admin')) {
+        const cloudFeatures = authManager.getCloudFeatures();
+        if (!cloudFeatures || !cloudFeatures.cloudStorage) {
+          this._showSnackbar('Cloud storage not available.', 'error');
+          return;
+        }
+        /** @type {number} */
+        const layoutCount = await cloudFeatures.cloudStorage.getLayoutCount();
+        if (layoutCount >= 1) {
+          SubscriptionDialogController.getInstance()
+            .show('You\'ve reached the free layout limit.');
+          return;
+        }
+      }
+    }
+
+    if (!this.#layoutMetadata.name) {
+      this._showLayoutNameDialog();
+      return;
+    }
+
+    await this._saveToCloud(this.#layoutMetadata.name);
+  }
+
+  /**
+   * Shows the layout naming dialog for unnamed layouts.
+   * @private
+   */
+  _showLayoutNameDialog() {
+    const input = document.getElementById('layoutNameInput');
+    if (!input) {
+      console.error('Layout name dialog elements not found');
+      return;
+    }
+    input.parentElement.classList.remove('invalid');
+    input.value = this.#layoutMetadata.name || '';
+    this.hideFileMenu();
+    ui('#layoutNameDialog');
+  }
+
+  /**
+   * Handler for confirming the layout name in the dialog.
+   */
+  async onConfirmLayoutName() {
+    const input = document.getElementById('layoutNameInput');
+    const layoutName = input?.value?.trim();
+
+    if (!isValidLayoutName(layoutName)) {
+      input.parentElement.classList.add('invalid');
+      input.focus();
+      return;
+    }
+    ui('#layoutNameDialog');
+    this.setLayoutName(layoutName);
+    await this._saveToCloud(layoutName);
+  }
+
+  /**
+   * Handle click on the layout name button in the toolbar.
+   * Swaps the button for an inline text input for renaming.
+   */
+  onLayoutNameClick() {
+    const button = document.getElementById('buttonLayoutName');
+    const input = document.getElementById('inputLayoutName');
+    if (!button || !input) return;
+
+    this._hideSelectionToolbar()
+    this.hideFileMenu();
+    input.value = button.textContent;
+    button.classList.add('hiddenish');
+    input.classList.remove('hidden');
+    input.focus();
+    input.select();
+
+    const commitRename = async () => {
+      input.removeEventListener('blur', commitRename);
+      input.removeEventListener('keydown', onKeyDown);
+      input.removeEventListener('input', onInput);
+      const newName = input.value.trim();
+      const authManager = await this._getAuthManager();
+      const canCloudSave = (authManager && authManager.isAuthenticated && authManager.hasCloudAccess);
+      if (newName.length === 0) {
+        if (canCloudSave && this.isCloudLayout()) {
+          button.textContent = this.getLayoutName() ?? "Untitled Layout";
+        } else {
+          this.#layoutMetadata.name = null;
+          button.textContent = "Untitled Layout";
+        }
+      } else {
+        this.setLayoutName(newName);
+      }
+      input.classList.add('hidden');
+      button.classList.remove('hiddenish');
+      if (canCloudSave && this.isCloudLayout()) {
+        await this._saveToCloud(this.#layoutMetadata.name);
+      }
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Enter') {
+        input.blur();
+      } else if (event.key === 'Escape') {
+        // Revert — just hide without updating
+        button.textContent = this.getLayoutName() ?? "Untitled Layout";
+        input.removeEventListener('blur', commitRename);
+        input.removeEventListener('keydown', onKeyDown);
+        input.removeEventListener('input', onInput);
+        input.classList.add('hidden');
+        button.classList.remove('hiddenish');
+      }
+      event.stopPropagation();
+    };
+
+    const onInput = (event) => {
+      button.textContent = input.value;
+      event.stopPropagation();
+    }
+
+    input.addEventListener('blur', commitRename);
+    input.addEventListener('keydown', onKeyDown);
+    input.addEventListener('input', onInput);
+  }
+
+
+  /**
+   * Saves the current layout to cloud storage.
+   * @param {string} layoutName - The name for the layout
+   * @private
+   */
+  async _saveToCloud(layoutName) {
+    const authManager = await this._getAuthManager();
+    if (!authManager) {
+      this._showSnackbar('Authentication not available.', 'error');
+      return;
+    }
+
+    const cloudFeatures = authManager.getCloudFeatures();
+    if (!cloudFeatures || !cloudFeatures.cloudStorage) {
+      this._showSnackbar('Cloud storage not available.', 'error');
+      return;
+    }
+
+    try {
+      this._showSnackbar('Saving to cloud...', 'info');
+      const layoutData = {
+        version: CurrentFormatVersion,
+        date: Date.now(),
+        x: this.workspace.x,
+        y: this.workspace.y,
+        zoom: this.workspace.scale.x,
+        layers: this.layers.map((layer) => layer.serialize()),
+        config: this.config.serializeWorkspaceSettings(),
+        metadata: {
+          name: layoutName
+        }
+      };
+
+      // Get existing layout ID if updating
+      const layoutId = this.#layoutMetadata.cloudId || null;
+      const result = await cloudFeatures.cloudStorage.saveLayout(
+        layoutData,
+        layoutName,
+        this,
+        layoutId
+      );
+      this.#layoutMetadata.name = layoutName;
+      this.#layoutMetadata.cloudId = result.layoutId;
+      this.#layoutMetadata.s3Key = result.s3Key;
+      this.#layoutMetadata.lastSaved = result.lastSaved;
+      this.#layoutMetadata.source = 'cloud';
+
+      this._showSnackbar('Layout saved to cloud!', 'success');
+    } catch (error) {
+      console.error('Failed to save layout to cloud:', error);
+      this._showSnackbar(error.message || 'Failed to save layout.', 'error');
+    }
+  }
+
+  /**
+   * Gets the AuthenticationManager instance.
+   * @returns {Promise<Object|null>} The AuthenticationManager or null
+   * @private
+   */
+  async _getAuthManager() {
+    try {
+      const { default: AuthenticationManager } = await import('./authenticationController.js');
+      return AuthenticationManager.getInstance();
+    } catch (error) {
+      console.error('Failed to load AuthenticationManager:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Shows a snackbar notification using BeerCSS.
+   * @param {string} message - The message to display
+   * @param {string} type - The type of notification ('success', 'error', 'info')
+   * @private
+   */
+  _showSnackbar(message, type = 'info') {
+    let snackbar = document.getElementById('cloudSnackbar');
+    if (!snackbar) {
+      snackbar = document.createElement('div');
+      snackbar.id = 'cloudSnackbar';
+      snackbar.className = 'snackbar large-text top';
+      document.body.appendChild(snackbar);
+    }
+
+    snackbar.innerHTML = `<i class="extra">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</i><span>${message}</span>`;
+    snackbar.classList.remove('error', 'success', 'info');
+    snackbar.classList.add(type);
+
+    ui('#cloudSnackbar', 3000);
+  }
+
+  /**
+   * Updates the visibility of cloud menu items based on authentication state.
+   * Called when authentication state changes.
+   */
+  async updateCloudMenuVisibility() {
+    const authManager = await this._getAuthManager();
+    const hasCloudAccess = authManager && authManager.isAuthenticated && authManager.hasCloudAccess;
+
+    const cloudSaveBtn = document.getElementById('buttonCloudSave');
+    if (cloudSaveBtn) {
+      if (hasCloudAccess && !this.readOnly) {
+        cloudSaveBtn.classList.remove('hidden');
+      } else {
+        cloudSaveBtn.classList.add('hidden');
+      }
+    }
+
+    const mobileCloudSaveBtn = document.getElementById('mobileButtonCloudSave');
+    if (mobileCloudSaveBtn) {
+      if (hasCloudAccess && !this.readOnly) {
+        mobileCloudSaveBtn.classList.remove('hidden');
+      } else {
+        mobileCloudSaveBtn.classList.add('hidden');
+      }
+    }
+  }
+
+  /**
    * 
    * @param {SerializedLayout} data 
+   * @param {Object} [cloudInfo] Optional cloud storage information for layouts loaded from cloud
+   * @param {String} [cloudInfo.cloudId] The cloud layout ID
+   * @param {String} [cloudInfo.s3Key] The S3 object key
+   * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
    */
-  _importLayout(data) {
+  _importLayout(data, cloudInfo = null) {
     this.reset(true);
+
+    // Handle metadata from layout data and cloud info
+    this.#layoutMetadata = {};
+    if (data.metadata) {
+      this.setLayoutName(data.metadata.name || null);
+    }
+
+    // If loaded from cloud, track cloud-specific metadata
+    if (cloudInfo) {
+      this.#layoutMetadata.cloudId = cloudInfo.cloudId || null;
+      this.#layoutMetadata.s3Key = cloudInfo.s3Key || null;
+      this.#layoutMetadata.lastSaved = cloudInfo.lastSaved || null;
+      this.#layoutMetadata.source = 'cloud';
+      this.#layoutMetadata.version = cloudInfo.version || 1;
+    } else {
+      this.#layoutMetadata.source = 'local';
+    }
+
     if (data.config) {
       this.config.deserializeWorkspaceSettings(data.config);
       this.checkBackgroundColorChange();
