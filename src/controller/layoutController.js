@@ -2052,8 +2052,8 @@ export class LayoutController {
           this.#layoutMetadata.name = null;
           button.textContent = "Untitled Layout";
         }
-      } else {
-        this.setLayoutName(newName);
+      } else if (!this.setLayoutName(newName)) {
+        button.textContent = this.getLayoutName() ?? "Untitled Layout";
       }
       input.classList.add('hidden');
       button.classList.remove('hiddenish');
@@ -2172,7 +2172,12 @@ export class LayoutController {
       document.body.appendChild(snackbar);
     }
 
-    snackbar.innerHTML = `<i class="extra">${type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info'}</i><span>${message}</span>`;
+    const icon = document.createElement('i');
+    icon.className = 'extra';
+    icon.textContent = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+    const span = document.createElement('span');
+    span.textContent = message;
+    snackbar.replaceChildren(icon, span);
     snackbar.classList.remove('error', 'success', 'info');
     snackbar.classList.add(type);
 
