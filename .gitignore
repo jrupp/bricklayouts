@@ -1,3 +1,5 @@
 node_modules
 #src/pixi.mjs
 #src/pixi.mjs.map
+src/cloud
+.cloud-private

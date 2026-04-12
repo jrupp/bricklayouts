@@ -69,13 +69,17 @@ describe("LayoutController", function() {
         geiSpy.withArgs('buttonRemove').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonImport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonCloudSave').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('buttonLayoutName').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonExport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('buttonNewLayout').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonDownload').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonImport').and.returnValue(document.createElement('li'));
+        geiSpy.withArgs('mobileButtonCloudSave').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonExport').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('mobileButtonNewLayout').and.returnValue(document.createElement('li'));
         geiSpy.withArgs('confirmNewLayout').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('confirmLayoutName').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonMenu').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('buttonConfig').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('configurationEditorClose').and.returnValue(document.createElement('button'));
@@ -90,6 +94,7 @@ describe("LayoutController", function() {
         geiSpy.withArgs('mobileLayerList').and.returnValue(document.createElement('ul'));
         geiSpy.withArgs('saveLayerDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('layerName').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('layoutNameInput').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('exportloading').and.returnValue(document.createElement('main'));
         selectionToolbar = document.createElement('nav');
         geiSpy.withArgs('selectionToolbar').and.returnValue(selectionToolbar);
@@ -1918,10 +1923,10 @@ describe("LayoutController", function() {
             expect(layoutController._sanitizeFilename("test.config.json")).toBe("testconfig");
         });
 
-        it("keeps only alphanumeric characters", function() {
+        it("keeps only alphanumeric characters and hyphens", function() {
             expect(layoutController._sanitizeFilename("test123")).toBe("test123");
             expect(layoutController._sanitizeFilename("Test123")).toBe("Test123");
-            expect(layoutController._sanitizeFilename("test-file")).toBe("testfile");
+            expect(layoutController._sanitizeFilename("test-file")).toBe("test-file");
             expect(layoutController._sanitizeFilename("test_file")).toBe("testfile");
             expect(layoutController._sanitizeFilename("test@file")).toBe("testfile");
             expect(layoutController._sanitizeFilename("test file")).toBe("testfile");
@@ -1964,7 +1969,7 @@ describe("LayoutController", function() {
             expect(layoutController._sanitizeFilename("q2WE4ty")).toBe("q2WE4ty");
             expect(layoutController._sanitizeFilename("layout123")).toBe("layout123");
             expect(layoutController._sanitizeFilename("user_layout_v2")).toBe("userlayoutv2");
-            expect(layoutController._sanitizeFilename("my-awesome-layout.json")).toBe("myawesomelayout");
+            expect(layoutController._sanitizeFilename("my-awesome-layout.json")).toBe("my-awesome-layout");
         });
 
         it("combines all sanitization rules", function() {

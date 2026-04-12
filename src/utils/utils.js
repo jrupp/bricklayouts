@@ -76,3 +76,25 @@ export function isMac() {
   return navigator.platform?.toUpperCase().includes('MAC') ?? false;
 }
 
+/**
+ * Layout name validation pattern - letters, numbers, hyphens, and spaces only
+ */
+const LAYOUT_NAME_PATTERN = /^[a-zA-Z0-9\- ]+$/;
+
+/**
+ * Validates layout name format
+ * @param {string} layoutName - The layout name to validate
+ * @returns {boolean} True if valid, false otherwise
+ */
+export function isValidLayoutName(layoutName) {
+  if (!layoutName || typeof layoutName !== 'string') {
+    return false;
+  }
+
+  const trimmed = layoutName.trim();
+  if (trimmed.length === 0 || trimmed.length > 100) {
+    return false;
+  }
+
+  return LAYOUT_NAME_PATTERN.test(trimmed);
+}

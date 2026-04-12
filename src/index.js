@@ -1,6 +1,8 @@
 import { ConfigurationController } from './controller/configurationController.js';
 import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
+import { AccountMenuController } from './controller/accountMenuController.js';
+import AuthenticationManager from './controller/authenticationController.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
 
 const canvasContainer = document.getElementById('canvasContainer');
@@ -38,4 +40,21 @@ await layoutController.init();
 layoutController.initWindowEvents();
 new ConfigurationController();
 InventoryController.getInstance();
+
+// Initialize authentication using singleton pattern
+// PUBLIC authentication UI (AccountMenu, AuthenticationModal) is imported directly
+// without auth checks, as they are needed for login/signup options
+const authManager = AuthenticationManager.getInstance();
+await authManager.initialize();
+new AccountMenuController(authManager);
+
+// Load private cloud features if user is already authenticated with cloud access
+// This handles the case where user refreshes the page while logged in
+if (authManager.isAuthenticated && authManager.hasCloudAccess) {
+  await authManager.loadPrivateCloudFeatures();
+}
+
+// Update cloud menu visibility based on authentication state
+await layoutController.updateCloudMenuVisibility();
+
 document.getElementById('apploading').remove();
