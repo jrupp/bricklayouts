@@ -13,6 +13,9 @@
     "jasmine-browser-runner": "^3.0.0",
     "jasmine-core": "^5.8.0"
   },
+  "overrides": {
+    "lodash": ">=4.18.1"
+  },
   "scripts": {
     "start": "http-server . --log-ip -c-1",
     "postinstall": "copyfiles -f node_modules/pixi.js/dist/pixi.mjs src/ && copyfiles -f node_modules/pixi.js/dist/pixi.mjs.map src/ && copyfiles -f node_modules/tabulator-tables/dist/css/tabulator.min.css src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs src/ && copyfiles -f node_modules/tabulator-tables/dist/js/tabulator_esm.min.mjs.map src/ && copyfiles -f node_modules/rbush/rbush.min.js src/ && copyfiles -f node_modules/amazon-cognito-identity-js/dist/amazon-cognito-identity.min.js src/",
