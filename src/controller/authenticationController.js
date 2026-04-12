@@ -944,7 +944,9 @@ class AuthenticationManager {
    * Reset authentication state without page reload
    */
   async signOut() {
-    this.cognitoUser.signOut(function () {});
+    if (this.cognitoUser) {
+      this.cognitoUser.signOut(function () {});
+    }
 
     // Clear authentication state
     this.cognitoUser = null;
