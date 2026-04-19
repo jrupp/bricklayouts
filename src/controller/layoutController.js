@@ -7,6 +7,7 @@ import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
 import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
+import { showSnackbar } from '../utils/snackbar.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import '../FileSaver.min.js';
@@ -1952,12 +1953,12 @@ export class LayoutController {
 
     const authManager = await this._getAuthManager();
     if (!authManager || !authManager.isAuthenticated) {
-      this._showSnackbar('Please sign in to save layouts to the cloud.', 'error');
+      showSnackbar('Please sign in to save layouts to the cloud.', 'error');
       return;
     }
 
     if (!authManager.hasCloudAccess) {
-      this._showSnackbar('Your account does not have cloud storage access.', 'error');
+      showSnackbar('Your account does not have cloud storage access.', 'error');
       return;
     }
 
@@ -1967,7 +1968,7 @@ export class LayoutController {
       if (!groups.includes('subscription') && !groups.includes('admin')) {
         const cloudFeatures = authManager.getCloudFeatures();
         if (!cloudFeatures || !cloudFeatures.cloudStorage) {
-          this._showSnackbar('Cloud storage not available.', 'error');
+          showSnackbar('Cloud storage not available.', 'error');
           return;
         }
         /** @type {number} */
@@ -2096,18 +2097,18 @@ export class LayoutController {
   async _saveToCloud(layoutName) {
     const authManager = await this._getAuthManager();
     if (!authManager) {
-      this._showSnackbar('Authentication not available.', 'error');
+      showSnackbar('Authentication not available.', 'error');
       return;
     }
 
     const cloudFeatures = authManager.getCloudFeatures();
     if (!cloudFeatures || !cloudFeatures.cloudStorage) {
-      this._showSnackbar('Cloud storage not available.', 'error');
+      showSnackbar('Cloud storage not available.', 'error');
       return;
     }
 
     try {
-      this._showSnackbar('Saving to cloud...', 'info');
+      showSnackbar('Saving to cloud...', 'info');
       const layoutData = {
         version: CurrentFormatVersion,
         date: Date.now(),
@@ -2135,10 +2136,10 @@ export class LayoutController {
       this.#layoutMetadata.lastSaved = result.lastSaved;
       this.#layoutMetadata.source = 'cloud';
 
-      this._showSnackbar('Layout saved to cloud!', 'success');
+      showSnackbar('Layout saved to cloud!', 'success');
     } catch (error) {
       console.error('Failed to save layout to cloud:', error);
-      this._showSnackbar(error.message || 'Failed to save layout.', 'error');
+      showSnackbar(error.message || 'Failed to save layout.', 'error');
     }
   }
 
@@ -2155,33 +2156,6 @@ export class LayoutController {
       console.error('Failed to load AuthenticationManager:', error);
       return null;
     }
-  }
-
-  /**
-   * Shows a snackbar notification using BeerCSS.
-   * @param {string} message - The message to display
-   * @param {string} type - The type of notification ('success', 'error', 'info')
-   * @private
-   */
-  _showSnackbar(message, type = 'info') {
-    let snackbar = document.getElementById('cloudSnackbar');
-    if (!snackbar) {
-      snackbar = document.createElement('div');
-      snackbar.id = 'cloudSnackbar';
-      snackbar.className = 'snackbar large-text top';
-      document.body.appendChild(snackbar);
-    }
-
-    const icon = document.createElement('i');
-    icon.className = 'extra';
-    icon.textContent = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
-    const span = document.createElement('span');
-    span.textContent = message;
-    snackbar.replaceChildren(icon, span);
-    snackbar.classList.remove('error', 'success', 'info');
-    snackbar.classList.add(type);
-
-    ui('#cloudSnackbar', 3000);
   }
 
   /**
