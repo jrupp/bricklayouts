@@ -4,6 +4,7 @@
  * to unauthenticated users and Profile/Logout options to authenticated users.
  */
 
+import { AuthenticationManager } from './authenticationController.js';
 import { LayoutController } from './layoutController.js';
 
 /**
@@ -12,8 +13,48 @@ import { LayoutController } from './layoutController.js';
  */
 let authModalModule = null;
 
+/**
+ * Singleton instance
+ * @type {AccountMenuController|null}
+ */
+let instance = null;
+
 class AccountMenuController {
+  /**
+   * Creates and initializes the singleton instance.
+   * @param {AuthenticationManager} authManager - The AuthenticationManager instance
+   * @returns {AccountMenuController} The singleton instance
+   */
+  static initialize(authManager) {
+    if (!instance) {
+      instance = new AccountMenuController(authManager);
+    }
+    return instance;
+  }
+
+  /**
+   * Gets the singleton instance of AccountMenuController.
+   * @returns {AccountMenuController} The singleton instance
+   */
+  static getInstance() {
+    if (!instance) {
+      throw new Error('AccountMenuController not initialized. Call initialize() first.');
+    }
+    return instance;
+  }
+
+  /**
+   * Resets the singleton instance. For testing only.
+   */
+  static resetInstance() {
+    instance = null;
+  }
+
+  /**
+   * @param {AuthenticationManager} authManager
+   */
   constructor(authManager) {
+    /** @type {AuthenticationManager} */
     this.authManager = authManager;
     this.menuElement = null;
     this.buttonElement = null;
@@ -156,6 +197,16 @@ class AccountMenuController {
   }
 
   /**
+   * Performs post-login UI state updates: menu state, cloud features, and menu visibility.
+   * Called after successful authentication from any flow.
+   */
+  async handlePostLoginUpdates() {
+    this.updateMenuState();
+    await this._loadPrivateCloudFeaturesIfNeeded();
+    await this._updateCloudMenuVisibility();
+  }
+
+  /**
    * Handle Login click - show authentication modal
    */
   async handleLogin() {
@@ -169,9 +220,7 @@ class AccountMenuController {
           await this.authManager.signOut();
           this.authManager.clearCloudFeatures();
         }
-        this.updateMenuState();
-        await this._loadPrivateCloudFeaturesIfNeeded();
-        await this._updateCloudMenuVisibility();
+        await this.handlePostLoginUpdates();
       });
     } catch (error) {
       console.error('Failed to load authentication modal:', error);
@@ -186,9 +235,7 @@ class AccountMenuController {
     try {
       const modal = await this._getAuthModal();
       modal.show('signup', async () => {
-        this.updateMenuState();
-        await this._loadPrivateCloudFeaturesIfNeeded();
-        await this._updateCloudMenuVisibility();
+        await this.handlePostLoginUpdates();
       });
     } catch (error) {
       console.error('Failed to load authentication modal:', error);
@@ -289,8 +336,14 @@ class AccountMenuController {
     const icon = this.buttonElement.querySelector('i');
     if (icon) {
       if (this.authManager && this.authManager.isAuthenticated) {
+        this.authManager.getUserName().then((name) => {
+          this.buttonElement.title = name;
+        }).catch(() => {
+          this.buttonElement.title = 'Logged in';
+        });
         icon.classList.add('fill');
       } else {
+        this.buttonElement.title = 'Account';
         icon.classList.remove('fill');
       }
     }

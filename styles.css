@@ -215,6 +215,7 @@ canvas {
 #authenticationModal,
 #buttonLayoutName,
 #fileOpenMenu,
+#portalRedirectConfirmDialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -277,6 +278,7 @@ canvas {
 [data-dark-mode=true] #authenticationModal,
 [data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] #fileOpenMenu,
+[data-dark-mode=true] #portalRedirectConfirmDialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -493,7 +495,7 @@ canvas {
 	z-index: 1099;
 }
 
-.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog) {
+.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog) {
 	z-index: 1101;
 }
 
@@ -547,8 +549,19 @@ canvas {
 	display: flex;
 }
 
+.cloudFileItem.locked {
+	opacity: 0.6;
+	cursor: default;
+}
+
+#fileOpenMenu.locked #renameLayout,
+#fileOpenMenu.locked #copyLayoutLink {
+	display: none;
+}
+
 #renameLayoutDialog,
-#deleteLayoutConfirmDialog {
+#deleteLayoutConfirmDialog,
+#portalRedirectConfirmDialog {
 	z-index: 1102;
 	transform: translate(-50%, 100%);
 }
@@ -627,6 +640,7 @@ li > .ctrl-key {
 	font-size: 1.4rem !important;
 }
 
+select.extra-text + label,
 input.extra-text + label {
 	font-size: 1.4rem !important;
 }
@@ -1104,6 +1118,10 @@ button:active {
 	opacity: 0.6;
 }
 
+.black-white-text {
+  color: var(--color);
+}
+
 #darkMode-container button {
 	block-size: 100%;
 	margin: 0;
@@ -1519,6 +1537,16 @@ i + span.label {
   display: block;
 }
 
+#profileModal.view-subscription .profileModal-title-subscription,
+#profileModal.view-subscription .profileModal-view-subscription {
+  display: block;
+}
+
+#profileModal.view-invoices .profileModal-title-invoices,
+#profileModal.view-invoices .profileModal-view-invoices {
+  display: block;
+}
+
 #profileModal #verifiedIcon.verified {
   cursor: default;
   opacity: 1;
@@ -1527,4 +1555,79 @@ i + span.label {
 #profileModal.social-user #editProfileBtn,
 #profileModal.social-user .profileModal-passwordBtn {
   display: none;
+}
+
+/* Small */
+@media only screen and (max-width: 600px) {
+  #subscriptionDialog {
+	--_padding: 1rem;
+    transform: translate(0);
+    inset: auto auto 0 0;
+    inline-size: 100%;
+    block-size: auto;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    padding-block: var(--_top) var(--_bottom);
+	inset-block-end: 0;
+  }
+
+  #subscriptionDialog>:only-child {
+	margin: 0;
+  }
+}
+
+/* Not Small */
+@media only screen and (min-width: 601px) {
+  #subscriptionDialog[data-view=plans] {
+	inline-size: 75%;
+  }
+  #subscriptionDialog[data-view=signin] {
+	inline-size: 44rem !important;
+  }
+  #subscriptionDialog[data-view=verify] {
+	inline-size: 44rem !important;
+  }
+}
+
+/* Subscription Dialog - Interval Toggle */
+#subscriptionIntervalToggle button {
+	color: var(--color);
+}
+
+#subscriptionIntervalToggle button.active {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* Subscription Dialog - Plan Cards */
+#subscriptionDialog ul li i {
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+#subscriptionProPlan {
+	border-width: medium;
+}
+
+#subscriptionProInterval {
+  align-self: flex-end;
+  line-height: 1.4;
+  font-size: 1.75rem;
+  font-weight: 400;
+  display: block;
+}
+
+#subscriptionProAnnualNote {
+  text-decoration-style: dashed;
+}
+
+/* Profile Modal - Subscription & Invoice Views */
+#profileModal .profileModal-view-subscription article,
+#profileModal .profileModal-view-invoices article {
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.5rem;
+}
+
+#profileModal .profileModal-view-invoices article .row {
+  align-items: center;
 }

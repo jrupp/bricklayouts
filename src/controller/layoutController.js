@@ -1962,9 +1962,18 @@ export class LayoutController {
       return;
     }
 
+    /** @type {Array<string>} */
+    const groups = await authManager.getUserGroups();
+    if (groups.includes('post-sub')) {
+      const cloudFeatures = authManager.getCloudFeatures();
+      if (cloudFeatures && cloudFeatures.fileDialog) {
+        this.hideFileMenu();
+        await cloudFeatures.fileDialog.showPostSubSelectionIfNeeded();
+        return;
+      }
+    }
+
     if (!this.#layoutMetadata.cloudId) {
-      /** @type {Array<string>} */
-      const groups = await authManager.getUserGroups();
       if (!groups.includes('subscription') && !groups.includes('admin')) {
         const cloudFeatures = authManager.getCloudFeatures();
         if (!cloudFeatures || !cloudFeatures.cloudStorage) {
@@ -1975,7 +1984,7 @@ export class LayoutController {
         const layoutCount = await cloudFeatures.cloudStorage.getLayoutCount();
         if (layoutCount >= 1) {
           SubscriptionDialogController.getInstance()
-            .show('You\'ve reached the free layout limit.');
+            .show('You\'ve reached the free layout limit. To save more layouts, please upgrade your subscription.', 'Upgrade Required');
           return;
         }
       }
@@ -2150,7 +2159,7 @@ export class LayoutController {
    */
   async _getAuthManager() {
     try {
-      const { default: AuthenticationManager } = await import('./authenticationController.js');
+      const { AuthenticationManager } = await import('./authenticationController.js');
       return AuthenticationManager.getInstance();
     } catch (error) {
       console.error('Failed to load AuthenticationManager:', error);

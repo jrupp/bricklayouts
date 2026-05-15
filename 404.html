@@ -145,34 +145,108 @@
             </nav>
         </div>
     </dialog>
-    <dialog id="subscriptionDialog" class="no-padding border large-width surface-container-high small-round">
+    <dialog id="subscriptionDialog" class="no-padding border surface-container-high small-round">
         <div>
             <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
                 <nav>
                     <h6 class="max">Subscription Required</h6>
                     <button class="circle medium transparent" data-ui="#subscriptionDialog">
-                        <i class="medium bold">close</i>
+                        <i class="extra bold">close</i>
                     </button>
                 </nav>
             </header>
-            <div class="small-padding horizontal-padding extra-text center-align">
-                <i class="extra primary-text">cloud_upload</i>
-                <p id="subscriptionDialogMessage" class="bold">
-                    You've reached the free layout limit.
-                </p>
-                <p>
-                    Free accounts can store one layout in the cloud. Subscription options for
-                    additional cloud storage are coming soon!
-                </p>
+            <h5 id="subscriptionDialogMessage" class="bold center-align small-padding no-margin">
+                You've reached the free layout limit.
+            </h5>
+            <!-- Sign-in prompt (shown for unauthenticated users) -->
+            <div id="subscriptionSignInPrompt" class="padding center-align hidden">
+                <div class="grid medium-space no-margin small-padding">
+                    <button id="subscriptionSignInButton" class="responsive border extra-text s6 vertical" style="min-height: 80px;">
+                        <i class="extra">login</i>
+                        <span>Sign In</span>
+                        <div class="large-text secondary-text">Use your existing account</div>
+                    </button>
+                    <button id="subscriptionSignUpButton" class="responsive border extra-text s6 vertical" style="min-height: 80px;">
+                        <i class="extra">person_add</i>
+                        <span>Create Account</span>
+                        <div class="large-text secondary-text">Sign up for a new account</div>
+                    </button>
+                </div>
             </div>
-            <hr style="background-color: var(--outline)">
-            <nav class="no-padding no-space no-margin">
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-end-end-radius: 0.5rem !important;"
-                    data-ui="#subscriptionDialog">
-                    <span>OK</span>
-                </button>
-            </nav>
+            <!-- Verify email prompt (shown for authenticated but unverified users) -->
+            <div id="subscriptionVerifyEmailPrompt" class="padding center-align hidden">
+                <i class="extra primary-text">mark_email_unread</i>
+                <p class="bold extra-text">Verify Your Email</p>
+                <p class="extra-text">You must verify your email address before subscribing to a Pro Plan.</p>
+                <div class="small-padding">
+                    <button id="subscriptionVerifyEmailButton" class="responsive primary round extra-text">
+                        <i>verified</i>
+                        <span>Verify Email</span>
+                    </button>
+                </div>
+            </div>
+            <!-- Plan selection (shown for authenticated users) -->
+            <div id="subscriptionPlansSection" class="padding">
+                <!-- Billing interval toggle -->
+                <nav class="center-align no-margin small-padding">
+                    <div class="border small-round tiny-padding surface-container-low" id="subscriptionIntervalToggle">
+                        <button class="black-white-text extra-text small-round no-border no-margin active" id="subscriptionMonthlyBtn" data-interval="month">
+                            <span>Monthly</span>
+                        </button>
+                        <button class="black-white-text extra-text small-round no-border no-margin" id="subscriptionAnnualBtn" data-interval="year">
+                            <span>Annual</span>
+                            <span class="badge extra-text none small-round" style="position: static; margin-left: 0.25rem;">Save 17%</span>
+                        </button>
+                    </div>
+                </nav>
+                <!-- Plan cards -->
+                <div class="grid small-padding">
+                    <!-- Free plan card -->
+                    <div class="border small-round padding surface-container-low l6 s12" id="subscriptionFreePlan">
+                        <h2 class="no-margin">Free</h2>
+                        <h2 class="top-align">
+                            <span class="extra-text" style="line-height: 1.4">$</span>0
+                        </h2>
+                        <button class="border extra responsive secondary-border secondary-text small-round top-margin" style="font-size: 2.25rem;" disabled>Current plan</button>
+                        <hr class="small-margin">
+                        <ul class="no-margin no-padding extra-text" style="list-style: none;">
+                            <li class="small-padding middle-align"><i class="large">check</i> Design, save & print 1 layout</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> 1 Cloud layout</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> Detailed parts list with purchase links</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> 24/7 access to tutorials & support resources</li>
+                        </ul>
+                    </div>
+                    <!-- Pro plan card (recommended) -->
+                    <div class="border small-round padding surface-container-low primary-border l6 s12" id="subscriptionProPlan">
+                        <div class="absolute center horizontal-padding primary round extra-text" style="top: -1.1rem; line-height: normal; padding-block: calc(var(--_padding) / 4)">Recommended</div>
+                        <h2 class="no-margin">Pro</h2>
+                        <h2 class="top-align">
+                            <span class="extra-text" style="line-height: 1.4">$</span>
+                            <span id="subscriptionProPrice">7</span>
+                            <span class="no-margin" id="subscriptionProInterval">/month</span>
+                        </h2>
+                        <div class="small-width hidden">
+                          <span class="extra-text large-line left-padding underline" id="subscriptionProAnnualNote"></span>
+                          <span class="bottom no-space tooltip">billed annually</span>
+                        </div>
+                        <button class="extra responsive primary-container small-round top-margin" style="font-size: 2.25rem;" id="subscriptionProSubscribeBtn">Upgrade</button>
+                        <hr class="small-margin">
+                        <ul class="no-margin no-padding extra-text" style="list-style: none;">
+                            <li class="small-padding middle-align"><i class="large">check</i> Unlimited cloud layouts</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> Publish to community gallery</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> Detailed parts list with purchase links</li>
+                            <li class="small-padding middle-align"><i class="large">check</i> 24/7 access to tutorials & support resources</li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- Pricing page link -->
+                <nav class="center-align small-padding no-margin">
+                    <a href="https://www.bricklayouts.com/pricing" target="_blank" rel="noopener" class="link extra-text">
+                        View full plan details & FAQ
+                        <i class="small">open_in_new</i>
+                    </a>
+                </nav>
+            </div>
         </div>
     </dialog>
     <section id="exportloading" class="hidden max no-padding center-align middle-align responsive primary">

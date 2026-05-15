@@ -2,7 +2,8 @@ import { ConfigurationController } from './controller/configurationController.js
 import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
-import AuthenticationManager from './controller/authenticationController.js';
+import { SubscriptionDialogController } from './controller/subscriptionDialogController.js';
+import { AuthenticationManager } from './controller/authenticationController.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
 
 const canvasContainer = document.getElementById('canvasContainer');
@@ -46,7 +47,7 @@ InventoryController.getInstance();
 // without auth checks, as they are needed for login/signup options
 const authManager = AuthenticationManager.getInstance();
 await authManager.initialize();
-new AccountMenuController(authManager);
+AccountMenuController.initialize(authManager);
 
 // Load private cloud features if user is already authenticated with cloud access
 // This handles the case where user refreshes the page while logged in
@@ -56,5 +57,56 @@ if (authManager.isAuthenticated && authManager.hasCloudAccess) {
 
 // Update cloud menu visibility based on authentication state
 await layoutController.updateCloudMenuVisibility();
+
+// Detect Stripe Checkout or Portal return flow via URL query parameters
+const checkoutParams = new URLSearchParams(window.location.search);
+const checkoutSessionId = checkoutParams.get('session_id');
+const checkoutCancelled = checkoutParams.get('checkout');
+const portalReturn = checkoutParams.get('portal_return');
+
+if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === 'true') {
+  // Dynamically import SubscriptionService only for checkout/portal return flows
+  import('./cloud/subscriptionService.js').then(async ({ SubscriptionService }) => {
+    const subscriptionService = new SubscriptionService(authManager);
+    try {
+      if (checkoutSessionId) {
+        await subscriptionService.handleSuccessReturn(checkoutSessionId);
+      } else if (portalReturn === 'true') {
+        await subscriptionService.handlePortalReturn();
+      } else {
+        await subscriptionService.handleCancelReturn();
+      }
+    } catch (error) {
+      console.error('Error handling checkout/portal return:', error);
+    }
+  }).catch((error) => {
+    console.error('Failed to load SubscriptionService for return flow:', error);
+  });
+} else if (authManager.isAuthenticated && authManager.hasCloudAccess) {
+  authManager.refreshSession();
+}
+
+// Handle subscribe deep link: ?subscribe=true or pending intent from sessionStorage
+const subscribeParam = checkoutParams.get('subscribe');
+const pendingSubscribe = sessionStorage.getItem('pendingSubscribe');
+
+if (subscribeParam === 'true' || pendingSubscribe === 'true') {
+  if (subscribeParam === 'true') {
+    const cleanUrl = new URL(window.location);
+    cleanUrl.searchParams.delete('subscribe');
+    window.history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search);
+  }
+  if (authManager.isAuthenticated) {
+    const hasAccess = await authManager.hasFeatureAccess('subscription');
+    if (!hasAccess) {
+      SubscriptionDialogController.getInstance().show('Choose a plan to get started.');
+    } else {
+      sessionStorage.removeItem('pendingSubscribe');
+    }
+  } else {
+    sessionStorage.setItem('pendingSubscribe', 'true');
+    SubscriptionDialogController.getInstance().show('Sign in or create an account to subscribe.', 'Get Started');
+  }
+}
 
 document.getElementById('apploading').remove();

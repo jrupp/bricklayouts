@@ -245,10 +245,6 @@ class AuthenticationManager {
           return;
         }
 
-        // Set grace period expiry to 24 hours from now
-        const gracePeriodExpiry = new Date();
-        gracePeriodExpiry.setHours(gracePeriodExpiry.getHours() + 24);
-
         const attributeList = [
           new CognitoUserAttribute({
             Name: 'email',
@@ -257,10 +253,6 @@ class AuthenticationManager {
           new CognitoUserAttribute({
             Name: 'given_name',
             Value: userDetails.name
-          }),
-          new CognitoUserAttribute({
-            Name: 'custom:grace_period_expires',
-            Value: gracePeriodExpiry.toISOString()
           })
         ];
 
@@ -1260,8 +1252,8 @@ class AuthenticationManager {
 }
 
 // Export for use in other modules
-export default AuthenticationManager;
+export { AuthenticationManager };
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = AuthenticationManager;
+  module.exports = { AuthenticationManager };
 }
