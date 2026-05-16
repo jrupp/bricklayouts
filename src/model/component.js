@@ -737,7 +737,7 @@ export class Component extends Container {
   /**
    * Set the color of the baseplate this Component is designed to be placed on.
    * Note: This only applies to components that are designed to be placed on a baseplate. Setting this for other components or for tracks that don't specify a baseplate color will have no effect.
-  * @param {?String} value The new color of the baseplate to set, or null to unset
+   * @param {?String} value The new color of the baseplate to set, or null to unset
    */
   set baseplateColor(value) {
     if (this.baseData.type !== DataTypes.TRACK || this.#bpColor?.toHex() === value) {
