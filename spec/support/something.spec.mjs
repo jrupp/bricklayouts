@@ -250,6 +250,7 @@ describe("LayoutController", function() {
             });
 
             drawGridSpy = spyOn(layoutController, 'drawGrid').and.stub();
+            spyOn(layoutController, '_positionSelectionToolbar').and.stub();
             layoutController.initWindowEvents();
         });
         beforeEach(function () {
@@ -443,16 +444,15 @@ describe("LayoutController", function() {
             });
 
             it("positions selection toolbar after resize events", function() {
-                // Spy on _positionSelectionToolbar to verify it's called along with drawGrid
-                const positionSpy = spyOn(layoutController, '_positionSelectionToolbar').and.stub();
-                
+                const positionSpy = layoutController._positionSelectionToolbar;
+                positionSpy.calls.reset();
+
                 window.dispatchEvent(new Event('resize'));
-                
+
                 expect(positionSpy).not.toHaveBeenCalled();
-                
+
                 jasmine.clock().tick(350);
-                
-                // Both drawGrid and _positionSelectionToolbar should be called
+
                 expect(drawGridSpy).toHaveBeenCalled();
                 expect(positionSpy).toHaveBeenCalled();
             });
@@ -8513,97 +8513,96 @@ describe("LayoutController", function() {
         });
 
         describe("exitReadOnlyMode() method", () => {
-            it("should set readOnly to false", () => {
+            it("should set readOnly to false", async () => {
                 layoutController.readOnly = true;
-                
-                layoutController.exitReadOnlyMode();
-                
+
+                await layoutController.exitReadOnlyMode();
+
                 expect(layoutController.readOnly).toBe(false);
             });
 
-            it("should run without errors", () => {
-                // Verify it runs without errors
-                expect(() => layoutController.exitReadOnlyMode()).not.toThrow();
+            it("should run without errors", async () => {
+                await expectAsync(layoutController.exitReadOnlyMode()).toBeResolved();
             });
         });
 
         describe("onNewLayoutClick() method", () => {
-            it("should reset layout and exit read-only mode when in read-only mode", () => {
+            it("should reset layout and exit read-only mode when in read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset').and.callThrough();
-                spyOn(layoutController, 'exitReadOnlyMode').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(layoutController.reset).toHaveBeenCalled();
                 expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
                 expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
                 expect(layoutController.hideFileMenu).toHaveBeenCalled();
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
 
-            it("should show confirmation dialog when not in read-only mode", () => {
+            it("should show confirmation dialog when not in read-only mode", async () => {
                 layoutController.readOnly = false;
                 spyOn(layoutController, 'hideFileMenu');
                 let uiSpy = spyOn(window, 'ui').and.stub();
-                layoutController.onNewLayoutClick();
+                await layoutController.onNewLayoutClick();
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.hideFileMenu).toHaveBeenCalled();
             });
 
-            it("should not show confirmation dialog when in read-only mode", () => {
+            it("should not show confirmation dialog when in read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset');
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Get the dialog and spy on its method
                 const dialog = document.getElementById('newLayoutConfirmDialog');
                 spyOn(dialog, 'showModal');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(dialog.showModal).not.toHaveBeenCalled();
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
         });
 
         describe("onConfirmNewLayout() method", () => {
-            it("should close dialog and reset layout", () => {
+            it("should close dialog and reset layout", async () => {
                 let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset');
-                layoutController.onConfirmNewLayout();
+                await layoutController.onConfirmNewLayout();
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
             });
 
-            it("should exit read-only mode and update URL when coming from read-only mode", () => {
+            it("should exit read-only mode and update URL when coming from read-only mode", async () => {
                 // Set up read-only mode
                 layoutController.readOnly = true;
                 let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset').and.callThrough();
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
 
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onConfirmNewLayout();
+
+                await layoutController.onConfirmNewLayout();
 
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
@@ -8616,21 +8615,21 @@ describe("LayoutController", function() {
         });
 
         describe("URL change behavior", () => {
-            it("should change URL to root when exiting read-only mode", () => {
+            it("should change URL to root when exiting read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset');
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
@@ -10011,6 +10010,273 @@ describe("LayoutController", function() {
                 expect(serialized.bp_color).toBe('');
                 const deserialized = Component.deserialize(structureData, serialized, layoutController.currentLayer);
                 expect(deserialized.baseplateColor).toBeUndefined();
+            });
+        });
+    });
+
+    describe("Lazy Asset Loading", function() {
+        let layoutController;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+        });
+
+        describe("_processTrackMetadata", function() {
+            it("should set default type to TRACK when type is undefined", function() {
+                let track = { alias: "test", name: "Test" };
+                layoutController._processTrackMetadata(track);
+                expect(track.type).toBeDefined();
+            });
+
+            it("should parse color string to integer", function() {
+                let track = { alias: "test", name: "Test", color: "#6c6e68" };
+                layoutController._processTrackMetadata(track);
+                expect(typeof track.color).toBe("number");
+                expect(track.color).toBe(0x6c6e68);
+            });
+
+            it("should parse onbp string to integer", function() {
+                let track = { alias: "test", name: "Test", onbp: "#A0A5A9" };
+                layoutController._processTrackMetadata(track);
+                expect(typeof track.onbp).toBe("number");
+                expect(track.onbp).toBe(0xA0A5A9);
+            });
+
+            it("should not modify color that is already a number", function() {
+                let track = { alias: "test", name: "Test", color: 0x6c6e68 };
+                layoutController._processTrackMetadata(track);
+                expect(track.color).toBe(0x6c6e68);
+            });
+
+            it("should convert connections to PolarVectors", function() {
+                let track = {
+                    alias: "test", name: "Test",
+                    connections: [{ vector: [10, 20, 0.5], type: 0 }]
+                };
+                layoutController._processTrackMetadata(track);
+                expect(track.connections[0].vector).toBeDefined();
+                expect(track.connections[0].vector.constructor.name).toBe("PolarVector");
+            });
+        });
+
+        describe("_extractTrackImage", function() {
+            it("should return an HTMLImageElement with correct className and alt", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
+                let image = await layoutController._extractTrackImage(track);
+                expect(image).toBeInstanceOf(HTMLImageElement);
+                expect(image.className).toBe("track");
+                expect(image.alt).toBe(track.name);
+            });
+
+            it("should handle onbp overlay compositing", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.onbp !== undefined);
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+
+            it("should handle shape/baseplate color fill", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "baseplate32x32");
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+        });
+
+        describe("_createPlaceholderImage", function() {
+            it("should return an HTMLImageElement", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image).toBeInstanceOf(HTMLImageElement);
+            });
+
+            it("should have correct className and alt", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image.className).toBe("track");
+                expect(image.alt).toBe("Test Component");
+            });
+
+            it("should have a data URI src", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image.src).toContain("data:image/svg+xml");
+            });
+        });
+
+        describe("_replacePlaceholderImage", function() {
+            it("should update the existing element src in place", function() {
+                let track = { alias: "test", name: "Test", image: null };
+                track.image = layoutController._createPlaceholderImage(track);
+                let originalElement = track.image;
+                let originalSrc = track.image.src;
+
+                let realImage = new Image();
+                realImage.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==";
+
+                layoutController._replacePlaceholderImage(track, realImage);
+
+                expect(track.image).toBe(originalElement);
+                expect(track.image.src).not.toBe(originalSrc);
+                expect(track.image.src).toBe(realImage.src);
+            });
+        });
+
+        describe("_extractLayoutAliases", function() {
+            it("should extract unique component type aliases", function() {
+                let data = {
+                    layers: [{
+                        components: [
+                            { type: "railStraight9V", pose: {} },
+                            { type: "railCurved9V", pose: {} },
+                            { type: "railStraight9V", pose: {} }
+                        ]
+                    }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(2);
+                expect(aliases).toContain("railStraight9V");
+                expect(aliases).toContain("railCurved9V");
+            });
+
+            it("should exclude shape and text types", function() {
+                let data = {
+                    layers: [{
+                        components: [
+                            { type: "railStraight9V", pose: {} },
+                            { type: "shape", pose: {} },
+                            { type: "text", pose: {} }
+                        ]
+                    }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases).not.toContain("shape");
+                expect(aliases).not.toContain("text");
+                expect(aliases.length).toBe(1);
+            });
+
+            it("should handle multiple layers", function() {
+                let data = {
+                    layers: [
+                        { components: [{ type: "railStraight9V", pose: {} }] },
+                        { components: [{ type: "railCurved9V", pose: {} }] }
+                    ]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(2);
+            });
+
+            it("should handle empty layers", function() {
+                let data = {
+                    layers: [{ components: [] }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(0);
+            });
+        });
+
+        describe("addComponent on-demand loading", function() {
+            it("should load asset if not cached before creating component", async function() {
+                let trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === "railStraight9V");
+                let initialCount = layoutController.currentLayer.children.length;
+                let loadSpy = spyOn(Assets, 'load').and.resolveTo(Assets.get(trackData.alias));
+                let cacheSpy = spyOn(Assets.cache, 'has').and.returnValue(false);
+
+                await layoutController.addComponent(trackData);
+
+                expect(loadSpy).toHaveBeenCalledWith(trackData.alias);
+                expect(layoutController.currentLayer.children.length).toBe(initialCount + 1);
+
+                cacheSpy.and.callThrough();
+                loadSpy.and.callThrough();
+            });
+
+            it("should not call Assets.load when asset is already cached", async function() {
+                let trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === "railStraight9V");
+                let initialCount = layoutController.currentLayer.children.length;
+                let loadSpy = spyOn(Assets, 'load');
+
+                await layoutController.addComponent(trackData);
+
+                expect(loadSpy).not.toHaveBeenCalled();
+                expect(layoutController.currentLayer.children.length).toBe(initialCount + 1);
+            });
+        });
+
+        describe("_importLayout on-demand loading", function() {
+            it("should load missing assets before importing layout", async function() {
+                let loadSpy = spyOn(Assets, 'load').and.resolveTo();
+                let cacheSpy = spyOn(Assets.cache, 'has').and.returnValue(false);
+
+                let data = structuredClone(layoutFileOne);
+                let aliases = layoutController._extractLayoutAliases(data);
+
+                await layoutController._importLayout(data);
+
+                expect(loadSpy).toHaveBeenCalled();
+                let loadedAliases = loadSpy.calls.first().args[0];
+                expect(loadedAliases.length).toBeGreaterThan(0);
+
+                cacheSpy.and.callThrough();
+                loadSpy.and.callThrough();
+            });
+        });
+
+        describe("_validateImportData manifest lookup", function() {
+            it("should return true for a type that exists in the manifest", function() {
+                let data = {
+                    type: "railStraight9V",
+                    pose: { x: 0, y: 0, angle: 0 },
+                    connections: []
+                };
+                expect(Component._validateImportData(data)).toBe(true);
+            });
+
+            it("should return false for a type that does not exist in the manifest", function() {
+                let data = {
+                    type: "nonexistentComponent",
+                    pose: { x: 0, y: 0, angle: 0 },
+                    connections: []
+                };
+                expect(Component._validateImportData(data)).toBe(false);
+            });
+        });
+
+        describe("_backgroundLoadRemaining", function() {
+            it("should load each alias and replace placeholder images", async function() {
+                let track1 = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
+                track1.image = layoutController._createPlaceholderImage(track1);
+                let originalSrc = track1.image.src;
+
+                let replaceSpy = spyOn(layoutController, '_replacePlaceholderImage').and.callThrough();
+
+                await layoutController._backgroundLoadRemaining(["railStraight9V"]);
+
+                expect(replaceSpy).toHaveBeenCalled();
+                expect(track1.image.src).not.toBe(originalSrc);
+            });
+        });
+
+        describe("exitReadOnlyMode asset loading", function() {
+            it("should load all assets and extract images", async function() {
+                layoutController.readOnly = true;
+                layoutController.trackData.bundles[0].assets.forEach(t => {
+                    t.image = undefined;
+                });
+
+                await layoutController.exitReadOnlyMode();
+
+                expect(layoutController.readOnly).toBe(false);
+                layoutController.trackData.bundles[0].assets.forEach(t => {
+                    if (t.alias !== 'baseplate' && t.alias !== 'shape' && t.alias !== 'text') {
+                        expect(t.image).toBeInstanceOf(HTMLImageElement);
+                    }
+                });
             });
         });
     });

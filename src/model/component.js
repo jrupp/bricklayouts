@@ -1117,7 +1117,7 @@ export class Component extends Container {
       data?.type,
       typeof data?.type === 'string',
       data?.type?.length > 0,
-      data?.type ? Assets.get(data?.type) : false,
+      data?.type ? (LayoutController._instance?.trackData?.bundles[0].assets.some(a => a.alias === data.type) ?? Assets.get(data.type)) : false,
       data?.pose,
       Pose._validateImportData(data?.pose),
       data?.connections,
