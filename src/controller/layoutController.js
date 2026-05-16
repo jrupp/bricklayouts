@@ -52,7 +52,7 @@ export { DataTypes };
  * @property {Number} [color] The color of the component, represented as a hexadecimal number. Only used for shapes and baseplates.
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
- * @property {Number} [onbp] Whether the component is designed to be placed on a baseplate (i.e., has bottom studs). Only used for structures. Color is the default to start with.
+ * @property {Number} [onbp] The default baseplate color to render this structure on. The presence of this property indicates the structure is designed to be placed on a baseplate (i.e., has bottom studs).
  */
 let TrackData;
 export { TrackData };
