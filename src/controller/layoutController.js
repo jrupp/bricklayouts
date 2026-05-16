@@ -1290,7 +1290,7 @@ export class LayoutController {
 
   showStructureColorDialog() {
     const comp = LayoutController.selectedComponent;
-    if (!comp) return;
+    if (!comp || comp.locked) return;
     const currentColor = comp.baseplateColor;
     this.#selectedStructureColor = currentColor ?? '';
 
