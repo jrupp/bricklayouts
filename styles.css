@@ -200,6 +200,7 @@ canvas {
 #mobileLayerEditor,
 #mobileMenu,
 #newCustomComponentDialog,
+#structureColorDialog,
 #partInventoryDialog,
 #selectionToolbar,
 #exportloading,
@@ -263,6 +264,7 @@ canvas {
 [data-dark-mode=true] #mobileLayerEditor,
 [data-dark-mode=true] #mobileMenu,
 [data-dark-mode=true] #newCustomComponentDialog,
+[data-dark-mode=true] #structureColorDialog,
 [data-dark-mode=true] #partInventoryDialog,
 [data-dark-mode=true] #selectionToolbar,
 [data-dark-mode=true] #exportloading,
@@ -525,6 +527,7 @@ canvas {
 #subscriptionDialog,
 #layoutNameDialog,
 #fileOpenDialog,
+#structureColorDialog,
 #profileModal,
 #authenticationModal,
 #partInventoryDialog {
@@ -878,6 +881,47 @@ i.legobrightgreen {
 
 #componentColorMenu li {
 	gap: 0.5rem;
+}
+
+#structureColorGrid {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 0.5rem;
+	padding: 0.5rem 0.25rem 0.75rem;
+}
+
+#structureColorGrid .bp-color-item {
+	aspect-ratio: 1;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	border: 2px solid transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#structureColorGrid .bp-color-item:hover {
+	border-color: var(--on-surface);
+}
+
+#structureColorGrid .bp-color-item.selected {
+	border-color: var(--on-surface);
+	border-width: 3px;
+}
+
+#structureColorGrid .bp-color-item i {
+	display: none;
+	font-size: 1.5rem;
+}
+
+#structureColorGrid .bp-color-item.selected i {
+	display: block;
+}
+
+#structureColorGrid .bp-color-item.bp-none {
+	background: var(--surface-variant);
+	border-color: var(--outline);
+	border-style: dashed;
 }
 
 #layerList>li,

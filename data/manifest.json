@@ -958,6 +958,115 @@
                         }
                     ],
                     "type": "track"
+                },
+                {
+                    "alias": "10251",
+                    "name": "Brick Bank",
+                    "category": "structures",
+                    "src": "10251.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10182",
+                    "name": "Cafe Corner",
+                    "category": "structures",
+                    "src": "10182.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10264",
+                    "name": "Corner Garage",
+                    "category": "structures",
+                    "src": "10264.png",
+                    "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10246",
+                    "name": "Detective's Office",
+                    "category": "structures",
+                    "src": "10246.png",
+                    "onbp": "#582A12",
+                    "make": 1
+                },
+                {
+                    "alias": "10260",
+                    "name": "Downtown Diner",
+                    "category": "structures",
+                    "src": "10260.png",
+                    "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10197",
+                    "name": "Fire Brigade",
+                    "category": "structures",
+                    "src": "10197.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10211",
+                    "name": "Grand Emporium",
+                    "category": "structures",
+                    "src": "10211.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10185",
+                    "name": "Green Grocer",
+                    "category": "structures",
+                    "src": "10185.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10312",
+                    "name": "Jazz Club",
+                    "category": "structures",
+                    "src": "10312.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
+                    "alias": "10190",
+                    "name": "Market Street",
+                    "category": "structures",
+                    "src": "10190.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10232",
+                    "name": "Palace Cinema",
+                    "category": "structures",
+                    "src": "10232.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10243",
+                    "name": "Parisian Restaurant",
+                    "category": "structures",
+                    "src": "10243.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
+                    "alias": "10278",
+                    "name": "Police Station",
+                    "category": "structures",
+                    "src": "10278.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10350",
+                    "name": "Tudor Corner",
+                    "category": "structures",
+                    "src": "10350.png",
+                    "onbp": "#10CB31",
+                    "make": 1
                 }
             ]
         }

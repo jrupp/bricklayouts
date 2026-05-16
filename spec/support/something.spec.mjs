@@ -211,6 +211,10 @@ describe("LayoutController", function() {
         circlePreview.value = 80;
         geiSpy.withArgs('circlePreview').and.returnValue(circlePreview);
 
+        const structureColorGrid = document.createElement('div');
+        geiSpy.withArgs('structureColorGrid').and.returnValue(structureColorGrid);
+        geiSpy.withArgs('saveStructureColor').and.returnValue(document.createElement('button'));
+
         window.Slip = class Slip {
             constructor() {
             }
@@ -9862,6 +9866,151 @@ describe("LayoutController", function() {
                 
                 // Save operations should not proceed
                 expect(component.resize).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("Structure Color Dialog", function() {
+        let layoutController;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+        });
+
+        describe("_showSelectionToolbar editable class", function() {
+            it("adds editable class when selected component has baseData.onbp defined", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                const mockComponent = {
+                    size: 1,
+                    destroyed: false,
+                    locked: false,
+                    baseData: structureData,
+                    canRotate: () => true,
+                    getBounds: () => ({ minX: 0, minY: 0, maxX: 100, maxY: 100 }),
+                    getGlobalPosition: () => ({ x: 50, y: 50 })
+                };
+                LayoutController.selectedComponent = mockComponent;
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList).toContain("editable");
+            });
+
+            it("does not add editable class when track component has no onbp", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                expect(selectionToolbar.classList).not.toContain("editable");
+            });
+        });
+
+        describe("editSelectedComponent routing", function() {
+            it("calls showStructureColorDialog when selected component has onbp", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                const mockComponent = {
+                    size: 1,
+                    locked: false,
+                    baseData: structureData
+                };
+                LayoutController.selectedComponent = mockComponent;
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).not.toHaveBeenCalled();
+            });
+
+            it("calls showCreateCustomComponentDialog when selected component does not have onbp", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).not.toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).toHaveBeenCalled();
+            });
+        });
+
+        describe("onSaveStructureColor", function() {
+            it("does not save when component is locked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                const comp = LayoutController.selectedComponent;
+                comp.locked = true;
+                const spy = spyOnProperty(comp, 'baseplateColor', 'set');
+                layoutController.onSaveStructureColor();
+                expect(spy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("serialization", function() {
+            it("serializes bp_color when baseplateColor is set", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = "#c91a09";
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe("#c91a09");
+            });
+
+            it("does not include bp_color when baseplateColor is undefined", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                const comp = layoutController.currentLayer.children[0];
+                const serialized = comp.serialize();
+                expect(serialized.hasOwnProperty('bp_color')).toBeFalse();
+            });
+
+            it("deserializes bp_color into bpColor option", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = "#c91a09";
+                const serialized = comp.serialize();
+                const deserialized = Component.deserialize(structureData, serialized, layoutController.currentLayer);
+                expect(deserialized.baseplateColor).toBe("#c91a09");
+            });
+
+            it("serializes bp_color as blank string when baseplateColor is removed on an onbp component", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = '';
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe('');
+            });
+
+            it("deserializes blank bp_color to undefined baseplateColor", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = '';
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe('');
+                const deserialized = Component.deserialize(structureData, serialized, layoutController.currentLayer);
+                expect(deserialized.baseplateColor).toBeUndefined();
             });
         });
     });

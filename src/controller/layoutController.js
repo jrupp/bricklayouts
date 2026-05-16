@@ -1,5 +1,5 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
-import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, HexToColorName } from '../model/component.js';
+import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, Color } from '../pixi.mjs';
+import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -35,7 +35,9 @@ const DataTypes = Object.freeze({
   /** Represents a baseplate component. */
   BASEPLATE: "baseplate",
   /** Represents a text component. */
-  TEXT: "text"
+  TEXT: "text",
+  /** Represents a tileable component. */
+  TILEABLE: "tileable"
 });
 export { DataTypes };
 
@@ -52,6 +54,7 @@ export { DataTypes };
  * @property {Number} [color] The color of the component, represented as a hexadecimal number. Only used for shapes and baseplates.
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
+ * @property {Number} [onbp] Whether the component is designed to be placed on a baseplate (i.e., has bottom studs). Only used for structures. Color is the default to start with.
  */
 let TrackData;
 export { TrackData };
@@ -219,6 +222,12 @@ export class LayoutController {
   #customComponentType = "shape";
 
   /**
+   * The selected baseplate color hex value for the structure color dialog.
+   * @type {string}
+   */
+  #selectedStructureColor = "";
+
+  /**
    * Metadata for the current layout (name, cloud references, etc.)
    * @type {LayoutMetadata}
    */
@@ -335,6 +344,8 @@ export class LayoutController {
     this.newLayer();
 
     this.initCustomComponentUI();
+
+    this.initStructureColorUI();
 
     this.checkBackgroundColorChange();
 
@@ -502,6 +513,22 @@ export class LayoutController {
       }
       if (track.color !== void 0 && typeof track.color === 'string') {
         track.color = parseInt(track.color.slice(1), 16);
+      }
+      if (track.onbp !== void 0 && typeof track.onbp === 'string') {
+        track.onbp = parseInt(track.onbp.slice(1), 16);
+        var tempGraphics = new Graphics();
+        tempGraphics.rect(0, 0, trackBundle[track.alias].width, trackBundle[track.alias].height);
+        tempGraphics.fill(track.onbp ?? 0xA0A5A9);
+        var tempSprite = new Sprite(trackBundle[track.alias]);
+        tempGraphics.addChild(tempSprite);
+        image = await this.app.renderer.extract.image({target: tempGraphics});
+        image.className = "track";
+        image.alt = track.name;
+        track.image = image;
+        tempSprite.destroy();
+        tempGraphics.destroy();
+        tempSprite = null;
+        tempGraphics = null;
       }
       if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
         var tempGraphics = new Graphics();
@@ -1102,6 +1129,79 @@ export class LayoutController {
     } else {
       document.getElementById('componentColorFilter').classList.add('hasInput');
     }
+  }
+
+  initStructureColorUI() {
+    const grid = document.getElementById('structureColorGrid');
+    if (!grid) return;
+    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure",
+      "dark bluish gray", "dark green", "dark orange", "dark pink", "dark red",
+      "dark tan", "green", "light bluish gray", "lilac", "lime", "medium nougat",
+      "olive green", "orange", "red", "tan", "white", "yellow"];
+
+    const noneItem = document.createElement('div');
+    noneItem.className = 'bp-color-item bp-none';
+    noneItem.dataset.hex = '';
+    noneItem.innerHTML = '<i>block</i>';
+    noneItem.title = 'None';
+    noneItem.addEventListener('click', () => {
+      grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+      noneItem.classList.add('selected');
+      this.#selectedStructureColor = '';
+    });
+    grid.appendChild(noneItem);
+
+    colors.forEach((color) => {
+      const hex = ColorNameToHex[color];
+      const item = document.createElement('div');
+      item.className = 'bp-color-item';
+      item.style.backgroundColor = hex;
+      item.dataset.hex = hex.toLowerCase();
+      item.title = color.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const checkIcon = document.createElement('i');
+      checkIcon.textContent = 'check';
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      checkIcon.style.color = (r * 299 + g * 587 + b * 114) / 1000 < 128 ? '#ffffff' : '#000000';
+      item.appendChild(checkIcon);
+      item.addEventListener('click', () => {
+        grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        this.#selectedStructureColor = hex.toLowerCase();
+      });
+      grid.appendChild(item);
+    });
+
+    document.getElementById('saveStructureColor').addEventListener('click',
+      this.onSaveStructureColor.bind(this));
+  }
+
+  showStructureColorDialog() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp) return;
+    const currentColor = comp.baseplateColor;
+    this.#selectedStructureColor = currentColor ?? '';
+
+    const grid = document.getElementById('structureColorGrid');
+    grid.querySelectorAll('.bp-color-item').forEach(el => {
+      el.classList.remove('selected');
+      if (currentColor && el.dataset.hex === currentColor.toLowerCase()) {
+        el.classList.add('selected');
+      } else if (!currentColor && el.dataset.hex === '') {
+        el.classList.add('selected');
+      }
+    });
+
+    ui("#structureColorDialog");
+  }
+
+  onSaveStructureColor() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.locked) return;
+    comp.baseplateColor = this.#selectedStructureColor;
+    this._positionSelectionToolbar();
+    ui("#structureColorDialog");
   }
 
   /**
@@ -2680,7 +2780,11 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      if (LayoutController.selectedComponent.baseData.onbp !== undefined) {
+        this.showStructureColorDialog();
+      } else {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      }
     }
   }
 
@@ -3441,7 +3545,7 @@ export class LayoutController {
       this.selectionToolbar.classList.remove('locked');
     }
 
-    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate"))) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');
