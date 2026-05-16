@@ -35,9 +35,7 @@ const DataTypes = Object.freeze({
   /** Represents a baseplate component. */
   BASEPLATE: "baseplate",
   /** Represents a text component. */
-  TEXT: "text",
-  /** Represents a tileable component. */
-  TILEABLE: "tileable"
+  TEXT: "text"
 });
 export { DataTypes };
 
