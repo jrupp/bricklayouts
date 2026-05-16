@@ -706,7 +706,7 @@ export class Component extends Container {
         height: this.#height
       });
       if (this.#bpColor.toYiq() < 92) {
-        // If the color is dark, we need to lighten the baseplate texture
+        // If the color is dark, we invert the stud color in the baseplate texture
         const filter = new ColorMatrixFilter();
         filter.negative(true);
         bpSprite.filters = [filter];
