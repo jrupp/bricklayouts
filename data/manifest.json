@@ -960,6 +960,38 @@
                     "type": "track"
                 },
                 {
+                    "alias": "5891",
+                    "name": "Apple Tree House",
+                    "category": "structures",
+                    "src": "5891.png",
+                    "onbp": "#10CB31",
+                    "make": 1
+                },
+                {
+                    "alias": "10255",
+                    "name": "Assembly Square",
+                    "category": "structures",
+                    "src": "10255.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "4996",
+                    "name": "Beach House",
+                    "category": "structures",
+                    "src": "4996.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10297",
+                    "name": "Botique Hotel",
+                    "category": "structures",
+                    "src": "10297.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
                     "alias": "10251",
                     "name": "Brick Bank",
                     "category": "structures",
@@ -1058,6 +1090,14 @@
                     "category": "structures",
                     "src": "10278.png",
                     "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10224",
+                    "name": "Town Hall",
+                    "category": "structures",
+                    "src": "10224.png",
+                    "onbp": "#EED9A4",
                     "make": 1
                 },
                 {
