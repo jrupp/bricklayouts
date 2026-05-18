@@ -1,10 +1,10 @@
-import { LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
+import { DataTypes, LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
 import { Component, DEFAULT_CIRCLE_PERCENTAGE } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
-import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
+import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
@@ -10262,6 +10262,17 @@ describe("LayoutController", function() {
             });
         });
 
+        describe("_extractTrackImage tileable", function() {
+            it("should extract image from tileable component", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.type === "tileable");
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+        });
+
         describe("exitReadOnlyMode asset loading", function() {
             it("should load all assets and extract images", async function() {
                 layoutController.readOnly = true;
@@ -10277,6 +10288,236 @@ describe("LayoutController", function() {
                         expect(t.image).toBeInstanceOf(HTMLImageElement);
                     }
                 });
+            });
+        });
+    });
+
+    describe("Tileable Components", function() {
+        let layoutController;
+        let tileableData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            tileableData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "carrotField");
+        });
+
+        describe("Component construction", function() {
+            it("creates a tileable component with default width and height from baseData", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp).toBeInstanceOf(Component);
+                expect(comp.componentWidth).toBe(64);
+                expect(comp.componentHeight).toBe(64);
+                expect(comp.baseData.type).toBe("tileable");
+                expect(comp.sprite).toBeInstanceOf(TilingSprite);
+            });
+
+            it("creates a tileable component with custom width and height", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 128, height: 256});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.componentWidth).toBe(128);
+                expect(comp.componentHeight).toBe(256);
+                expect(comp.sprite.width).toBe(128);
+                expect(comp.sprite.height).toBe(256);
+            });
+
+            it("sets units to studs for tileable components", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.units).toBe("studs");
+            });
+
+            it("has no connections", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.connections).toHaveSize(0);
+            });
+        });
+
+        describe("resize", function() {
+            it("updates sprite width and height when resized", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                comp.resize(128, 96, 'studs');
+                expect(comp.componentWidth).toBe(128);
+                expect(comp.componentHeight).toBe(96);
+                expect(comp.sprite.width).toBe(128);
+                expect(comp.sprite.height).toBe(96);
+            });
+
+            it("updates internal dimensions", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                comp.resize(200, 300, 'studs');
+                expect(comp.componentWidth).toBe(200);
+                expect(comp.componentHeight).toBe(300);
+            });
+        });
+
+        describe("serialization", function() {
+            it("serializes tileable component with width and height", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let serialized = comp.serialize();
+                expect(serialized.type).toBe("carrotField");
+                expect(serialized.width).toBe(96);
+                expect(serialized.height).toBe(128);
+                expect(serialized.units).toBe("studs");
+            });
+
+            it("round-trips through serialize and deserialize", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let serialized = comp.serialize();
+                let deserialized = Component.deserialize(tileableData, serialized, layoutController.currentLayer);
+                expect(deserialized.componentWidth).toBe(comp.componentWidth);
+                expect(deserialized.componentHeight).toBe(comp.componentHeight);
+                expect(deserialized.units).toBe("studs");
+                expect(deserialized.baseData.type).toBe("tileable");
+            });
+        });
+
+        describe("clone", function() {
+            it("clones a tileable component with same dimensions", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let cloned = comp.clone(layoutController.currentLayer);
+                expect(cloned.componentWidth).toBe(96);
+                expect(cloned.componentHeight).toBe(128);
+                expect(cloned.units).toBe("studs");
+                expect(cloned.baseData.type).toBe("tileable");
+                expect(cloned.sprite).toBeInstanceOf(TilingSprite);
+            });
+        });
+
+        describe("onCreateCustomComponent", function() {
+            it("creates a tileable component via dialog", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let button = layoutController.componentBrowser.querySelector('[data-track-alias="carrotField"]');
+                if (!button) { pending("No carrotField button in component browser"); return; }
+                button.click();
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+                layoutController.onCreateCustomComponent();
+                expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+                expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "tileable", alias: "carrotField"}), false, jasmine.objectContaining({width: 64, height: 64}));
+            });
+
+            it("finds the correct asset by selectedTileType alias", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let cornButton = layoutController.componentBrowser.querySelector('[data-track-alias="cornField"]');
+                if (!cornButton) { pending("No cornField button in component browser"); return; }
+                cornButton.click();
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                spyOn(window, 'ui').and.stub();
+                let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+                layoutController.onCreateCustomComponent();
+                expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({alias: "cornField"}), false, jasmine.any(Object));
+            });
+        });
+
+        describe("onSaveCustomComponent", function() {
+            it("saves changes to a tileable component", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('8');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('8');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                let resizeSpy = spyOn(layoutController.layers[0].children[0], 'resize').and.callThrough();
+                layoutController.onSaveCustomComponent();
+                expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+                expect(layoutController.currentLayer.children[0].componentWidth).toBe(128);
+                expect(layoutController.currentLayer.children[0].componentHeight).toBe(128);
+                expect(resizeSpy).toHaveBeenCalledOnceWith(128, 128, "studs");
+            });
+        });
+
+        describe("showCreateCustomComponentDialog", function() {
+            it("sets dialog title with component name when creating", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let titleEl = document.getElementById('componentDialogTitle');
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(titleEl.innerText).toBe('New Carrot Field');
+            });
+
+            it("sets dialog title with component name when editing", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let titleEl = document.getElementById('componentDialogTitle');
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                expect(titleEl.innerText).toBe('Edit Carrot Field');
+            });
+
+            it("hides the size units selector", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(componentSizeUnits.parentElement.parentElement.classList).toContain('hidden');
+            });
+
+            it("hides the color selector", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(componentColorSelect.classList).toContain('hidden');
+            });
+
+            it("populates width and height fields when editing", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                expect(componentWidth.value).toBe('6');
+                expect(componentHeight.value).toBe('8');
+            });
+        });
+
+        describe("editSelectedComponent routing", function() {
+            it("calls showCreateCustomComponentDialog with type and name for tileable", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).not.toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).toHaveBeenCalledOnceWith('tileable', true, 'Carrot Field');
+            });
+        });
+
+        describe("_showSelectionToolbar", function() {
+            it("adds editable class for tileable component", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                expect(selectionToolbar.classList).toContain("editable");
+            });
+        });
+
+        describe("unsupported component type", function() {
+            it("throws error for unsupported type", function() {
+                let fakeData = {alias: "fake", type: "invalidtype", connections: []};
+                expect(function() {
+                    new Component(fakeData, {x: 0, y: 0, angle: 0}, layoutController.currentLayer, {});
+                }).toThrowError("Unsupported component type: invalidtype");
             });
         });
     });
