@@ -295,6 +295,11 @@ export class Component extends Container {
       let plateTexture = this._generateBaseplateTexture();
       this.sprite = new Sprite(plateTexture);
       this.sprite.anchor.set(0.5);
+    } else if (this.baseData.type === DataTypes.TILEABLE) {
+      ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
+      this.#units = 'studs';
+      this.sprite = new TilingSprite({texture: Assets.get(this.baseData.alias), width: this.#width, height: this.#height});
+      this.sprite.anchor.set(0.5);
     } else if (this.baseData.type === DataTypes.TEXT) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       this.#text = options.text ?? this.baseData.text ?? 'Text';
@@ -310,6 +315,8 @@ export class Component extends Container {
         },
       });
       this.sprite.anchor.set(0.5);
+    } else {
+      throw new Error(`Unsupported component type: ${this.baseData.type}`);
     }
     if (baseData.scale) {
       this.sprite.scale.set(baseData.scale);
@@ -806,6 +813,9 @@ export class Component extends Container {
       if (this.#shape === 'circle') {
         this.#height = this.#width;
       }
+    } else if (this.baseData.type === DataTypes.TILEABLE) {
+      this.sprite.width = width;
+      this.sprite.height = height;
     }
   }
 

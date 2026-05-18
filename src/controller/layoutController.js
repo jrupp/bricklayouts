@@ -1,4 +1,4 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, Color } from '../pixi.mjs';
+import { Assets, Application, Bounds, Color, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, TilingSprite } from '../pixi.mjs';
 import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
@@ -35,7 +35,9 @@ const DataTypes = Object.freeze({
   /** Represents a baseplate component. */
   BASEPLATE: "baseplate",
   /** Represents a text component. */
-  TEXT: "text"
+  TEXT: "text",
+  /** Represents a tileable component. */
+  TILEABLE: "tileable"
 });
 export { DataTypes };
 
@@ -226,6 +228,12 @@ export class LayoutController {
    * @type {string}
    */
   #selectedStructureColor = "";
+
+  /**
+   * The selected tile type for the tileable component dialog.
+   * @type {string}
+   */
+  #selectedTileType = "";
 
   /**
    * Metadata for the current layout (name, cloud references, etc.)
@@ -534,6 +542,11 @@ export class LayoutController {
       tempGraphics.rect(0, 0, track.width, track.height);
       tempGraphics.fill(track.color ?? 0xA0A5A9);
       image = await this.app.renderer.extract.image(tempGraphics);
+      tempGraphics.destroy();
+    } else if (track.type === DataTypes.TILEABLE) {
+      var tempSprite = new TilingSprite({texture, width: 96, height: 96});
+      image = await this.app.renderer.extract.image(tempSprite);
+      tempSprite.destroy();
     } else {
       image = await this.app.renderer.extract.image(texture);
     }
@@ -803,13 +816,20 @@ export class LayoutController {
         button.appendChild(track.image);
         button.appendChild(label);
         button.dataset.trackAlias = track.alias;
-        button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
-        button.addEventListener('click', (e) => {
-          if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
-            LayoutController.browserMobileClick = false;
-            this.addComponent(track, true);
-          }
-        });
+        if (track.type === DataTypes.TILEABLE) {
+          button.addEventListener('click', (e) => {
+            this.#selectedTileType = track.alias;
+            this.showCreateCustomComponentDialog(track.type, false, track.name)
+          });
+        } else {
+          button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
+          button.addEventListener('click', (e) => {
+            if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
+              LayoutController.browserMobileClick = false;
+              this.addComponent(track, true);
+            }
+          });
+        }
         this.componentBrowser.appendChild(button);
       }
     });
@@ -955,7 +975,7 @@ export class LayoutController {
           } else if (newComponent.baseData.type === DataTypes.TRACK) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.width / 2, y: newComponent.height / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.width / 2, newComponent.height / 2, 0);
-          } else if (newComponent.baseData.type === DataTypes.BASEPLATE) {
+          } else if (newComponent.baseData.type === DataTypes.BASEPLATE || newComponent.baseData.type === DataTypes.TILEABLE) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.componentWidth / 2, y: newComponent.componentHeight / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.componentWidth / 2, newComponent.componentHeight / 2, 0);
           } else {
@@ -994,7 +1014,11 @@ export class LayoutController {
     document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
     if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
-      this.addComponent(LayoutController.browserDragTrack, true);
+      if (LayoutController.browserDragTrack.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.browserDragTrack.type, false, LayoutController.browserDragTrack.name);
+      } else {
+        this.addComponent(LayoutController.browserDragTrack, true);
+      }
     }
 
     if (LayoutController.ghostElement) {
@@ -1319,14 +1343,16 @@ export class LayoutController {
    * Show the create custom component dialog.
    * @param {DataTypes} type The type of the component to create.
    * @param {Boolean} [editing] Whether this is called while editing an existing custom component. Defaults to false
+   * @param {String} [componentName] The name of the component. Defaults to an empty string.
    */
-  showCreateCustomComponentDialog(type, editing=false) {
+  showCreateCustomComponentDialog(type, editing=false, componentName = '') {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
     const componentBorderColor = document.getElementById('componentBorderColor');
     const componentShapeSelect = document.getElementById('componentShapeSelect');
+    const componentColorSelect = document.getElementById('componentColorSelect');
     const componentShape = document.getElementById('componentShape');
     const circleTypeSelector = document.getElementById('circleTypeSelector');
     const percentageConfiguration = document.getElementById('percentageConfiguration');
@@ -1337,11 +1363,13 @@ export class LayoutController {
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
-      document.getElementById('componentDialogTitle').innerText = `Edit Custom ${typeName}`;
+      let title = componentName ? `Edit ${componentName}` : `Edit Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.add('editing');
       componentShapeSelect.classList.add('hidden');
     } else {
-      document.getElementById('componentDialogTitle').innerText = `New Custom ${typeName}`;
+      let title = componentName ? `New ${componentName}` : `New Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.remove('editing');
       componentShapeSelect.children[0].classList.add('active');
       componentShapeSelect.children[1].classList.remove('active');
@@ -1352,6 +1380,13 @@ export class LayoutController {
     componentTextNode.value = '';
     if (editing) {
       componentTextNode.value = LayoutController.selectedComponent.text ?? '';
+    }
+    if (type === DataTypes.TILEABLE) {
+      componentWidthNode.nextElementSibling.textContent = 'Width in studs (e.g. 4)';
+      componentHeightNode.nextElementSibling.textContent = 'Height in studs (e.g. 4)';
+    } else {
+      componentWidthNode.nextElementSibling.textContent = 'Component Width';
+      componentHeightNode.nextElementSibling.textContent = 'Component Height';
     }
     document.getElementById('componentWidthError').innerText = '';
     document.getElementById('componentSizeUnitsError').innerText = '';
@@ -1405,7 +1440,7 @@ export class LayoutController {
       componentHeightNode.parentElement.classList.remove('hidden');
       color = "green";
       document.getElementById('componentFontOptions').classList.add('hidden');
-      if (type === DataTypes.BASEPLATE) {
+      if (type === DataTypes.BASEPLATE || type === DataTypes.TILEABLE) {
         if (editing) {
           componentHeightNode.value = (LayoutController.selectedComponent.componentHeight / 16).toString();
           componentWidthNode.value = (LayoutController.selectedComponent.componentWidth / 16).toString();
@@ -1472,11 +1507,16 @@ export class LayoutController {
         document.getElementById('componentShapeOptions').classList.remove('hidden');
       }
     }
-    if (editing) {
-      color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+    if (type === DataTypes.TILEABLE) {
+      componentColorSelect.classList.add('hidden');
+    } else {
+      if (editing) {
+        color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+      }
+      componentColorSelect.classList.remove('hidden');
+      componentColorSelect.setAttribute('data-color', color.replaceAll(' ', ''));
+      document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
-    document.getElementById('componentColorSelect').setAttribute('data-color', color.replaceAll(' ', ''));
-    document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     ui("#newCustomComponentDialog");
   }
 
@@ -1556,7 +1596,8 @@ export class LayoutController {
       options.font = document.getElementById('componentFont').value;
       options.fontSize = parseInt(document.getElementById('componentFontSize').value) * 20;
     }
-    let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
+    let alias = this.#customComponentType !== DataTypes.TILEABLE ? this.#customComponentType : this.#selectedTileType;
+    let track = this.trackData.bundles[0].assets.find((a) => a.alias === alias);
     this.addComponent(track, false, options);
     ui("#newCustomComponentDialog");
   }
@@ -2911,6 +2952,8 @@ export class LayoutController {
       }
       if (LayoutController.selectedComponent.baseData.onbp !== undefined) {
         this.showStructureColorDialog();
+      } else if (LayoutController.selectedComponent.baseData.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true, LayoutController.selectedComponent.baseData.name);
       } else {
         this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
       }
@@ -3674,7 +3717,7 @@ export class LayoutController {
       this.selectionToolbar.classList.remove('locked');
     }
 
-    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TILEABLE || comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');

@@ -1107,6 +1107,46 @@
                     "src": "10350.png",
                     "onbp": "#10CB31",
                     "make": 1
+                },
+                {
+                    "alias": "carrotField",
+                    "name": "Carrot Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "carrotfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "cornField",
+                    "name": "Corn Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cornfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "cottonField",
+                    "name": "Cotton Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cottonfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "potatoField",
+                    "name": "Potato Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "potatofield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "wheatField",
+                    "name": "Wheat Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "wheatfield.png",
+                    "type": "tileable"
                 }
             ]
         }
