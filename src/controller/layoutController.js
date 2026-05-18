@@ -2570,6 +2570,10 @@ export class LayoutController {
    */
   static onDragMove(event) {
     if (LayoutController.dragTarget) {
+      if (LayoutController.dragTarget.destroyed) {
+        LayoutController.dragTarget = null;
+        return;
+      }
       if (!LayoutController.dragTarget.isDragging) {
         const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
         LayoutController.dragDistance += diff;
