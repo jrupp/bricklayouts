@@ -887,4 +887,21 @@ describe("LayoutLayer", function() {
             layoutLayer.cleanupGroupDeserialization();
         });
     });
+
+    describe("findComponentByUuid", function() {
+        it("returns a component by UUID", function() {
+            let layoutLayer = new LayoutLayer();
+            let mockComponent = jasmine.createSpyObj('Component', ['destroy'], {
+                uuid: 'test-uuid-123'
+            });
+            Object.setPrototypeOf(mockComponent, Component.prototype);
+            layoutLayer.children.push(mockComponent);
+            expect(layoutLayer.findComponentByUuid('test-uuid-123')).toBe(mockComponent);
+        });
+
+        it("returns null for unknown UUID", function() {
+            let layoutLayer = new LayoutLayer();
+            expect(layoutLayer.findComponentByUuid('nonexistent')).toBeNull();
+        });
+    });
 });

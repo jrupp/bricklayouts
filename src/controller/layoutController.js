@@ -10,6 +10,7 @@ import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.
 import { showSnackbar } from '../utils/snackbar.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
+import { UndoManager } from './undoManager.js';
 import '../FileSaver.min.js';
 
 
@@ -131,6 +132,17 @@ export class LayoutController {
    * Flag to track if Alt key was pressed when drag started (for duplication)
    */
   static dragWithAlt = false;
+
+  /**
+   * @type {?String}
+   * When set to 'add' or 'duplicate', onDragEnd records this type instead of 'move'.
+   */
+  static dragIsNewComponent = null;
+
+  /**
+   * @type {?Object}
+   */
+  static preDragPose = null;
 
   /**
    * @type {?Component | ComponentGroup}
@@ -272,6 +284,10 @@ export class LayoutController {
      * @type {Boolean}
      */
     this.readOnly = false;
+    /**
+     * @type {UndoManager}
+     */
+    this.undoManager = new UndoManager(this);
     /**
      * @type {HTMLDivElement}
      */
@@ -953,6 +969,7 @@ export class LayoutController {
           // TODO: See if there is a way to reduce the code duplication with onDragStart
           LayoutController.dragTarget = newComponent;
           LayoutController.dragDistance = 0;
+          LayoutController.dragIsNewComponent = 'add';
           newComponent.alpha = 0.5;
           newComponent.isDragging = false;
           newComponent.dragStartConnection = null;
@@ -1064,6 +1081,10 @@ export class LayoutController {
         });
       }
     }
+    this.undoManager.record({
+      type: 'add',
+      data: { componentUuid: newComp.uuid, layerUuid: this.currentLayer.uuid }
+    });
     LayoutController.selectComponent(newComp);
   }
 
@@ -1334,7 +1355,14 @@ export class LayoutController {
   onSaveStructureColor() {
     const comp = LayoutController.selectedComponent;
     if (!comp || comp.locked) return;
+    const layer = comp.layer || comp.parent;
+    const previousState = comp.serialize();
+    const childIndex = layer ? layer.children.indexOf(comp) : -1;
     comp.baseplateColor = this.#selectedStructureColor;
+    this.undoManager.record({
+      type: 'edit',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousState, childIndex }
+    });
     this._positionSelectionToolbar();
     ui("#structureColorDialog");
   }
@@ -1606,6 +1634,10 @@ export class LayoutController {
     if (LayoutController.selectedComponent.locked) {
       return;
     }
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    const previousState = comp.serialize();
+    const childIndex = layer ? layer.children.indexOf(comp) : -1;
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
@@ -1682,6 +1714,10 @@ export class LayoutController {
       }
     }
     LayoutController.selectedComponent.color = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    this.undoManager.record({
+      type: 'edit',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousState, childIndex }
+    });
     this._positionSelectionToolbar();
     ui("#newCustomComponentDialog");
   }
@@ -1691,6 +1727,7 @@ export class LayoutController {
    * @param {Boolean} preserveReadOnly If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
   reset(preserveReadOnly = false) {
+    this.undoManager.suppress();
     Connection.connectionDB.clear();
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
@@ -1731,6 +1768,8 @@ export class LayoutController {
       this.readOnly = false;
     }
     this.newLayer();
+    this.undoManager.unsuppress();
+    this.undoManager.clear();
   }
 
   get currentLayer() {
@@ -1755,6 +1794,28 @@ export class LayoutController {
    */
   get layoutMetadata() {
     return { ...this.#layoutMetadata };
+  }
+
+  /**
+   * Find a component or group across all layers by UUID.
+   * @param {String} uuid
+   * @returns {?Component|ComponentGroup}
+   */
+  findComponentByUuid(uuid) {
+    for (const layer of this.layers) {
+      const comp = layer.findComponentByUuid(uuid);
+      if (comp) return comp;
+    }
+    return null;
+  }
+
+  /**
+   * Find a layer by UUID.
+   * @param {String} uuid
+   * @returns {?LayoutLayer}
+   */
+  findLayerByUuid(uuid) {
+    return this.layers.find(layer => layer.uuid === uuid) ?? null;
   }
 
   /**
@@ -2026,6 +2087,10 @@ export class LayoutController {
     }
     if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
       this.pasteComponent();
+      event.preventDefault();
+    }
+    if (LayoutController.dragTarget == null && event.key === 'z' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+      this.undoManager.undo();
       event.preventDefault();
     }
     if (event.key === '0' && (event.ctrlKey || event.metaKey)) {
@@ -2473,6 +2538,7 @@ export class LayoutController {
       await Assets.load(unloaded);
     }
 
+    this.undoManager.suppress();
     this.reset(true);
 
     // Handle metadata from layout data and cloud info
@@ -2518,10 +2584,12 @@ export class LayoutController {
       this.drawGrid();
     }
     this.updateLayerList();
+    this.undoManager.unsuppress();
+    this.undoManager.clear();
   }
 
   /**
-   * 
+   *
    * @param {SerializedLayout} data
    * @returns {Boolean} True if the data is valid, false otherwise
    */
@@ -2592,6 +2660,8 @@ export class LayoutController {
           const clonedComponent = originalComponent.clone(layer);
           layer.addChild(clonedComponent);
 
+          LayoutController.dragIsNewComponent = 'duplicate';
+
           LayoutController.finalizeDraggedComponent(originalComponent);
 
           if (LayoutController.selectedComponent?.uuid === originalComponent.uuid || LayoutController.selectedComponent === originalComponent) {
@@ -2624,6 +2694,9 @@ export class LayoutController {
           LayoutController.dragWithAlt = false;
         }
 
+        if (!LayoutController.dragWithAlt) {
+          LayoutController.preDragPose = LayoutController.dragTarget.getPose().serialize();
+        }
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
@@ -2691,9 +2764,35 @@ export class LayoutController {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
       let target = LayoutController.dragTarget;
       LayoutController.finalizeDraggedComponent(target);
+      if (LayoutController.dragIsNewComponent) {
+        const layer = target.layer || target.parent;
+        LayoutController.getInstance().undoManager.record({
+          type: LayoutController.dragIsNewComponent,
+          data: { componentUuid: target.uuid, layerUuid: layer?.uuid }
+        });
+        LayoutController.dragIsNewComponent = null;
+        LayoutController.preDragPose = null;
+      } else if (LayoutController.preDragPose) {
+        const currentPose = target.getPose().serialize();
+        if (currentPose.x !== LayoutController.preDragPose.x ||
+            currentPose.y !== LayoutController.preDragPose.y ||
+            currentPose.angle !== LayoutController.preDragPose.angle) {
+          const layer = target.layer || target.parent;
+          LayoutController.getInstance().undoManager.record({
+            type: 'move',
+            data: {
+              componentUuid: target.uuid,
+              layerUuid: layer?.uuid,
+              previousPose: LayoutController.preDragPose
+            }
+          });
+        }
+        LayoutController.preDragPose = null;
+      }
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
       LayoutController.dragWithAlt = false;
+      LayoutController.dragIsNewComponent = null;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);
       window.app.stage.off('pointermove', LayoutController.onSelectionMove);
@@ -2831,11 +2930,17 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      if (LayoutController.selectedComponent instanceof Component) {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
-      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
-        LayoutController.selectedComponent.bringToFront();
+      const comp = LayoutController.selectedComponent;
+      const previousIndex = this.currentLayer.children.indexOf(comp);
+      if (comp instanceof Component) {
+        this.currentLayer.setChildIndex(comp, this.currentLayer.children.length - 2);
+      } else if (comp instanceof ComponentGroup) {
+        comp.bringToFront();
       }
+      this.undoManager.record({
+        type: 'zorder',
+        data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+      });
     }
   }
 
@@ -2845,11 +2950,17 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      if (LayoutController.selectedComponent instanceof Component) {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, 0);
-      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
-        LayoutController.selectedComponent.sendToBack();
+      const comp = LayoutController.selectedComponent;
+      const previousIndex = this.currentLayer.children.indexOf(comp);
+      if (comp instanceof Component) {
+        this.currentLayer.setChildIndex(comp, 0);
+      } else if (comp instanceof ComponentGroup) {
+        comp.sendToBack();
       }
+      this.undoManager.record({
+        type: 'zorder',
+        data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+      });
     }
   }
 
@@ -2882,6 +2993,11 @@ export class LayoutController {
     if (component?.locked) {
       return;
     }
+    const layer = component.layer || component.parent;
+    const layerUuid = layer?.uuid;
+    const childIndex = layer ? layer.children.indexOf(component) : -1;
+    const serialized = component.serialize();
+    const baseDataAlias = component.baseData.alias;
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
       this._hideSelectionToolbar();
@@ -2893,6 +3009,10 @@ export class LayoutController {
       component.isTemporary = false;
     }
     component.destroy();
+    this.undoManager.record({
+      type: 'delete',
+      data: { serialized, baseDataAlias, childIndex, layerUuid }
+    });
     component = null;
   }
   
@@ -2937,6 +3057,10 @@ export class LayoutController {
         this.currentLayer.findMatchingConnection(openCon, true);
       });
     }
+    this.undoManager.record({
+      type: 'duplicate',
+      data: { componentUuid: clone.uuid, layerUuid: this.currentLayer.uuid }
+    });
     LayoutController.selectComponent(clone);
   }
 
@@ -2980,7 +3104,17 @@ export class LayoutController {
     if (LayoutController.selectedComponent.locked) {
       return;
     }
-    LayoutController.selectedComponent.rotate();
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    const usedConnections = comp.getUsedConnections();
+    const previousPose = comp.getPose().serialize();
+    const previousState = usedConnections.length === 1 ? comp.serialize() : null;
+    const childIndex = usedConnections.length === 1 ? layer.children.indexOf(comp) : -1;
+    comp.rotate();
+    this.undoManager.record({
+      type: 'rotate',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousPose, previousState, childIndex }
+    });
     this._positionSelectionToolbar();
   }
 
@@ -2992,7 +3126,13 @@ export class LayoutController {
     if (!LayoutController.selectedComponent) {
       return;
     }
-    LayoutController.selectedComponent.locked = true;
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    this.undoManager.record({
+      type: 'lock',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: false }
+    });
+    comp.locked = true;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();
   }
@@ -3005,7 +3145,13 @@ export class LayoutController {
     if (!LayoutController.selectedComponent) {
       return;
     }
-    LayoutController.selectedComponent.locked = false;
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    this.undoManager.record({
+      type: 'lock',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: true }
+    });
+    comp.locked = false;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();
   }
@@ -3022,7 +3168,11 @@ export class LayoutController {
     if (selected.hasLockedComponents()) {
       return;
     }
-    
+    const layer = selected.layer || selected.parent;
+    this.undoManager.record({
+      type: 'group',
+      data: { groupUuid: selected.uuid, layerUuid: layer?.uuid }
+    });
     selected.isTemporary = false;
     this._showSelectionToolbar();
   }
@@ -3036,6 +3186,11 @@ export class LayoutController {
     if (!selected || selected.isTemporary) {
       return;
     }
+    const layer = selected.layer || selected.parent;
+    this.undoManager.record({
+      type: 'ungroup',
+      data: { groupUuid: selected.uuid, layerUuid: layer?.uuid }
+    });
     selected.isTemporary = true;
     this._showSelectionToolbar();
   }
@@ -3308,7 +3463,7 @@ export class LayoutController {
     this.currentLayer = new LayoutLayer();
     this.layers.push(this.#currentLayer);
     this.workspace.addChild(this.#currentLayer);
-    
+
     let layerNumber = this.layers.length;
     let layerName = `Layer ${layerNumber}`;
     while (this.layers.some(layer => layer.label === layerName)) {
@@ -3316,11 +3471,15 @@ export class LayoutController {
       layerName = `Layer ${layerNumber}`;
     }
     this.#currentLayer.label = layerName;
-    
+
     if (this.readOnly === true) {
       this.#currentLayer.eventMode = 'none';
       this.#currentLayer.interactiveChildren = false;
     }
+    this.undoManager.record({
+      type: 'layer_add',
+      data: { layerUuid: this.#currentLayer.uuid }
+    });
     LayoutController.selectComponent(null);
     this.updateLayerList();
   }
@@ -3344,6 +3503,7 @@ export class LayoutController {
       if (e.target.className.indexOf('instant') > -1) e.preventDefault();
     }, false);
     layerList.addEventListener('slip:reorder', (e) => {
+      const previousOrder = this.layers.map(l => l.uuid);
       const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
       const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
       const layer = this.layers[oppIndex];
@@ -3351,9 +3511,14 @@ export class LayoutController {
       this.layers.splice(oppSpliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
       this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.undoManager.record({
+        type: 'layer_reorder',
+        data: { previousOrder }
+      });
       this.updateLayerList();
     }, false);
     mobileLayerList.addEventListener('slip:reorder', (e) => {
+      const previousOrder = this.layers.map(l => l.uuid);
       const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
       const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
       const layer = this.layers[oppIndex];
@@ -3361,6 +3526,10 @@ export class LayoutController {
       this.layers.splice(oppSpliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
       this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.undoManager.record({
+        type: 'layer_reorder',
+        data: { previousOrder }
+      });
       this.updateLayerList();
     }, false);
     new Slip(layerList);
@@ -3405,6 +3574,22 @@ export class LayoutController {
     console.log(`Delete Layer ${index}`);
     if (this.layers.length > 1) {
       let tempLayer = this.layers[index];
+      const serializedComponents = [];
+      for (const child of tempLayer.children) {
+        if (child instanceof Component) {
+          serializedComponents.push(child.serialize());
+        }
+      }
+      this.undoManager.record({
+        type: 'layer_delete',
+        data: {
+          layerUuid: tempLayer.uuid,
+          layerName: tempLayer.label,
+          layerOpacity: tempLayer.alpha,
+          layerIndex: index,
+          serializedComponents
+        }
+      });
       this.layers.splice(index, 1);
       if (this.#currentLayer === tempLayer) {
         this.currentLayer = this.layers[0];
@@ -3451,8 +3636,17 @@ export class LayoutController {
     }
     // Ensure opacity is within valid range
     layerOpacity = Math.max(0, Math.min(100, layerOpacity));
-    this.layers[index].label = layerName;
-    this.layers[index].alpha = layerOpacity / 100;
+    const layer = this.layers[index];
+    this.undoManager.record({
+      type: 'layer_edit',
+      data: {
+        layerUuid: layer.uuid,
+        previousName: layer.label,
+        previousOpacity: layer.alpha
+      }
+    });
+    layer.label = layerName;
+    layer.alpha = layerOpacity / 100;
     this.updateLayerList();
     ui("#editLayerDialog");
   }
