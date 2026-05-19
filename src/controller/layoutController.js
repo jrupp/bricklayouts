@@ -1,5 +1,5 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
-import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, HexToColorName } from '../model/component.js';
+import { Assets, Application, Bounds, Color, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, TilingSprite } from '../pixi.mjs';
+import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -35,7 +35,9 @@ const DataTypes = Object.freeze({
   /** Represents a baseplate component. */
   BASEPLATE: "baseplate",
   /** Represents a text component. */
-  TEXT: "text"
+  TEXT: "text",
+  /** Represents a tileable component. */
+  TILEABLE: "tileable"
 });
 export { DataTypes };
 
@@ -52,6 +54,7 @@ export { DataTypes };
  * @property {Number} [color] The color of the component, represented as a hexadecimal number. Only used for shapes and baseplates.
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
+ * @property {Number} [onbp] The default baseplate color to render this structure on. The presence of this property indicates the structure is designed to be placed on a baseplate (i.e., has bottom studs).
  */
 let TrackData;
 export { TrackData };
@@ -206,6 +209,8 @@ export class LayoutController {
    */
   static boundBrowserDragEnd = null;
 
+  static PRIORITY_ASSET_COUNT = 10;
+
   /**
    * The currently active layer
    * @type {LayoutLayer}
@@ -217,6 +222,18 @@ export class LayoutController {
    * @type {DataTypes}
    */
   #customComponentType = "shape";
+
+  /**
+   * The selected baseplate color hex value for the structure color dialog.
+   * @type {string}
+   */
+  #selectedStructureColor = "";
+
+  /**
+   * The selected tile type for the tileable component dialog.
+   * @type {string}
+   */
+  #selectedTileType = "";
 
   /**
    * Metadata for the current layout (name, cloud references, etc.)
@@ -335,6 +352,8 @@ export class LayoutController {
     this.newLayer();
 
     this.initCustomComponentUI();
+
+    this.initStructureColorUI();
 
     this.checkBackgroundColorChange();
 
@@ -479,6 +498,149 @@ export class LayoutController {
     return filename;
   }
 
+  /**
+   * Process metadata for a track asset. Does not require the texture to be loaded.
+   * @param {TrackData} track
+   */
+  _processTrackMetadata(track) {
+    if (track.type === void 0) {
+      track.type = DataTypes.TRACK;
+    }
+    if (track.color !== void 0 && typeof track.color === 'string') {
+      track.color = parseInt(track.color.slice(1), 16);
+    }
+    if (track.onbp !== void 0 && typeof track.onbp === 'string') {
+      track.onbp = parseInt(track.onbp.slice(1), 16);
+    }
+    if (track.connections && track.connections.length > 0) {
+      track.connections = track.connections.map((connection) => {
+        return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};
+      });
+    }
+  }
+
+  /**
+   * Extract an HTML image element from a loaded track texture for display in the component browser.
+   * Requires the track's texture to already be loaded in the asset cache.
+   * @param {TrackData} track
+   * @returns {Promise<HTMLImageElement>}
+   */
+  async _extractTrackImage(track) {
+    let texture = Assets.get(track.alias);
+    let image;
+    if (track.onbp !== void 0) {
+      var tempGraphics = new Graphics();
+      tempGraphics.rect(0, 0, texture.width, texture.height);
+      tempGraphics.fill(track.onbp ?? 0xA0A5A9);
+      var tempSprite = new Sprite(texture);
+      tempGraphics.addChild(tempSprite);
+      image = await this.app.renderer.extract.image({target: tempGraphics});
+      tempSprite.destroy();
+      tempGraphics.destroy();
+    } else if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
+      var tempGraphics = new Graphics();
+      tempGraphics.rect(0, 0, track.width, track.height);
+      tempGraphics.fill(track.color ?? 0xA0A5A9);
+      image = await this.app.renderer.extract.image(tempGraphics);
+      tempGraphics.destroy();
+    } else if (track.type === DataTypes.TILEABLE) {
+      var tempSprite = new TilingSprite({texture, width: 96, height: 96});
+      image = await this.app.renderer.extract.image(tempSprite);
+      tempSprite.destroy();
+    } else {
+      image = await this.app.renderer.extract.image(texture);
+    }
+    image.className = "track";
+    image.alt = track.name;
+    return image;
+  }
+
+  /**
+   * Create a placeholder image for a track asset that hasn't been loaded yet.
+   * @param {TrackData} track
+   * @returns {HTMLImageElement}
+   */
+  _createPlaceholderImage(track) {
+    const image = new Image();
+    image.className = 'track';
+    image.alt = track.name;
+    image.src = 'data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
+      '<rect width="64" height="64" fill="#e0e0e0" rx="4"/>' +
+      '</svg>'
+    );
+    return image;
+  }
+
+  /**
+   * Replace a placeholder image with the real extracted image by updating src in-place.
+   * @param {TrackData} track
+   * @param {HTMLImageElement} realImage
+   */
+  _replacePlaceholderImage(track, realImage) {
+    track.image.src = realImage.src;
+  }
+
+  /**
+   * Background-load remaining assets and progressively update placeholder images.
+   * Called without await so it runs in the background.
+   * @param {string[]} aliases
+   */
+  async _backgroundLoadRemaining(aliases) {
+    for (const alias of aliases) {
+      await Assets.load(alias);
+      const track = this.trackData.bundles[0].assets.find(t => t.alias === alias);
+      if (track) {
+        const realImage = await this._extractTrackImage(track);
+        this._replacePlaceholderImage(track, realImage);
+      }
+    }
+  }
+
+  /**
+   * Extract unique asset aliases referenced in a layout's component data.
+   * Excludes 'shape' and 'text' types which use shared textures.
+   * @param {SerializedLayout} data
+   * @returns {string[]}
+   */
+  _extractLayoutAliases(data) {
+    const aliases = new Set();
+    data.layers.forEach(layer => {
+      layer.components.forEach(comp => {
+        if (comp.type !== 'shape' && comp.type !== 'text') {
+          aliases.add(comp.type);
+        }
+      });
+    });
+    return [...aliases];
+  }
+
+  /**
+   * Fetch layout data for read-only mode from either a public share code or file path.
+   * @returns {Promise<Object|null>} The layout data, or null if not found
+   */
+  async _fetchReadOnlyLayoutData() {
+    const urlPath = window.location.pathname;
+    const rawFilename = urlPath.substring(1);
+
+    const publicLayoutLoader = new PublicLayoutLoader();
+    const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
+
+    if (shareCode) {
+      const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
+      return { layoutData: publicLayoutData.layoutData, layoutName: publicLayoutData.layoutName, source: 'public' };
+    }
+
+    const sanitizedFilename = this._sanitizeFilename(rawFilename);
+    if (!sanitizedFilename) {
+      return null;
+    }
+
+    const layoutPath = path.toAbsolute(`../data/layouts/${sanitizedFilename}.json`);
+    let layout = await Assets.load(layoutPath);
+    return { layoutData: layout, layoutName: null, source: 'file' };
+  }
+
   async init() {
     if (window.location.pathname !== '/') {
       this.readOnly = true;
@@ -490,35 +652,64 @@ export class LayoutController {
       document.getElementById('layerList').classList.add('readonly');
       document.getElementById('mobileLayerList').classList.add('readonly');
     }
-    const trackBundle = await Assets.loadBundle('track');
-    await Promise.all(this.trackData.bundles[0].assets.map(/** @param {TrackData} track */async (track) => {
-      /** @type {HTMLImageElement} */
-      var image = await this.app.renderer.extract.image(trackBundle[track.alias]);
-      image.className = "track";
-      image.alt = track.name;
-      track.image = image;
-      if (track.type === void 0) {
-        track.type = DataTypes.TRACK;
+
+    // Process metadata for all assets (no textures needed)
+    this.trackData.bundles[0].assets.forEach(track => {
+      this._processTrackMetadata(track);
+    });
+
+    if (this.readOnly) {
+      await Assets.load(['baseplate', 'shape', 'text']);
+      this.createComponentBrowser();
+      try {
+        const result = await this._fetchReadOnlyLayoutData();
+        if (!result) {
+          document.getElementById('notfound').classList.remove('hidden');
+          return;
+        }
+
+        const neededAliases = this._extractLayoutAliases(result.layoutData);
+        if (neededAliases.length > 0) {
+          await Assets.load(neededAliases);
+        }
+
+        await this._importLayout(result.layoutData);
+        if (result.layoutName) {
+          this.setLayoutName(result.layoutName);
+        }
+      } catch (error) {
+        document.getElementById('notfound').classList.remove('hidden');
       }
-      if (track.color !== void 0 && typeof track.color === 'string') {
-        track.color = parseInt(track.color.slice(1), 16);
+    } else {
+      const allAssets = this.trackData.bundles[0].assets;
+      const browserVisible = allAssets.filter(t =>
+        t.alias !== 'baseplate' && t.alias !== 'shape' && t.alias !== 'text'
+      );
+      const priorityAliases = [
+        'baseplate', 'shape', 'text',
+        ...browserVisible.slice(0, LayoutController.PRIORITY_ASSET_COUNT).map(t => t.alias)
+      ];
+      await Assets.load(priorityAliases);
+
+      await Promise.all(allAssets.map(async (track) => {
+        if (Assets.cache.has(track.alias)) {
+          track.image = await this._extractTrackImage(track);
+        } else {
+          track.image = this._createPlaceholderImage(track);
+        }
+      }));
+
+      this.createComponentBrowser();
+
+      const remainingAliases = browserVisible
+        .slice(LayoutController.PRIORITY_ASSET_COUNT)
+        .map(t => t.alias)
+        .filter(a => !Assets.cache.has(a));
+      if (remainingAliases.length > 0) {
+        this._backgroundLoadRemaining(remainingAliases);
       }
-      if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
-        var tempGraphics = new Graphics();
-        tempGraphics.rect(0, 0, track.width, track.height);
-        tempGraphics.fill(track.color ?? 0xA0A5A9);
-        image = await this.app.renderer.extract.image(tempGraphics);
-        image.className = "track";
-        image.alt = track.name;
-        track.image = image;
-      }
-      if (track.connections && track.connections.length > 0) {
-        var newConnections = track.connections.map((connection) => {return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};});
-        // TODO: We want to store more information with each connection, like the index of the preferred next connection
-        track.connections = newConnections;
-      }
-    }));
-    this.createComponentBrowser();
+    }
+
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
     this.app.stage.on('pointerup', LayoutController.onDragEnd);
@@ -586,52 +777,6 @@ export class LayoutController {
       this.drawGrid();
       this._positionSelectionToolbar();
     });
-    if (this.readOnly) {
-      try {
-        // Extract filename from URL path and sanitize it
-        const urlPath = window.location.pathname;
-        const rawFilename = urlPath.substring(1); // Remove leading slash
-
-        // First, check if this is an 8-character share code for a public layout
-        const publicLayoutLoader = new PublicLayoutLoader();
-        const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
-
-        if (shareCode) {
-          // Try to load as a public layout first
-          try {
-            const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
-            // Public layouts are always read-only (already set above)
-            this._importLayout(publicLayoutData.layoutData);
-            // Set layout name from public layout metadata
-            if (publicLayoutData.layoutName) {
-              this.setLayoutName(publicLayoutData.layoutName);
-            }
-            return;
-          } catch (publicError) {
-            // If public layout loading fails, show not found
-            console.warn('Failed to load public layout:', publicError.message);
-            document.getElementById('notfound').classList.remove('hidden');
-            return;
-          }
-        }
-
-        // Fall back to file-based layout loading for non-share-code URLs
-        const sanitizedFilename = this._sanitizeFilename(rawFilename);
-        
-        if (!sanitizedFilename) {
-          // If sanitization fails, show not found
-          document.getElementById('notfound').classList.remove('hidden');
-          return;
-        }
-        
-        const layoutPath = path.toAbsolute(`../data/layouts/${sanitizedFilename}.json`);
-        let layout = await Assets.load(layoutPath);
-        this._importLayout(layout);
-      } catch (error) {
-        document.getElementById('notfound').classList.remove('hidden');
-      }
-      return;
-    }
   }
 
   _createCustomComponentButton(type, labelText, iconSrc) {
@@ -671,13 +816,20 @@ export class LayoutController {
         button.appendChild(track.image);
         button.appendChild(label);
         button.dataset.trackAlias = track.alias;
-        button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
-        button.addEventListener('click', (e) => {
-          if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
-            LayoutController.browserMobileClick = false;
-            this.addComponent(track, true);
-          }
-        });
+        if (track.type === DataTypes.TILEABLE) {
+          button.addEventListener('click', (e) => {
+            this.#selectedTileType = track.alias;
+            this.showCreateCustomComponentDialog(track.type, false, track.name)
+          });
+        } else {
+          button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
+          button.addEventListener('click', (e) => {
+            if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
+              LayoutController.browserMobileClick = false;
+              this.addComponent(track, true);
+            }
+          });
+        }
         this.componentBrowser.appendChild(button);
       }
     });
@@ -722,7 +874,7 @@ export class LayoutController {
    * Creates ghost element and transitions to component drag when over canvas.
    * @param {PointerEvent} event - The pointer event
    */
-  _onBrowserDragMove(event) {
+  async _onBrowserDragMove(event) {
     if (!LayoutController.browserDragTrack || !LayoutController.browserDragStartPos) {
       return;
     }
@@ -786,6 +938,9 @@ export class LayoutController {
         };
 
         let a = syntheticEvent.getLocalPosition(this.#currentLayer);
+        if (!Assets.cache.has(track.alias)) {
+          await Assets.load(track.alias);
+        }
         const newComponent = new Component(track, {x: a.x, y: a.y, angle: 0}, this.currentLayer, {});
         
         if (newComponent) {
@@ -820,7 +975,7 @@ export class LayoutController {
           } else if (newComponent.baseData.type === DataTypes.TRACK) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.width / 2, y: newComponent.height / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.width / 2, newComponent.height / 2, 0);
-          } else if (newComponent.baseData.type === DataTypes.BASEPLATE) {
+          } else if (newComponent.baseData.type === DataTypes.BASEPLATE || newComponent.baseData.type === DataTypes.TILEABLE) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.componentWidth / 2, y: newComponent.componentHeight / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.componentWidth / 2, newComponent.componentHeight / 2, 0);
           } else {
@@ -859,7 +1014,11 @@ export class LayoutController {
     document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
     if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
-      this.addComponent(LayoutController.browserDragTrack, true);
+      if (LayoutController.browserDragTrack.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.browserDragTrack.type, false, LayoutController.browserDragTrack.name);
+      } else {
+        this.addComponent(LayoutController.browserDragTrack, true);
+      }
     }
 
     if (LayoutController.ghostElement) {
@@ -881,7 +1040,10 @@ export class LayoutController {
    * @param {Boolean} [checkConnections] Whether to check for open connections near the new component
    * @param {ComponentOptions} [options] Additional options for the component
    */
-  addComponent(track, checkConnections = false, options = {}) {
+  async addComponent(track, checkConnections = false, options = {}) {
+    if (!Assets.cache.has(track.alias)) {
+      await Assets.load(track.alias);
+    }
     console.log("Create component: " + track.alias);
     var newComp = null;
     if (LayoutController.selectedComponent) {
@@ -1104,18 +1266,93 @@ export class LayoutController {
     }
   }
 
+  initStructureColorUI() {
+    const grid = document.getElementById('structureColorGrid');
+    if (!grid) return;
+    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure",
+      "dark bluish gray", "dark green", "dark orange", "dark pink", "dark red",
+      "dark tan", "green", "light bluish gray", "lilac", "lime", "medium nougat",
+      "olive green", "orange", "red", "tan", "white", "yellow"];
+
+    const noneItem = document.createElement('div');
+    noneItem.className = 'bp-color-item bp-none';
+    noneItem.dataset.hex = '';
+    noneItem.innerHTML = '<i>block</i>';
+    noneItem.title = 'None';
+    noneItem.addEventListener('click', () => {
+      grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+      noneItem.classList.add('selected');
+      this.#selectedStructureColor = '';
+    });
+    grid.appendChild(noneItem);
+
+    colors.forEach((color) => {
+      const hex = ColorNameToHex[color];
+      const item = document.createElement('div');
+      item.className = 'bp-color-item';
+      item.style.backgroundColor = hex;
+      item.dataset.hex = hex.toLowerCase();
+      item.title = color.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const checkIcon = document.createElement('i');
+      checkIcon.textContent = 'check';
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      checkIcon.style.color = (r * 299 + g * 587 + b * 114) / 1000 < 128 ? '#ffffff' : '#000000';
+      item.appendChild(checkIcon);
+      item.addEventListener('click', () => {
+        grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        this.#selectedStructureColor = hex.toLowerCase();
+      });
+      grid.appendChild(item);
+    });
+
+    document.getElementById('saveStructureColor').addEventListener('click',
+      this.onSaveStructureColor.bind(this));
+  }
+
+  showStructureColorDialog() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.locked) return;
+    const currentColor = comp.baseplateColor;
+    this.#selectedStructureColor = currentColor ?? '';
+
+    const grid = document.getElementById('structureColorGrid');
+    grid.querySelectorAll('.bp-color-item').forEach(el => {
+      el.classList.remove('selected');
+      if (currentColor && el.dataset.hex === currentColor.toLowerCase()) {
+        el.classList.add('selected');
+      } else if (!currentColor && el.dataset.hex === '') {
+        el.classList.add('selected');
+      }
+    });
+
+    ui("#structureColorDialog");
+  }
+
+  onSaveStructureColor() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.locked) return;
+    comp.baseplateColor = this.#selectedStructureColor;
+    this._positionSelectionToolbar();
+    ui("#structureColorDialog");
+  }
+
   /**
    * Show the create custom component dialog.
    * @param {DataTypes} type The type of the component to create.
    * @param {Boolean} [editing] Whether this is called while editing an existing custom component. Defaults to false
+   * @param {String} [componentName] The name of the component. Defaults to an empty string.
    */
-  showCreateCustomComponentDialog(type, editing=false) {
+  showCreateCustomComponentDialog(type, editing=false, componentName = '') {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
     const componentBorderColor = document.getElementById('componentBorderColor');
     const componentShapeSelect = document.getElementById('componentShapeSelect');
+    const componentColorSelect = document.getElementById('componentColorSelect');
     const componentShape = document.getElementById('componentShape');
     const circleTypeSelector = document.getElementById('circleTypeSelector');
     const percentageConfiguration = document.getElementById('percentageConfiguration');
@@ -1126,11 +1363,13 @@ export class LayoutController {
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
-      document.getElementById('componentDialogTitle').innerText = `Edit Custom ${typeName}`;
+      let title = componentName ? `Edit ${componentName}` : `Edit Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.add('editing');
       componentShapeSelect.classList.add('hidden');
     } else {
-      document.getElementById('componentDialogTitle').innerText = `New Custom ${typeName}`;
+      let title = componentName ? `New ${componentName}` : `New Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.remove('editing');
       componentShapeSelect.children[0].classList.add('active');
       componentShapeSelect.children[1].classList.remove('active');
@@ -1141,6 +1380,13 @@ export class LayoutController {
     componentTextNode.value = '';
     if (editing) {
       componentTextNode.value = LayoutController.selectedComponent.text ?? '';
+    }
+    if (type === DataTypes.TILEABLE) {
+      componentWidthNode.nextElementSibling.textContent = 'Width in studs (e.g. 4)';
+      componentHeightNode.nextElementSibling.textContent = 'Height in studs (e.g. 4)';
+    } else {
+      componentWidthNode.nextElementSibling.textContent = 'Component Width';
+      componentHeightNode.nextElementSibling.textContent = 'Component Height';
     }
     document.getElementById('componentWidthError').innerText = '';
     document.getElementById('componentSizeUnitsError').innerText = '';
@@ -1194,7 +1440,7 @@ export class LayoutController {
       componentHeightNode.parentElement.classList.remove('hidden');
       color = "green";
       document.getElementById('componentFontOptions').classList.add('hidden');
-      if (type === DataTypes.BASEPLATE) {
+      if (type === DataTypes.BASEPLATE || type === DataTypes.TILEABLE) {
         if (editing) {
           componentHeightNode.value = (LayoutController.selectedComponent.componentHeight / 16).toString();
           componentWidthNode.value = (LayoutController.selectedComponent.componentWidth / 16).toString();
@@ -1261,11 +1507,16 @@ export class LayoutController {
         document.getElementById('componentShapeOptions').classList.remove('hidden');
       }
     }
-    if (editing) {
-      color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+    if (type === DataTypes.TILEABLE) {
+      componentColorSelect.classList.add('hidden');
+    } else {
+      if (editing) {
+        color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+      }
+      componentColorSelect.classList.remove('hidden');
+      componentColorSelect.setAttribute('data-color', color.replaceAll(' ', ''));
+      document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
-    document.getElementById('componentColorSelect').setAttribute('data-color', color.replaceAll(' ', ''));
-    document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     ui("#newCustomComponentDialog");
   }
 
@@ -1345,7 +1596,8 @@ export class LayoutController {
       options.font = document.getElementById('componentFont').value;
       options.fontSize = parseInt(document.getElementById('componentFontSize').value) * 20;
     }
-    let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
+    let alias = this.#customComponentType !== DataTypes.TILEABLE ? this.#customComponentType : this.#selectedTileType;
+    let track = this.trackData.bundles[0].assets.find((a) => a.alias === alias);
     this.addComponent(track, false, options);
     ui("#newCustomComponentDialog");
   }
@@ -1576,7 +1828,7 @@ export class LayoutController {
    * Exit read-only mode and restore interactive functionality.
    * This undoes the UI changes made when entering read-only mode in init().
    */
-  exitReadOnlyMode() {
+  async exitReadOnlyMode() {
     this.readOnly = false;
 
     const buttonRemove = document.getElementById('buttonRemove');
@@ -1597,6 +1849,18 @@ export class LayoutController {
       this.#currentLayer.interactiveChildren = true;
     }
 
+    const allAliases = this.trackData.bundles[0].assets.map(t => t.alias);
+    const unloaded = allAliases.filter(a => !Assets.cache.has(a));
+    if (unloaded.length > 0) {
+      await Assets.load(unloaded);
+    }
+
+    await Promise.all(this.trackData.bundles[0].assets.map(async (track) => {
+      if (!track.image) {
+        track.image = await this._extractTrackImage(track);
+      }
+    }));
+
     document.getElementById('componentMenu')?.classList.remove('hidden');
     this.createComponentBrowser();
 
@@ -1608,10 +1872,10 @@ export class LayoutController {
    * Shows confirmation dialog if not in read-only mode.
    * If in read-only mode, resets layout and updates URL.
    */
-  onNewLayoutClick() {
+  async onNewLayoutClick() {
     if (this.readOnly) {
       this.reset();
-      this.exitReadOnlyMode();
+      await this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
     } else {
       ui("#newLayoutConfirmDialog");
@@ -1622,14 +1886,14 @@ export class LayoutController {
   /**
    * Handle the confirmation of creating a new layout.
    * Called when user confirms they want to create a new layout.
-   * @see {@link LayoutController.onNewLayoutClick} 
+   * @see {@link LayoutController.onNewLayoutClick}
    */
-  onConfirmNewLayout() {
+  async onConfirmNewLayout() {
     ui("#newLayoutConfirmDialog");
     const wasReadOnly = this.readOnly;
     this.reset();
     if (wasReadOnly) {
-      this.exitReadOnlyMode();
+      await this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
     }
   }
@@ -1922,10 +2186,10 @@ export class LayoutController {
             }
             if (this.readOnly) {
               this.reset();
-              this.exitReadOnlyMode();
+              await this.exitReadOnlyMode();
               window.history.pushState({}, '', window.location.origin);
             }
-            this._importLayout(data);
+            await this._importLayout(data);
           } catch (e) {
             console.error(e);
             if (e instanceof SyntaxError) {
@@ -2202,7 +2466,13 @@ export class LayoutController {
    * @param {String} [cloudInfo.s3Key] The S3 object key
    * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
    */
-  _importLayout(data, cloudInfo = null) {
+  async _importLayout(data, cloudInfo = null) {
+    const neededAliases = this._extractLayoutAliases(data);
+    const unloaded = neededAliases.filter(a => !Assets.cache.has(a));
+    if (unloaded.length > 0) {
+      await Assets.load(unloaded);
+    }
+
     this.reset(true);
 
     // Handle metadata from layout data and cloud info
@@ -2300,6 +2570,10 @@ export class LayoutController {
    */
   static onDragMove(event) {
     if (LayoutController.dragTarget) {
+      if (LayoutController.dragTarget.destroyed) {
+        LayoutController.dragTarget = null;
+        return;
+      }
       if (!LayoutController.dragTarget.isDragging) {
         const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
         LayoutController.dragDistance += diff;
@@ -2680,7 +2954,13 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      if (LayoutController.selectedComponent.baseData.onbp !== undefined) {
+        this.showStructureColorDialog();
+      } else if (LayoutController.selectedComponent.baseData.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true, LayoutController.selectedComponent.baseData.name);
+      } else {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      }
     }
   }
 
@@ -3441,7 +3721,7 @@ export class LayoutController {
       this.selectionToolbar.classList.remove('locked');
     }
 
-    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate"))) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TILEABLE || comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');

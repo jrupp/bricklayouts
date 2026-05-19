@@ -17,6 +17,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [shape] The shape of the component (e.g., "rectangle", "circle")
  * @property {String} color The color of the component
  * @property {String} [outline_color] The color of the outline, if applicable
+ * @property {String} [bp_color] The color of the baseplate to place this on, if applicable
  * @property {Number} [opacity] The opacity of the component, if applicable
  * @property {String} [text] The text to display on the component, if applicable
  * @property {String} [font] The font to use for the text, if applicable
@@ -35,6 +36,7 @@ export { SerializedComponent };
  * @property {string} units The units that the component is measured in (e.g., "studs", "inches", "feet")
  * @property {string} shape The shape of the component (e.g., "rectangle", "circle")
  * @property {string} color The color of the component
+ * @property {string} bpColor The color of the baseplate to place this on, if applicable
  * @property {string} outlineColor The color of the outline
  * @property {number} opacity The opacity of the component
  * @property {string} text The text to display on the component
@@ -110,6 +112,12 @@ export class Component extends Container {
    * This is used for shape components only.
    */
   #outlineColor;
+
+  /**
+   * @type {?Color}
+   * The color of the baseplate to place this on, if applicable.
+   */
+  #bpColor;
 
   /**
    * @type {Number}
@@ -241,7 +249,17 @@ export class Component extends Container {
     this.#locked = false;
 
     if (this.baseData.type === DataTypes.TRACK) {
-      this.sprite = new Sprite(Assets.get(baseData.alias));
+      if (this.baseData.onbp !== undefined && options.bpColor !== "") {
+        this.#bpColor = new Color(options.bpColor ?? this.baseData.onbp);
+      }
+      if (this.#bpColor === undefined) {
+        this.sprite = new Sprite(Assets.get(baseData.alias));
+      } else {
+        let tempTexture = Assets.get(baseData.alias);
+        ({ width: this.#width, height: this.#height } = {...{width: tempTexture.width, height: tempTexture.height}, ...this.baseData});
+        tempTexture = null;
+        this.sprite = new Sprite(this._generateStructureOnBaseplateTexture());
+      }
       this.sprite.anchor.set(0.5);
       if (this.baseData.color !== undefined) {
         this.#color = new Color(this.baseData.color);
@@ -277,6 +295,11 @@ export class Component extends Container {
       let plateTexture = this._generateBaseplateTexture();
       this.sprite = new Sprite(plateTexture);
       this.sprite.anchor.set(0.5);
+    } else if (this.baseData.type === DataTypes.TILEABLE) {
+      ({ width: this.#width, height: this.#height } = {...this.baseData, ...options});
+      this.#units = 'studs';
+      this.sprite = new TilingSprite({texture: Assets.get(this.baseData.alias), width: this.#width, height: this.#height});
+      this.sprite.anchor.set(0.5);
     } else if (this.baseData.type === DataTypes.TEXT) {
       this.#color = new Color(options.color ?? this.baseData.color ?? 0xA0A5A9);
       this.#text = options.text ?? this.baseData.text ?? 'Text';
@@ -292,6 +315,8 @@ export class Component extends Container {
         },
       });
       this.sprite.anchor.set(0.5);
+    } else {
+      throw new Error(`Unsupported component type: ${this.baseData.type}`);
     }
     if (baseData.scale) {
       this.sprite.scale.set(baseData.scale);
@@ -427,6 +452,11 @@ export class Component extends Container {
       fontSize: this.#fontSize,
       circlePercentage: this.#circlePercentage
     };
+    if (this.baseData.onbp !== undefined) {
+      options.bpColor = this.#bpColor?.toHex() ?? "";
+      delete options.width;
+      delete options.height;
+    }
     if (connectTo) {
       let newComp = Component.fromComponent(this.baseData, connectTo, layer, options);
       if (newComp) {
@@ -666,6 +696,73 @@ export class Component extends Container {
   }
 
   /**
+   * Generates the texture for a structure that is designed to be placed on a baseplate.
+   * @returns {Texture} The generated texture for the structure on a baseplate
+   */
+  _generateStructureOnBaseplateTexture() {
+    /** @type {Texture} */
+    let structureTexture = undefined;
+    let structureAlias = `${this.baseData.alias}-${this.#bpColor.toHex()}`;
+    if (Assets.cache.has(structureAlias)) {
+      structureTexture = Assets.get(structureAlias);
+    } else {
+      let tempContainer = new Container();
+      let bpSprite = new TilingSprite({
+        texture: Assets.get("baseplate"),
+        width: this.#width,
+        height: this.#height
+      });
+      if (this.#bpColor.toYiq() < 92) {
+        // If the color is dark, we invert the stud color in the baseplate texture
+        const filter = new ColorMatrixFilter();
+        filter.negative(true);
+        bpSprite.filters = [filter];
+      }
+      let tempSprite = new Sprite(Assets.get(this.baseData.alias));
+      tempContainer.addChild(bpSprite);
+      tempContainer.addChild(tempSprite);
+      structureTexture = LayoutController.getInstance().app.renderer.extract.texture({target: tempContainer, clearColor: this.#bpColor});
+      Assets.cache.set(structureAlias, structureTexture);
+      tempSprite.destroy();
+      bpSprite.destroy();
+      tempContainer.destroy();
+      tempSprite = null;
+      bpSprite = null;
+      tempContainer = null;
+    }
+    return structureTexture;
+  }
+
+  /**
+   * Get the color of the baseplate this Component is designed to be placed on, if applicable.
+   * @returns {?String} The color of the baseplate this Component is designed to be placed on, or null if not applicable
+   */
+  get baseplateColor() {
+    return this.#bpColor?.toHex();
+  }
+
+  /**
+   * Set the color of the baseplate this Component is designed to be placed on.
+   * Note: This only applies to components that are designed to be placed on a baseplate. Setting this for other components or for tracks that don't specify a baseplate color will have no effect.
+   * @param {?String} value The new color of the baseplate to set, or null to unset
+   */
+  set baseplateColor(value) {
+    if (this.baseData.type !== DataTypes.TRACK || this.#bpColor?.toHex() === value) {
+      return;
+    }
+    let tempTexture = Assets.get(this.baseData.alias);
+    if (value !== void 0 && value !== '') {
+      this.#bpColor = new Color(value);
+      ({ width: this.#width, height: this.#height } = {...{width: tempTexture.width, height: tempTexture.height}, ...this.baseData});
+      this.sprite.texture = this._generateStructureOnBaseplateTexture();
+    } else {
+      this.#bpColor = undefined;
+      this.sprite.texture = tempTexture;
+    }
+    tempTexture = null;
+  }
+
+  /**
    * Get the color of this Component.
    * @returns {String} The color of this Component
    */
@@ -716,6 +813,9 @@ export class Component extends Container {
       if (this.#shape === 'circle') {
         this.#height = this.#width;
       }
+    } else if (this.baseData.type === DataTypes.TILEABLE) {
+      this.sprite.width = width;
+      this.sprite.height = height;
     }
   }
 
@@ -942,6 +1042,9 @@ export class Component extends Container {
     if (data.circle_percentage !== undefined) {
       options.circlePercentage = data.circle_percentage;
     }
+    if (data.bp_color !== undefined) {
+      options.bpColor = data.bp_color;
+    }
     const newComponent = new Component(baseData, Pose.deserialize(data.pose), layer, options);
     data.connections.forEach((connectionData, index) => {
       newComponent.connections[index].deserialize(connectionData);
@@ -991,6 +1094,17 @@ export class Component extends Container {
       serialized.circle_percentage = this.#circlePercentage;
     }
 
+    if (this.baseData.onbp !== undefined) {
+      delete serialized.width;
+      delete serialized.height;
+    }
+
+    if (this.#bpColor !== undefined) {
+      serialized.bp_color = this.#bpColor.toHex();
+    } else if (this.baseData.onbp !== undefined) {
+      serialized.bp_color = '';
+    }
+
     if (this.group && !this.group.isTemporary) {
       serialized.group = this.group.uuid;
     }
@@ -1013,7 +1127,7 @@ export class Component extends Container {
       data?.type,
       typeof data?.type === 'string',
       data?.type?.length > 0,
-      data?.type ? Assets.get(data?.type) : false,
+      data?.type ? (LayoutController._instance?.trackData?.bundles[0].assets.some(a => a.alias === data.type) ?? Assets.get(data.type)) : false,
       data?.pose,
       Pose._validateImportData(data?.pose),
       data?.connections,

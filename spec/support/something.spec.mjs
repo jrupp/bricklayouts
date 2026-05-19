@@ -1,10 +1,10 @@
-import { LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
+import { DataTypes, LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
 import { Component, DEFAULT_CIRCLE_PERCENTAGE } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
-import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite } from '../../src/pixi.mjs';
+import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
 import layoutFileOne from './layout1.json' with { "type": "json" };
@@ -211,6 +211,10 @@ describe("LayoutController", function() {
         circlePreview.value = 80;
         geiSpy.withArgs('circlePreview').and.returnValue(circlePreview);
 
+        const structureColorGrid = document.createElement('div');
+        geiSpy.withArgs('structureColorGrid').and.returnValue(structureColorGrid);
+        geiSpy.withArgs('saveStructureColor').and.returnValue(document.createElement('button'));
+
         window.Slip = class Slip {
             constructor() {
             }
@@ -246,6 +250,7 @@ describe("LayoutController", function() {
             });
 
             drawGridSpy = spyOn(layoutController, 'drawGrid').and.stub();
+            spyOn(layoutController, '_positionSelectionToolbar').and.stub();
             layoutController.initWindowEvents();
         });
         beforeEach(function () {
@@ -439,16 +444,15 @@ describe("LayoutController", function() {
             });
 
             it("positions selection toolbar after resize events", function() {
-                // Spy on _positionSelectionToolbar to verify it's called along with drawGrid
-                const positionSpy = spyOn(layoutController, '_positionSelectionToolbar').and.stub();
-                
+                const positionSpy = layoutController._positionSelectionToolbar;
+                positionSpy.calls.reset();
+
                 window.dispatchEvent(new Event('resize'));
-                
+
                 expect(positionSpy).not.toHaveBeenCalled();
-                
+
                 jasmine.clock().tick(350);
-                
-                // Both drawGrid and _positionSelectionToolbar should be called
+
                 expect(drawGridSpy).toHaveBeenCalled();
                 expect(positionSpy).toHaveBeenCalled();
             });
@@ -8509,97 +8513,96 @@ describe("LayoutController", function() {
         });
 
         describe("exitReadOnlyMode() method", () => {
-            it("should set readOnly to false", () => {
+            it("should set readOnly to false", async () => {
                 layoutController.readOnly = true;
-                
-                layoutController.exitReadOnlyMode();
-                
+
+                await layoutController.exitReadOnlyMode();
+
                 expect(layoutController.readOnly).toBe(false);
             });
 
-            it("should run without errors", () => {
-                // Verify it runs without errors
-                expect(() => layoutController.exitReadOnlyMode()).not.toThrow();
+            it("should run without errors", async () => {
+                await expectAsync(layoutController.exitReadOnlyMode()).toBeResolved();
             });
         });
 
         describe("onNewLayoutClick() method", () => {
-            it("should reset layout and exit read-only mode when in read-only mode", () => {
+            it("should reset layout and exit read-only mode when in read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset').and.callThrough();
-                spyOn(layoutController, 'exitReadOnlyMode').and.callThrough();
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(layoutController.reset).toHaveBeenCalled();
                 expect(layoutController.exitReadOnlyMode).toHaveBeenCalled();
                 expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
                 expect(layoutController.hideFileMenu).toHaveBeenCalled();
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
 
-            it("should show confirmation dialog when not in read-only mode", () => {
+            it("should show confirmation dialog when not in read-only mode", async () => {
                 layoutController.readOnly = false;
                 spyOn(layoutController, 'hideFileMenu');
                 let uiSpy = spyOn(window, 'ui').and.stub();
-                layoutController.onNewLayoutClick();
+                await layoutController.onNewLayoutClick();
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.hideFileMenu).toHaveBeenCalled();
             });
 
-            it("should not show confirmation dialog when in read-only mode", () => {
+            it("should not show confirmation dialog when in read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset');
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Get the dialog and spy on its method
                 const dialog = document.getElementById('newLayoutConfirmDialog');
                 spyOn(dialog, 'showModal');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(dialog.showModal).not.toHaveBeenCalled();
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
         });
 
         describe("onConfirmNewLayout() method", () => {
-            it("should close dialog and reset layout", () => {
+            it("should close dialog and reset layout", async () => {
                 let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset');
-                layoutController.onConfirmNewLayout();
+                await layoutController.onConfirmNewLayout();
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
             });
 
-            it("should exit read-only mode and update URL when coming from read-only mode", () => {
+            it("should exit read-only mode and update URL when coming from read-only mode", async () => {
                 // Set up read-only mode
                 layoutController.readOnly = true;
                 let uiSpy = spyOn(window, 'ui').and.stub();
                 spyOn(layoutController, 'reset').and.callThrough();
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
 
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onConfirmNewLayout();
+
+                await layoutController.onConfirmNewLayout();
 
                 expect(uiSpy).toHaveBeenCalledWith("#newLayoutConfirmDialog");
                 expect(layoutController.reset).toHaveBeenCalled();
@@ -8612,21 +8615,21 @@ describe("LayoutController", function() {
         });
 
         describe("URL change behavior", () => {
-            it("should change URL to root when exiting read-only mode", () => {
+            it("should change URL to root when exiting read-only mode", async () => {
                 layoutController.readOnly = true;
-                
+
                 spyOn(layoutController, 'reset');
-                spyOn(layoutController, 'exitReadOnlyMode');
+                spyOn(layoutController, 'exitReadOnlyMode').and.resolveTo();
                 spyOn(layoutController, 'hideFileMenu');
-                
+
                 // Mock window.history
                 const originalPushState = window.history.pushState;
                 spyOn(window.history, 'pushState');
-                
-                layoutController.onNewLayoutClick();
-                
+
+                await layoutController.onNewLayoutClick();
+
                 expect(window.history.pushState).toHaveBeenCalledWith({}, '', window.location.origin);
-                
+
                 // Restore original pushState
                 window.history.pushState = originalPushState;
             });
@@ -9862,6 +9865,659 @@ describe("LayoutController", function() {
                 
                 // Save operations should not proceed
                 expect(component.resize).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe("Structure Color Dialog", function() {
+        let layoutController;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+        });
+
+        describe("_showSelectionToolbar editable class", function() {
+            it("adds editable class when selected component has baseData.onbp defined", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                const mockComponent = {
+                    size: 1,
+                    destroyed: false,
+                    locked: false,
+                    baseData: structureData,
+                    canRotate: () => true,
+                    getBounds: () => ({ minX: 0, minY: 0, maxX: 100, maxY: 100 }),
+                    getGlobalPosition: () => ({ x: 50, y: 50 })
+                };
+                LayoutController.selectedComponent = mockComponent;
+                layoutController._showSelectionToolbar();
+                expect(selectionToolbar.classList).toContain("editable");
+            });
+
+            it("does not add editable class when track component has no onbp", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                expect(selectionToolbar.classList).not.toContain("editable");
+            });
+        });
+
+        describe("editSelectedComponent routing", function() {
+            it("calls showStructureColorDialog when selected component has onbp", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                const mockComponent = {
+                    size: 1,
+                    locked: false,
+                    baseData: structureData
+                };
+                LayoutController.selectedComponent = mockComponent;
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).not.toHaveBeenCalled();
+            });
+
+            it("calls showCreateCustomComponentDialog when selected component does not have onbp", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).not.toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).toHaveBeenCalled();
+            });
+        });
+
+        describe("onSaveStructureColor", function() {
+            it("does not save when component is locked", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                const comp = LayoutController.selectedComponent;
+                comp.locked = true;
+                const spy = spyOnProperty(comp, 'baseplateColor', 'set');
+                layoutController.onSaveStructureColor();
+                expect(spy).not.toHaveBeenCalled();
+            });
+        });
+
+        describe("serialization", function() {
+            it("serializes bp_color when baseplateColor is set", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = "#c91a09";
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe("#c91a09");
+            });
+
+            it("does not include bp_color when baseplateColor is undefined", function() {
+                const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+                layoutController.addComponent(trackData);
+                const comp = layoutController.currentLayer.children[0];
+                const serialized = comp.serialize();
+                expect(serialized.hasOwnProperty('bp_color')).toBeFalse();
+            });
+
+            it("deserializes bp_color into bpColor option", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = "#c91a09";
+                const serialized = comp.serialize();
+                const deserialized = Component.deserialize(structureData, serialized, layoutController.currentLayer);
+                expect(deserialized.baseplateColor).toBe("#c91a09");
+            });
+
+            it("serializes bp_color as blank string when baseplateColor is removed on an onbp component", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = '';
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe('');
+            });
+
+            it("deserializes blank bp_color to undefined baseplateColor", function() {
+                const structureData = layoutController.trackData.bundles[0].assets.find((a) => a.onbp !== undefined);
+                if (!structureData) {
+                    pending("No structure with onbp in manifest");
+                    return;
+                }
+                layoutController.addComponent(structureData);
+                const comp = layoutController.currentLayer.children[0];
+                comp.baseplateColor = '';
+                const serialized = comp.serialize();
+                expect(serialized.bp_color).toBe('');
+                const deserialized = Component.deserialize(structureData, serialized, layoutController.currentLayer);
+                expect(deserialized.baseplateColor).toBeUndefined();
+            });
+        });
+    });
+
+    describe("Lazy Asset Loading", function() {
+        let layoutController;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+        });
+
+        describe("_processTrackMetadata", function() {
+            it("should set default type to TRACK when type is undefined", function() {
+                let track = { alias: "test", name: "Test" };
+                layoutController._processTrackMetadata(track);
+                expect(track.type).toBeDefined();
+            });
+
+            it("should parse color string to integer", function() {
+                let track = { alias: "test", name: "Test", color: "#6c6e68" };
+                layoutController._processTrackMetadata(track);
+                expect(typeof track.color).toBe("number");
+                expect(track.color).toBe(0x6c6e68);
+            });
+
+            it("should parse onbp string to integer", function() {
+                let track = { alias: "test", name: "Test", onbp: "#A0A5A9" };
+                layoutController._processTrackMetadata(track);
+                expect(typeof track.onbp).toBe("number");
+                expect(track.onbp).toBe(0xA0A5A9);
+            });
+
+            it("should not modify color that is already a number", function() {
+                let track = { alias: "test", name: "Test", color: 0x6c6e68 };
+                layoutController._processTrackMetadata(track);
+                expect(track.color).toBe(0x6c6e68);
+            });
+
+            it("should convert connections to PolarVectors", function() {
+                let track = {
+                    alias: "test", name: "Test",
+                    connections: [{ vector: [10, 20, 0.5], type: 0 }]
+                };
+                layoutController._processTrackMetadata(track);
+                expect(track.connections[0].vector).toBeDefined();
+                expect(track.connections[0].vector.constructor.name).toBe("PolarVector");
+            });
+        });
+
+        describe("_extractTrackImage", function() {
+            it("should return an HTMLImageElement with correct className and alt", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
+                let image = await layoutController._extractTrackImage(track);
+                expect(image).toBeInstanceOf(HTMLImageElement);
+                expect(image.className).toBe("track");
+                expect(image.alt).toBe(track.name);
+            });
+
+            it("should handle onbp overlay compositing", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.onbp !== undefined);
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+
+            it("should handle shape/baseplate color fill", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "baseplate32x32");
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+        });
+
+        describe("_createPlaceholderImage", function() {
+            it("should return an HTMLImageElement", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image).toBeInstanceOf(HTMLImageElement);
+            });
+
+            it("should have correct className and alt", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image.className).toBe("track");
+                expect(image.alt).toBe("Test Component");
+            });
+
+            it("should have a data URI src", function() {
+                let track = { alias: "test", name: "Test Component" };
+                let image = layoutController._createPlaceholderImage(track);
+                expect(image.src).toContain("data:image/svg+xml");
+            });
+        });
+
+        describe("_replacePlaceholderImage", function() {
+            it("should update the existing element src in place", function() {
+                let track = { alias: "test", name: "Test", image: null };
+                track.image = layoutController._createPlaceholderImage(track);
+                let originalElement = track.image;
+                let originalSrc = track.image.src;
+
+                let realImage = new Image();
+                realImage.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==";
+
+                layoutController._replacePlaceholderImage(track, realImage);
+
+                expect(track.image).toBe(originalElement);
+                expect(track.image.src).not.toBe(originalSrc);
+                expect(track.image.src).toBe(realImage.src);
+            });
+        });
+
+        describe("_extractLayoutAliases", function() {
+            it("should extract unique component type aliases", function() {
+                let data = {
+                    layers: [{
+                        components: [
+                            { type: "railStraight9V", pose: {} },
+                            { type: "railCurved9V", pose: {} },
+                            { type: "railStraight9V", pose: {} }
+                        ]
+                    }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(2);
+                expect(aliases).toContain("railStraight9V");
+                expect(aliases).toContain("railCurved9V");
+            });
+
+            it("should exclude shape and text types", function() {
+                let data = {
+                    layers: [{
+                        components: [
+                            { type: "railStraight9V", pose: {} },
+                            { type: "shape", pose: {} },
+                            { type: "text", pose: {} }
+                        ]
+                    }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases).not.toContain("shape");
+                expect(aliases).not.toContain("text");
+                expect(aliases.length).toBe(1);
+            });
+
+            it("should handle multiple layers", function() {
+                let data = {
+                    layers: [
+                        { components: [{ type: "railStraight9V", pose: {} }] },
+                        { components: [{ type: "railCurved9V", pose: {} }] }
+                    ]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(2);
+            });
+
+            it("should handle empty layers", function() {
+                let data = {
+                    layers: [{ components: [] }]
+                };
+                let aliases = layoutController._extractLayoutAliases(data);
+                expect(aliases.length).toBe(0);
+            });
+        });
+
+        describe("addComponent on-demand loading", function() {
+            it("should load asset if not cached before creating component", async function() {
+                let trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === "railStraight9V");
+                let initialCount = layoutController.currentLayer.children.length;
+                let loadSpy = spyOn(Assets, 'load').and.resolveTo(Assets.get(trackData.alias));
+                let cacheSpy = spyOn(Assets.cache, 'has').and.returnValue(false);
+
+                await layoutController.addComponent(trackData);
+
+                expect(loadSpy).toHaveBeenCalledWith(trackData.alias);
+                expect(layoutController.currentLayer.children.length).toBe(initialCount + 1);
+
+                cacheSpy.and.callThrough();
+                loadSpy.and.callThrough();
+            });
+
+            it("should not call Assets.load when asset is already cached", async function() {
+                let trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === "railStraight9V");
+                let initialCount = layoutController.currentLayer.children.length;
+                let loadSpy = spyOn(Assets, 'load');
+
+                await layoutController.addComponent(trackData);
+
+                expect(loadSpy).not.toHaveBeenCalled();
+                expect(layoutController.currentLayer.children.length).toBe(initialCount + 1);
+            });
+        });
+
+        describe("_importLayout on-demand loading", function() {
+            it("should load missing assets before importing layout", async function() {
+                let loadSpy = spyOn(Assets, 'load').and.resolveTo();
+                let cacheSpy = spyOn(Assets.cache, 'has').and.returnValue(false);
+
+                let data = structuredClone(layoutFileOne);
+                let aliases = layoutController._extractLayoutAliases(data);
+
+                await layoutController._importLayout(data);
+
+                expect(loadSpy).toHaveBeenCalled();
+                let loadedAliases = loadSpy.calls.first().args[0];
+                expect(loadedAliases.length).toBeGreaterThan(0);
+
+                cacheSpy.and.callThrough();
+                loadSpy.and.callThrough();
+            });
+        });
+
+        describe("_validateImportData manifest lookup", function() {
+            it("should return true for a type that exists in the manifest", function() {
+                let data = {
+                    type: "railStraight9V",
+                    pose: { x: 0, y: 0, angle: 0 },
+                    connections: []
+                };
+                expect(Component._validateImportData(data)).toBe(true);
+            });
+
+            it("should return false for a type that does not exist in the manifest", function() {
+                let data = {
+                    type: "nonexistentComponent",
+                    pose: { x: 0, y: 0, angle: 0 },
+                    connections: []
+                };
+                expect(Component._validateImportData(data)).toBe(false);
+            });
+        });
+
+        describe("_backgroundLoadRemaining", function() {
+            it("should load each alias and replace placeholder images", async function() {
+                let track1 = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
+                track1.image = layoutController._createPlaceholderImage(track1);
+                let originalSrc = track1.image.src;
+
+                let replaceSpy = spyOn(layoutController, '_replacePlaceholderImage').and.callThrough();
+
+                await layoutController._backgroundLoadRemaining(["railStraight9V"]);
+
+                expect(replaceSpy).toHaveBeenCalled();
+                expect(track1.image.src).not.toBe(originalSrc);
+            });
+        });
+
+        describe("_extractTrackImage tileable", function() {
+            it("should extract image from tileable component", async function() {
+                let track = layoutController.trackData.bundles[0].assets.find(t => t.type === "tileable");
+                if (track) {
+                    let image = await layoutController._extractTrackImage(track);
+                    expect(image).toBeInstanceOf(HTMLImageElement);
+                    expect(image.className).toBe("track");
+                }
+            });
+        });
+
+        describe("exitReadOnlyMode asset loading", function() {
+            it("should load all assets and extract images", async function() {
+                layoutController.readOnly = true;
+                layoutController.trackData.bundles[0].assets.forEach(t => {
+                    t.image = undefined;
+                });
+
+                await layoutController.exitReadOnlyMode();
+
+                expect(layoutController.readOnly).toBe(false);
+                layoutController.trackData.bundles[0].assets.forEach(t => {
+                    if (t.alias !== 'baseplate' && t.alias !== 'shape' && t.alias !== 'text') {
+                        expect(t.image).toBeInstanceOf(HTMLImageElement);
+                    }
+                });
+            });
+        });
+    });
+
+    describe("Tileable Components", function() {
+        let layoutController;
+        let tileableData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            tileableData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "carrotField");
+        });
+
+        describe("Component construction", function() {
+            it("creates a tileable component with default width and height from baseData", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp).toBeInstanceOf(Component);
+                expect(comp.componentWidth).toBe(64);
+                expect(comp.componentHeight).toBe(64);
+                expect(comp.baseData.type).toBe("tileable");
+                expect(comp.sprite).toBeInstanceOf(TilingSprite);
+            });
+
+            it("creates a tileable component with custom width and height", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 128, height: 256});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.componentWidth).toBe(128);
+                expect(comp.componentHeight).toBe(256);
+                expect(comp.sprite.width).toBe(128);
+                expect(comp.sprite.height).toBe(256);
+            });
+
+            it("sets units to studs for tileable components", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.units).toBe("studs");
+            });
+
+            it("has no connections", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                expect(comp.connections).toHaveSize(0);
+            });
+        });
+
+        describe("resize", function() {
+            it("updates sprite width and height when resized", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                comp.resize(128, 96, 'studs');
+                expect(comp.componentWidth).toBe(128);
+                expect(comp.componentHeight).toBe(96);
+                expect(comp.sprite.width).toBe(128);
+                expect(comp.sprite.height).toBe(96);
+            });
+
+            it("updates internal dimensions", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let comp = layoutController.currentLayer.children[0];
+                comp.resize(200, 300, 'studs');
+                expect(comp.componentWidth).toBe(200);
+                expect(comp.componentHeight).toBe(300);
+            });
+        });
+
+        describe("serialization", function() {
+            it("serializes tileable component with width and height", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let serialized = comp.serialize();
+                expect(serialized.type).toBe("carrotField");
+                expect(serialized.width).toBe(96);
+                expect(serialized.height).toBe(128);
+                expect(serialized.units).toBe("studs");
+            });
+
+            it("round-trips through serialize and deserialize", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let serialized = comp.serialize();
+                let deserialized = Component.deserialize(tileableData, serialized, layoutController.currentLayer);
+                expect(deserialized.componentWidth).toBe(comp.componentWidth);
+                expect(deserialized.componentHeight).toBe(comp.componentHeight);
+                expect(deserialized.units).toBe("studs");
+                expect(deserialized.baseData.type).toBe("tileable");
+            });
+        });
+
+        describe("clone", function() {
+            it("clones a tileable component with same dimensions", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                let comp = layoutController.currentLayer.children[0];
+                let cloned = comp.clone(layoutController.currentLayer);
+                expect(cloned.componentWidth).toBe(96);
+                expect(cloned.componentHeight).toBe(128);
+                expect(cloned.units).toBe("studs");
+                expect(cloned.baseData.type).toBe("tileable");
+                expect(cloned.sprite).toBeInstanceOf(TilingSprite);
+            });
+        });
+
+        describe("onCreateCustomComponent", function() {
+            it("creates a tileable component via dialog", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let button = layoutController.componentBrowser.querySelector('[data-track-alias="carrotField"]');
+                if (!button) { pending("No carrotField button in component browser"); return; }
+                button.click();
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+                layoutController.onCreateCustomComponent();
+                expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+                expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({type: "tileable", alias: "carrotField"}), false, jasmine.objectContaining({width: 64, height: 64}));
+            });
+
+            it("finds the correct asset by selectedTileType alias", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let cornButton = layoutController.componentBrowser.querySelector('[data-track-alias="cornField"]');
+                if (!cornButton) { pending("No cornField button in component browser"); return; }
+                cornButton.click();
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('4');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                spyOn(window, 'ui').and.stub();
+                let addSpy = spyOn(layoutController, 'addComponent').and.callThrough();
+                layoutController.onCreateCustomComponent();
+                expect(addSpy).toHaveBeenCalledOnceWith(jasmine.objectContaining({alias: "cornField"}), false, jasmine.any(Object));
+            });
+        });
+
+        describe("onSaveCustomComponent", function() {
+            it("saves changes to a tileable component", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                spyOnProperty(componentWidth, 'value', 'get').and.returnValue('8');
+                spyOnProperty(componentHeight, 'value', 'get').and.returnValue('8');
+                spyOnProperty(componentSizeUnits, 'value', 'get').and.returnValue('studs');
+                let j = jasmine.createSpyObj({"getPropertyValue": "#237841"});
+                spyOn(window, 'getComputedStyle').and.returnValue(j);
+                let uiSpy = spyOn(window, 'ui').and.stub();
+                let resizeSpy = spyOn(layoutController.layers[0].children[0], 'resize').and.callThrough();
+                layoutController.onSaveCustomComponent();
+                expect(uiSpy).toHaveBeenCalledOnceWith("#newCustomComponentDialog");
+                expect(layoutController.currentLayer.children[0].componentWidth).toBe(128);
+                expect(layoutController.currentLayer.children[0].componentHeight).toBe(128);
+                expect(resizeSpy).toHaveBeenCalledOnceWith(128, 128, "studs");
+            });
+        });
+
+        describe("showCreateCustomComponentDialog", function() {
+            it("sets dialog title with component name when creating", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                let titleEl = document.getElementById('componentDialogTitle');
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(titleEl.innerText).toBe('New Carrot Field');
+            });
+
+            it("sets dialog title with component name when editing", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                let titleEl = document.getElementById('componentDialogTitle');
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                expect(titleEl.innerText).toBe('Edit Carrot Field');
+            });
+
+            it("hides the size units selector", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(componentSizeUnits.parentElement.parentElement.classList).toContain('hidden');
+            });
+
+            it("hides the color selector", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.showCreateCustomComponentDialog('tileable', false, 'Carrot Field');
+                expect(componentColorSelect.classList).toContain('hidden');
+            });
+
+            it("populates width and height fields when editing", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 96, height: 128});
+                layoutController.showCreateCustomComponentDialog('tileable', true, 'Carrot Field');
+                expect(componentWidth.value).toBe('6');
+                expect(componentHeight.value).toBe('8');
+            });
+        });
+
+        describe("editSelectedComponent routing", function() {
+            it("calls showCreateCustomComponentDialog with type and name for tileable", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                spyOn(layoutController, 'showStructureColorDialog');
+                spyOn(layoutController, 'showCreateCustomComponentDialog');
+                layoutController.editSelectedComponent();
+                expect(layoutController.showStructureColorDialog).not.toHaveBeenCalled();
+                expect(layoutController.showCreateCustomComponentDialog).toHaveBeenCalledOnceWith('tileable', true, 'Carrot Field');
+            });
+        });
+
+        describe("_showSelectionToolbar", function() {
+            it("adds editable class for tileable component", function() {
+                if (!tileableData) { pending("No tileable data in manifest"); return; }
+                layoutController.addComponent(tileableData, false, {width: 64, height: 64});
+                expect(selectionToolbar.classList).toContain("editable");
+            });
+        });
+
+        describe("unsupported component type", function() {
+            it("throws error for unsupported type", function() {
+                let fakeData = {alias: "fake", type: "invalidtype", connections: []};
+                expect(function() {
+                    new Component(fakeData, {x: 0, y: 0, angle: 0}, layoutController.currentLayer, {});
+                }).toThrowError("Unsupported component type: invalidtype");
             });
         });
     });

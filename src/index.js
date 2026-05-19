@@ -12,7 +12,6 @@ const app = new Application();
 await app.init({ background: '#93bee2', resizeTo: canvasContainer, resolution: window.devicePixelRatio ?? 1 });
 canvasContainer.appendChild(app.canvas);
 await Assets.init({ basePath: '/img/', manifest: path.toAbsolute('../data/manifest.json') });
-await Assets.loadBundle('track');
 window.app = app;
 window.assets = Assets;
 Color.prototype.toYiq = function () {
