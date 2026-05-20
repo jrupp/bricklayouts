@@ -145,6 +145,11 @@ export class LayoutController {
   static preDragPose = null;
 
   /**
+   * @type {?Array<{componentUuid: String, previousPose: {x: Number, y: Number, angle: Number}}>}
+   */
+  static preDragComponentPoses = null;
+
+  /**
    * @type {?Component | ComponentGroup}
    */
   static selectedComponent = null;
@@ -2696,6 +2701,12 @@ export class LayoutController {
 
         if (!LayoutController.dragWithAlt) {
           LayoutController.preDragPose = LayoutController.dragTarget.getPose().serialize();
+          if (LayoutController.dragTarget instanceof ComponentGroup) {
+            LayoutController.preDragComponentPoses = LayoutController.dragTarget.getAllComponents().map(c => ({
+              componentUuid: c.uuid,
+              previousPose: c.getPose().serialize()
+            }));
+          }
         }
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
@@ -2772,22 +2783,34 @@ export class LayoutController {
         });
         LayoutController.dragIsNewComponent = null;
         LayoutController.preDragPose = null;
+        LayoutController.preDragComponentPoses = null;
       } else if (LayoutController.preDragPose) {
         const currentPose = target.getPose().serialize();
         if (currentPose.x !== LayoutController.preDragPose.x ||
             currentPose.y !== LayoutController.preDragPose.y ||
             currentPose.angle !== LayoutController.preDragPose.angle) {
           const layer = target.layer || target.parent;
-          LayoutController.getInstance().undoManager.record({
-            type: 'move',
-            data: {
-              componentUuid: target.uuid,
-              layerUuid: layer?.uuid,
-              previousPose: LayoutController.preDragPose
-            }
-          });
+          if (LayoutController.preDragComponentPoses) {
+            LayoutController.getInstance().undoManager.record({
+              type: 'move_group',
+              data: {
+                layerUuid: layer?.uuid,
+                components: LayoutController.preDragComponentPoses
+              }
+            });
+          } else {
+            LayoutController.getInstance().undoManager.record({
+              type: 'move',
+              data: {
+                componentUuid: target.uuid,
+                layerUuid: layer?.uuid,
+                previousPose: LayoutController.preDragPose
+              }
+            });
+          }
         }
         LayoutController.preDragPose = null;
+        LayoutController.preDragComponentPoses = null;
       }
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
@@ -3106,15 +3129,27 @@ export class LayoutController {
     }
     const comp = LayoutController.selectedComponent;
     const layer = comp.layer || comp.parent;
-    const usedConnections = comp.getUsedConnections();
-    const previousPose = comp.getPose().serialize();
-    const previousState = usedConnections.length === 1 ? comp.serialize() : null;
-    const childIndex = usedConnections.length === 1 ? layer.children.indexOf(comp) : -1;
-    comp.rotate();
-    this.undoManager.record({
-      type: 'rotate',
-      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousPose, previousState, childIndex }
-    });
+    if (comp instanceof ComponentGroup) {
+      const componentPoses = comp.getAllComponents().map(c => ({
+        componentUuid: c.uuid,
+        previousPose: c.getPose().serialize()
+      }));
+      comp.rotate();
+      this.undoManager.record({
+        type: 'rotate_group',
+        data: { layerUuid: layer?.uuid, components: componentPoses }
+      });
+    } else {
+      const usedConnections = comp.getUsedConnections();
+      const previousPose = comp.getPose().serialize();
+      const previousState = usedConnections.length === 1 ? comp.serialize() : null;
+      const childIndex = usedConnections.length === 1 ? layer.children.indexOf(comp) : -1;
+      comp.rotate();
+      this.undoManager.record({
+        type: 'rotate',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousPose, previousState, childIndex }
+      });
+    }
     this._positionSelectionToolbar();
   }
 

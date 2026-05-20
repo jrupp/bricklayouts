@@ -109,8 +109,14 @@ export class UndoManager {
       case 'move':
         this.#undoMove(entry.data);
         break;
+      case 'move_group':
+        this.#undoMoveGroup(entry.data);
+        break;
       case 'rotate':
         this.#undoRotate(entry.data);
+        break;
+      case 'rotate_group':
+        this.#undoRotateGroup(entry.data);
         break;
       case 'edit':
         this.#undoEdit(entry.data);
@@ -209,6 +215,30 @@ export class UndoManager {
   }
 
   /**
+   * @param {{layerUuid: String, components: Array<{componentUuid: String, previousPose: {x: Number, y: Number, angle: Number}}>}} data
+   */
+  #undoMoveGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const allOpenConnections = [];
+    for (const entry of data.components) {
+      const comp = layer.findComponentByUuid(entry.componentUuid);
+      if (!comp) continue;
+      comp.deleteCollisionTree();
+      comp.closeConnections();
+      comp.position.set(entry.previousPose.x, entry.previousPose.y);
+      comp.sprite.rotation = entry.previousPose.angle;
+      comp.insertCollisionTree();
+      allOpenConnections.push(...comp.getOpenConnections());
+    }
+    for (const openCon of allOpenConnections) {
+      layer.findMatchingConnection(openCon, true);
+    }
+    allOpenConnections.length = 0;
+    this.#controller._positionSelectionToolbar();
+  }
+
+  /**
    * @param {{componentUuid: String, layerUuid: String, previousPose: {x: Number, y: Number, angle: Number}, previousState: ?Object, childIndex: Number}} data
    */
   #undoRotate(data) {
@@ -250,6 +280,32 @@ export class UndoManager {
         this.#controller._positionSelectionToolbar();
       }
     }
+  }
+
+  /**
+   * @param {{layerUuid: String, components: Array<{componentUuid: String, previousPose: {x: Number, y: Number, angle: Number}}>}} data
+   */
+  #undoRotateGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const allOpenConnections = [];
+    for (const entry of data.components) {
+      const comp = layer.findComponentByUuid(entry.componentUuid);
+      if (!comp) continue;
+      comp.deleteCollisionTree();
+      comp.closeConnections();
+      comp.position.set(entry.previousPose.x, entry.previousPose.y);
+      comp.sprite.rotation = entry.previousPose.angle;
+      comp.insertCollisionTree();
+      comp.connections.forEach((connection) => {
+        connection.updateCircle();
+      });
+      allOpenConnections.push(...comp.getOpenConnections());
+    }
+    for (const openCon of allOpenConnections) {
+      layer.findMatchingConnection(openCon, true);
+    }
+    this.#controller._positionSelectionToolbar();
   }
 
   /**
@@ -501,6 +557,13 @@ export class UndoManager {
     for (const entry of this.#stack) {
       if (entry.data.componentUuid === oldUuid) {
         entry.data.componentUuid = newUuid;
+      }
+      if (entry.data.components) {
+        for (const compEntry of entry.data.components) {
+          if (compEntry.componentUuid === oldUuid) {
+            compEntry.componentUuid = newUuid;
+          }
+        }
       }
     }
   }

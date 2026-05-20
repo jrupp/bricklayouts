@@ -147,6 +147,151 @@ describe('UndoManager', () => {
       expect(mockComp.insertCollisionTree).toHaveBeenCalled();
     });
 
+    it('restores positions of all components for undo-move_group', () => {
+      const mockCompA = {
+        uuid: 'a',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockCompB = {
+        uuid: 'b',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0.3 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        }),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'move_group',
+        data: {
+          layerUuid: '456',
+          components: [
+            { componentUuid: 'a', previousPose: { x: 10, y: 20, angle: 0 } },
+            { componentUuid: 'b', previousPose: { x: 30, y: 40, angle: 0.5 } }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockCompA.deleteCollisionTree).toHaveBeenCalled();
+      expect(mockCompA.closeConnections).toHaveBeenCalled();
+      expect(mockCompA.position.set).toHaveBeenCalledWith(10, 20);
+      expect(mockCompA.sprite.rotation).toBe(0);
+      expect(mockCompA.insertCollisionTree).toHaveBeenCalled();
+      expect(mockCompB.position.set).toHaveBeenCalledWith(30, 40);
+      expect(mockCompB.sprite.rotation).toBe(0.5);
+    });
+
+    it('restores connections after all positions are set for undo-move_group', () => {
+      const openConA = { uuid: 'oc-a' };
+      const openConB = { uuid: 'oc-b' };
+      const mockCompA = {
+        uuid: 'a',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([openConA])
+      };
+      const mockCompB = {
+        uuid: 'b',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([openConB])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        }),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'move_group',
+        data: {
+          layerUuid: '456',
+          components: [
+            { componentUuid: 'a', previousPose: { x: 0, y: 0, angle: 0 } },
+            { componentUuid: 'b', previousPose: { x: 5, y: 5, angle: 0 } }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer.findMatchingConnection).toHaveBeenCalledWith(openConA, true);
+      expect(mockLayer.findMatchingConnection).toHaveBeenCalledWith(openConB, true);
+    });
+
+    it('restores positions and rotations for undo-rotate_group', () => {
+      const mockConnA = { uuid: 'conn-a', updateCircle: jasmine.createSpy('updateCircle') };
+      const mockCompA = {
+        uuid: 'a',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0.5 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        connections: new Map([['conn-a', mockConnA]]),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockCompB = {
+        uuid: 'b',
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 1.2 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        connections: new Map(),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        }),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'rotate_group',
+        data: {
+          layerUuid: '456',
+          components: [
+            { componentUuid: 'a', previousPose: { x: 10, y: 20, angle: 0 } },
+            { componentUuid: 'b', previousPose: { x: 30, y: 40, angle: 0.5 } }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockCompA.position.set).toHaveBeenCalledWith(10, 20);
+      expect(mockCompA.sprite.rotation).toBe(0);
+      expect(mockCompB.position.set).toHaveBeenCalledWith(30, 40);
+      expect(mockCompB.sprite.rotation).toBe(0.5);
+      expect(mockConnA.updateCircle).toHaveBeenCalled();
+    });
+
     it('restores locked state for undo-lock', () => {
       const mockComp = { uuid: '123', locked: true };
       const mockLayer = {
@@ -653,6 +798,46 @@ describe('UndoManager', () => {
       undoManager.undo();
       expect(Component.deserialize).toHaveBeenCalledTimes(3);
       expect(undoManager.length).toBe(0);
+    });
+
+    it('updates componentUuid inside move_group entries when a component is recreated', () => {
+      const comp = makeMockComp('orig');
+      comp.position = { set: jasmine.createSpy('set') };
+      comp.sprite = { rotation: 0 };
+      comp.deleteCollisionTree = jasmine.createSpy('deleteCollisionTree');
+      comp.insertCollisionTree = jasmine.createSpy('insertCollisionTree');
+      comp.closeConnections = jasmine.createSpy('closeConnections');
+      components.set('orig', comp);
+
+      undoManager.record({
+        type: 'move_group',
+        data: {
+          layerUuid: 'l1',
+          components: [
+            { componentUuid: 'orig', previousPose: { x: 0, y: 0, angle: 0 } }
+          ]
+        }
+      });
+      undoManager.record({
+        type: 'edit',
+        data: {
+          componentUuid: 'orig', layerUuid: 'l1',
+          previousState: { pose: {} }, childIndex: 0
+        }
+      });
+
+      undoManager.undo();
+      expect(Component.deserialize).toHaveBeenCalledTimes(1);
+
+      const restoredComp = components.get('restored-1');
+      restoredComp.position = { set: jasmine.createSpy('set') };
+      restoredComp.sprite = { rotation: 0 };
+      restoredComp.deleteCollisionTree = jasmine.createSpy('deleteCollisionTree');
+      restoredComp.insertCollisionTree = jasmine.createSpy('insertCollisionTree');
+      restoredComp.closeConnections = jasmine.createSpy('closeConnections');
+
+      undoManager.undo();
+      expect(restoredComp.position.set).toHaveBeenCalledWith(0, 0);
     });
   });
 });
