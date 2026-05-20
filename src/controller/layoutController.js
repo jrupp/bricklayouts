@@ -3128,10 +3128,30 @@ export class LayoutController {
     }
     const comp = LayoutController.selectedComponent;
     const layer = comp.layer || comp.parent;
-    this.undoManager.record({
-      type: 'lock',
-      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: false }
-    });
+    if (comp instanceof ComponentGroup) {
+      if (comp.isTemporary) {
+        const members = comp.components.map(child => {
+          if (child instanceof ComponentGroup) {
+            return { type: 'group', memberComponentUuid: child.getAllComponents()[0]?.uuid, groupUuid: child.uuid, wasLocked: child.locked };
+          }
+          return { type: 'component', componentUuid: child.uuid, wasLocked: child.locked };
+        });
+        this.undoManager.record({
+          type: 'lock_temp_group',
+          data: { layerUuid: layer?.uuid, members }
+        });
+      } else {
+        this.undoManager.record({
+          type: 'lock_perm_group',
+          data: { groupUuid: comp.uuid, layerUuid: layer?.uuid, memberComponentUuid: comp.getAllComponents()[0]?.uuid, wasLocked: false }
+        });
+      }
+    } else {
+      this.undoManager.record({
+        type: 'lock',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: false }
+      });
+    }
     comp.locked = true;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();
@@ -3147,10 +3167,30 @@ export class LayoutController {
     }
     const comp = LayoutController.selectedComponent;
     const layer = comp.layer || comp.parent;
-    this.undoManager.record({
-      type: 'lock',
-      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: true }
-    });
+    if (comp instanceof ComponentGroup) {
+      if (comp.isTemporary) {
+        const members = comp.components.map(child => {
+          if (child instanceof ComponentGroup) {
+            return { type: 'group', memberComponentUuid: child.getAllComponents()[0]?.uuid, groupUuid: child.uuid, wasLocked: child.locked };
+          }
+          return { type: 'component', componentUuid: child.uuid, wasLocked: child.locked };
+        });
+        this.undoManager.record({
+          type: 'lock_temp_group',
+          data: { layerUuid: layer?.uuid, members }
+        });
+      } else {
+        this.undoManager.record({
+          type: 'lock_perm_group',
+          data: { groupUuid: comp.uuid, layerUuid: layer?.uuid, memberComponentUuid: comp.getAllComponents()[0]?.uuid, wasLocked: true }
+        });
+      }
+    } else {
+      this.undoManager.record({
+        type: 'lock',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: true }
+      });
+    }
     comp.locked = false;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();

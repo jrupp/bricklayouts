@@ -118,6 +118,12 @@ export class UndoManager {
       case 'lock':
         this.#undoLock(entry.data);
         break;
+      case 'lock_perm_group':
+        this.#undoLockPermGroup(entry.data);
+        break;
+      case 'lock_temp_group':
+        this.#undoLockTempGroup(entry.data);
+        break;
       case 'zorder':
         this.#undoZOrder(entry.data);
         break;
@@ -289,6 +295,38 @@ export class UndoManager {
     if (LayoutController.selectedComponent === comp) {
       this.#controller._showSelectionToolbar();
       this.#controller._positionSelectionToolbar();
+    }
+  }
+
+  /**
+   * @param {{groupUuid: String, memberComponentUuid: String, layerUuid: String, wasLocked: Boolean}} data
+   */
+  #undoLockPermGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const group = this.#findGroupByUuid(layer, data.memberComponentUuid, data.groupUuid);
+    if (!group) return;
+    group.locked = data.wasLocked;
+    if (LayoutController.selectedComponent === group) {
+      this.#controller._showSelectionToolbar();
+      this.#controller._positionSelectionToolbar();
+    }
+  }
+
+  /**
+   * @param {{layerUuid: String, members: Array<{type: String, componentUuid: ?String, memberComponentUuid: ?String, groupUuid: ?String, wasLocked: Boolean}>}} data
+   */
+  #undoLockTempGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    for (const member of data.members) {
+      if (member.type === 'group') {
+        const group = this.#findGroupByUuid(layer, member.memberComponentUuid, member.groupUuid);
+        if (group) group.locked = member.wasLocked;
+      } else {
+        const comp = layer.findComponentByUuid(member.componentUuid);
+        if (comp) comp.locked = member.wasLocked;
+      }
     }
   }
 

@@ -162,6 +162,80 @@ describe('UndoManager', () => {
       expect(mockComp.locked).toBe(false);
     });
 
+    it('restores locked state on a permanent group for undo-lock_perm_group', () => {
+      const mockGroup = { uuid: 'g1', locked: true, group: null };
+      const mockComp = { uuid: 'c1', group: mockGroup };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'c1') return mockComp;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'lock_perm_group',
+        data: { groupUuid: 'g1', layerUuid: '456', memberComponentUuid: 'c1', wasLocked: false }
+      });
+      undoManager.undo();
+      expect(mockGroup.locked).toBe(false);
+    });
+
+    it('restores locked state on individual components for undo-lock_temp_group', () => {
+      const mockCompA = { uuid: 'a', locked: true };
+      const mockCompB = { uuid: 'b', locked: true };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'lock_temp_group',
+        data: {
+          layerUuid: '456',
+          members: [
+            { type: 'component', componentUuid: 'a', wasLocked: false },
+            { type: 'component', componentUuid: 'b', wasLocked: true }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockCompA.locked).toBe(false);
+      expect(mockCompB.locked).toBe(true);
+    });
+
+    it('restores locked state on nested permanent group for undo-lock_temp_group', () => {
+      const nestedGroup = { uuid: 'ng1', locked: true, group: null };
+      const nestedComp = { uuid: 'nc1', group: nestedGroup };
+      const mockCompA = { uuid: 'a', locked: true };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'nc1') return nestedComp;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'lock_temp_group',
+        data: {
+          layerUuid: '456',
+          members: [
+            { type: 'component', componentUuid: 'a', wasLocked: false },
+            { type: 'group', memberComponentUuid: 'nc1', groupUuid: 'ng1', wasLocked: false }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockCompA.locked).toBe(false);
+      expect(nestedGroup.locked).toBe(false);
+    });
+
     it('restores child index for undo-zorder', () => {
       const mockComp = { uuid: '123' };
       const mockLayer = {
