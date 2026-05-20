@@ -1,5 +1,6 @@
 import { UndoManager, UNDO_BUFFER_SIZE } from '../../src/controller/undoManager.js';
 import { Component } from '../../src/model/component.js';
+import { ComponentGroup } from '../../src/model/componentGroup.js';
 import { LayoutController } from '../../src/controller/layoutController.js';
 import { LayoutLayer } from '../../src/model/layoutLayer.js';
 
@@ -179,18 +180,85 @@ describe('UndoManager', () => {
     });
 
     it('sets group back to temporary for undo-group', () => {
-      const mockGroup = { uuid: 'g1', isTemporary: false };
+      const mockGroup = { uuid: 'g1', isTemporary: false, group: null };
+      const mockComp = { uuid: 'c1', group: mockGroup };
       const mockLayer = {
-        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.returnValue(mockGroup)
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'c1') return mockComp;
+          return null;
+        })
       };
       mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
 
       undoManager.record({
         type: 'group',
-        data: { groupUuid: 'g1', layerUuid: '456' }
+        data: { groupUuid: 'g1', layerUuid: '456', memberComponentUuid: 'c1' }
       });
       undoManager.undo();
       expect(mockGroup.isTemporary).toBe(true);
+    });
+
+    it('finds group through nested group chain for undo-group', () => {
+      const outerGroup = { uuid: 'outer', isTemporary: false, group: null };
+      const innerGroup = { uuid: 'inner', group: outerGroup };
+      const mockComp = { uuid: 'c1', group: innerGroup };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'c1') return mockComp;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'group',
+        data: { groupUuid: 'outer', layerUuid: '456', memberComponentUuid: 'c1' }
+      });
+      undoManager.undo();
+      expect(outerGroup.isTemporary).toBe(true);
+    });
+
+    it('restores group to permanent for undo-ungroup when group still exists', () => {
+      const mockGroup = { uuid: 'g1', isTemporary: true, group: null };
+      const mockComp = { uuid: 'c1', group: mockGroup };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'c1') return mockComp;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'ungroup',
+        data: { groupUuid: 'g1', layerUuid: '456', componentUuids: ['c1', 'c2'] }
+      });
+      undoManager.undo();
+      expect(mockGroup.isTemporary).toBe(false);
+    });
+
+    it('recreates group from component UUIDs for undo-ungroup when group was destroyed', () => {
+      const mockCompA = { uuid: 'a', group: null, parent: 'layer', connections: new Map() };
+      const mockCompB = { uuid: 'b', group: null, parent: 'layer', connections: new Map() };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'ungroup',
+        data: { groupUuid: 'g1', layerUuid: '456', componentUuids: ['a', 'b'] }
+      });
+      undoManager.undo();
+      expect(LayoutController.selectComponent).toHaveBeenCalled();
+      const selectedGroup = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selectedGroup).toBeInstanceOf(ComponentGroup);
+      expect(selectedGroup.isTemporary).toBe(false);
+      expect(selectedGroup.components.length).toBe(2);
     });
 
     it('restores layer name and opacity for undo-layer_edit', () => {

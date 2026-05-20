@@ -1,4 +1,5 @@
 import { Component } from '../model/component.js';
+import { ComponentGroup } from '../model/componentGroup.js';
 import { LayoutController } from './layoutController.js';
 import { LayoutLayer } from '../model/layoutLayer.js';
 
@@ -304,32 +305,50 @@ export class UndoManager {
   }
 
   /**
-   * @param {{groupUuid: String, layerUuid: String}} data
+   * @param {{groupUuid: String, memberComponentUuid: String, layerUuid: String}} data
    */
   #undoGroup(data) {
     const layer = this.#controller.findLayerByUuid(data.layerUuid);
     if (!layer) return;
-    const comp = layer.findComponentByUuid(data.groupUuid);
-    if (comp && 'isTemporary' in comp) {
-      comp.isTemporary = true;
-      if (LayoutController.selectedComponent === comp) {
-        this.#controller._showSelectionToolbar();
-      }
+    const group = this.#findGroupByUuid(layer, data.memberComponentUuid, data.groupUuid);
+    if (!group) return;
+    group.isTemporary = true;
+    if (LayoutController.selectedComponent === group) {
+      this.#controller._showSelectionToolbar();
+    } else {
+      LayoutController.selectComponent(group);
     }
   }
 
   /**
-   * @param {{groupUuid: String, layerUuid: String}} data
+   * @param {{groupUuid: String, componentUuids: Array<String>, layerUuid: String}} data
    */
   #undoUngroup(data) {
     const layer = this.#controller.findLayerByUuid(data.layerUuid);
     if (!layer) return;
-    const comp = layer.findComponentByUuid(data.groupUuid);
-    if (comp && 'isTemporary' in comp) {
-      comp.isTemporary = false;
-      if (LayoutController.selectedComponent === comp) {
+    const existing = this.#findGroupByUuid(layer, data.componentUuids[0], data.groupUuid);
+    if (existing) {
+      existing.isTemporary = false;
+      if (LayoutController.selectedComponent === existing) {
         this.#controller._showSelectionToolbar();
       }
+      return;
+    }
+    LayoutController.selectComponent(null);
+    const newGroup = new ComponentGroup(false);
+    for (const uuid of data.componentUuids) {
+      const comp = layer.findComponentByUuid(uuid);
+      if (!comp) continue;
+      if (comp.group) {
+        if (!comp.group.group) {
+          newGroup.addComponent(comp.group);
+        }
+      } else {
+        newGroup.addComponent(comp);
+      }
+    }
+    if (newGroup.components.length > 0) {
+      LayoutController.selectComponent(newGroup);
     }
   }
 
@@ -414,6 +433,24 @@ export class UndoManager {
       this.#controller.workspace.setChildIndex(layer, i);
     });
     this.#controller.updateLayerList();
+  }
+
+  /**
+   * Locate a ComponentGroup by traversing upward from a known component.
+   * @param {LayoutLayer} layer
+   * @param {String} componentUuid - UUID of a leaf Component inside the group
+   * @param {String} groupUuid - UUID of the target group
+   * @returns {?ComponentGroup}
+   */
+  #findGroupByUuid(layer, componentUuid, groupUuid) {
+    const comp = layer.findComponentByUuid(componentUuid);
+    if (!comp) return null;
+    let current = comp.group;
+    while (current) {
+      if (current.uuid === groupUuid) return current;
+      current = current.group;
+    }
+    return null;
   }
 
   /**

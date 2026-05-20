@@ -3169,9 +3169,14 @@ export class LayoutController {
       return;
     }
     const layer = selected.layer || selected.parent;
+    const allComponents = selected.getAllComponents();
     this.undoManager.record({
       type: 'group',
-      data: { groupUuid: selected.uuid, layerUuid: layer?.uuid }
+      data: {
+        groupUuid: selected.uuid,
+        layerUuid: layer?.uuid,
+        memberComponentUuid: allComponents[0]?.uuid
+      }
     });
     selected.isTemporary = false;
     this._showSelectionToolbar();
@@ -3187,9 +3192,19 @@ export class LayoutController {
       return;
     }
     const layer = selected.layer || selected.parent;
+    const componentUuids = selected.components.map(child => {
+      if (child instanceof ComponentGroup) {
+        return child.getAllComponents()[0]?.uuid;
+      }
+      return child.uuid;
+    }).filter(Boolean);
     this.undoManager.record({
       type: 'ungroup',
-      data: { groupUuid: selected.uuid, layerUuid: layer?.uuid }
+      data: {
+        groupUuid: selected.uuid,
+        layerUuid: layer?.uuid,
+        componentUuids
+      }
     });
     selected.isTemporary = true;
     this._showSelectionToolbar();
