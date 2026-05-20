@@ -355,18 +355,17 @@ export class UndoManager {
   }
 
   /**
-   * @param {{layerUuid: String, layerName: String, layerOpacity: Number, layerIndex: Number, serializedComponents: ?Array<Object>}} data
+   * @param {{layerUuid: String, layerIndex: Number, serializedLayer: Object}} data
    */
   #undoLayerDelete(data) {
     const layer = new LayoutLayer();
     layer.uuid = data.layerUuid;
-    layer.label = data.layerName;
-    layer.alpha = data.layerOpacity;
+    layer.deserialize(data.serializedLayer);
     const index = Math.min(data.layerIndex, this.#controller.layers.length);
     this.#controller.layers.splice(index, 0, layer);
     this.#controller.workspace.addChildAt(layer, index);
-    if (data.serializedComponents && data.serializedComponents.length > 0) {
-      for (const compData of data.serializedComponents) {
+    if (data.serializedLayer.components) {
+      for (const compData of data.serializedLayer.components) {
         const baseData = this.#controller.trackData.bundles[0].assets.find(
           a => a.alias === compData.type
         );
@@ -376,7 +375,7 @@ export class UndoManager {
           layer.addChild(comp);
         }
       }
-      // Restore connections
+      layer.cleanupGroupDeserialization();
       for (const child of layer.children) {
         if (child instanceof Component) {
           const openConnections = child.getOpenConnections();

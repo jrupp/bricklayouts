@@ -1,6 +1,7 @@
 import { UndoManager, UNDO_BUFFER_SIZE } from '../../src/controller/undoManager.js';
 import { Component } from '../../src/model/component.js';
 import { LayoutController } from '../../src/controller/layoutController.js';
+import { LayoutLayer } from '../../src/model/layoutLayer.js';
 
 describe('UndoManager', () => {
   let undoManager;
@@ -241,6 +242,44 @@ describe('UndoManager', () => {
       undoManager.record({ type: 'add', data: { componentUuid: '2', layerUuid: '456' } });
       undoManager.undo();
       expect(mockController.deleteComponent).toHaveBeenCalledWith(mockComp2);
+    });
+
+    it('restores a deleted layer using deserialize and cleanupGroupDeserialization', () => {
+      const serializedLayer = {
+        name: 'Test Layer',
+        visible: false,
+        opacity: 75,
+        components: [
+          { type: 'straight', pose: { x: 0, y: 0, angle: 0 }, connections: [] }
+        ],
+        groups: [{ uuid: 'g1', components: ['c1', 'c2'] }]
+      };
+
+      const mockBaseData = { alias: 'straight' };
+      const mockComp = {
+        uuid: 'c1',
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+
+      spyOn(LayoutLayer.prototype, 'deserialize').and.stub();
+      spyOn(LayoutLayer.prototype, 'addChild').and.stub();
+      spyOn(LayoutLayer.prototype, 'cleanupGroupDeserialization').and.stub();
+      spyOn(Component, 'deserialize').and.returnValue(mockComp);
+
+      mockController.trackData = { bundles: [{ assets: [mockBaseData] }] };
+      mockController.layers = [{}];
+
+      undoManager.record({
+        type: 'layer_delete',
+        data: { layerUuid: 'l1', layerIndex: 1, serializedLayer }
+      });
+      undoManager.undo();
+
+      expect(LayoutLayer.prototype.deserialize).toHaveBeenCalledWith(serializedLayer);
+      expect(Component.deserialize).toHaveBeenCalledTimes(1);
+      expect(LayoutLayer.prototype.cleanupGroupDeserialization).toHaveBeenCalled();
+      expect(mockController.layers.length).toBe(2);
+      expect(mockController.updateLayerList).toHaveBeenCalled();
     });
   });
 

@@ -3574,20 +3574,12 @@ export class LayoutController {
     console.log(`Delete Layer ${index}`);
     if (this.layers.length > 1) {
       let tempLayer = this.layers[index];
-      const serializedComponents = [];
-      for (const child of tempLayer.children) {
-        if (child instanceof Component) {
-          serializedComponents.push(child.serialize());
-        }
-      }
       this.undoManager.record({
         type: 'layer_delete',
         data: {
           layerUuid: tempLayer.uuid,
-          layerName: tempLayer.label,
-          layerOpacity: tempLayer.alpha,
           layerIndex: index,
-          serializedComponents
+          serializedLayer: tempLayer.serialize()
         }
       });
       this.layers.splice(index, 1);
