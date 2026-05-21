@@ -140,6 +140,9 @@ export class UndoManager {
       case 'zorder':
         this.#undoZOrder(entry.data);
         break;
+      case 'zorder_group':
+        this.#undoZOrderGroup(entry.data);
+        break;
       case 'group':
         this.#undoGroup(entry.data);
         break;
@@ -502,6 +505,21 @@ export class UndoManager {
     if (!comp) return;
     const index = Math.min(data.previousIndex, layer.children.length - 1);
     layer.setChildIndex(comp, Math.max(0, index));
+  }
+
+  /**
+   * @param {{layerUuid: String, components: Array<{componentUuid: String, previousIndex: Number}>}} data
+   */
+  #undoZOrderGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const sorted = [...data.components].sort((a, b) => a.previousIndex - b.previousIndex);
+    for (const entry of sorted) {
+      const comp = layer.findComponentByUuid(entry.componentUuid);
+      if (!comp) continue;
+      const index = Math.min(entry.previousIndex, layer.children.length - 1);
+      layer.setChildIndex(comp, Math.max(0, index));
+    }
   }
 
   /**

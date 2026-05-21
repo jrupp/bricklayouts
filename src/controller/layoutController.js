@@ -2961,16 +2961,24 @@ export class LayoutController {
         return;
       }
       const comp = LayoutController.selectedComponent;
-      const previousIndex = this.currentLayer.children.indexOf(comp);
       if (comp instanceof Component) {
+        const previousIndex = this.currentLayer.children.indexOf(comp);
         this.currentLayer.setChildIndex(comp, this.currentLayer.children.length - 2);
+        this.undoManager.record({
+          type: 'zorder',
+          data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+        });
       } else if (comp instanceof ComponentGroup) {
+        const components = comp.getAllComponents().map(c => ({
+          componentUuid: c.uuid,
+          previousIndex: this.currentLayer.children.indexOf(c)
+        }));
         comp.bringToFront();
+        this.undoManager.record({
+          type: 'zorder_group',
+          data: { layerUuid: this.currentLayer.uuid, components }
+        });
       }
-      this.undoManager.record({
-        type: 'zorder',
-        data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
-      });
     }
   }
 
@@ -2981,16 +2989,24 @@ export class LayoutController {
         return;
       }
       const comp = LayoutController.selectedComponent;
-      const previousIndex = this.currentLayer.children.indexOf(comp);
       if (comp instanceof Component) {
+        const previousIndex = this.currentLayer.children.indexOf(comp);
         this.currentLayer.setChildIndex(comp, 0);
+        this.undoManager.record({
+          type: 'zorder',
+          data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+        });
       } else if (comp instanceof ComponentGroup) {
+        const components = comp.getAllComponents().map(c => ({
+          componentUuid: c.uuid,
+          previousIndex: this.currentLayer.children.indexOf(c)
+        }));
         comp.sendToBack();
+        this.undoManager.record({
+          type: 'zorder_group',
+          data: { layerUuid: this.currentLayer.uuid, components }
+        });
       }
-      this.undoManager.record({
-        type: 'zorder',
-        data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
-      });
     }
   }
 

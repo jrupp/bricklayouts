@@ -538,6 +538,86 @@ describe('UndoManager', () => {
       expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockComp, 1);
     });
 
+    it('restores child indices for all components in undo-zorder_group', () => {
+      const mockCompA = { uuid: 'a' };
+      const mockCompB = { uuid: 'b' };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        }),
+        children: [{}, {}, mockCompA, mockCompB, {}, {}],
+        setChildIndex: jasmine.createSpy('setChildIndex')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'zorder_group',
+        data: {
+          layerUuid: '456',
+          components: [
+            { componentUuid: 'a', previousIndex: 1 },
+            { componentUuid: 'b', previousIndex: 3 }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockCompA, 1);
+      expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockCompB, 3);
+    });
+
+    it('restores group components in ascending index order for undo-zorder_group', () => {
+      const mockCompA = { uuid: 'a' };
+      const mockCompB = { uuid: 'b' };
+      const callOrder = [];
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        }),
+        children: [{}, {}, mockCompA, mockCompB, {}, {}],
+        setChildIndex: jasmine.createSpy('setChildIndex').and.callFake((comp, idx) => {
+          callOrder.push(comp.uuid);
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'zorder_group',
+        data: {
+          layerUuid: '456',
+          components: [
+            { componentUuid: 'b', previousIndex: 5 },
+            { componentUuid: 'a', previousIndex: 2 }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(callOrder).toEqual(['a', 'b']);
+    });
+
+    it('clamps indices to layer bounds for undo-zorder_group', () => {
+      const mockComp = { uuid: 'a' };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.returnValue(mockComp),
+        children: [mockComp, {}],
+        setChildIndex: jasmine.createSpy('setChildIndex')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'zorder_group',
+        data: {
+          layerUuid: '456',
+          components: [{ componentUuid: 'a', previousIndex: 99 }]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockComp, 1);
+    });
+
     it('sets group back to temporary for undo-group', () => {
       const mockGroup = { uuid: 'g1', isTemporary: false, group: null };
       const mockComp = { uuid: 'c1', group: mockGroup };
