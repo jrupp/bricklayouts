@@ -119,6 +119,146 @@ describe('UndoManager', () => {
       expect(mockController.deleteComponent).toHaveBeenCalledWith(mockComp);
     });
 
+    it('destroys permanent group for undo-duplicate_group', () => {
+      const mockGroup = {
+        uuid: 'g1',
+        isTemporary: false,
+        group: null,
+        destroyed: false,
+        destroy: jasmine.createSpy('destroy').and.callFake(function () { this.destroyed = true; }),
+        getAllComponents: () => [mockCompA, mockCompB]
+      };
+      const mockCompA = { uuid: 'a', group: mockGroup, destroyed: false };
+      const mockCompB = { uuid: 'b', group: mockGroup, destroyed: false };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: ['a', 'b'], layerUuid: '456' }
+      });
+      undoManager.undo();
+      expect(mockGroup.destroy).toHaveBeenCalledTimes(1);
+    });
+
+    it('deletes orphaned components for undo-duplicate_group when temp group was destroyed', () => {
+      const mockCompA = { uuid: 'a', group: null, destroyed: false };
+      const mockCompB = { uuid: 'b', group: null, destroyed: false };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: ['a', 'b'], layerUuid: '456' }
+      });
+      undoManager.undo();
+      expect(mockController.deleteComponent).toHaveBeenCalledWith(mockCompA);
+      expect(mockController.deleteComponent).toHaveBeenCalledWith(mockCompB);
+    });
+
+    it('destroys temp group and deletes its components for undo-duplicate_group', () => {
+      const mockCompA = { uuid: 'a', group: null, destroyed: false };
+      const mockCompB = { uuid: 'b', group: null, destroyed: false };
+      const mockGroup = {
+        uuid: 'g1',
+        isTemporary: true,
+        group: null,
+        destroyed: false,
+        destroy: jasmine.createSpy('destroy').and.callFake(function () {
+          this.destroyed = true;
+          mockCompA.group = null;
+          mockCompB.group = null;
+        }),
+        getAllComponents: () => [mockCompA, mockCompB]
+      };
+      mockCompA.group = mockGroup;
+      mockCompB.group = mockGroup;
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          if (uuid === 'b') return mockCompB;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: ['a', 'b'], layerUuid: '456' }
+      });
+      undoManager.undo();
+      expect(mockGroup.destroy).toHaveBeenCalledTimes(1);
+      expect(mockController.deleteComponent).toHaveBeenCalledWith(mockCompA);
+      expect(mockController.deleteComponent).toHaveBeenCalledWith(mockCompB);
+    });
+
+    it('deselects group before destroying for undo-duplicate_group', () => {
+      const mockGroup = {
+        uuid: 'g1',
+        isTemporary: false,
+        group: null,
+        destroyed: false,
+        destroy: jasmine.createSpy('destroy').and.callFake(function () { this.destroyed = true; }),
+        getAllComponents: () => [mockCompA]
+      };
+      const mockCompA = { uuid: 'a', group: mockGroup, destroyed: false };
+      LayoutController.selectedComponent = mockGroup;
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'a') return mockCompA;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: ['a'], layerUuid: '456' }
+      });
+      undoManager.undo();
+      expect(LayoutController.selectComponent).toHaveBeenCalledWith(null);
+      expect(mockGroup.destroy).toHaveBeenCalled();
+    });
+
+    it('traverses to top-level group for undo-duplicate_group with nested groups', () => {
+      const outerGroup = {
+        uuid: 'outer',
+        isTemporary: false,
+        group: null,
+        destroyed: false,
+        destroy: jasmine.createSpy('destroy').and.callFake(function () { this.destroyed = true; }),
+        getAllComponents: () => [mockComp]
+      };
+      const innerGroup = { uuid: 'inner', group: outerGroup };
+      const mockComp = { uuid: 'c1', group: innerGroup, destroyed: false };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'c1') return mockComp;
+          return null;
+        })
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: ['c1'], layerUuid: '456' }
+      });
+      undoManager.undo();
+      expect(outerGroup.destroy).toHaveBeenCalledTimes(1);
+    });
+
     it('restores position for undo-move', () => {
       const mockComp = {
         uuid: '123',

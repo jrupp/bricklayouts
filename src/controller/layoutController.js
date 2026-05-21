@@ -2777,10 +2777,17 @@ export class LayoutController {
       LayoutController.finalizeDraggedComponent(target);
       if (LayoutController.dragIsNewComponent) {
         const layer = target.layer || target.parent;
-        LayoutController.getInstance().undoManager.record({
-          type: LayoutController.dragIsNewComponent,
-          data: { componentUuid: target.uuid, layerUuid: layer?.uuid }
-        });
+        if (target instanceof ComponentGroup) {
+          LayoutController.getInstance().undoManager.record({
+            type: 'duplicate_group',
+            data: { componentUuids: target.getAllComponents().map(c => c.uuid), layerUuid: layer?.uuid }
+          });
+        } else {
+          LayoutController.getInstance().undoManager.record({
+            type: LayoutController.dragIsNewComponent,
+            data: { componentUuid: target.uuid, layerUuid: layer?.uuid }
+          });
+        }
         LayoutController.dragIsNewComponent = null;
         LayoutController.preDragPose = null;
         LayoutController.preDragComponentPoses = null;
@@ -3120,10 +3127,17 @@ export class LayoutController {
         this.currentLayer.findMatchingConnection(openCon, true);
       });
     }
-    this.undoManager.record({
-      type: 'duplicate',
-      data: { componentUuid: clone.uuid, layerUuid: this.currentLayer.uuid }
-    });
+    if (clone instanceof ComponentGroup) {
+      this.undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: clone.getAllComponents().map(c => c.uuid), layerUuid: this.currentLayer.uuid }
+      });
+    } else {
+      this.undoManager.record({
+        type: 'duplicate',
+        data: { componentUuid: clone.uuid, layerUuid: this.currentLayer.uuid }
+      });
+    }
     LayoutController.selectComponent(clone);
   }
 

@@ -104,6 +104,9 @@ export class UndoManager {
       case 'duplicate':
         this.#undoAdd(entry.data);
         break;
+      case 'duplicate_group':
+        this.#undoDuplicateGroup(entry.data);
+        break;
       case 'delete':
         this.#undoDelete(entry.data);
         break;
@@ -171,6 +174,53 @@ export class UndoManager {
       LayoutController.selectComponent(nextComp);
     }
     this.#controller.deleteComponent(comp);
+  }
+
+  /**
+   * @param {{componentUuids: Array<String>, layerUuid: String}} data
+   */
+  #undoDuplicateGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const destroyedGroups = new Set();
+    const componentsToDelete = [];
+    for (const uuid of data.componentUuids) {
+      const comp = layer.findComponentByUuid(uuid);
+      if (!comp || comp.destroyed) continue;
+      let topGroup = null;
+      let current = comp.group;
+      while (current) {
+        topGroup = current;
+        current = current.group;
+      }
+      if (topGroup && !destroyedGroups.has(topGroup.uuid)) {
+        destroyedGroups.add(topGroup.uuid);
+        if (!topGroup.isTemporary) {
+          if (LayoutController.selectedComponent === topGroup) {
+            LayoutController.selectComponent(null);
+          }
+          topGroup.destroy();
+        } else {
+          const groupComps = topGroup.getAllComponents();
+          if (LayoutController.selectedComponent === topGroup) {
+            LayoutController.selectComponent(null);
+          }
+          if (!topGroup.destroyed) {
+            topGroup.destroy();
+          }
+          componentsToDelete.push(...groupComps);
+        }
+      } else if (!topGroup) {
+        componentsToDelete.push(comp);
+      }
+    }
+    for (const comp of componentsToDelete) {
+      if (comp.destroyed) continue;
+      if (LayoutController.selectedComponent === comp) {
+        LayoutController.selectComponent(null);
+      }
+      this.#controller.deleteComponent(comp);
+    }
   }
 
   /**
