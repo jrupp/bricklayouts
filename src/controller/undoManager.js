@@ -1,5 +1,6 @@
 import { Component } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
+import { Connection } from '../model/connection.js';
 import { LayoutController } from './layoutController.js';
 import { LayoutLayer } from '../model/layoutLayer.js';
 
@@ -106,6 +107,9 @@ export class UndoManager {
       case 'delete':
         this.#undoDelete(entry.data);
         break;
+      case 'delete_group':
+        this.#undoDeleteGroup(entry.data);
+        break;
       case 'move':
         this.#undoMove(entry.data);
         break;
@@ -190,6 +194,51 @@ export class UndoManager {
     openConnections.forEach((openCon) => {
       layer.findMatchingConnection(openCon, true);
     });
+  }
+
+  #undoDeleteGroup(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    layer._reconstructGroups(data.groups);
+    for (const entry of data.components) {
+      for (const conn of entry.serialized.connections || []) {
+        Connection.connectionDB.delete(conn.uuid);
+      }
+    }
+    const restored = [];
+    for (const entry of data.components) {
+      const baseData = this.#controller.trackData.bundles[0].assets.find(
+        a => a.alias === entry.baseDataAlias
+      );
+      if (!baseData) continue;
+      const comp = Component.deserialize(baseData, entry.serialized, layer);
+      if (!comp) continue;
+      layer.addChild(comp);
+      restored.push({ comp, childIndex: entry.childIndex });
+    }
+    restored.sort((a, b) => a.childIndex - b.childIndex);
+    for (const { comp, childIndex } of restored) {
+      const index = Math.min(childIndex, layer.children.length - 1);
+      if (index >= 0 && index < layer.children.length - 1) {
+        layer.setChildIndex(comp, index);
+      }
+    }
+    for (const { comp } of restored) {
+      const openConnections = comp.getOpenConnections();
+      openConnections.forEach((openCon) => {
+        layer.findMatchingConnection(openCon, true);
+      });
+    }
+    const groupMap = layer.getGroupLookupMap();
+    if (!groupMap) return;
+    const topGroupUuid = data.groups[0]?.uuid;
+    const topGroup = groupMap.get(topGroupUuid);
+    layer.cleanupGroupDeserialization();
+    if (!topGroup) return;
+    if (data.temporary) {
+      topGroup.isTemporary = true;
+    }
+    LayoutController.selectComponent(topGroup);
   }
 
   /**
@@ -471,6 +520,7 @@ export class UndoManager {
    * @param {{layerUuid: String, layerIndex: Number, serializedLayer: Object}} data
    */
   #undoLayerDelete(data) {
+    Connection.connectionDB.clear();
     const layer = new LayoutLayer();
     layer.uuid = data.layerUuid;
     layer.deserialize(data.serializedLayer);

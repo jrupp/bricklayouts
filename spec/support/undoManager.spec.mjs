@@ -480,6 +480,210 @@ describe('UndoManager', () => {
       expect(selectedGroup.components.length).toBe(2);
     });
 
+    it('restores a deleted permanent group with components via undo-delete_group', () => {
+      const mockBaseData = { alias: 'straight' };
+      const mockComp = {
+        uuid: 'c1',
+        group: null,
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      spyOn(Component, 'deserialize').and.returnValue(mockComp);
+      const mockLayer = {
+        children: [{}, {}],
+        addChild: jasmine.createSpy('addChild'),
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection'),
+        _reconstructGroups: jasmine.createSpy('_reconstructGroups'),
+        getGroupLookupMap: jasmine.createSpy('getGroupLookupMap').and.callFake(() => {
+          const topGroup = new ComponentGroup(false);
+          topGroup.uuid = 'g1';
+          topGroup.parent = mockLayer;
+          return new Map([['g1', topGroup]]);
+        }),
+        cleanupGroupDeserialization: jasmine.createSpy('cleanupGroupDeserialization')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+      mockController.trackData = { bundles: [{ assets: [mockBaseData] }] };
+
+      undoManager.record({
+        type: 'delete_group',
+        data: {
+          layerUuid: 'l1',
+          temporary: false,
+          parentGroupUuid: null,
+          components: [
+            { baseDataAlias: 'straight', serialized: { pose: {} }, childIndex: 1 }
+          ],
+          groups: [{ uuid: 'g1' }]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer._reconstructGroups).toHaveBeenCalledWith([{ uuid: 'g1' }]);
+      expect(Component.deserialize).toHaveBeenCalledTimes(1);
+      expect(mockLayer.addChild).toHaveBeenCalledWith(mockComp);
+      expect(LayoutController.selectComponent).toHaveBeenCalled();
+      const selected = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selected).toBeInstanceOf(ComponentGroup);
+      expect(selected.isTemporary).toBe(false);
+    });
+
+    it('restores a deleted temporary group and marks it temporary via undo-delete_group', () => {
+      const mockBaseData = { alias: 'curve' };
+      const mockComp = {
+        uuid: 'c1',
+        group: null,
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      spyOn(Component, 'deserialize').and.returnValue(mockComp);
+      const mockLayer = {
+        children: [],
+        addChild: jasmine.createSpy('addChild'),
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection'),
+        _reconstructGroups: jasmine.createSpy('_reconstructGroups'),
+        getGroupLookupMap: jasmine.createSpy('getGroupLookupMap').and.callFake(() => {
+          const topGroup = new ComponentGroup(false);
+          topGroup.uuid = 'g2';
+          topGroup.parent = mockLayer;
+          return new Map([['g2', topGroup]]);
+        }),
+        cleanupGroupDeserialization: jasmine.createSpy('cleanupGroupDeserialization')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+      mockController.trackData = { bundles: [{ assets: [mockBaseData] }] };
+
+      undoManager.record({
+        type: 'delete_group',
+        data: {
+          layerUuid: 'l1',
+          temporary: true,
+          parentGroupUuid: null,
+          components: [
+            { baseDataAlias: 'curve', serialized: { pose: {} }, childIndex: 0 }
+          ],
+          groups: [{ uuid: 'g2' }]
+        }
+      });
+      undoManager.undo();
+      const selected = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selected).toBeInstanceOf(ComponentGroup);
+      expect(selected.isTemporary).toBe(true);
+    });
+
+    it('restores a deleted group with nested groups and multiple components via undo-delete_group', () => {
+      const mockBaseData1 = { alias: 'straight' };
+      const mockBaseData2 = { alias: 'curve' };
+      let deserializeCount = 0;
+      const mockComps = [];
+      spyOn(Component, 'deserialize').and.callFake(() => {
+        const comp = {
+          uuid: `c${deserializeCount}`,
+          group: null,
+          getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+        };
+        deserializeCount++;
+        mockComps.push(comp);
+        return comp;
+      });
+      const mockLayer = {
+        children: [{}, {}, {}],
+        addChild: jasmine.createSpy('addChild'),
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection'),
+        _reconstructGroups: jasmine.createSpy('_reconstructGroups'),
+        getGroupLookupMap: jasmine.createSpy('getGroupLookupMap').and.callFake(() => {
+          const outerGroup = new ComponentGroup(false);
+          outerGroup.uuid = 'outer';
+          outerGroup.parent = mockLayer;
+          const innerGroup = new ComponentGroup(false);
+          innerGroup.uuid = 'inner';
+          innerGroup.parent = mockLayer;
+          innerGroup.group = outerGroup;
+          return new Map([['outer', outerGroup], ['inner', innerGroup]]);
+        }),
+        cleanupGroupDeserialization: jasmine.createSpy('cleanupGroupDeserialization')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+      mockController.trackData = { bundles: [{ assets: [mockBaseData1, mockBaseData2] }] };
+
+      undoManager.record({
+        type: 'delete_group',
+        data: {
+          layerUuid: 'l1',
+          temporary: false,
+          parentGroupUuid: null,
+          components: [
+            { baseDataAlias: 'straight', serialized: { pose: {}, group: 'outer' }, childIndex: 0 },
+            { baseDataAlias: 'curve', serialized: { pose: {}, group: 'inner' }, childIndex: 2 },
+            { baseDataAlias: 'straight', serialized: { pose: {}, group: 'inner' }, childIndex: 1 }
+          ],
+          groups: [
+            { uuid: 'outer' },
+            { uuid: 'inner', group: 'outer', locked: 1 }
+          ]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer._reconstructGroups).toHaveBeenCalledWith([
+        { uuid: 'outer' },
+        { uuid: 'inner', group: 'outer', locked: 1 }
+      ]);
+      expect(Component.deserialize).toHaveBeenCalledTimes(3);
+      expect(mockLayer.addChild).toHaveBeenCalledTimes(3);
+      const selected = LayoutController.selectComponent.calls.mostRecent().args[0];
+      expect(selected).toBeInstanceOf(ComponentGroup);
+      expect(selected.uuid).toBe('outer');
+    });
+
+    it('restores z-ordering when undoing a group delete', () => {
+      const mockBaseData = { alias: 'straight' };
+      const mockComps = [];
+      spyOn(Component, 'deserialize').and.callFake(() => {
+        const comp = {
+          uuid: `c${mockComps.length}`,
+          group: null,
+          getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+        };
+        mockComps.push(comp);
+        return comp;
+      });
+      const mockLayer = {
+        children: [{}, {}, {}, {}, {}],
+        addChild: jasmine.createSpy('addChild').and.callFake(() => {
+          mockLayer.children.push({});
+        }),
+        setChildIndex: jasmine.createSpy('setChildIndex'),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection'),
+        _reconstructGroups: jasmine.createSpy('_reconstructGroups'),
+        getGroupLookupMap: jasmine.createSpy('getGroupLookupMap').and.callFake(() => {
+          const group = new ComponentGroup(false);
+          group.uuid = 'g1';
+          group.parent = mockLayer;
+          return new Map([['g1', group]]);
+        }),
+        cleanupGroupDeserialization: jasmine.createSpy('cleanupGroupDeserialization')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+      mockController.trackData = { bundles: [{ assets: [mockBaseData] }] };
+
+      undoManager.record({
+        type: 'delete_group',
+        data: {
+          layerUuid: 'l1',
+          temporary: false,
+          parentGroupUuid: null,
+          components: [
+            { baseDataAlias: 'straight', serialized: { pose: {} }, childIndex: 1 },
+            { baseDataAlias: 'straight', serialized: { pose: {} }, childIndex: 3 }
+          ],
+          groups: [{ uuid: 'g1' }]
+        }
+      });
+      undoManager.undo();
+      expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockComps[0], 1);
+      expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockComps[1], 3);
+    });
+
     it('restores layer name and opacity for undo-layer_edit', () => {
       const mockLayer = {
         uuid: 'l1',

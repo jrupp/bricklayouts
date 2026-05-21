@@ -3018,6 +3018,10 @@ export class LayoutController {
     }
     const layer = component.layer || component.parent;
     const layerUuid = layer?.uuid;
+    if (component instanceof ComponentGroup) {
+      this.#deleteComponentGroup(component, layer, layerUuid);
+      return;
+    }
     const childIndex = layer ? layer.children.indexOf(component) : -1;
     const serialized = component.serialize();
     const baseDataAlias = component.baseData.alias;
@@ -3028,15 +3032,51 @@ export class LayoutController {
     if (this.copiedComponent === component) {
       this.copiedComponent = null;
     }
-    if (component instanceof ComponentGroup && component.isTemporary) {
-      component.isTemporary = false;
-    }
     component.destroy();
     this.undoManager.record({
       type: 'delete',
       data: { serialized, baseDataAlias, childIndex, layerUuid }
     });
     component = null;
+  }
+
+  #deleteComponentGroup(component, layer, layerUuid) {
+    const wasTemporary = component.isTemporary;
+    if (wasTemporary) {
+      component.isTemporary = false;
+    }
+    const allComponents = component.getAllComponents();
+    const components = allComponents.map(comp => ({
+      baseDataAlias: comp.baseData.alias,
+      serialized: comp.serialize(),
+      childIndex: layer ? layer.children.indexOf(comp) : -1
+    }));
+    const groups = [];
+    const collectGroups = (group) => {
+      groups.push(group.serialize());
+      for (const child of group.components) {
+        if (child instanceof ComponentGroup) {
+          collectGroups(child);
+        }
+      }
+    };
+    collectGroups(component);
+    const parentGroupUuid = groups[0].group || null;
+    delete groups[0].group;
+    if (LayoutController.selectedComponent === component) {
+      LayoutController.selectedComponent = null;
+      this._hideSelectionToolbar();
+    }
+    if (this.copiedComponent === component) {
+      this.copiedComponent = null;
+    }
+    this.undoManager.suppress();
+    component.destroy();
+    this.undoManager.unsuppress();
+    this.undoManager.record({
+      type: 'delete_group',
+      data: { layerUuid, temporary: wasTemporary, parentGroupUuid, components, groups }
+    });
   }
   
   deleteSelectedComponent() {
