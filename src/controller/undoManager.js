@@ -319,11 +319,15 @@ export class UndoManager {
       }
     } else {
       comp.deleteCollisionTree();
+      comp.closeConnections();
       comp.position.set(data.previousPose.x, data.previousPose.y);
       comp.sprite.rotation = data.previousPose.angle;
       comp.insertCollisionTree();
       comp.connections.forEach((connection) => {
         connection.updateCircle();
+        if (!connection.otherConnection) {
+          layer.findMatchingConnection(connection, true);
+        }
       });
       if (LayoutController.selectedComponent === comp) {
         this.#controller._positionSelectionToolbar();
@@ -348,6 +352,9 @@ export class UndoManager {
       comp.insertCollisionTree();
       comp.connections.forEach((connection) => {
         connection.updateCircle();
+        if (!connection.otherConnection) {
+          layer.findMatchingConnection(connection, true);
+        }
       });
       allOpenConnections.push(...comp.getOpenConnections());
     }

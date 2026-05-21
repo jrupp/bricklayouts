@@ -904,6 +904,7 @@ describe('UndoManager', () => {
       comp.sprite = { rotation: 0 };
       comp.deleteCollisionTree = jasmine.createSpy('deleteCollisionTree');
       comp.insertCollisionTree = jasmine.createSpy('insertCollisionTree');
+      comp.closeConnections = jasmine.createSpy('closeConnections');
       comp.connections = [];
       components.set('orig', comp);
 
