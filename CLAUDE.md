@@ -16,7 +16,7 @@ npm start            # starts local dev server
 CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-- ~851 specs, completes in ~6-9 seconds
+- ~902 specs, completes in ~6-9 seconds
 - A WebGL patch is applied during CI for PixiJS v8 headless Chrome support
 
 ## Code style
@@ -48,3 +48,14 @@ PixiJS v8 (rendering), Jasmine (testing), Tabulator (tables), RBush (spatial ind
 - Consider browser compatibility: desktop Chrome/Firefox/Safari/Edge, mobile Safari (iOS), mobile Chrome (iOS/Android)
 - The Visual Viewport API handles iOS Chrome rotation — see `layoutController.js` `initWindowEvents()`
 - API Gateway Cognito authorizer expects ID tokens, not access tokens
+
+## Undo system
+
+- `src/controller/undoManager.js` manages an undo buffer using the Command Pattern
+- `UNDO_BUFFER_SIZE` (module export, default 3) controls the buffer depth
+- When adding new operations that modify the layout (add/remove/edit components, modify layers), record an undo entry via `this.undoManager.record({ type, data })`
+- Undo entries store minimal inverse data, not full snapshots — each entry references components/layers by UUID
+- Use `suppress()`/`unsuppress()` around bulk automated operations (imports, resets) that should not be undoable
+- The `#isUndoing` flag automatically prevents re-recording during undo execution
+- Hotkey: Ctrl+Z / Cmd+Z (no redo)
+- No entries are recorded when `LayoutController.readOnly` is true

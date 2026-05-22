@@ -10521,4 +10521,35 @@ describe("LayoutController", function() {
             });
         });
     });
+    describe("UndoManager", function() {
+        it("correctly undoes zOrder changes", function() {
+            /** @type {LayoutController} */
+            let layoutController = window.layoutController;
+            layoutController.reset();
+            let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "railStraight9V");
+            let baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias === "baseplate32x32");
+            layoutController.addComponent(baseplateData);
+            LayoutController.selectComponent();
+            layoutController.addComponent(trackData);
+            layoutController.addComponent(trackData);
+            let baseplate = layoutController.currentLayer.children[0];
+            let track1 = layoutController.currentLayer.children[1];
+            let track2 = layoutController.currentLayer.children[2];
+            expect(baseplate.baseData.alias).toBe("baseplate32x32");
+            expect(track1.baseData.alias).toBe("railStraight9V");
+            expect(track2.baseData.alias).toBe("railStraight9V");
+            expect(layoutController.currentLayer.children[0].uuid).toBe(baseplate.uuid);
+            expect(layoutController.currentLayer.children[1].uuid).toBe(track1.uuid);
+            expect(layoutController.currentLayer.children[2].uuid).toBe(track2.uuid);
+            layoutController.selectConnected();
+            layoutController.sendSelectedComponentToBack();
+            expect(layoutController.currentLayer.children[0].uuid).toBe(track1.uuid);
+            expect(layoutController.currentLayer.children[1].uuid).toBe(track2.uuid);
+            expect(layoutController.currentLayer.children[2].uuid).toBe(baseplate.uuid);
+            layoutController.undoManager.undo();
+            expect(layoutController.currentLayer.children[0].uuid).toBe(baseplate.uuid);
+            expect(layoutController.currentLayer.children[1].uuid).toBe(track1.uuid);
+            expect(layoutController.currentLayer.children[2].uuid).toBe(track2.uuid);
+        });
+    });
 });

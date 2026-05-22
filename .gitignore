@@ -4,3 +4,4 @@ node_modules
 src/cloud
 spec/cloud
 .cloud-private
+.kiro/specs
