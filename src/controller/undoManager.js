@@ -513,7 +513,7 @@ export class UndoManager {
   #undoZOrderGroup(data) {
     const layer = this.#controller.findLayerByUuid(data.layerUuid);
     if (!layer) return;
-    const sorted = [...data.components].sort((a, b) => a.previousIndex - b.previousIndex);
+    const sorted = [...data.components].sort((a, b) => b.previousIndex - a.previousIndex);
     for (const entry of sorted) {
       const comp = layer.findComponentByUuid(entry.componentUuid);
       if (!comp) continue;

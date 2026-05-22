@@ -567,7 +567,7 @@ describe('UndoManager', () => {
       expect(mockLayer.setChildIndex).toHaveBeenCalledWith(mockCompB, 3);
     });
 
-    it('restores group components in ascending index order for undo-zorder_group', () => {
+    it('restores group components in descending index order for undo-zorder_group', () => {
       const mockCompA = { uuid: 'a' };
       const mockCompB = { uuid: 'b' };
       const callOrder = [];
@@ -595,7 +595,7 @@ describe('UndoManager', () => {
         }
       });
       undoManager.undo();
-      expect(callOrder).toEqual(['a', 'b']);
+      expect(callOrder).toEqual(['b', 'a']);
     });
 
     it('clamps indices to layer bounds for undo-zorder_group', () => {
