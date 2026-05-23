@@ -211,6 +211,7 @@ canvas {
 #accountMenuButton,
 #fileOpenDialog,
 #deleteLayoutConfirmDialog,
+#makePublicConfirmDialog,
 #renameLayoutDialog,
 #profileModal,
 #authenticationModal,
@@ -275,6 +276,7 @@ canvas {
 [data-dark-mode=true] #accountMenuButton,
 [data-dark-mode=true] #fileOpenDialog,
 [data-dark-mode=true] #deleteLayoutConfirmDialog,
+[data-dark-mode=true] #makePublicConfirmDialog,
 [data-dark-mode=true] #renameLayoutDialog,
 [data-dark-mode=true] #profileModal,
 [data-dark-mode=true] #authenticationModal,
@@ -497,7 +499,7 @@ canvas {
 	z-index: 1099;
 }
 
-.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog) {
+.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog, + #makePublicConfirmDialog) {
 	z-index: 1101;
 }
 
@@ -544,10 +546,12 @@ canvas {
 	transition: all var(--speed2), background-color 0s;
 }
 
+#makeLayoutPublic,
 #copyLayoutLink {
 	display: none;
 }
 
+#fileOpenMenu.subscriber:not(.public) #makeLayoutPublic,
 #fileOpenMenu.public #copyLayoutLink {
 	display: flex;
 }
@@ -564,6 +568,7 @@ canvas {
 
 #renameLayoutDialog,
 #deleteLayoutConfirmDialog,
+#makePublicConfirmDialog,
 #portalRedirectConfirmDialog {
 	z-index: 1102;
 	transform: translate(-50%, 100%);
