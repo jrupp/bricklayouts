@@ -574,6 +574,17 @@ canvas {
 	transform: translate(-50%, 100%);
 }
 
+#makePublicConfirmDialog {
+	max-inline-size: 100%;
+	inline-size: 38rem;
+}
+
+.click-to-copy,
+.click-to-copy > input,
+.click-to-copy > i {
+	cursor: pointer !important;
+}
+
 .cloudFileItem {
 	cursor: pointer;
 	padding: 0.5rem 1rem;
