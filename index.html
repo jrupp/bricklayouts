@@ -20,8 +20,16 @@
     <link rel="icon" type="image/png" sizes="32x32" href="https://app.bricklayouts.com/img/appIcon-32.png">
     <link rel="icon" type="image/png" sizes="256x256" href="https://app.bricklayouts.com/img/appIcon-256.png">
     <link rel="icon" type="image/x-icon" sizes="48x48" href="https://app.bricklayouts.com/favicon.ico">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="img/appIcon-256.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="BrickLayouts">
     <link rel="stylesheet" href="browserReset.css">
-    <script defer file-types="json" data-domain="bricklayouts.com" src="https://plausible.io/js/script.file-downloads.js"></script>
+    <script async src="https://plausible.io/js/pa-fMecMiuopa1gV8cZrd5pJ.js"></script>
+    <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+    </script>
     <script src="src/slip.js"></script>
     <script src="src/rbush.min.js"></script>
     <link href="beer.min.css" rel="stylesheet">
@@ -229,7 +237,7 @@
                           <span class="extra-text large-line left-padding underline" id="subscriptionProAnnualNote"></span>
                           <span class="bottom no-space tooltip">billed annually</span>
                         </div>
-                        <button class="extra responsive primary-container small-round top-margin" style="font-size: 2.25rem;" id="subscriptionProSubscribeBtn">Upgrade</button>
+                        <button class="extra responsive primary-container small-round top-margin plausible-event-name=Upgrade" style="font-size: 2.25rem;" id="subscriptionProSubscribeBtn">Upgrade</button>
                         <hr class="small-margin">
                         <ul class="no-margin no-padding extra-text" style="list-style: none;">
                             <li class="small-padding middle-align"><i class="large">check</i> Unlimited cloud layouts</li>
@@ -241,7 +249,7 @@
                 </div>
                 <!-- Pricing page link -->
                 <nav class="center-align small-padding no-margin">
-                    <a href="https://www.bricklayouts.com/pricing" target="_blank" rel="noopener" class="link extra-text">
+                    <a href="https://www.bricklayouts.com/pricing" target="_blank" rel="noopener" class="link extra-text plausible-event-name=Plan+FAQs">
                         View full plan details & FAQ
                         <i class="small">open_in_new</i>
                     </a>
