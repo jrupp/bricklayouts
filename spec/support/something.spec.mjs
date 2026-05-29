@@ -463,6 +463,7 @@ describe("LayoutController", function() {
         it("resets the layout", function() {
             /** @type {LayoutController} */
             let layoutController = window.layoutController;
+            LayoutController.selectedComponent = null;
             let trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
             expect(trackData).toBeDefined();
             layoutController.addComponent(trackData);
