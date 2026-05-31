@@ -6,6 +6,10 @@
 	--component-active: rgb(100, 100, 100);
 	--canvas-bg: white;
 	--toolbar-item-border: #c0c0c0;
+	--slide-ease: cubic-bezier(.4,-0.3,.6,1.3);
+/*   --slide-ease: cubic-bezier(.8,-0.3,.2,1.3); */
+    --easing: var(--slide-ease);
+	--speed: 0.5s;
 }
 
 :root[data-dark-mode=true] {
@@ -159,21 +163,6 @@ canvas {
 
 #exportloading.hidden {
 	display: none;
-}
-
-#darkMode-container {
-	position: fixed;
-	top: 10px;
-	right: 10px;
-	z-index: 1000;
-}
-
-#darkMode-container *,
-#darkMode-container *:after,
-#darkMode-container *:before {
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	box-sizing: border-box;
 }
 
 #componentMenu {
@@ -1182,24 +1171,6 @@ button:active {
   color: var(--color);
 }
 
-#darkMode-container button {
-	block-size: 100%;
-	margin: 0;
-}
-
-#darktoggle:after {
-	opacity: 1;
-}
-
-#darktoggle:is(:focus-visible, :hover):after {
-	opacity: 1;
-	background-size: 100%;
-}
-
-#darkMode-container button:active {
-	opacity: 1;
-}
-
 .toolbarItem[disabled] {
 	opacity: 0.5;
 }
@@ -1270,10 +1241,6 @@ i + span.label {
 @media (hover:hover) {
 	.componentBrowser>button:hover {
 		background: var(--component-hover);
-		opacity: 1;
-	}
-
-	#darkMode-container button:hover {
 		opacity: 1;
 	}
 }
@@ -1443,12 +1410,6 @@ i + span.label {
 	gap: 0.5rem;
 }
 
-#darkMode-container {
-	position: static;
-	top: auto;
-	right: auto;
-}
-
 #accountMenu-container {
 	position: relative;
 }
@@ -1457,7 +1418,7 @@ i + span.label {
 	cursor: pointer;
 }
 
-#accountMenuButton i {
+#accountMenuButton>i {
 	--_size: 2.5rem;
 }
 
@@ -1485,7 +1446,7 @@ i + span.label {
 	background: var(--surface-container-high);
 }
 
-#accountDropdownMenu li i {
+#accountDropdownMenu li>i {
 	--_size: 2rem;
 	color: var(--on-surface-variant);
 }

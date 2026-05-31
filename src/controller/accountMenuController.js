@@ -112,6 +112,16 @@ class AccountMenuController {
     if (!this.menuElement) {
       return;
     }
+    let currentDarkMode = document.documentElement.dataset.darkMode;
+    let darkModeItem = `
+        <li id="menuDarkMode" title="Toggle dark mode">
+          <i>dark_mode</i>Dark Mode
+          <label class="switch icon" style="pointer-events: none;">
+            <input type="checkbox" id="darkModeToggle" ${currentDarkMode === 'true' ? 'checked' : ''}>
+            <span><i>close</i><i>done</i></span>
+          </label>
+        </li>
+    `;
 
     this.menuElement.innerHTML = '';
 
@@ -120,6 +130,8 @@ class AccountMenuController {
         <li id="menuProfile" title="View and edit your profile" data-ui="#accountDropdownMenu">
           <i>person</i>Profile
         </li>
+        ${darkModeItem}
+        <hr>
         <li id="menuLogout" title="Sign out of your account" data-ui="#accountDropdownMenu">
           <i>logout</i>
           <div>Logout</div>
@@ -135,6 +147,8 @@ class AccountMenuController {
           <i>person_add</i>
           <div>Sign up</div>
         </li>
+        <hr>
+        ${darkModeItem}
       `;
     }
 
@@ -149,6 +163,7 @@ class AccountMenuController {
     const signupItem = document.getElementById('menuSignup');
     const profileItem = document.getElementById('menuProfile');
     const logoutItem = document.getElementById('menuLogout');
+    const darkModeItem = document.getElementById('menuDarkMode');
 
     if (loginItem) {
       loginItem.addEventListener('click', () => this.handleLogin());
@@ -164,6 +179,10 @@ class AccountMenuController {
 
     if (logoutItem) {
       logoutItem.addEventListener('click', () => this.handleLogout());
+    }
+
+    if (darkModeItem) {
+      darkModeItem.addEventListener('click', () => this.handleDarkModeToggle());
     }
   }
 
@@ -194,6 +213,18 @@ class AccountMenuController {
   async _getAuthModal() {
     const module = await this._getAuthModalModule();
     return module.AuthenticationModal.getInstance(this.authManager);
+  }
+
+  /**
+   * Handle dark mode toggle - update data attribute, localStorage, and checkbox state
+   */
+  async handleDarkModeToggle() {
+    const dark = document.documentElement.dataset.darkMode = (document.documentElement.dataset.darkMode === 'false');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    const darkToggleInput = document.getElementById('darkModeToggle');
+    if (darkToggleInput) {
+      darkToggleInput.checked = dark;
+    }
   }
 
   /**
