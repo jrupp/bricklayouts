@@ -1,0 +1,23 @@
+{
+  "name": "BrickLayouts",
+  "short_name": "BrickLayouts",
+  "description": "A web-based tool for designing layouts and displays with LEGO elements.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#93bee2",
+  "icons": [
+    {
+      "src": "img/appIcon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/appIcon.png",
+      "sizes": "1200x1200",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

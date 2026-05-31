@@ -6,6 +6,10 @@
 	--component-active: rgb(100, 100, 100);
 	--canvas-bg: white;
 	--toolbar-item-border: #c0c0c0;
+	--slide-ease: cubic-bezier(.4,-0.3,.6,1.3);
+/*   --slide-ease: cubic-bezier(.8,-0.3,.2,1.3); */
+    --easing: var(--slide-ease);
+	--speed: 0.5s;
 }
 
 :root[data-dark-mode=true] {
@@ -161,21 +165,6 @@ canvas {
 	display: none;
 }
 
-#darkMode-container {
-	position: fixed;
-	top: 10px;
-	right: 10px;
-	z-index: 1000;
-}
-
-#darkMode-container *,
-#darkMode-container *:after,
-#darkMode-container *:before {
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	box-sizing: border-box;
-}
-
 #componentMenu {
 	position: fixed;
 	/* top: calc(5rem + 20px); */
@@ -200,6 +189,7 @@ canvas {
 #mobileLayerEditor,
 #mobileMenu,
 #newCustomComponentDialog,
+#structureColorDialog,
 #partInventoryDialog,
 #selectionToolbar,
 #exportloading,
@@ -210,11 +200,13 @@ canvas {
 #accountMenuButton,
 #fileOpenDialog,
 #deleteLayoutConfirmDialog,
+#makePublicConfirmDialog,
 #renameLayoutDialog,
 #profileModal,
 #authenticationModal,
 #buttonLayoutName,
 #fileOpenMenu,
+#portalRedirectConfirmDialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -262,6 +254,7 @@ canvas {
 [data-dark-mode=true] #mobileLayerEditor,
 [data-dark-mode=true] #mobileMenu,
 [data-dark-mode=true] #newCustomComponentDialog,
+[data-dark-mode=true] #structureColorDialog,
 [data-dark-mode=true] #partInventoryDialog,
 [data-dark-mode=true] #selectionToolbar,
 [data-dark-mode=true] #exportloading,
@@ -272,11 +265,13 @@ canvas {
 [data-dark-mode=true] #accountMenuButton,
 [data-dark-mode=true] #fileOpenDialog,
 [data-dark-mode=true] #deleteLayoutConfirmDialog,
+[data-dark-mode=true] #makePublicConfirmDialog,
 [data-dark-mode=true] #renameLayoutDialog,
 [data-dark-mode=true] #profileModal,
 [data-dark-mode=true] #authenticationModal,
 [data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] #fileOpenMenu,
+[data-dark-mode=true] #portalRedirectConfirmDialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -493,7 +488,7 @@ canvas {
 	z-index: 1099;
 }
 
-.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog) {
+.overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog, + #makePublicConfirmDialog) {
 	z-index: 1101;
 }
 
@@ -523,6 +518,7 @@ canvas {
 #subscriptionDialog,
 #layoutNameDialog,
 #fileOpenDialog,
+#structureColorDialog,
 #profileModal,
 #authenticationModal,
 #partInventoryDialog {
@@ -539,18 +535,43 @@ canvas {
 	transition: all var(--speed2), background-color 0s;
 }
 
+#makeLayoutPublic,
 #copyLayoutLink {
 	display: none;
 }
 
+#fileOpenMenu.subscriber:not(.public) #makeLayoutPublic,
 #fileOpenMenu.public #copyLayoutLink {
 	display: flex;
 }
 
+.cloudFileItem.locked {
+	opacity: 0.6;
+	cursor: default;
+}
+
+#fileOpenMenu.locked #renameLayout,
+#fileOpenMenu.locked #copyLayoutLink {
+	display: none;
+}
+
 #renameLayoutDialog,
-#deleteLayoutConfirmDialog {
+#deleteLayoutConfirmDialog,
+#makePublicConfirmDialog,
+#portalRedirectConfirmDialog {
 	z-index: 1102;
 	transform: translate(-50%, 100%);
+}
+
+#makePublicConfirmDialog {
+	max-inline-size: 100%;
+	inline-size: 38rem;
+}
+
+.click-to-copy,
+.click-to-copy > input,
+.click-to-copy > i {
+	cursor: pointer !important;
 }
 
 .cloudFileItem {
@@ -627,6 +648,7 @@ li > .ctrl-key {
 	font-size: 1.4rem !important;
 }
 
+select.extra-text + label,
 input.extra-text + label {
 	font-size: 1.4rem !important;
 }
@@ -864,6 +886,47 @@ i.legobrightgreen {
 
 #componentColorMenu li {
 	gap: 0.5rem;
+}
+
+#structureColorGrid {
+	display: grid;
+	grid-template-columns: repeat(6, 1fr);
+	gap: 0.5rem;
+	padding: 0.5rem 0.25rem 0.75rem;
+}
+
+#structureColorGrid .bp-color-item {
+	aspect-ratio: 1;
+	border-radius: 0.25rem;
+	cursor: pointer;
+	border: 2px solid transparent;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+#structureColorGrid .bp-color-item:hover {
+	border-color: var(--on-surface);
+}
+
+#structureColorGrid .bp-color-item.selected {
+	border-color: var(--on-surface);
+	border-width: 3px;
+}
+
+#structureColorGrid .bp-color-item i {
+	display: none;
+	font-size: 1.5rem;
+}
+
+#structureColorGrid .bp-color-item.selected i {
+	display: block;
+}
+
+#structureColorGrid .bp-color-item.bp-none {
+	background: var(--surface-variant);
+	border-color: var(--outline);
+	border-style: dashed;
 }
 
 #layerList>li,
@@ -1104,22 +1167,8 @@ button:active {
 	opacity: 0.6;
 }
 
-#darkMode-container button {
-	block-size: 100%;
-	margin: 0;
-}
-
-#darktoggle:after {
-	opacity: 1;
-}
-
-#darktoggle:is(:focus-visible, :hover):after {
-	opacity: 1;
-	background-size: 100%;
-}
-
-#darkMode-container button:active {
-	opacity: 1;
+.black-white-text {
+  color: var(--color);
 }
 
 .toolbarItem[disabled] {
@@ -1192,10 +1241,6 @@ i + span.label {
 @media (hover:hover) {
 	.componentBrowser>button:hover {
 		background: var(--component-hover);
-		opacity: 1;
-	}
-
-	#darkMode-container button:hover {
 		opacity: 1;
 	}
 }
@@ -1365,12 +1410,6 @@ i + span.label {
 	gap: 0.5rem;
 }
 
-#darkMode-container {
-	position: static;
-	top: auto;
-	right: auto;
-}
-
 #accountMenu-container {
 	position: relative;
 }
@@ -1379,7 +1418,7 @@ i + span.label {
 	cursor: pointer;
 }
 
-#accountMenuButton i {
+#accountMenuButton>i {
 	--_size: 2.5rem;
 }
 
@@ -1407,7 +1446,7 @@ i + span.label {
 	background: var(--surface-container-high);
 }
 
-#accountDropdownMenu li i {
+#accountDropdownMenu li>i {
 	--_size: 2rem;
 	color: var(--on-surface-variant);
 }
@@ -1519,6 +1558,16 @@ i + span.label {
   display: block;
 }
 
+#profileModal.view-subscription .profileModal-title-subscription,
+#profileModal.view-subscription .profileModal-view-subscription {
+  display: block;
+}
+
+#profileModal.view-invoices .profileModal-title-invoices,
+#profileModal.view-invoices .profileModal-view-invoices {
+  display: block;
+}
+
 #profileModal #verifiedIcon.verified {
   cursor: default;
   opacity: 1;
@@ -1527,4 +1576,79 @@ i + span.label {
 #profileModal.social-user #editProfileBtn,
 #profileModal.social-user .profileModal-passwordBtn {
   display: none;
+}
+
+/* Small */
+@media only screen and (max-width: 600px) {
+  #subscriptionDialog {
+	--_padding: 1rem;
+    transform: translate(0);
+    inset: auto auto 0 0;
+    inline-size: 100%;
+    block-size: auto;
+    max-inline-size: 100%;
+    max-block-size: 100%;
+    padding-block: var(--_top) var(--_bottom);
+	inset-block-end: 0;
+  }
+
+  #subscriptionDialog>:only-child {
+	margin: 0;
+  }
+}
+
+/* Not Small */
+@media only screen and (min-width: 601px) {
+  #subscriptionDialog[data-view=plans] {
+	inline-size: 75%;
+  }
+  #subscriptionDialog[data-view=signin] {
+	inline-size: 44rem !important;
+  }
+  #subscriptionDialog[data-view=verify] {
+	inline-size: 44rem !important;
+  }
+}
+
+/* Subscription Dialog - Interval Toggle */
+#subscriptionIntervalToggle button {
+	color: var(--color);
+}
+
+#subscriptionIntervalToggle button.active {
+  background-color: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* Subscription Dialog - Plan Cards */
+#subscriptionDialog ul li i {
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+#subscriptionProPlan {
+	border-width: medium;
+}
+
+#subscriptionProInterval {
+  align-self: flex-end;
+  line-height: 1.4;
+  font-size: 1.75rem;
+  font-weight: 400;
+  display: block;
+}
+
+#subscriptionProAnnualNote {
+  text-decoration-style: dashed;
+}
+
+/* Profile Modal - Subscription & Invoice Views */
+#profileModal .profileModal-view-subscription article,
+#profileModal .profileModal-view-invoices article {
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.5rem;
+}
+
+#profileModal .profileModal-view-invoices article .row {
+  align-items: center;
 }

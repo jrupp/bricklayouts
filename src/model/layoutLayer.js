@@ -99,6 +99,20 @@ export class LayoutLayer extends Container {
     }
 
     /**
+     * Find a component or group in this layer by UUID.
+     * @param {String} uuid
+     * @returns {?Component|ComponentGroup}
+     */
+    findComponentByUuid(uuid) {
+        for (const child of this.children) {
+            if ((child instanceof Component || child instanceof ComponentGroup) && child.uuid === uuid) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Check if this LayoutLayer is equal to another LayoutLayer
      * @param {LayoutLayer} other 
      * @returns {Boolean} True if this LayoutLayer is equal to the other, false otherwise

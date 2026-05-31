@@ -783,22 +783,6 @@
                     ]
                 },
                 {
-                    "alias": "pineTreeSmall",
-                    "name": "Small Pine Tree",
-                    "make": 0,
-                    "category": "structures",
-                    "src": "pinetree-small.png"
-                },
-                {
-                    "alias": "waterTower",
-                    "name": "Water Tower",
-                    "partNumber": "CM-INS-002",
-                    "make": 4,
-                    "category": "structures",
-                    "src": "watertower.png",
-                    "affil": "layout/water-tower-mils-module/"
-                },
-                {
                     "alias": "railRamp9V",
                     "src": "53834.png",
                     "category": "9V",
@@ -813,13 +797,6 @@
                             "next": 0
                         }
                     ]
-                },
-                {
-                    "alias": "10275",
-                    "name": "Elf Club House",
-                    "category": "structures",
-                    "src": "10275.png",
-                    "make": 1
                 },
                 {
                     "alias": "r104SwitchLeft",
@@ -958,6 +935,274 @@
                         }
                     ],
                     "type": "track"
+                },
+                {
+                    "alias": "aspenTree",
+                    "name": "Aspen Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "aspentree.png",
+                    "width": 192,
+                    "height": 192
+                },
+                {
+                    "alias": "birchTree",
+                    "name": "Birch Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "birchtree.png",
+                    "width": 288,
+                    "height": 288
+                },
+                {
+                    "alias": "cypressTree",
+                    "name": "Cypress Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cypresstree.png",
+                    "width": 128,
+                    "height": 128
+                },
+                {
+                    "alias": "mapleTree",
+                    "name": "Maple Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "mapletree.png",
+                    "width": 352,
+                    "height": 352
+                },
+                {
+                    "alias": "oakTree",
+                    "name": "Oak Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "oaktree.png",
+                    "width": 352,
+                    "height": 352
+                },
+                {
+                    "alias": "pineTreeSmall",
+                    "name": "Small Pine Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "pinetree-small.png",
+                    "width": 144,
+                    "height": 144
+                },
+                {
+                    "alias": "shrubSmall",
+                    "name": "Shrub",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "shrub-small.png",
+                    "width": 128,
+                    "height": 128
+                },
+                {
+                    "alias": "waterTower",
+                    "name": "Water Tower",
+                    "partNumber": "CM-INS-002",
+                    "make": 4,
+                    "category": "structures",
+                    "src": "watertower.png",
+                    "affil": "layout/water-tower-mils-module/"
+                },
+                {
+                    "alias": "5891",
+                    "name": "Apple Tree House",
+                    "category": "structures",
+                    "src": "5891.png",
+                    "onbp": "#10CB31",
+                    "make": 1
+                },
+                {
+                    "alias": "10255",
+                    "name": "Assembly Square",
+                    "category": "structures",
+                    "src": "10255.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "4996",
+                    "name": "Beach House",
+                    "category": "structures",
+                    "src": "4996.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10297",
+                    "name": "Botique Hotel",
+                    "category": "structures",
+                    "src": "10297.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
+                    "alias": "10251",
+                    "name": "Brick Bank",
+                    "category": "structures",
+                    "src": "10251.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10182",
+                    "name": "Cafe Corner",
+                    "category": "structures",
+                    "src": "10182.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10264",
+                    "name": "Corner Garage",
+                    "category": "structures",
+                    "src": "10264.png",
+                    "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10246",
+                    "name": "Detective's Office",
+                    "category": "structures",
+                    "src": "10246.png",
+                    "onbp": "#582A12",
+                    "make": 1
+                },
+                {
+                    "alias": "10260",
+                    "name": "Downtown Diner",
+                    "category": "structures",
+                    "src": "10260.png",
+                    "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10275",
+                    "name": "Elf Club House",
+                    "category": "structures",
+                    "src": "10275.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10197",
+                    "name": "Fire Brigade",
+                    "category": "structures",
+                    "src": "10197.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10211",
+                    "name": "Grand Emporium",
+                    "category": "structures",
+                    "src": "10211.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10185",
+                    "name": "Green Grocer",
+                    "category": "structures",
+                    "src": "10185.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
+                    "alias": "10312",
+                    "name": "Jazz Club",
+                    "category": "structures",
+                    "src": "10312.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
+                    "alias": "10190",
+                    "name": "Market Street",
+                    "category": "structures",
+                    "src": "10190.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10232",
+                    "name": "Palace Cinema",
+                    "category": "structures",
+                    "src": "10232.png",
+                    "make": 1
+                },
+                {
+                    "alias": "10243",
+                    "name": "Parisian Restaurant",
+                    "category": "structures",
+                    "src": "10243.png",
+                    "onbp": "#A0A5A9",
+                    "make": 1
+                },
+                {
+                    "alias": "10278",
+                    "name": "Police Station",
+                    "category": "structures",
+                    "src": "10278.png",
+                    "onbp": "#6C6E68",
+                    "make": 1
+                },
+                {
+                    "alias": "10224",
+                    "name": "Town Hall",
+                    "category": "structures",
+                    "src": "10224.png",
+                    "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10350",
+                    "name": "Tudor Corner",
+                    "category": "structures",
+                    "src": "10350.png",
+                    "onbp": "#10CB31",
+                    "make": 1
+                },
+                {
+                    "alias": "carrotField",
+                    "name": "Carrot Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "carrotfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "cornField",
+                    "name": "Corn Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cornfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "cottonField",
+                    "name": "Cotton Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cottonfield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "potatoField",
+                    "name": "Potato Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "potatofield.png",
+                    "type": "tileable"
+                },
+                {
+                    "alias": "wheatField",
+                    "name": "Wheat Field",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "wheatfield.png",
+                    "type": "tileable"
                 }
             ]
         }

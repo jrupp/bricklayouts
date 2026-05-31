@@ -4,6 +4,7 @@
  * to unauthenticated users and Profile/Logout options to authenticated users.
  */
 
+import { AuthenticationManager } from './authenticationController.js';
 import { LayoutController } from './layoutController.js';
 
 /**
@@ -12,8 +13,48 @@ import { LayoutController } from './layoutController.js';
  */
 let authModalModule = null;
 
+/**
+ * Singleton instance
+ * @type {AccountMenuController|null}
+ */
+let instance = null;
+
 class AccountMenuController {
+  /**
+   * Creates and initializes the singleton instance.
+   * @param {AuthenticationManager} authManager - The AuthenticationManager instance
+   * @returns {AccountMenuController} The singleton instance
+   */
+  static initialize(authManager) {
+    if (!instance) {
+      instance = new AccountMenuController(authManager);
+    }
+    return instance;
+  }
+
+  /**
+   * Gets the singleton instance of AccountMenuController.
+   * @returns {AccountMenuController} The singleton instance
+   */
+  static getInstance() {
+    if (!instance) {
+      throw new Error('AccountMenuController not initialized. Call initialize() first.');
+    }
+    return instance;
+  }
+
+  /**
+   * Resets the singleton instance. For testing only.
+   */
+  static resetInstance() {
+    instance = null;
+  }
+
+  /**
+   * @param {AuthenticationManager} authManager
+   */
   constructor(authManager) {
+    /** @type {AuthenticationManager} */
     this.authManager = authManager;
     this.menuElement = null;
     this.buttonElement = null;
@@ -71,6 +112,16 @@ class AccountMenuController {
     if (!this.menuElement) {
       return;
     }
+    let currentDarkMode = document.documentElement.dataset.darkMode;
+    let darkModeItem = `
+        <li id="menuDarkMode" title="Toggle dark mode">
+          <i>dark_mode</i>Dark Mode
+          <label class="switch icon" style="pointer-events: none;">
+            <input type="checkbox" id="darkModeToggle" ${currentDarkMode === 'true' ? 'checked' : ''}>
+            <span><i>close</i><i>done</i></span>
+          </label>
+        </li>
+    `;
 
     this.menuElement.innerHTML = '';
 
@@ -79,6 +130,8 @@ class AccountMenuController {
         <li id="menuProfile" title="View and edit your profile" data-ui="#accountDropdownMenu">
           <i>person</i>Profile
         </li>
+        ${darkModeItem}
+        <hr>
         <li id="menuLogout" title="Sign out of your account" data-ui="#accountDropdownMenu">
           <i>logout</i>
           <div>Logout</div>
@@ -94,6 +147,8 @@ class AccountMenuController {
           <i>person_add</i>
           <div>Sign up</div>
         </li>
+        <hr>
+        ${darkModeItem}
       `;
     }
 
@@ -108,6 +163,7 @@ class AccountMenuController {
     const signupItem = document.getElementById('menuSignup');
     const profileItem = document.getElementById('menuProfile');
     const logoutItem = document.getElementById('menuLogout');
+    const darkModeItem = document.getElementById('menuDarkMode');
 
     if (loginItem) {
       loginItem.addEventListener('click', () => this.handleLogin());
@@ -123,6 +179,10 @@ class AccountMenuController {
 
     if (logoutItem) {
       logoutItem.addEventListener('click', () => this.handleLogout());
+    }
+
+    if (darkModeItem) {
+      darkModeItem.addEventListener('click', () => this.handleDarkModeToggle());
     }
   }
 
@@ -156,6 +216,28 @@ class AccountMenuController {
   }
 
   /**
+   * Handle dark mode toggle - update data attribute, localStorage, and checkbox state
+   */
+  async handleDarkModeToggle() {
+    const dark = document.documentElement.dataset.darkMode = (document.documentElement.dataset.darkMode === 'false');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    const darkToggleInput = document.getElementById('darkModeToggle');
+    if (darkToggleInput) {
+      darkToggleInput.checked = dark;
+    }
+  }
+
+  /**
+   * Performs post-login UI state updates: menu state, cloud features, and menu visibility.
+   * Called after successful authentication from any flow.
+   */
+  async handlePostLoginUpdates() {
+    this.updateMenuState();
+    await this._loadPrivateCloudFeaturesIfNeeded();
+    await this._updateCloudMenuVisibility();
+  }
+
+  /**
    * Handle Login click - show authentication modal
    */
   async handleLogin() {
@@ -169,9 +251,7 @@ class AccountMenuController {
           await this.authManager.signOut();
           this.authManager.clearCloudFeatures();
         }
-        this.updateMenuState();
-        await this._loadPrivateCloudFeaturesIfNeeded();
-        await this._updateCloudMenuVisibility();
+        await this.handlePostLoginUpdates();
       });
     } catch (error) {
       console.error('Failed to load authentication modal:', error);
@@ -186,9 +266,7 @@ class AccountMenuController {
     try {
       const modal = await this._getAuthModal();
       modal.show('signup', async () => {
-        this.updateMenuState();
-        await this._loadPrivateCloudFeaturesIfNeeded();
-        await this._updateCloudMenuVisibility();
+        await this.handlePostLoginUpdates();
       });
     } catch (error) {
       console.error('Failed to load authentication modal:', error);
@@ -289,8 +367,14 @@ class AccountMenuController {
     const icon = this.buttonElement.querySelector('i');
     if (icon) {
       if (this.authManager && this.authManager.isAuthenticated) {
+        this.authManager.getUserName().then((name) => {
+          this.buttonElement.title = name;
+        }).catch(() => {
+          this.buttonElement.title = 'Logged in';
+        });
         icon.classList.add('fill');
       } else {
+        this.buttonElement.title = 'Account';
         icon.classList.remove('fill');
       }
     }
