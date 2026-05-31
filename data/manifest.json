@@ -783,22 +783,6 @@
                     ]
                 },
                 {
-                    "alias": "pineTreeSmall",
-                    "name": "Small Pine Tree",
-                    "make": 0,
-                    "category": "structures",
-                    "src": "pinetree-small.png"
-                },
-                {
-                    "alias": "waterTower",
-                    "name": "Water Tower",
-                    "partNumber": "CM-INS-002",
-                    "make": 4,
-                    "category": "structures",
-                    "src": "watertower.png",
-                    "affil": "layout/water-tower-mils-module/"
-                },
-                {
                     "alias": "railRamp9V",
                     "src": "53834.png",
                     "category": "9V",
@@ -813,13 +797,6 @@
                             "next": 0
                         }
                     ]
-                },
-                {
-                    "alias": "10275",
-                    "name": "Elf Club House",
-                    "category": "structures",
-                    "src": "10275.png",
-                    "make": 1
                 },
                 {
                     "alias": "r104SwitchLeft",
@@ -960,6 +937,78 @@
                     "type": "track"
                 },
                 {
+                    "alias": "aspenTree",
+                    "name": "Aspen Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "aspentree.png",
+                    "width": 192,
+                    "height": 192
+                },
+                {
+                    "alias": "birchTree",
+                    "name": "Birch Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "birchtree.png",
+                    "width": 288,
+                    "height": 288
+                },
+                {
+                    "alias": "cypressTree",
+                    "name": "Cypress Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "cypresstree.png",
+                    "width": 128,
+                    "height": 128
+                },
+                {
+                    "alias": "mapleTree",
+                    "name": "Maple Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "mapletree.png",
+                    "width": 352,
+                    "height": 352
+                },
+                {
+                    "alias": "oakTree",
+                    "name": "Oak Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "oaktree.png",
+                    "width": 352,
+                    "height": 352
+                },
+                {
+                    "alias": "pineTreeSmall",
+                    "name": "Small Pine Tree",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "pinetree-small.png",
+                    "width": 144,
+                    "height": 144
+                },
+                {
+                    "alias": "shrubSmall",
+                    "name": "Shrub",
+                    "make": 0,
+                    "category": "structures",
+                    "src": "shrub-small.png",
+                    "width": 128,
+                    "height": 128
+                },
+                {
+                    "alias": "waterTower",
+                    "name": "Water Tower",
+                    "partNumber": "CM-INS-002",
+                    "make": 4,
+                    "category": "structures",
+                    "src": "watertower.png",
+                    "affil": "layout/water-tower-mils-module/"
+                },
+                {
                     "alias": "5891",
                     "name": "Apple Tree House",
                     "category": "structures",
@@ -1028,6 +1077,13 @@
                     "category": "structures",
                     "src": "10260.png",
                     "onbp": "#EED9A4",
+                    "make": 1
+                },
+                {
+                    "alias": "10275",
+                    "name": "Elf Club House",
+                    "category": "structures",
+                    "src": "10275.png",
                     "make": 1
                 },
                 {
