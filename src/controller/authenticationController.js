@@ -1253,6 +1253,7 @@ class AuthenticationManager {
 
 // Export for use in other modules
 export { AuthenticationManager };
+export default AuthenticationManager;
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { AuthenticationManager };
