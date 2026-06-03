@@ -1,5 +1,5 @@
-import { Assets, Application, Bounds, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Texture, Color } from '../pixi.mjs';
-import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, HexToColorName } from '../model/component.js';
+import { Assets, Application, Bounds, Color, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, TilingSprite } from '../pixi.mjs';
+import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
 import { Connection } from '../model/connection.js';
@@ -10,6 +10,7 @@ import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.
 import { showSnackbar } from '../utils/snackbar.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
+import { UndoManager } from './undoManager.js';
 import '../FileSaver.min.js';
 
 
@@ -35,7 +36,9 @@ const DataTypes = Object.freeze({
   /** Represents a baseplate component. */
   BASEPLATE: "baseplate",
   /** Represents a text component. */
-  TEXT: "text"
+  TEXT: "text",
+  /** Represents a tileable component. */
+  TILEABLE: "tileable"
 });
 export { DataTypes };
 
@@ -52,6 +55,7 @@ export { DataTypes };
  * @property {Number} [color] The color of the component, represented as a hexadecimal number. Only used for shapes and baseplates.
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
+ * @property {Number} [onbp] The default baseplate color to render this structure on. The presence of this property indicates the structure is designed to be placed on a baseplate (i.e., has bottom studs).
  */
 let TrackData;
 export { TrackData };
@@ -130,6 +134,22 @@ export class LayoutController {
   static dragWithAlt = false;
 
   /**
+   * @type {?String}
+   * When set to 'add' or 'duplicate', onDragEnd records this type instead of 'move'.
+   */
+  static dragIsNewComponent = null;
+
+  /**
+   * @type {?Object}
+   */
+  static preDragPose = null;
+
+  /**
+   * @type {?Array<{componentUuid: String, previousPose: {x: Number, y: Number, angle: Number}}>}
+   */
+  static preDragComponentPoses = null;
+
+  /**
    * @type {?Component | ComponentGroup}
    */
   static selectedComponent = null;
@@ -206,6 +226,8 @@ export class LayoutController {
    */
   static boundBrowserDragEnd = null;
 
+  static PRIORITY_ASSET_COUNT = 10;
+
   /**
    * The currently active layer
    * @type {LayoutLayer}
@@ -217,6 +239,18 @@ export class LayoutController {
    * @type {DataTypes}
    */
   #customComponentType = "shape";
+
+  /**
+   * The selected baseplate color hex value for the structure color dialog.
+   * @type {string}
+   */
+  #selectedStructureColor = "";
+
+  /**
+   * The selected tile type for the tileable component dialog.
+   * @type {string}
+   */
+  #selectedTileType = "";
 
   /**
    * Metadata for the current layout (name, cloud references, etc.)
@@ -255,6 +289,10 @@ export class LayoutController {
      * @type {Boolean}
      */
     this.readOnly = false;
+    /**
+     * @type {UndoManager}
+     */
+    this.undoManager = new UndoManager(this);
     /**
      * @type {HTMLDivElement}
      */
@@ -335,6 +373,8 @@ export class LayoutController {
     this.newLayer();
 
     this.initCustomComponentUI();
+
+    this.initStructureColorUI();
 
     this.checkBackgroundColorChange();
 
@@ -479,6 +519,149 @@ export class LayoutController {
     return filename;
   }
 
+  /**
+   * Process metadata for a track asset. Does not require the texture to be loaded.
+   * @param {TrackData} track
+   */
+  _processTrackMetadata(track) {
+    if (track.type === void 0) {
+      track.type = DataTypes.TRACK;
+    }
+    if (track.color !== void 0 && typeof track.color === 'string') {
+      track.color = parseInt(track.color.slice(1), 16);
+    }
+    if (track.onbp !== void 0 && typeof track.onbp === 'string') {
+      track.onbp = parseInt(track.onbp.slice(1), 16);
+    }
+    if (track.connections && track.connections.length > 0) {
+      track.connections = track.connections.map((connection) => {
+        return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};
+      });
+    }
+  }
+
+  /**
+   * Extract an HTML image element from a loaded track texture for display in the component browser.
+   * Requires the track's texture to already be loaded in the asset cache.
+   * @param {TrackData} track
+   * @returns {Promise<HTMLImageElement>}
+   */
+  async _extractTrackImage(track) {
+    let texture = Assets.get(track.alias);
+    let image;
+    if (track.onbp !== void 0) {
+      var tempGraphics = new Graphics();
+      tempGraphics.rect(0, 0, texture.width, texture.height);
+      tempGraphics.fill(track.onbp ?? 0xA0A5A9);
+      var tempSprite = new Sprite(texture);
+      tempGraphics.addChild(tempSprite);
+      image = await this.app.renderer.extract.image({target: tempGraphics});
+      tempSprite.destroy();
+      tempGraphics.destroy();
+    } else if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
+      var tempGraphics = new Graphics();
+      tempGraphics.rect(0, 0, track.width, track.height);
+      tempGraphics.fill(track.color ?? 0xA0A5A9);
+      image = await this.app.renderer.extract.image(tempGraphics);
+      tempGraphics.destroy();
+    } else if (track.type === DataTypes.TILEABLE) {
+      var tempSprite = new TilingSprite({texture, width: 96, height: 96});
+      image = await this.app.renderer.extract.image(tempSprite);
+      tempSprite.destroy();
+    } else {
+      image = await this.app.renderer.extract.image(texture);
+    }
+    image.className = "track";
+    image.alt = track.name;
+    return image;
+  }
+
+  /**
+   * Create a placeholder image for a track asset that hasn't been loaded yet.
+   * @param {TrackData} track
+   * @returns {HTMLImageElement}
+   */
+  _createPlaceholderImage(track) {
+    const image = new Image();
+    image.className = 'track';
+    image.alt = track.name;
+    image.src = 'data:image/svg+xml,' + encodeURIComponent(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">' +
+      '<rect width="64" height="64" fill="#e0e0e0" rx="4"/>' +
+      '</svg>'
+    );
+    return image;
+  }
+
+  /**
+   * Replace a placeholder image with the real extracted image by updating src in-place.
+   * @param {TrackData} track
+   * @param {HTMLImageElement} realImage
+   */
+  _replacePlaceholderImage(track, realImage) {
+    track.image.src = realImage.src;
+  }
+
+  /**
+   * Background-load remaining assets and progressively update placeholder images.
+   * Called without await so it runs in the background.
+   * @param {string[]} aliases
+   */
+  async _backgroundLoadRemaining(aliases) {
+    for (const alias of aliases) {
+      await Assets.load(alias);
+      const track = this.trackData.bundles[0].assets.find(t => t.alias === alias);
+      if (track) {
+        const realImage = await this._extractTrackImage(track);
+        this._replacePlaceholderImage(track, realImage);
+      }
+    }
+  }
+
+  /**
+   * Extract unique asset aliases referenced in a layout's component data.
+   * Excludes 'shape' and 'text' types which use shared textures.
+   * @param {SerializedLayout} data
+   * @returns {string[]}
+   */
+  _extractLayoutAliases(data) {
+    const aliases = new Set();
+    data.layers.forEach(layer => {
+      layer.components.forEach(comp => {
+        if (comp.type !== 'shape' && comp.type !== 'text') {
+          aliases.add(comp.type);
+        }
+      });
+    });
+    return [...aliases];
+  }
+
+  /**
+   * Fetch layout data for read-only mode from either a public share code or file path.
+   * @returns {Promise<Object|null>} The layout data, or null if not found
+   */
+  async _fetchReadOnlyLayoutData() {
+    const urlPath = window.location.pathname;
+    const rawFilename = urlPath.substring(1);
+
+    const publicLayoutLoader = new PublicLayoutLoader();
+    const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
+
+    if (shareCode) {
+      const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
+      return { layoutData: publicLayoutData.layoutData, layoutName: publicLayoutData.layoutName, source: 'public' };
+    }
+
+    const sanitizedFilename = this._sanitizeFilename(rawFilename);
+    if (!sanitizedFilename) {
+      return null;
+    }
+
+    const layoutPath = path.toAbsolute(`../data/layouts/${sanitizedFilename}.json`);
+    let layout = await Assets.load(layoutPath);
+    return { layoutData: layout, layoutName: null, source: 'file' };
+  }
+
   async init() {
     if (window.location.pathname !== '/') {
       this.readOnly = true;
@@ -490,35 +673,64 @@ export class LayoutController {
       document.getElementById('layerList').classList.add('readonly');
       document.getElementById('mobileLayerList').classList.add('readonly');
     }
-    const trackBundle = await Assets.loadBundle('track');
-    await Promise.all(this.trackData.bundles[0].assets.map(/** @param {TrackData} track */async (track) => {
-      /** @type {HTMLImageElement} */
-      var image = await this.app.renderer.extract.image(trackBundle[track.alias]);
-      image.className = "track";
-      image.alt = track.name;
-      track.image = image;
-      if (track.type === void 0) {
-        track.type = DataTypes.TRACK;
+
+    // Process metadata for all assets (no textures needed)
+    this.trackData.bundles[0].assets.forEach(track => {
+      this._processTrackMetadata(track);
+    });
+
+    if (this.readOnly) {
+      await Assets.load(['baseplate', 'shape', 'text']);
+      this.createComponentBrowser();
+      try {
+        const result = await this._fetchReadOnlyLayoutData();
+        if (!result) {
+          document.getElementById('notfound').classList.remove('hidden');
+          return;
+        }
+
+        const neededAliases = this._extractLayoutAliases(result.layoutData);
+        if (neededAliases.length > 0) {
+          await Assets.load(neededAliases);
+        }
+
+        await this._importLayout(result.layoutData);
+        if (result.layoutName) {
+          this.setLayoutName(result.layoutName);
+        }
+      } catch (error) {
+        document.getElementById('notfound').classList.remove('hidden');
       }
-      if (track.color !== void 0 && typeof track.color === 'string') {
-        track.color = parseInt(track.color.slice(1), 16);
+    } else {
+      const allAssets = this.trackData.bundles[0].assets;
+      const browserVisible = allAssets.filter(t =>
+        t.alias !== 'baseplate' && t.alias !== 'shape' && t.alias !== 'text'
+      );
+      const priorityAliases = [
+        'baseplate', 'shape', 'text',
+        ...browserVisible.slice(0, LayoutController.PRIORITY_ASSET_COUNT).map(t => t.alias)
+      ];
+      await Assets.load(priorityAliases);
+
+      await Promise.all(allAssets.map(async (track) => {
+        if (Assets.cache.has(track.alias)) {
+          track.image = await this._extractTrackImage(track);
+        } else {
+          track.image = this._createPlaceholderImage(track);
+        }
+      }));
+
+      this.createComponentBrowser();
+
+      const remainingAliases = browserVisible
+        .slice(LayoutController.PRIORITY_ASSET_COUNT)
+        .map(t => t.alias)
+        .filter(a => !Assets.cache.has(a));
+      if (remainingAliases.length > 0) {
+        this._backgroundLoadRemaining(remainingAliases);
       }
-      if ((track.type === DataTypes.SHAPE || track.type === DataTypes.BASEPLATE) && track.width !== void 0 && track.height !== void 0) {
-        var tempGraphics = new Graphics();
-        tempGraphics.rect(0, 0, track.width, track.height);
-        tempGraphics.fill(track.color ?? 0xA0A5A9);
-        image = await this.app.renderer.extract.image(tempGraphics);
-        image.className = "track";
-        image.alt = track.name;
-        track.image = image;
-      }
-      if (track.connections && track.connections.length > 0) {
-        var newConnections = track.connections.map((connection) => {return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};});
-        // TODO: We want to store more information with each connection, like the index of the preferred next connection
-        track.connections = newConnections;
-      }
-    }));
-    this.createComponentBrowser();
+    }
+
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
     this.app.stage.on('pointerup', LayoutController.onDragEnd);
@@ -586,52 +798,6 @@ export class LayoutController {
       this.drawGrid();
       this._positionSelectionToolbar();
     });
-    if (this.readOnly) {
-      try {
-        // Extract filename from URL path and sanitize it
-        const urlPath = window.location.pathname;
-        const rawFilename = urlPath.substring(1); // Remove leading slash
-
-        // First, check if this is an 8-character share code for a public layout
-        const publicLayoutLoader = new PublicLayoutLoader();
-        const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
-
-        if (shareCode) {
-          // Try to load as a public layout first
-          try {
-            const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
-            // Public layouts are always read-only (already set above)
-            this._importLayout(publicLayoutData.layoutData);
-            // Set layout name from public layout metadata
-            if (publicLayoutData.layoutName) {
-              this.setLayoutName(publicLayoutData.layoutName);
-            }
-            return;
-          } catch (publicError) {
-            // If public layout loading fails, show not found
-            console.warn('Failed to load public layout:', publicError.message);
-            document.getElementById('notfound').classList.remove('hidden');
-            return;
-          }
-        }
-
-        // Fall back to file-based layout loading for non-share-code URLs
-        const sanitizedFilename = this._sanitizeFilename(rawFilename);
-        
-        if (!sanitizedFilename) {
-          // If sanitization fails, show not found
-          document.getElementById('notfound').classList.remove('hidden');
-          return;
-        }
-        
-        const layoutPath = path.toAbsolute(`../data/layouts/${sanitizedFilename}.json`);
-        let layout = await Assets.load(layoutPath);
-        this._importLayout(layout);
-      } catch (error) {
-        document.getElementById('notfound').classList.remove('hidden');
-      }
-      return;
-    }
   }
 
   _createCustomComponentButton(type, labelText, iconSrc) {
@@ -671,13 +837,20 @@ export class LayoutController {
         button.appendChild(track.image);
         button.appendChild(label);
         button.dataset.trackAlias = track.alias;
-        button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
-        button.addEventListener('click', (e) => {
-          if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
-            LayoutController.browserMobileClick = false;
-            this.addComponent(track, true);
-          }
-        });
+        if (track.type === DataTypes.TILEABLE) {
+          button.addEventListener('click', (e) => {
+            this.#selectedTileType = track.alias;
+            this.showCreateCustomComponentDialog(track.type, false, track.name)
+          });
+        } else {
+          button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
+          button.addEventListener('click', (e) => {
+            if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
+              LayoutController.browserMobileClick = false;
+              this.addComponent(track, true);
+            }
+          });
+        }
         this.componentBrowser.appendChild(button);
       }
     });
@@ -722,7 +895,7 @@ export class LayoutController {
    * Creates ghost element and transitions to component drag when over canvas.
    * @param {PointerEvent} event - The pointer event
    */
-  _onBrowserDragMove(event) {
+  async _onBrowserDragMove(event) {
     if (!LayoutController.browserDragTrack || !LayoutController.browserDragStartPos) {
       return;
     }
@@ -786,6 +959,9 @@ export class LayoutController {
         };
 
         let a = syntheticEvent.getLocalPosition(this.#currentLayer);
+        if (!Assets.cache.has(track.alias)) {
+          await Assets.load(track.alias);
+        }
         const newComponent = new Component(track, {x: a.x, y: a.y, angle: 0}, this.currentLayer, {});
         
         if (newComponent) {
@@ -798,6 +974,7 @@ export class LayoutController {
           // TODO: See if there is a way to reduce the code duplication with onDragStart
           LayoutController.dragTarget = newComponent;
           LayoutController.dragDistance = 0;
+          LayoutController.dragIsNewComponent = 'add';
           newComponent.alpha = 0.5;
           newComponent.isDragging = false;
           newComponent.dragStartConnection = null;
@@ -820,7 +997,7 @@ export class LayoutController {
           } else if (newComponent.baseData.type === DataTypes.TRACK) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.width / 2, y: newComponent.height / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.width / 2, newComponent.height / 2, 0);
-          } else if (newComponent.baseData.type === DataTypes.BASEPLATE) {
+          } else if (newComponent.baseData.type === DataTypes.BASEPLATE || newComponent.baseData.type === DataTypes.TILEABLE) {
             newComponent.dragStartPos = newComponent.getPose().subtract({x: newComponent.componentWidth / 2, y: newComponent.componentHeight / 2, angle: 0}).subtract({...a, angle: 0});
             newComponent.dragStartOffset = new Pose(newComponent.componentWidth / 2, newComponent.componentHeight / 2, 0);
           } else {
@@ -859,7 +1036,11 @@ export class LayoutController {
     document.removeEventListener('pointercancel', LayoutController.boundBrowserDragEnd);
 
     if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
-      this.addComponent(LayoutController.browserDragTrack, true);
+      if (LayoutController.browserDragTrack.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.browserDragTrack.type, false, LayoutController.browserDragTrack.name);
+      } else {
+        this.addComponent(LayoutController.browserDragTrack, true);
+      }
     }
 
     if (LayoutController.ghostElement) {
@@ -881,7 +1062,10 @@ export class LayoutController {
    * @param {Boolean} [checkConnections] Whether to check for open connections near the new component
    * @param {ComponentOptions} [options] Additional options for the component
    */
-  addComponent(track, checkConnections = false, options = {}) {
+  async addComponent(track, checkConnections = false, options = {}) {
+    if (!Assets.cache.has(track.alias)) {
+      await Assets.load(track.alias);
+    }
     console.log("Create component: " + track.alias);
     var newComp = null;
     if (LayoutController.selectedComponent) {
@@ -902,6 +1086,10 @@ export class LayoutController {
         });
       }
     }
+    this.undoManager.record({
+      type: 'add',
+      data: { componentUuid: newComp.uuid, layerUuid: this.currentLayer.uuid }
+    });
     LayoutController.selectComponent(newComp);
   }
 
@@ -1104,18 +1292,100 @@ export class LayoutController {
     }
   }
 
+  initStructureColorUI() {
+    const grid = document.getElementById('structureColorGrid');
+    if (!grid) return;
+    const colors = ["aqua", "black", "blue", "bright green", "brown", "dark azure",
+      "dark bluish gray", "dark green", "dark orange", "dark pink", "dark red",
+      "dark tan", "green", "light bluish gray", "lilac", "lime", "medium nougat",
+      "olive green", "orange", "red", "tan", "white", "yellow"];
+
+    const noneItem = document.createElement('div');
+    noneItem.className = 'bp-color-item bp-none';
+    noneItem.dataset.hex = '';
+    noneItem.innerHTML = '<i>block</i>';
+    noneItem.title = 'None';
+    noneItem.addEventListener('click', () => {
+      grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+      noneItem.classList.add('selected');
+      this.#selectedStructureColor = '';
+    });
+    grid.appendChild(noneItem);
+
+    colors.forEach((color) => {
+      const hex = ColorNameToHex[color];
+      const item = document.createElement('div');
+      item.className = 'bp-color-item';
+      item.style.backgroundColor = hex;
+      item.dataset.hex = hex.toLowerCase();
+      item.title = color.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const checkIcon = document.createElement('i');
+      checkIcon.textContent = 'check';
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      checkIcon.style.color = (r * 299 + g * 587 + b * 114) / 1000 < 128 ? '#ffffff' : '#000000';
+      item.appendChild(checkIcon);
+      item.addEventListener('click', () => {
+        grid.querySelectorAll('.bp-color-item').forEach(el => el.classList.remove('selected'));
+        item.classList.add('selected');
+        this.#selectedStructureColor = hex.toLowerCase();
+      });
+      grid.appendChild(item);
+    });
+
+    document.getElementById('saveStructureColor').addEventListener('click',
+      this.onSaveStructureColor.bind(this));
+  }
+
+  showStructureColorDialog() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.locked) return;
+    const currentColor = comp.baseplateColor;
+    this.#selectedStructureColor = currentColor ?? '';
+
+    const grid = document.getElementById('structureColorGrid');
+    grid.querySelectorAll('.bp-color-item').forEach(el => {
+      el.classList.remove('selected');
+      if (currentColor && el.dataset.hex === currentColor.toLowerCase()) {
+        el.classList.add('selected');
+      } else if (!currentColor && el.dataset.hex === '') {
+        el.classList.add('selected');
+      }
+    });
+
+    ui("#structureColorDialog");
+  }
+
+  onSaveStructureColor() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.locked) return;
+    const layer = comp.layer || comp.parent;
+    const previousState = comp.serialize();
+    const childIndex = layer ? layer.children.indexOf(comp) : -1;
+    comp.baseplateColor = this.#selectedStructureColor;
+    this.undoManager.record({
+      type: 'edit',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousState, childIndex }
+    });
+    this._positionSelectionToolbar();
+    ui("#structureColorDialog");
+  }
+
   /**
    * Show the create custom component dialog.
    * @param {DataTypes} type The type of the component to create.
    * @param {Boolean} [editing] Whether this is called while editing an existing custom component. Defaults to false
+   * @param {String} [componentName] The name of the component. Defaults to an empty string.
    */
-  showCreateCustomComponentDialog(type, editing=false) {
+  showCreateCustomComponentDialog(type, editing=false, componentName = '') {
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
     const componentSizeUnits = document.getElementById('componentSizeUnits');
     const componentBorderColor = document.getElementById('componentBorderColor');
     const componentShapeSelect = document.getElementById('componentShapeSelect');
+    const componentColorSelect = document.getElementById('componentColorSelect');
     const componentShape = document.getElementById('componentShape');
     const circleTypeSelector = document.getElementById('circleTypeSelector');
     const percentageConfiguration = document.getElementById('percentageConfiguration');
@@ -1126,11 +1396,13 @@ export class LayoutController {
     this.#customComponentType = type;
     const typeName = type.charAt(0).toUpperCase() + type.slice(1);
     if (editing) {
-      document.getElementById('componentDialogTitle').innerText = `Edit Custom ${typeName}`;
+      let title = componentName ? `Edit ${componentName}` : `Edit Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.add('editing');
       componentShapeSelect.classList.add('hidden');
     } else {
-      document.getElementById('componentDialogTitle').innerText = `New Custom ${typeName}`;
+      let title = componentName ? `New ${componentName}` : `New Custom ${typeName}`;
+      document.getElementById('componentDialogTitle').innerText = title;
       document.getElementById('newCustomComponentDialog').classList.remove('editing');
       componentShapeSelect.children[0].classList.add('active');
       componentShapeSelect.children[1].classList.remove('active');
@@ -1141,6 +1413,13 @@ export class LayoutController {
     componentTextNode.value = '';
     if (editing) {
       componentTextNode.value = LayoutController.selectedComponent.text ?? '';
+    }
+    if (type === DataTypes.TILEABLE) {
+      componentWidthNode.nextElementSibling.textContent = 'Width in studs (e.g. 4)';
+      componentHeightNode.nextElementSibling.textContent = 'Height in studs (e.g. 4)';
+    } else {
+      componentWidthNode.nextElementSibling.textContent = 'Component Width';
+      componentHeightNode.nextElementSibling.textContent = 'Component Height';
     }
     document.getElementById('componentWidthError').innerText = '';
     document.getElementById('componentSizeUnitsError').innerText = '';
@@ -1194,7 +1473,7 @@ export class LayoutController {
       componentHeightNode.parentElement.classList.remove('hidden');
       color = "green";
       document.getElementById('componentFontOptions').classList.add('hidden');
-      if (type === DataTypes.BASEPLATE) {
+      if (type === DataTypes.BASEPLATE || type === DataTypes.TILEABLE) {
         if (editing) {
           componentHeightNode.value = (LayoutController.selectedComponent.componentHeight / 16).toString();
           componentWidthNode.value = (LayoutController.selectedComponent.componentWidth / 16).toString();
@@ -1261,11 +1540,16 @@ export class LayoutController {
         document.getElementById('componentShapeOptions').classList.remove('hidden');
       }
     }
-    if (editing) {
-      color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+    if (type === DataTypes.TILEABLE) {
+      componentColorSelect.classList.add('hidden');
+    } else {
+      if (editing) {
+        color = HexToColorName[LayoutController.selectedComponent.color] ?? 'black';
+      }
+      componentColorSelect.classList.remove('hidden');
+      componentColorSelect.setAttribute('data-color', color.replaceAll(' ', ''));
+      document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
-    document.getElementById('componentColorSelect').setAttribute('data-color', color.replaceAll(' ', ''));
-    document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     ui("#newCustomComponentDialog");
   }
 
@@ -1345,7 +1629,8 @@ export class LayoutController {
       options.font = document.getElementById('componentFont').value;
       options.fontSize = parseInt(document.getElementById('componentFontSize').value) * 20;
     }
-    let track = this.trackData.bundles[0].assets.find((a) => a.alias === this.#customComponentType);
+    let alias = this.#customComponentType !== DataTypes.TILEABLE ? this.#customComponentType : this.#selectedTileType;
+    let track = this.trackData.bundles[0].assets.find((a) => a.alias === alias);
     this.addComponent(track, false, options);
     ui("#newCustomComponentDialog");
   }
@@ -1354,6 +1639,10 @@ export class LayoutController {
     if (LayoutController.selectedComponent.locked) {
       return;
     }
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    const previousState = comp.serialize();
+    const childIndex = layer ? layer.children.indexOf(comp) : -1;
     const componentWidthNode = document.getElementById('componentWidth');
     const componentHeightNode = document.getElementById('componentHeight');
     const componentTextNode = document.getElementById('componentText');
@@ -1430,6 +1719,10 @@ export class LayoutController {
       }
     }
     LayoutController.selectedComponent.color = window.getComputedStyle(document.getElementById('componentColorSelect').children[0]).getPropertyValue('color');
+    this.undoManager.record({
+      type: 'edit',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousState, childIndex }
+    });
     this._positionSelectionToolbar();
     ui("#newCustomComponentDialog");
   }
@@ -1439,6 +1732,7 @@ export class LayoutController {
    * @param {Boolean} preserveReadOnly If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
   reset(preserveReadOnly = false) {
+    this.undoManager.suppress();
     Connection.connectionDB.clear();
     this.hideFileMenu();
     this.layers.forEach(layer => layer.destroy());
@@ -1479,6 +1773,8 @@ export class LayoutController {
       this.readOnly = false;
     }
     this.newLayer();
+    this.undoManager.unsuppress();
+    this.undoManager.clear();
   }
 
   get currentLayer() {
@@ -1503,6 +1799,28 @@ export class LayoutController {
    */
   get layoutMetadata() {
     return { ...this.#layoutMetadata };
+  }
+
+  /**
+   * Find a component or group across all layers by UUID.
+   * @param {String} uuid
+   * @returns {?Component|ComponentGroup}
+   */
+  findComponentByUuid(uuid) {
+    for (const layer of this.layers) {
+      const comp = layer.findComponentByUuid(uuid);
+      if (comp) return comp;
+    }
+    return null;
+  }
+
+  /**
+   * Find a layer by UUID.
+   * @param {String} uuid
+   * @returns {?LayoutLayer}
+   */
+  findLayerByUuid(uuid) {
+    return this.layers.find(layer => layer.uuid === uuid) ?? null;
   }
 
   /**
@@ -1576,7 +1894,7 @@ export class LayoutController {
    * Exit read-only mode and restore interactive functionality.
    * This undoes the UI changes made when entering read-only mode in init().
    */
-  exitReadOnlyMode() {
+  async exitReadOnlyMode() {
     this.readOnly = false;
 
     const buttonRemove = document.getElementById('buttonRemove');
@@ -1597,6 +1915,18 @@ export class LayoutController {
       this.#currentLayer.interactiveChildren = true;
     }
 
+    const allAliases = this.trackData.bundles[0].assets.map(t => t.alias);
+    const unloaded = allAliases.filter(a => !Assets.cache.has(a));
+    if (unloaded.length > 0) {
+      await Assets.load(unloaded);
+    }
+
+    await Promise.all(this.trackData.bundles[0].assets.map(async (track) => {
+      if (!track.image) {
+        track.image = await this._extractTrackImage(track);
+      }
+    }));
+
     document.getElementById('componentMenu')?.classList.remove('hidden');
     this.createComponentBrowser();
 
@@ -1608,10 +1938,10 @@ export class LayoutController {
    * Shows confirmation dialog if not in read-only mode.
    * If in read-only mode, resets layout and updates URL.
    */
-  onNewLayoutClick() {
+  async onNewLayoutClick() {
     if (this.readOnly) {
       this.reset();
-      this.exitReadOnlyMode();
+      await this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
     } else {
       ui("#newLayoutConfirmDialog");
@@ -1622,14 +1952,14 @@ export class LayoutController {
   /**
    * Handle the confirmation of creating a new layout.
    * Called when user confirms they want to create a new layout.
-   * @see {@link LayoutController.onNewLayoutClick} 
+   * @see {@link LayoutController.onNewLayoutClick}
    */
-  onConfirmNewLayout() {
+  async onConfirmNewLayout() {
     ui("#newLayoutConfirmDialog");
     const wasReadOnly = this.readOnly;
     this.reset();
     if (wasReadOnly) {
-      this.exitReadOnlyMode();
+      await this.exitReadOnlyMode();
       window.history.pushState({}, '', window.location.origin);
     }
   }
@@ -1762,6 +2092,10 @@ export class LayoutController {
     }
     if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
       this.pasteComponent();
+      event.preventDefault();
+    }
+    if (LayoutController.dragTarget == null && event.key === 'z' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+      this.undoManager.undo();
       event.preventDefault();
     }
     if (event.key === '0' && (event.ctrlKey || event.metaKey)) {
@@ -1922,10 +2256,10 @@ export class LayoutController {
             }
             if (this.readOnly) {
               this.reset();
-              this.exitReadOnlyMode();
+              await this.exitReadOnlyMode();
               window.history.pushState({}, '', window.location.origin);
             }
-            this._importLayout(data);
+            await this._importLayout(data);
           } catch (e) {
             console.error(e);
             if (e instanceof SyntaxError) {
@@ -1962,9 +2296,18 @@ export class LayoutController {
       return;
     }
 
+    /** @type {Array<string>} */
+    const groups = await authManager.getUserGroups();
+    if (groups.includes('post-sub')) {
+      const cloudFeatures = authManager.getCloudFeatures();
+      if (cloudFeatures && cloudFeatures.fileDialog) {
+        this.hideFileMenu();
+        await cloudFeatures.fileDialog.showPostSubSelectionIfNeeded();
+        return;
+      }
+    }
+
     if (!this.#layoutMetadata.cloudId) {
-      /** @type {Array<string>} */
-      const groups = await authManager.getUserGroups();
       if (!groups.includes('subscription') && !groups.includes('admin')) {
         const cloudFeatures = authManager.getCloudFeatures();
         if (!cloudFeatures || !cloudFeatures.cloudStorage) {
@@ -1975,7 +2318,7 @@ export class LayoutController {
         const layoutCount = await cloudFeatures.cloudStorage.getLayoutCount();
         if (layoutCount >= 1) {
           SubscriptionDialogController.getInstance()
-            .show('You\'ve reached the free layout limit.');
+            .show('You\'ve reached the free layout limit. To save more layouts, please upgrade your subscription.', 'Upgrade Required');
           return;
         }
       }
@@ -2150,7 +2493,7 @@ export class LayoutController {
    */
   async _getAuthManager() {
     try {
-      const { default: AuthenticationManager } = await import('./authenticationController.js');
+      const { AuthenticationManager } = await import('./authenticationController.js');
       return AuthenticationManager.getInstance();
     } catch (error) {
       console.error('Failed to load AuthenticationManager:', error);
@@ -2193,7 +2536,14 @@ export class LayoutController {
    * @param {String} [cloudInfo.s3Key] The S3 object key
    * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
    */
-  _importLayout(data, cloudInfo = null) {
+  async _importLayout(data, cloudInfo = null) {
+    const neededAliases = this._extractLayoutAliases(data);
+    const unloaded = neededAliases.filter(a => !Assets.cache.has(a));
+    if (unloaded.length > 0) {
+      await Assets.load(unloaded);
+    }
+
+    this.undoManager.suppress();
     this.reset(true);
 
     // Handle metadata from layout data and cloud info
@@ -2239,10 +2589,12 @@ export class LayoutController {
       this.drawGrid();
     }
     this.updateLayerList();
+    this.undoManager.unsuppress();
+    this.undoManager.clear();
   }
 
   /**
-   * 
+   *
    * @param {SerializedLayout} data
    * @returns {Boolean} True if the data is valid, false otherwise
    */
@@ -2291,6 +2643,10 @@ export class LayoutController {
    */
   static onDragMove(event) {
     if (LayoutController.dragTarget) {
+      if (LayoutController.dragTarget.destroyed) {
+        LayoutController.dragTarget = null;
+        return;
+      }
       if (!LayoutController.dragTarget.isDragging) {
         const diff = Math.sqrt(event.movementX * event.movementX + event.movementY * event.movementY);
         LayoutController.dragDistance += diff;
@@ -2308,6 +2664,8 @@ export class LayoutController {
           const originalDragStartConnection = originalComponent.dragStartConnection;
           const clonedComponent = originalComponent.clone(layer);
           layer.addChild(clonedComponent);
+
+          LayoutController.dragIsNewComponent = 'duplicate';
 
           LayoutController.finalizeDraggedComponent(originalComponent);
 
@@ -2341,6 +2699,15 @@ export class LayoutController {
           LayoutController.dragWithAlt = false;
         }
 
+        if (!LayoutController.dragWithAlt) {
+          LayoutController.preDragPose = LayoutController.dragTarget.getPose().serialize();
+          if (LayoutController.dragTarget instanceof ComponentGroup) {
+            LayoutController.preDragComponentPoses = LayoutController.dragTarget.getAllComponents().map(c => ({
+              componentUuid: c.uuid,
+              previousPose: c.getPose().serialize()
+            }));
+          }
+        }
         LayoutController.dragTarget.isDragging = true;
         LayoutController.getInstance()._hideSelectionToolbar();
         LayoutController.dragTarget.closeConnections();
@@ -2408,9 +2775,54 @@ export class LayoutController {
       window.app.stage.off('pointermove', LayoutController.onDragMove);
       let target = LayoutController.dragTarget;
       LayoutController.finalizeDraggedComponent(target);
+      if (LayoutController.dragIsNewComponent) {
+        const layer = target.layer || target.parent;
+        if (target instanceof ComponentGroup) {
+          LayoutController.getInstance().undoManager.record({
+            type: 'duplicate_group',
+            data: { componentUuids: target.getAllComponents().map(c => c.uuid), layerUuid: layer?.uuid }
+          });
+        } else {
+          LayoutController.getInstance().undoManager.record({
+            type: LayoutController.dragIsNewComponent,
+            data: { componentUuid: target.uuid, layerUuid: layer?.uuid }
+          });
+        }
+        LayoutController.dragIsNewComponent = null;
+        LayoutController.preDragPose = null;
+        LayoutController.preDragComponentPoses = null;
+      } else if (LayoutController.preDragPose) {
+        const currentPose = target.getPose().serialize();
+        if (currentPose.x !== LayoutController.preDragPose.x ||
+            currentPose.y !== LayoutController.preDragPose.y ||
+            currentPose.angle !== LayoutController.preDragPose.angle) {
+          const layer = target.layer || target.parent;
+          if (LayoutController.preDragComponentPoses) {
+            LayoutController.getInstance().undoManager.record({
+              type: 'move_group',
+              data: {
+                layerUuid: layer?.uuid,
+                components: LayoutController.preDragComponentPoses
+              }
+            });
+          } else {
+            LayoutController.getInstance().undoManager.record({
+              type: 'move',
+              data: {
+                componentUuid: target.uuid,
+                layerUuid: layer?.uuid,
+                previousPose: LayoutController.preDragPose
+              }
+            });
+          }
+        }
+        LayoutController.preDragPose = null;
+        LayoutController.preDragComponentPoses = null;
+      }
       LayoutController.dragTarget = null;
       LayoutController.dragDistance = 0;
       LayoutController.dragWithAlt = false;
+      LayoutController.dragIsNewComponent = null;
     } else {
       window.app.stage.off('pointermove', LayoutController.onPan);
       window.app.stage.off('pointermove', LayoutController.onSelectionMove);
@@ -2548,10 +2960,24 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      if (LayoutController.selectedComponent instanceof Component) {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, this.currentLayer.children.length - 2);
-      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
-        LayoutController.selectedComponent.bringToFront();
+      const comp = LayoutController.selectedComponent;
+      if (comp instanceof Component) {
+        const previousIndex = this.currentLayer.children.indexOf(comp);
+        this.currentLayer.setChildIndex(comp, this.currentLayer.children.length - 2);
+        this.undoManager.record({
+          type: 'zorder',
+          data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+        });
+      } else if (comp instanceof ComponentGroup) {
+        const components = comp.getAllComponents().map(c => ({
+          componentUuid: c.uuid,
+          previousIndex: this.currentLayer.children.indexOf(c)
+        }));
+        comp.bringToFront();
+        this.undoManager.record({
+          type: 'zorder_group',
+          data: { layerUuid: this.currentLayer.uuid, components }
+        });
       }
     }
   }
@@ -2562,10 +2988,24 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      if (LayoutController.selectedComponent instanceof Component) {
-        this.currentLayer.setChildIndex(LayoutController.selectedComponent, 0);
-      } else if (LayoutController.selectedComponent instanceof ComponentGroup) {
-        LayoutController.selectedComponent.sendToBack();
+      const comp = LayoutController.selectedComponent;
+      if (comp instanceof Component) {
+        const previousIndex = this.currentLayer.children.indexOf(comp);
+        this.currentLayer.setChildIndex(comp, 0);
+        this.undoManager.record({
+          type: 'zorder',
+          data: { componentUuid: comp.uuid, layerUuid: this.currentLayer.uuid, previousIndex }
+        });
+      } else if (comp instanceof ComponentGroup) {
+        const components = comp.getAllComponents().map(c => ({
+          componentUuid: c.uuid,
+          previousIndex: this.currentLayer.children.indexOf(c)
+        }));
+        comp.sendToBack();
+        this.undoManager.record({
+          type: 'zorder_group',
+          data: { layerUuid: this.currentLayer.uuid, components }
+        });
       }
     }
   }
@@ -2599,6 +3039,15 @@ export class LayoutController {
     if (component?.locked) {
       return;
     }
+    const layer = component.layer || component.parent;
+    const layerUuid = layer?.uuid;
+    if (component instanceof ComponentGroup) {
+      this.#deleteComponentGroup(component, layer, layerUuid);
+      return;
+    }
+    const childIndex = layer ? layer.children.indexOf(component) : -1;
+    const serialized = component.serialize();
+    const baseDataAlias = component.baseData.alias;
     if (LayoutController.selectedComponent === component) {
       LayoutController.selectedComponent = null;
       this._hideSelectionToolbar();
@@ -2606,11 +3055,51 @@ export class LayoutController {
     if (this.copiedComponent === component) {
       this.copiedComponent = null;
     }
-    if (component instanceof ComponentGroup && component.isTemporary) {
+    component.destroy();
+    this.undoManager.record({
+      type: 'delete',
+      data: { serialized, baseDataAlias, childIndex, layerUuid }
+    });
+    component = null;
+  }
+
+  #deleteComponentGroup(component, layer, layerUuid) {
+    const wasTemporary = component.isTemporary;
+    if (wasTemporary) {
       component.isTemporary = false;
     }
+    const allComponents = component.getAllComponents();
+    const components = allComponents.map(comp => ({
+      baseDataAlias: comp.baseData.alias,
+      serialized: comp.serialize(),
+      childIndex: layer ? layer.children.indexOf(comp) : -1
+    }));
+    const groups = [];
+    const collectGroups = (group) => {
+      groups.push(group.serialize());
+      for (const child of group.components) {
+        if (child instanceof ComponentGroup) {
+          collectGroups(child);
+        }
+      }
+    };
+    collectGroups(component);
+    const parentGroupUuid = groups[0].group || null;
+    delete groups[0].group;
+    if (LayoutController.selectedComponent === component) {
+      LayoutController.selectedComponent = null;
+      this._hideSelectionToolbar();
+    }
+    if (this.copiedComponent === component) {
+      this.copiedComponent = null;
+    }
+    this.undoManager.suppress();
     component.destroy();
-    component = null;
+    this.undoManager.unsuppress();
+    this.undoManager.record({
+      type: 'delete_group',
+      data: { layerUuid, temporary: wasTemporary, parentGroupUuid, components, groups }
+    });
   }
   
   deleteSelectedComponent() {
@@ -2654,6 +3143,17 @@ export class LayoutController {
         this.currentLayer.findMatchingConnection(openCon, true);
       });
     }
+    if (clone instanceof ComponentGroup) {
+      this.undoManager.record({
+        type: 'duplicate_group',
+        data: { componentUuids: clone.getAllComponents().map(c => c.uuid), layerUuid: this.currentLayer.uuid }
+      });
+    } else {
+      this.undoManager.record({
+        type: 'duplicate',
+        data: { componentUuid: clone.uuid, layerUuid: this.currentLayer.uuid }
+      });
+    }
     LayoutController.selectComponent(clone);
   }
 
@@ -2671,7 +3171,13 @@ export class LayoutController {
       if (LayoutController.selectedComponent.locked) {
         return;
       }
-      this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      if (LayoutController.selectedComponent.baseData.onbp !== undefined) {
+        this.showStructureColorDialog();
+      } else if (LayoutController.selectedComponent.baseData.type === DataTypes.TILEABLE) {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true, LayoutController.selectedComponent.baseData.name);
+      } else {
+        this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
+      }
     }
   }
 
@@ -2691,7 +3197,29 @@ export class LayoutController {
     if (LayoutController.selectedComponent.locked) {
       return;
     }
-    LayoutController.selectedComponent.rotate();
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    if (comp instanceof ComponentGroup) {
+      const componentPoses = comp.getAllComponents().map(c => ({
+        componentUuid: c.uuid,
+        previousPose: c.getPose().serialize()
+      }));
+      comp.rotate();
+      this.undoManager.record({
+        type: 'rotate_group',
+        data: { layerUuid: layer?.uuid, components: componentPoses }
+      });
+    } else {
+      const usedConnections = comp.getUsedConnections();
+      const previousPose = comp.getPose().serialize();
+      const previousState = usedConnections.length === 1 ? comp.serialize() : null;
+      const childIndex = usedConnections.length === 1 ? layer.children.indexOf(comp) : -1;
+      comp.rotate();
+      this.undoManager.record({
+        type: 'rotate',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousPose, previousState, childIndex }
+      });
+    }
     this._positionSelectionToolbar();
   }
 
@@ -2703,7 +3231,33 @@ export class LayoutController {
     if (!LayoutController.selectedComponent) {
       return;
     }
-    LayoutController.selectedComponent.locked = true;
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    if (comp instanceof ComponentGroup) {
+      if (comp.isTemporary) {
+        const members = comp.components.map(child => {
+          if (child instanceof ComponentGroup) {
+            return { type: 'group', memberComponentUuid: child.getAllComponents()[0]?.uuid, groupUuid: child.uuid, wasLocked: child.locked };
+          }
+          return { type: 'component', componentUuid: child.uuid, wasLocked: child.locked };
+        });
+        this.undoManager.record({
+          type: 'lock_temp_group',
+          data: { layerUuid: layer?.uuid, members }
+        });
+      } else {
+        this.undoManager.record({
+          type: 'lock_perm_group',
+          data: { groupUuid: comp.uuid, layerUuid: layer?.uuid, memberComponentUuid: comp.getAllComponents()[0]?.uuid, wasLocked: false }
+        });
+      }
+    } else {
+      this.undoManager.record({
+        type: 'lock',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: false }
+      });
+    }
+    comp.locked = true;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();
   }
@@ -2716,7 +3270,33 @@ export class LayoutController {
     if (!LayoutController.selectedComponent) {
       return;
     }
-    LayoutController.selectedComponent.locked = false;
+    const comp = LayoutController.selectedComponent;
+    const layer = comp.layer || comp.parent;
+    if (comp instanceof ComponentGroup) {
+      if (comp.isTemporary) {
+        const members = comp.components.map(child => {
+          if (child instanceof ComponentGroup) {
+            return { type: 'group', memberComponentUuid: child.getAllComponents()[0]?.uuid, groupUuid: child.uuid, wasLocked: child.locked };
+          }
+          return { type: 'component', componentUuid: child.uuid, wasLocked: child.locked };
+        });
+        this.undoManager.record({
+          type: 'lock_temp_group',
+          data: { layerUuid: layer?.uuid, members }
+        });
+      } else {
+        this.undoManager.record({
+          type: 'lock_perm_group',
+          data: { groupUuid: comp.uuid, layerUuid: layer?.uuid, memberComponentUuid: comp.getAllComponents()[0]?.uuid, wasLocked: true }
+        });
+      }
+    } else {
+      this.undoManager.record({
+        type: 'lock',
+        data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasLocked: true }
+      });
+    }
+    comp.locked = false;
     this._showSelectionToolbar();
     this._positionSelectionToolbar();
   }
@@ -2733,7 +3313,16 @@ export class LayoutController {
     if (selected.hasLockedComponents()) {
       return;
     }
-    
+    const layer = selected.layer || selected.parent;
+    const allComponents = selected.getAllComponents();
+    this.undoManager.record({
+      type: 'group',
+      data: {
+        groupUuid: selected.uuid,
+        layerUuid: layer?.uuid,
+        memberComponentUuid: allComponents[0]?.uuid
+      }
+    });
     selected.isTemporary = false;
     this._showSelectionToolbar();
   }
@@ -2747,6 +3336,21 @@ export class LayoutController {
     if (!selected || selected.isTemporary) {
       return;
     }
+    const layer = selected.layer || selected.parent;
+    const componentUuids = selected.components.map(child => {
+      if (child instanceof ComponentGroup) {
+        return child.getAllComponents()[0]?.uuid;
+      }
+      return child.uuid;
+    }).filter(Boolean);
+    this.undoManager.record({
+      type: 'ungroup',
+      data: {
+        groupUuid: selected.uuid,
+        layerUuid: layer?.uuid,
+        componentUuids
+      }
+    });
     selected.isTemporary = true;
     this._showSelectionToolbar();
   }
@@ -3019,7 +3623,7 @@ export class LayoutController {
     this.currentLayer = new LayoutLayer();
     this.layers.push(this.#currentLayer);
     this.workspace.addChild(this.#currentLayer);
-    
+
     let layerNumber = this.layers.length;
     let layerName = `Layer ${layerNumber}`;
     while (this.layers.some(layer => layer.label === layerName)) {
@@ -3027,11 +3631,15 @@ export class LayoutController {
       layerName = `Layer ${layerNumber}`;
     }
     this.#currentLayer.label = layerName;
-    
+
     if (this.readOnly === true) {
       this.#currentLayer.eventMode = 'none';
       this.#currentLayer.interactiveChildren = false;
     }
+    this.undoManager.record({
+      type: 'layer_add',
+      data: { layerUuid: this.#currentLayer.uuid }
+    });
     LayoutController.selectComponent(null);
     this.updateLayerList();
   }
@@ -3055,6 +3663,7 @@ export class LayoutController {
       if (e.target.className.indexOf('instant') > -1) e.preventDefault();
     }, false);
     layerList.addEventListener('slip:reorder', (e) => {
+      const previousOrder = this.layers.map(l => l.uuid);
       const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
       const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
       const layer = this.layers[oppIndex];
@@ -3062,9 +3671,14 @@ export class LayoutController {
       this.layers.splice(oppSpliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
       this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.undoManager.record({
+        type: 'layer_reorder',
+        data: { previousOrder }
+      });
       this.updateLayerList();
     }, false);
     mobileLayerList.addEventListener('slip:reorder', (e) => {
+      const previousOrder = this.layers.map(l => l.uuid);
       const oppIndex = this.layers.length - 1 - e.detail.originalIndex;
       const oppSpliceIndex = this.layers.length - 1 - e.detail.spliceIndex;
       const layer = this.layers[oppIndex];
@@ -3072,6 +3686,10 @@ export class LayoutController {
       this.layers.splice(oppSpliceIndex, 0, layer);
       e.target.parentNode.insertBefore(e.target, e.detail.insertBefore);
       this.workspace.setChildIndex(layer, oppSpliceIndex);
+      this.undoManager.record({
+        type: 'layer_reorder',
+        data: { previousOrder }
+      });
       this.updateLayerList();
     }, false);
     new Slip(layerList);
@@ -3116,6 +3734,14 @@ export class LayoutController {
     console.log(`Delete Layer ${index}`);
     if (this.layers.length > 1) {
       let tempLayer = this.layers[index];
+      this.undoManager.record({
+        type: 'layer_delete',
+        data: {
+          layerUuid: tempLayer.uuid,
+          layerIndex: index,
+          serializedLayer: tempLayer.serialize()
+        }
+      });
       this.layers.splice(index, 1);
       if (this.#currentLayer === tempLayer) {
         this.currentLayer = this.layers[0];
@@ -3162,8 +3788,17 @@ export class LayoutController {
     }
     // Ensure opacity is within valid range
     layerOpacity = Math.max(0, Math.min(100, layerOpacity));
-    this.layers[index].label = layerName;
-    this.layers[index].alpha = layerOpacity / 100;
+    const layer = this.layers[index];
+    this.undoManager.record({
+      type: 'layer_edit',
+      data: {
+        layerUuid: layer.uuid,
+        previousName: layer.label,
+        previousOpacity: layer.alpha
+      }
+    });
+    layer.label = layerName;
+    layer.alpha = layerOpacity / 100;
     this.updateLayerList();
     ui("#editLayerDialog");
   }
@@ -3432,7 +4067,7 @@ export class LayoutController {
       this.selectionToolbar.classList.remove('locked');
     }
 
-    if (comp.size === 1 && (comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate"))) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TILEABLE || comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');

@@ -2,4 +2,6 @@ node_modules
 #src/pixi.mjs
 #src/pixi.mjs.map
 src/cloud
+spec/cloud
 .cloud-private
+.kiro/specs
