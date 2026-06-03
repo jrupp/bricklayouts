@@ -9,6 +9,17 @@ describe('UndoManager', () => {
   let mockController;
 
   beforeEach(() => {
+    if (!window.RBush) {
+      window.RBush = function () {
+        return {
+          insert: jasmine.createSpy('insert'),
+          remove: jasmine.createSpy('remove'),
+          search: jasmine.createSpy('search').and.returnValue([]),
+          load: jasmine.createSpy('load'),
+          clear: jasmine.createSpy('clear')
+        };
+      };
+    }
     LayoutController.selectedComponent = null;
     spyOn(LayoutController, 'selectComponent');
     mockController = {
