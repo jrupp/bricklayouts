@@ -101,6 +101,11 @@ describe("LayoutController", function() {
         geiSpy.withArgs('selToolMenu').and.returnValue(document.createElement('menu'));
         geiSpy.withArgs('createComponentDialog').and.returnValue(document.createElement('button'));
         geiSpy.withArgs('saveComponentDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('createRandomTrees').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('randomTreesDensity').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('randomTreesDensityLabel').and.returnValue(document.createElement('output'));
+        geiSpy.withArgs('randomTreesWidth').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('randomTreesHeight').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
         geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));

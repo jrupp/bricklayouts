@@ -943,7 +943,8 @@
                     "category": "structures",
                     "src": "aspentree.png",
                     "width": 192,
-                    "height": 192
+                    "height": 192,
+                    "isTree": 1
                 },
                 {
                     "alias": "birchTree",
@@ -952,7 +953,8 @@
                     "category": "structures",
                     "src": "birchtree.png",
                     "width": 288,
-                    "height": 288
+                    "height": 288,
+                    "isTree": 1
                 },
                 {
                     "alias": "cypressTree",
@@ -961,7 +963,8 @@
                     "category": "structures",
                     "src": "cypresstree.png",
                     "width": 128,
-                    "height": 128
+                    "height": 128,
+                    "isTree": 1
                 },
                 {
                     "alias": "mapleTree",
@@ -970,7 +973,8 @@
                     "category": "structures",
                     "src": "mapletree.png",
                     "width": 352,
-                    "height": 352
+                    "height": 352,
+                    "isTree": 1
                 },
                 {
                     "alias": "oakTree",
@@ -979,7 +983,8 @@
                     "category": "structures",
                     "src": "oaktree.png",
                     "width": 352,
-                    "height": 352
+                    "height": 352,
+                    "isTree": 1
                 },
                 {
                     "alias": "pineTreeSmall",
@@ -988,7 +993,8 @@
                     "category": "structures",
                     "src": "pinetree-small.png",
                     "width": 144,
-                    "height": 144
+                    "height": 144,
+                    "isTree": 1
                 },
                 {
                     "alias": "shrubSmall",

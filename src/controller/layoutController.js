@@ -376,6 +376,8 @@ export class LayoutController {
 
     this.initStructureColorUI();
 
+    this.initRandomTreesUI();
+
     this.checkBackgroundColorChange();
 
     this.drawGrid();
@@ -827,6 +829,19 @@ export class LayoutController {
     } else if (selectedCategory === 'custom') {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
+    }
+    if ((selectedCategory === 'structures' && searchQuery.length === 0) || (searchQuery.length > 0 && 'random trees'.includes(searchQuery))) {
+      let rtButton = document.createElement('button');
+      rtButton.title = 'Random Trees';
+      let rtImage = new Image();
+      rtImage.src = 'img/icon-add-black.png';
+      rtImage.className = 'custom';
+      rtButton.appendChild(rtImage);
+      let rtLabel = document.createElement('span');
+      rtLabel.textContent = 'Random Trees';
+      rtButton.appendChild(rtLabel);
+      rtButton.addEventListener('click', () => this.showRandomTreesDialog());
+      this.componentBrowser.appendChild(rtButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
       if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
@@ -1551,6 +1566,192 @@ export class LayoutController {
       document.getElementById('componentColorName').value = color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     }
     ui("#newCustomComponentDialog");
+  }
+
+  initRandomTreesUI() {
+    const componentWidthNode = document.getElementById('randomTreesWidth');
+    const componentHeightNode = document.getElementById('randomTreesHeight');
+    document.getElementById('createRandomTrees').addEventListener('click', this.onCreateRandomTrees.bind(this));
+    const randomTreesDensity = document.getElementById('randomTreesDensity');
+    const randomTreesDensityLabel = document.getElementById('randomTreesDensityLabel');
+    if (randomTreesDensity && randomTreesDensityLabel) {
+      randomTreesDensity.addEventListener('input', (event) => {
+        const val = -1.0 * parseFloat(event.target.value);
+        if (val <= 0.8) randomTreesDensityLabel.textContent = 'Very Dense';
+        else if (val <= 1.1) randomTreesDensityLabel.textContent = 'Dense';
+        else if (val <= 1.5) randomTreesDensityLabel.textContent = 'Normal';
+        else randomTreesDensityLabel.textContent = 'Sparse';
+      });
+      randomTreesDensity.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          this.onCreateRandomTrees();
+        }
+        if (event.key === 'Escape') {
+          ui("#randomTreesDialog");
+        }
+        event.stopPropagation();
+      });
+    }
+    componentWidthNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onCreateRandomTrees();
+      }
+      if (event.key === 'Escape') {
+        ui("#randomTreesDialog");
+      }
+      event.stopPropagation();
+    });
+    componentWidthNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+    componentHeightNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        this.onCreateRandomTrees();
+      }
+      if (event.key === 'Escape') {
+        ui("#randomTreesDialog");
+      }
+      event.stopPropagation();
+    });
+    componentHeightNode.addEventListener('input', (event) => {
+      if (event.target.value.length > 0) {
+        event.target.parentElement.classList.remove('invalid');
+      }
+    });
+  }
+
+  showRandomTreesDialog() {
+    document.getElementById('randomTreesWidth').value = '32';
+    document.getElementById('randomTreesHeight').value = '32';
+    document.getElementById('randomTreesDensity').value = '-1.2';
+    document.getElementById('randomTreesDensityLabel').textContent = 'Normal';
+    ui("#randomTreesDialog");
+  }
+
+  onCreateRandomTrees() {
+    const width = parseInt(document.getElementById('randomTreesWidth').value);
+    const height = parseInt(document.getElementById('randomTreesHeight').value);
+    const density = -1.0 * parseFloat(document.getElementById('randomTreesDensity').value);
+    if (!width || width < 1 || !height || height < 1) {
+      showSnackbar('Please enter valid dimensions.');
+      return;
+    }
+    ui("#randomTreesDialog");
+    this.generateRandomTrees(width, height, density);
+  }
+
+  /**
+   * 
+   * @param {number} widthStuds 
+   * @param {number} heightStuds 
+   * @param {number} density Ranging from 0.5 (very dense) to 2.0 (very sparse) 
+   * @returns 
+   */
+  async generateRandomTrees(widthStuds, heightStuds, density) {
+    const trees = this.trackData.bundles[0].assets.filter(a => a.isTree === 1);
+    if (trees.length === 0) return;
+
+    await Promise.all(trees.map(t => {
+      if (!Assets.cache.has(t.alias)) return Assets.load(t.alias);
+    }));
+
+    const pixelWidth = widthStuds * 16;
+    const pixelHeight = heightStuds * 16;
+    const snapToSize = this.config.snapToSize || 16;
+
+    const screenCenter = { x: this.app.screen.width / 2, y: this.app.screen.height / 2 };
+    const center = this.currentLayer.toLocal(screenCenter);
+    const originX = Math.round((center.x - pixelWidth / 2) / snapToSize) * snapToSize;
+    const originY = Math.round((center.y - pixelHeight / 2) / snapToSize) * snapToSize;
+
+    const positions = [];
+    for (let x = originX; x < originX + pixelWidth; x += snapToSize) {
+      for (let y = originY; y < originY + pixelHeight; y += snapToSize) {
+        positions.push({ x, y });
+      }
+    }
+
+    const placed = [];
+    const placedCircles = [];
+
+    const spacing = density > 1.0 ? (density - 1.0) : 0;
+    const overlapFraction = density < 1.0 ? (1.0 - density) / 2 : 0;
+
+    const passes = [{ pool: trees, distMultiplier: 1 + spacing - overlapFraction }];
+    if (density <= 0.7) {
+      const minWidth = Math.min(...trees.map(t => t.width));
+      passes.push({ pool: trees.filter(t => t.width === minWidth), distMultiplier: 1 - overlapFraction });
+    }
+
+    this.undoManager.suppress();
+
+    for (const pass of passes) {
+      for (let i = positions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [positions[i], positions[j]] = [positions[j], positions[i]];
+      }
+
+      for (const pos of positions) {
+        const selectedTree = pass.pool[Math.floor(Math.random() * pass.pool.length)];
+        const radius = selectedTree.width / 2;
+
+        if (pos.x - radius < originX || pos.x + radius > originX + pixelWidth ||
+            pos.y - radius < originY || pos.y + radius > originY + pixelHeight) {
+          continue;
+        }
+
+        let fits = true;
+        for (const existing of placedCircles) {
+          const dx = pos.x - existing.x;
+          const dy = pos.y - existing.y;
+          const distSq = dx * dx + dy * dy;
+          const minDist = (radius + existing.radius) * pass.distMultiplier;
+          if (distSq < minDist * minDist) {
+            fits = false;
+            break;
+          }
+        }
+
+        if (!fits) continue;
+
+        const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+        const angle = angles[Math.floor(Math.random() * 4)];
+        let offset = 0;
+        if ((selectedTree.width / 16) % 2 === 1) {
+          offset = 8;
+        }
+        const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
+        this.currentLayer.addChild(comp);
+
+        placed.push(comp);
+        placedCircles.push({ x: pos.x, y: pos.y, radius });
+      }
+    }
+
+    this.undoManager.unsuppress();
+
+    if (placed.length === 0) {
+      showSnackbar('Area too small to fit any trees.');
+      return;
+    }
+
+    const group = new ComponentGroup(false);
+    for (const comp of placed) {
+      group.addComponent(comp);
+    }
+    group.insertCollisionTree();
+
+    this.undoManager.record({
+      type: 'duplicate_group',
+      data: {
+        componentUuids: placed.map(c => c.uuid),
+        layerUuid: this.currentLayer.uuid
+      }
+    });
+
+    LayoutController.selectComponent(group);
   }
 
   onCreateCustomComponent() {
