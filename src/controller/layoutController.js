@@ -1702,10 +1702,14 @@ export class LayoutController {
           continue;
         }
 
+        let offset = 0;
+        if ((selectedTree.width / 16) % 2 === 1) {
+          offset = 8;
+        }
         let fits = true;
         for (const existing of placedCircles) {
-          const dx = pos.x - existing.x;
-          const dy = pos.y - existing.y;
+          const dx = pos.x + offset - existing.x;
+          const dy = pos.y + offset - existing.y;
           const distSq = dx * dx + dy * dy;
           const minDist = (radius + existing.radius) * pass.distMultiplier;
           if (distSq < minDist * minDist) {
@@ -1718,15 +1722,11 @@ export class LayoutController {
 
         const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
         const angle = angles[Math.floor(Math.random() * 4)];
-        let offset = 0;
-        if ((selectedTree.width / 16) % 2 === 1) {
-          offset = 8;
-        }
         const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
         this.currentLayer.addChild(comp);
 
         placed.push(comp);
-        placedCircles.push({ x: pos.x, y: pos.y, radius });
+        placedCircles.push({ x: pos.x + offset, y: pos.y + offset, radius });
       }
     }
 
