@@ -1687,53 +1687,55 @@ export class LayoutController {
 
     this.undoManager.suppress();
 
-    for (const pass of passes) {
-      for (let i = positions.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [positions[i], positions[j]] = [positions[j], positions[i]];
-      }
-
-      for (const pos of positions) {
-        const selectedTree = pass.pool[Math.floor(Math.random() * pass.pool.length)];
-        const radius = selectedTree.width / 2;
-
-        if (pos.x - radius < originX || pos.x + radius > originX + pixelWidth ||
-            pos.y - radius < originY || pos.y + radius > originY + pixelHeight) {
-          continue;
+    try {
+      for (const pass of passes) {
+        for (let i = positions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [positions[i], positions[j]] = [positions[j], positions[i]];
         }
 
-        let offset = 0;
-        if ((selectedTree.width / 16) % 2 === 1) {
-          offset = 8;
-        }
-        let fits = true;
-        for (const existing of placedCircles) {
-          const dx = pos.x + offset - existing.x;
-          const dy = pos.y + offset - existing.y;
-          const distSq = dx * dx + dy * dy;
-          const minDist = (radius + existing.radius) * pass.distMultiplier;
-          if (distSq < minDist * minDist) {
-            fits = false;
-            break;
+        for (const pos of positions) {
+          const selectedTree = pass.pool[Math.floor(Math.random() * pass.pool.length)];
+          const radius = selectedTree.width / 2;
+
+          if (pos.x - radius < originX || pos.x + radius > originX + pixelWidth ||
+              pos.y - radius < originY || pos.y + radius > originY + pixelHeight) {
+            continue;
           }
+
+          let offset = 0;
+          if ((selectedTree.width / 16) % 2 === 1) {
+            offset = 8;
+          }
+          let fits = true;
+          for (const existing of placedCircles) {
+            const dx = pos.x + offset - existing.x;
+            const dy = pos.y + offset - existing.y;
+            const distSq = dx * dx + dy * dy;
+            const minDist = (radius + existing.radius) * pass.distMultiplier;
+            if (distSq < minDist * minDist) {
+              fits = false;
+              break;
+            }
+          }
+
+          if (!fits) continue;
+
+          const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+          const angle = angles[Math.floor(Math.random() * 4)];
+          const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
+          this.currentLayer.addChild(comp);
+
+          placed.push(comp);
+          placedCircles.push({ x: pos.x + offset, y: pos.y + offset, radius });
         }
-
-        if (!fits) continue;
-
-        const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
-        const angle = angles[Math.floor(Math.random() * 4)];
-        const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
-        this.currentLayer.addChild(comp);
-
-        placed.push(comp);
-        placedCircles.push({ x: pos.x + offset, y: pos.y + offset, radius });
       }
+    } finally {
+      this.undoManager.unsuppress();
     }
 
-    this.undoManager.unsuppress();
-
     if (placed.length === 0) {
-      showSnackbar('Area too small to fit any trees.');
+      showSnackbar('Area too small to fit any trees.', 'error');
       return;
     }
 

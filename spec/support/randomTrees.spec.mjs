@@ -186,4 +186,12 @@ describe("Random Trees", function () {
     expect(components.length).toBe(0);
     expect(layoutController.undoManager.length).toBe(0);
   });
+
+  it("unsuppresses undoManager even when component creation throws", async function () {
+    spyOn(layoutController.currentLayer, 'addChild').and.throwError('simulated failure');
+
+    await expectAsync(layoutController.generateRandomTrees(32, 32, 1.0)).toBeRejectedWithError('simulated failure');
+
+    expect(layoutController.undoManager._suppressed).toBe(false);
+  });
 });
