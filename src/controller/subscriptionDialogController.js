@@ -133,13 +133,18 @@ class SubscriptionDialogController {
    * @private
    */
   _attachCloseHandler() {
+    if (this._closeHandler && this._closeHandlerTarget) {
+      this._closeHandlerTarget.removeEventListener('close', this._closeHandler);
+    }
     if (this.dialogElement) {
-      this.dialogElement.addEventListener('close', () => {
+      this._closeHandler = () => {
         if (!this._transitioning) {
           sessionStorage.removeItem('pendingSubscribe');
         }
         this._transitioning = false;
-      });
+      };
+      this._closeHandlerTarget = this.dialogElement;
+      this.dialogElement.addEventListener('close', this._closeHandler);
     }
   }
 
