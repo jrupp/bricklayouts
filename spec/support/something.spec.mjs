@@ -109,6 +109,13 @@ describe("LayoutController", function() {
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
         geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
+        const shareContainer = document.createElement('div');
+        shareContainer.classList.add('hidden');
+        geiSpy.withArgs('shareButton-container').and.returnValue(shareContainer);
+        const shareButton = document.createElement('button');
+        shareButton.disabled = true;
+        geiSpy.withArgs('shareButton').and.returnValue(shareButton);
+        geiSpy.withArgs('shareButtonIcon').and.returnValue(document.createElement('i'));
         let p = document.createElement('div');
         let p2 = document.createElement('div');
         let p3 = document.createElement('div');
@@ -10527,7 +10534,7 @@ describe("LayoutController", function() {
             });
         });
     });
-    describe("UndoManager", function() {
+    describe("LayoutController to UndoManager", function() {
         it("correctly undoes zOrder changes", function() {
             /** @type {LayoutController} */
             let layoutController = window.layoutController;
@@ -10556,6 +10563,103 @@ describe("LayoutController", function() {
             expect(layoutController.currentLayer.children[0].uuid).toBe(baseplate.uuid);
             expect(layoutController.currentLayer.children[1].uuid).toBe(track1.uuid);
             expect(layoutController.currentLayer.children[2].uuid).toBe(track2.uuid);
+        });
+    });
+
+    describe('updateCloudMetadata with public state', () => {
+        it('stores isPublic when provided', () => {
+            layoutController.updateCloudMetadata({ cloudId: 'test-id', isPublic: true });
+            expect(layoutController.layoutMetadata.isPublic).toBeTrue();
+        });
+
+        it('stores shareCode when provided', () => {
+            layoutController.updateCloudMetadata({ cloudId: 'test-id', shareCode: 'AbCd1234' });
+            expect(layoutController.layoutMetadata.shareCode).toBe('AbCd1234');
+        });
+
+        it('does not overwrite isPublic when not provided', () => {
+            layoutController.updateCloudMetadata({ cloudId: 'test-id', isPublic: true });
+            layoutController.updateCloudMetadata({ cloudId: 'test-id', s3Key: 'new-key' });
+            expect(layoutController.layoutMetadata.isPublic).toBeTrue();
+        });
+
+        it('clears isPublic and shareCode on clearCloudMetadata', () => {
+            layoutController.updateCloudMetadata({ cloudId: 'test-id', isPublic: true, shareCode: 'AbCd1234' });
+            layoutController.clearCloudMetadata();
+            expect(layoutController.layoutMetadata.isPublic).toBeUndefined();
+            expect(layoutController.layoutMetadata.shareCode).toBeUndefined();
+        });
+    });
+
+    describe('share button visibility', () => {
+        let shareContainer;
+        let shareBtn;
+
+        beforeEach(() => {
+            shareContainer = document.getElementById('shareButton-container');
+            shareBtn = document.getElementById('shareButton');
+            layoutController.clearCloudMetadata();
+        });
+
+        it('hides share button when not authenticated', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(
+                Promise.resolve({ isAuthenticated: false, hasCloudAccess: false })
+            );
+            await layoutController.updateCloudMenuVisibility();
+            expect(shareContainer.classList.contains('hidden')).toBeTrue();
+        });
+
+        it('hides share button when readOnly is true', async () => {
+            layoutController.readOnly = true;
+            spyOn(layoutController, '_getAuthManager').and.returnValue(
+                Promise.resolve({
+                    isAuthenticated: true,
+                    hasCloudAccess: true,
+                    getUserGroups: () => Promise.resolve(['subscription']),
+                })
+            );
+            await layoutController.updateCloudMenuVisibility();
+            expect(shareContainer.classList.contains('hidden')).toBeTrue();
+            layoutController.readOnly = false;
+        });
+
+        it('disables share button for non-cloud layouts', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(
+                Promise.resolve({
+                    isAuthenticated: true,
+                    hasCloudAccess: true,
+                    getUserGroups: () => Promise.resolve(['subscription']),
+                })
+            );
+            await layoutController.updateCloudMenuVisibility();
+            expect(shareBtn.disabled).toBeTrue();
+            expect(shareBtn.title).toBe('Save your layout to share it');
+        });
+
+        it('enables share button for cloud layouts', async () => {
+            layoutController.updateCloudMetadata({ cloudId: 'test-id' });
+            spyOn(layoutController, '_getAuthManager').and.returnValue(
+                Promise.resolve({
+                    isAuthenticated: true,
+                    hasCloudAccess: true,
+                    getUserGroups: () => Promise.resolve(['subscription']),
+                })
+            );
+            await layoutController.updateCloudMenuVisibility();
+            expect(shareBtn.disabled).toBeFalse();
+            expect(shareBtn.title).toBe('Share your layout');
+        });
+
+        it('shows share button when authenticated subscriber', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(
+                Promise.resolve({
+                    isAuthenticated: true,
+                    hasCloudAccess: true,
+                    getUserGroups: () => Promise.resolve(['subscription']),
+                })
+            );
+            await layoutController.updateCloudMenuVisibility();
+            expect(shareContainer.classList.contains('hidden')).toBeFalse();
         });
     });
 });

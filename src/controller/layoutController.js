@@ -6,7 +6,7 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
+import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
@@ -1978,6 +1978,7 @@ export class LayoutController {
     this.newLayer();
     this.undoManager.unsuppress();
     this.undoManager.clear();
+    this.updateCloudMenuVisibility();
   }
 
   get currentLayer() {
@@ -2071,7 +2072,14 @@ export class LayoutController {
     if (cloudInfo.version !== undefined) {
       this.#layoutMetadata.version = cloudInfo.version;
     }
+    if (cloudInfo.isPublic !== undefined) {
+      this.#layoutMetadata.isPublic = cloudInfo.isPublic;
+    }
+    if (cloudInfo.shareCode !== undefined) {
+      this.#layoutMetadata.shareCode = cloudInfo.shareCode;
+    }
     this.#layoutMetadata.source = 'cloud';
+    this.updateCloudMenuVisibility();
   }
 
   /**
@@ -2082,6 +2090,8 @@ export class LayoutController {
     delete this.#layoutMetadata.s3Key;
     delete this.#layoutMetadata.lastSaved;
     delete this.#layoutMetadata.version;
+    delete this.#layoutMetadata.isPublic;
+    delete this.#layoutMetadata.shareCode;
     this.#layoutMetadata.source = 'local';
   }
 
@@ -2683,6 +2693,7 @@ export class LayoutController {
       this.#layoutMetadata.source = 'cloud';
 
       showSnackbar('Layout saved to cloud!', 'success');
+      this.updateCloudMenuVisibility();
     } catch (error) {
       console.error('Failed to save layout to cloud:', error);
       showSnackbar(error.message || 'Failed to save layout.', 'error');
@@ -2727,6 +2738,57 @@ export class LayoutController {
         mobileCloudSaveBtn.classList.remove('hidden');
       } else {
         mobileCloudSaveBtn.classList.add('hidden');
+      }
+    }
+
+    const shareContainer = document.getElementById('shareButton-container');
+    if (shareContainer) {
+      if (this.readOnly || !authManager || !authManager.isAuthenticated) {
+        shareContainer.classList.add('hidden');
+      } else {
+        const groups = await authManager.getUserGroups();
+        const isSubscriber = groups.includes('subscription') || groups.includes('admin');
+        if (isSubscriber) {
+          shareContainer.classList.remove('hidden');
+          const shareBtn = document.getElementById('shareButton');
+          if (shareBtn) {
+            if (this.isCloudLayout()) {
+              shareBtn.disabled = false;
+              shareBtn.title = 'Share your layout';
+            } else {
+              shareBtn.disabled = true;
+              shareBtn.title = 'Save your layout to share it';
+            }
+
+            if (!shareBtn.dataset.iconSet) {
+              const icon = document.getElementById('shareButtonIcon');
+              if (icon) {
+                if (isIOSBrowser()) {
+                  icon.textContent = 'ios_share';
+                } else if (isAndroidBrowser()) {
+                  icon.textContent = 'share';
+                } else {
+                  icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l7 7-7 7v-4.5c-5 0-8.5 1.5-11 5 1-5 4-10 11-10.5V5z"/></svg>';
+                }
+                shareBtn.dataset.iconSet = 'true';
+              }
+            }
+
+            if (!shareBtn.dataset.listenerAttached) {
+              shareBtn.addEventListener('click', async () => {
+                const { ShareDialogController } = await import('../cloud/shareDialogController.js');
+                const shareDialog = ShareDialogController.getInstance(
+                  authManager.getCloudFeatures().cloudStorage,
+                  this
+                );
+                shareDialog.show();
+              });
+              shareBtn.dataset.listenerAttached = 'true';
+            }
+          }
+        } else {
+          shareContainer.classList.add('hidden');
+        }
       }
     }
   }

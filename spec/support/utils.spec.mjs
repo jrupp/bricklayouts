@@ -1,4 +1,4 @@
-import { getOptionIndexByValue, isApproxMultiple } from '../../src/utils/utils.js';
+import { getOptionIndexByValue, isApproxMultiple, isAndroidBrowser } from '../../src/utils/utils.js';
 
 describe('isApproxMultiple', () => {
   it('returns true for exact integer multiples', () => {
@@ -134,5 +134,48 @@ describe('getOptionIndexByValue', () => {
     expect(getOptionIndexByValue(id, '2')).toBe(0);
 
     removeElementById(id);
+  });
+});
+
+describe('isAndroidBrowser', () => {
+  let originalUserAgent;
+
+  beforeEach(() => {
+    originalUserAgent = navigator.userAgent;
+  });
+
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: originalUserAgent,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  it('returns true for Android user agents', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36',
+      writable: true,
+      configurable: true,
+    });
+    expect(isAndroidBrowser()).toBeTrue();
+  });
+
+  it('returns false for iOS user agents', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15',
+      writable: true,
+      configurable: true,
+    });
+    expect(isAndroidBrowser()).toBeFalse();
+  });
+
+  it('returns false for desktop user agents', () => {
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      writable: true,
+      configurable: true,
+    });
+    expect(isAndroidBrowser()).toBeFalse();
   });
 });
