@@ -68,6 +68,8 @@ export { TrackData };
  * @property {String} [lastSaved] ISO 8601 timestamp of when the layout was last saved to cloud.
  * @property {String} [source] The source of the layout ('local' or 'cloud').
  * @property {Number} [version] The version number of the layout in cloud storage.
+ * @property {Boolean} [isPublic] Whether the layout is publicly shared.
+ * @property {String} [shareCode] The public share code for the layout, if it is shared.
  */
 let LayoutMetadata;
 export { LayoutMetadata };
