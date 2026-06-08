@@ -53,7 +53,7 @@ body {
 	transition: background var(--speed) var(--easing);
 }
 
-canvas {
+#canvasContainer > canvas {
 	width: 100%;
 	height: 100%;
 	touch-action: manipulation;
@@ -208,6 +208,8 @@ canvas {
 #buttonLayoutName,
 #fileOpenMenu,
 #portalRedirectConfirmDialog,
+#shareDialog,
+#shareButton-container,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -274,6 +276,8 @@ canvas {
 [data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] #fileOpenMenu,
 [data-dark-mode=true] #portalRedirectConfirmDialog,
+[data-dark-mode=true] #shareDialog,
+[data-dark-mode=true] #shareButton-container,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -1343,6 +1347,19 @@ i + span.label {
 
 /* Media query for screens 50rem (800px) and narrower - targets tablets and mobile devices */
 @media (max-width: 50rem) {
+	#shareButtonText {
+		display: none;
+	}
+	#shareButton {
+		--_padding: 0;
+		padding: 0;
+		block-size: var(--_size);
+		inline-size: var(--_size);
+		box-sizing: border-box;
+		--_round: 0;
+		border-radius: 50%;
+	}
+
 	#configurationEditor {
 		max-width: 48rem;
 		--_margin: calc(5rem + 20px) 0 0 0;
@@ -1465,6 +1482,62 @@ i + span.label {
 
 [data-dark-mode=true] #accountDropdownMenu li:hover {
 	background: var(--surface-container-high);
+}
+
+/* Share Button */
+#shareButton-container {
+	position: relative;
+}
+
+#shareButton-container.hidden {
+	display: none;
+}
+
+#shareButton {
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	box-sizing: content-box;
+	--_round: 2rem;
+	border-radius: var(--_round) !important;
+}
+
+#shareButton:hover:not([disabled]) {
+	background: var(--component-hover);
+}
+
+#shareButton[disabled] {
+	opacity: 0.5;
+	cursor: default;
+}
+
+#shareButtonIcon svg {
+	fill: none !important;
+}
+
+#shareFacebook svg {
+	fill: #0866FF !important;
+}
+
+#shareReddit svg {
+	fill: #FF4500 !important;
+}
+
+#shareX svg {
+	fill: var(--color) !important;
+}
+
+/* Share Dialog */
+#shareDialog:not(.bottom) {
+	z-index: 1100;
+	max-inline-size: 100%;
+	inline-size: 38rem;
+}
+
+#shareDialog.bottom {
+	z-index: 1100;
+	max-height: 80vh;
 }
 
 #cloudSnackbar {

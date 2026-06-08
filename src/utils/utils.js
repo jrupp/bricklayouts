@@ -62,6 +62,16 @@ export function isIOSBrowser() {
 }
 
 /**
+ * Detects if the current browser is running on an Android device.
+ *
+ * @returns {boolean} True if running on Android, false otherwise.
+ */
+export function isAndroidBrowser() {
+  const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+  return /Android/.test(userAgent);
+}
+
+/**
  * Detects if the current platform is macOS.
  * This is used to determine whether to show certain UI elements like the "⌘" key in shortcuts.
  * @returns {boolean} True if the current platform is macOS, false otherwise.

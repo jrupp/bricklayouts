@@ -6,7 +6,7 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
+import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
@@ -68,6 +68,8 @@ export { TrackData };
  * @property {String} [lastSaved] ISO 8601 timestamp of when the layout was last saved to cloud.
  * @property {String} [source] The source of the layout ('local' or 'cloud').
  * @property {Number} [version] The version number of the layout in cloud storage.
+ * @property {Boolean} [isPublic] Whether the layout is publicly shared.
+ * @property {String} [shareCode] The public share code for the layout, if it is shared.
  */
 let LayoutMetadata;
 export { LayoutMetadata };
@@ -1568,6 +1570,7 @@ export class LayoutController {
     ui("#newCustomComponentDialog");
   }
 
+  /** Initializes event listeners for the random trees dialog inputs. */
   initRandomTreesUI() {
     const componentWidthNode = document.getElementById('randomTreesWidth');
     const componentHeightNode = document.getElementById('randomTreesHeight');
@@ -1622,6 +1625,7 @@ export class LayoutController {
     });
   }
 
+  /** Opens the random trees dialog with default values. */
   showRandomTreesDialog() {
     document.getElementById('randomTreesWidth').value = '32';
     document.getElementById('randomTreesHeight').value = '32';
@@ -1630,6 +1634,7 @@ export class LayoutController {
     ui("#randomTreesDialog");
   }
 
+  /** Validates inputs and triggers random tree generation from the dialog. */
   onCreateRandomTrees() {
     const width = parseInt(document.getElementById('randomTreesWidth').value);
     const height = parseInt(document.getElementById('randomTreesHeight').value);
@@ -1643,11 +1648,10 @@ export class LayoutController {
   }
 
   /**
-   * 
-   * @param {number} widthStuds 
-   * @param {number} heightStuds 
-   * @param {number} density Ranging from 0.5 (very dense) to 2.0 (very sparse) 
-   * @returns 
+   * Generates a random forest of tree components within the specified area.
+   * @param {number} widthStuds - Width of the area in studs.
+   * @param {number} heightStuds - Height of the area in studs.
+   * @param {number} density - Spacing factor; 0.5 (very dense) to 2.0 (very sparse).
    */
   async generateRandomTrees(widthStuds, heightStuds, density) {
     const trees = this.trackData.bundles[0].assets.filter(a => a.isTree === 1);
@@ -1978,6 +1982,7 @@ export class LayoutController {
     this.newLayer();
     this.undoManager.unsuppress();
     this.undoManager.clear();
+    this.updateCloudMenuVisibility();
   }
 
   get currentLayer() {
@@ -2071,7 +2076,14 @@ export class LayoutController {
     if (cloudInfo.version !== undefined) {
       this.#layoutMetadata.version = cloudInfo.version;
     }
+    if (cloudInfo.isPublic !== undefined) {
+      this.#layoutMetadata.isPublic = cloudInfo.isPublic;
+    }
+    if (cloudInfo.shareCode !== undefined) {
+      this.#layoutMetadata.shareCode = cloudInfo.shareCode;
+    }
     this.#layoutMetadata.source = 'cloud';
+    this.updateCloudMenuVisibility();
   }
 
   /**
@@ -2082,6 +2094,8 @@ export class LayoutController {
     delete this.#layoutMetadata.s3Key;
     delete this.#layoutMetadata.lastSaved;
     delete this.#layoutMetadata.version;
+    delete this.#layoutMetadata.isPublic;
+    delete this.#layoutMetadata.shareCode;
     this.#layoutMetadata.source = 'local';
   }
 
@@ -2683,6 +2697,7 @@ export class LayoutController {
       this.#layoutMetadata.source = 'cloud';
 
       showSnackbar('Layout saved to cloud!', 'success');
+      this.updateCloudMenuVisibility();
     } catch (error) {
       console.error('Failed to save layout to cloud:', error);
       showSnackbar(error.message || 'Failed to save layout.', 'error');
@@ -2727,6 +2742,66 @@ export class LayoutController {
         mobileCloudSaveBtn.classList.remove('hidden');
       } else {
         mobileCloudSaveBtn.classList.add('hidden');
+      }
+    }
+
+    const shareContainer = document.getElementById('shareButton-container');
+    if (shareContainer) {
+      if (this.readOnly || !authManager || !authManager.isAuthenticated) {
+        shareContainer.classList.add('hidden');
+      } else {
+        let groups = [];
+        try {
+          groups = await authManager.getUserGroups();
+        } catch (e) {
+          // Token parsing can fail — treat as non-subscriber
+        }
+        const isSubscriber = groups.includes('subscription') || groups.includes('admin');
+        if (isSubscriber) {
+          shareContainer.classList.remove('hidden');
+          const shareBtn = document.getElementById('shareButton');
+          if (shareBtn) {
+            if (this.isCloudLayout()) {
+              shareBtn.disabled = false;
+              shareBtn.title = 'Share your layout';
+            } else {
+              shareBtn.disabled = true;
+              shareBtn.title = 'Save your layout to share it';
+            }
+
+            if (!shareBtn.dataset.iconSet) {
+              const icon = document.getElementById('shareButtonIcon');
+              if (icon) {
+                if (isIOSBrowser()) {
+                  icon.textContent = 'ios_share';
+                } else if (isAndroidBrowser()) {
+                  icon.textContent = 'share';
+                } else {
+                  icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l7 7-7 7v-4.5c-5 0-8.5 1.5-11 5 1-5 4-10 11-10.5V5z"/></svg>';
+                }
+                shareBtn.dataset.iconSet = 'true';
+              }
+            }
+
+            if (!shareBtn.dataset.listenerAttached) {
+              shareBtn.addEventListener('click', async () => {
+                try {
+                  const { ShareDialogController } = await import('../cloud/shareDialogController.js');
+                  const shareDialog = ShareDialogController.getInstance(
+                    authManager.getCloudFeatures().cloudStorage,
+                    this
+                  );
+                  shareDialog.show();
+                } catch (e) {
+                  showSnackbar('Unable to open share dialog.', 'error');
+                }
+              });
+              shareBtn.dataset.listenerAttached = 'true';
+            }
+          }
+        } else {
+          shareContainer.classList.add('hidden');
+        }
       }
     }
   }
