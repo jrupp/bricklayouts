@@ -2746,7 +2746,12 @@ export class LayoutController {
       if (this.readOnly || !authManager || !authManager.isAuthenticated) {
         shareContainer.classList.add('hidden');
       } else {
-        const groups = await authManager.getUserGroups();
+        let groups = [];
+        try {
+          groups = await authManager.getUserGroups();
+        } catch (e) {
+          // Token parsing can fail — treat as non-subscriber
+        }
         const isSubscriber = groups.includes('subscription') || groups.includes('admin');
         if (isSubscriber) {
           shareContainer.classList.remove('hidden');
@@ -2776,12 +2781,16 @@ export class LayoutController {
 
             if (!shareBtn.dataset.listenerAttached) {
               shareBtn.addEventListener('click', async () => {
-                const { ShareDialogController } = await import('../cloud/shareDialogController.js');
-                const shareDialog = ShareDialogController.getInstance(
-                  authManager.getCloudFeatures().cloudStorage,
-                  this
-                );
-                shareDialog.show();
+                try {
+                  const { ShareDialogController } = await import('../cloud/shareDialogController.js');
+                  const shareDialog = ShareDialogController.getInstance(
+                    authManager.getCloudFeatures().cloudStorage,
+                    this
+                  );
+                  shareDialog.show();
+                } catch (e) {
+                  showSnackbar('Unable to open share dialog.', 'error');
+                }
               });
               shareBtn.dataset.listenerAttached = 'true';
             }

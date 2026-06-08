@@ -1357,7 +1357,7 @@ i + span.label {
 		inline-size: var(--_size);
 		box-sizing: border-box;
 		--_round: 0;
-	    border-radius: 50%;
+		border-radius: 50%;
 	}
 
 	#configurationEditor {
@@ -1500,7 +1500,7 @@ i + span.label {
 	gap: 0.4rem;
 	box-sizing: content-box;
 	--_round: 2rem;
-    border-radius: var(--_round) !important;
+	border-radius: var(--_round) !important;
 }
 
 #shareButton:hover:not([disabled]) {
