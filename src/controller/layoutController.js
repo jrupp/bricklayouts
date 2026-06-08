@@ -1570,6 +1570,7 @@ export class LayoutController {
     ui("#newCustomComponentDialog");
   }
 
+  /** Initializes event listeners for the random trees dialog inputs. */
   initRandomTreesUI() {
     const componentWidthNode = document.getElementById('randomTreesWidth');
     const componentHeightNode = document.getElementById('randomTreesHeight');
@@ -1624,6 +1625,7 @@ export class LayoutController {
     });
   }
 
+  /** Opens the random trees dialog with default values. */
   showRandomTreesDialog() {
     document.getElementById('randomTreesWidth').value = '32';
     document.getElementById('randomTreesHeight').value = '32';
@@ -1632,6 +1634,7 @@ export class LayoutController {
     ui("#randomTreesDialog");
   }
 
+  /** Validates inputs and triggers random tree generation from the dialog. */
   onCreateRandomTrees() {
     const width = parseInt(document.getElementById('randomTreesWidth').value);
     const height = parseInt(document.getElementById('randomTreesHeight').value);
@@ -1645,11 +1648,10 @@ export class LayoutController {
   }
 
   /**
-   * 
-   * @param {number} widthStuds 
-   * @param {number} heightStuds 
-   * @param {number} density Ranging from 0.5 (very dense) to 2.0 (very sparse) 
-   * @returns 
+   * Generates a random forest of tree components within the specified area.
+   * @param {number} widthStuds - Width of the area in studs.
+   * @param {number} heightStuds - Height of the area in studs.
+   * @param {number} density - Spacing factor; 0.5 (very dense) to 2.0 (very sparse).
    */
   async generateRandomTrees(widthStuds, heightStuds, density) {
     const trees = this.trackData.bundles[0].assets.filter(a => a.isTree === 1);
