@@ -2371,9 +2371,12 @@ export class LayoutController {
           reader.onload = _ => {
             this.reset();
             Assets.add({alias:'newComponent', src:reader.result});
-            Assets.load('newComponent').then((textures) => {
+            Assets.load('newComponent').then((texture) => {
               import('./editorController.js').then((module) => {
-                LayoutController.editorController = new module.EditorController(textures.newComponent, this);
+                if (!LayoutController.editorController) {
+                  LayoutController.editorController = new module.EditorController(this, true);
+                }
+                LayoutController.editorController.show(texture);
               });
             });
           };

@@ -14,16 +14,27 @@ import '../FileSaver.min.js';
  * @class EditorController
  */
 export class EditorController {
+  static UNIT_MULTIPLIERS = {
+    studs: 16,
+    inches: 51.2,
+    feet: 614.4,
+    centimeters: 20,
+    millimeters: 2
+  };
+
   /**
-   * 
-   * @param {Texture} texture 
    * @param {LayoutController} layoutController
+   * @param {boolean} [isAdmin=false]
    */
-  constructor(texture, layoutController) {
+  constructor(layoutController, isAdmin=false) {
     /** @type {LayoutController} */
     this.layoutController = layoutController;
-    /** @type {Texture} */
-    this.texture = texture;
+    /** @type {boolean} */
+    this.isAdmin = isAdmin;
+    /** @type {?Texture} */
+    this.texture = null;
+    /** @type {?Component} */
+    this.newComp = null;
 
     /** @type {TrackData} */
     this.baseData = {
@@ -31,23 +42,21 @@ export class EditorController {
       name: 'New Component',
       category: '9V',
       src: '',
-      image: this.texture,
+      image: null,
       scale: 1.0,
       type: DataTypes.TRACK,
       connections: []
-    }
+    };
     /**
      * Copies of the component being used for testing
      * @type {Array<Component>}
      */
     this.testComps = new Array();
-    /**
-     * The new component being edited
-     * @type {Component}
-     */
-    this.newComp = new Component(this.baseData, { x: layoutController.app.screen.width, y: layoutController.app.screen.height, angle: 0 }, layoutController.currentLayer);
-    layoutController.currentLayer.addChild(this.newComp);
-    document.getElementById('componentEditor').classList.remove('hidden');
+
+    this.#bindEditorEvents();
+  }
+
+  #bindEditorEvents() {
     document.getElementById('connectionEditorClose').addEventListener('click', () => {
       let editor = document.getElementById('connectionEditor');
       editor.classList.add('hidden');
@@ -101,6 +110,7 @@ export class EditorController {
         this.onDragStart(event, newConnection);
       }).on('pointerup', this.onDragEnd, this);
       this.updateConnections();
+      document.getElementById('componentEditorTest').removeAttribute('disabled');
     });
     let connectionsList = document.getElementById('componentEditorConnectionsList');
     connectionsList.addEventListener('slip:beforeswipe', function(e){e.preventDefault();}, false);
@@ -122,13 +132,172 @@ export class EditorController {
         this.testComps.length = 0;
       } else {
         this.newComp.connections.forEach((connection) => {
-          let tempComp = Component.fromConnection(this.baseData, connection, layoutController.currentLayer);
+          let tempComp = Component.fromConnection(this.baseData, connection, this.layoutController.currentLayer);
           this.testComps.push(tempComp);
-          layoutController.currentLayer.addChild(tempComp);
+          this.layoutController.currentLayer.addChild(tempComp);
         });
       }
     });
     document.getElementById('componentEditorExport').addEventListener('click', this.exportComponent.bind(this));
+  }
+
+  /**
+   * Displays the editor with the given texture. First prompts the user
+   * for component size and units, then creates the component at that scale.
+   * @param {Texture} texture
+   */
+  show(texture) {
+    this.texture = texture;
+    if (this.isAdmin) {
+      this.#showEditor(texture.width, texture.height);
+    } else {
+      this.#showSizeDialog();
+    }
+  }
+
+  #showSizeDialog() {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'no-padding border surface-container-high small-round';
+    dialog.id = 'editorSizeDialog';
+    dialog.innerHTML = `
+      <div>
+        <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+          <nav>
+            <h6 class="max">Component Size</h6>
+            <button class="circle medium transparent" id="editorSizeDialogClose">
+              <i class="medium bold">close</i>
+            </button>
+          </nav>
+        </header>
+        <div style="padding-left: 0.5rem; padding-right: 0.5rem;">
+          <div class="grid vertical-margin">
+            <div class="s8">
+              <div class="field label prefix middle-align large-space border medium no-margin">
+                <i class="large no-round">width</i>
+                <input id="editorSizeWidth" type="number" min="1" placeholder=" " autofocus>
+                <label>Width</label>
+                <output class="invalid" id="editorSizeWidthError"></output>
+              </div>
+            </div>
+            <div class="s4">
+              <div class="field label suffix middle-align large-space border medium no-margin">
+                <select id="editorSizeUnits">
+                  <option value="studs" selected>Studs</option>
+                  <option value="inches">Inches</option>
+                  <option value="feet">Feet</option>
+                  <option value="centimeters">Centimeters</option>
+                  <option value="millimeters">Millimeters</option>
+                </select>
+                <label>Units</label>
+                <i class="extra">arrow_drop_down</i>
+              </div>
+            </div>
+          </div>
+          <div class="grid vertical-margin">
+            <div class="s8">
+              <div class="field label prefix middle-align large-space border medium no-margin">
+                <i class="large no-round">height</i>
+                <input id="editorSizeHeight" type="number" min="1" placeholder=" ">
+                <label>Height</label>
+                <output class="invalid" id="editorSizeHeightError"></output>
+              </div>
+            </div>
+          </div>
+        </div>
+        <hr>
+        <nav class="no-padding no-space no-margin">
+          <button class="no-round max extra-text left-button primary-text" id="editorSizeDialogConfirm"><span>Confirm</span></button>
+          <button class="no-round max extra-text right-button error" id="editorSizeDialogCancel"><span>Cancel</span></button>
+        </nav>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    const closeDialog = () => {
+      dialog.close();
+      dialog.remove();
+    };
+
+    dialog.querySelector('#editorSizeDialogClose').addEventListener('click', closeDialog);
+    dialog.querySelector('#editorSizeDialogCancel').addEventListener('click', closeDialog);
+    dialog.addEventListener('close', () => dialog.remove());
+
+    dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', () => {
+      const widthInput = dialog.querySelector('#editorSizeWidth');
+      const heightInput = dialog.querySelector('#editorSizeHeight');
+      const unitsSelect = dialog.querySelector('#editorSizeUnits');
+      const widthError = dialog.querySelector('#editorSizeWidthError');
+      const heightError = dialog.querySelector('#editorSizeHeightError');
+      const width = widthInput.value;
+      const height = heightInput.value;
+
+      widthError.innerText = '';
+      heightError.innerText = '';
+      widthInput.parentElement.classList.remove('invalid');
+      heightInput.parentElement.classList.remove('invalid');
+
+      if (width.length === 0 || isNaN(width) || parseFloat(width) <= 0) {
+        widthError.innerText = 'Width must be a positive number';
+        widthInput.parentElement.classList.add('invalid');
+        widthInput.focus();
+        return;
+      }
+      if (height.length === 0 || isNaN(height) || parseFloat(height) <= 0) {
+        heightError.innerText = 'Height must be a positive number';
+        heightInput.parentElement.classList.add('invalid');
+        heightInput.focus();
+        return;
+      }
+
+      const units = unitsSelect.value;
+      const multiplier = EditorController.UNIT_MULTIPLIERS[units] || 16;
+      const pixelWidth = parseFloat(width) * multiplier;
+      const pixelHeight = parseFloat(height) * multiplier;
+
+      closeDialog();
+      this.#showEditor(pixelWidth, pixelHeight);
+    });
+  }
+
+  /**
+   * 
+   * @param {number} width 
+   * @param {number} height 
+   */
+  #showEditor(width, height) {
+    this.baseData.image = this.texture;
+    this.baseData.width = width;
+    this.baseData.height = height;
+    this.baseData.connections = [];
+
+    if (this.newComp) {
+      this.newComp.destroy();
+      this.newComp = null;
+    }
+    this.testComps.forEach((comp) => comp.destroy());
+    this.testComps.length = 0;
+
+    this.newComp = new Component(this.baseData, { x: this.layoutController.app.screen.width, y: this.layoutController.app.screen.height, angle: 0 }, this.layoutController.currentLayer);
+    this.layoutController.currentLayer.addChild(this.newComp);
+    this.newComp.sprite.setSize(width, height);
+    this.baseData.scale = this.newComp.sprite.scale.x;
+
+    document.getElementById('componentScale').value = this.newComp.sprite.scale.x;
+    document.getElementById('componentAlias').value = this.baseData.alias;
+    document.getElementById('componentName').value = this.baseData.name;
+    document.getElementById('componentEditor').classList.remove('hidden');
+    document.getElementById('componentEditorConnectionsList').innerHTML = '';
+    document.getElementById('componentEditorTest').setAttribute('disabled', 'disabled');
+    if (this.isAdmin) {
+      document.getElementById('componentEditorConnections').classList.remove('hidden');
+      document.getElementById('componentAliasField').classList.remove('hidden');
+      document.getElementById('componentScaleField').classList.remove('hidden');
+    } else {
+      document.getElementById('componentEditorConnections').classList.add('hidden');
+      document.getElementById('componentAliasField').classList.add('hidden');
+      document.getElementById('componentScaleField').classList.add('hidden');
+    }
   }
 
   updateConnections() {
@@ -312,16 +481,37 @@ export class EditorController {
   }
 
   /**
-   * Exports the component data to a JSON file so it can be easily added to the manifest later
+   * For admins: Exports the component data to a JSON file so it can be easily added to the manifest later
+   * For everyone else: Exports the newComp as an image.
    */
-  exportComponent() {
-    let data = JSON.stringify(this.baseData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next']);
-    const blob = new Blob([data], { type: 'application/json' });
-    saveAs(blob, `${this.baseData.alias}.json`);
+  async exportComponent() {
+    if (this.isAdmin) {
+      let data = JSON.stringify(this.baseData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next']);
+      const blob = new Blob([data], { type: 'application/json' });
+      saveAs(blob, `${this.baseData.alias}.json`);
+    } else {
+      this.layoutController.undoManager.suppress();
+      for (const layer of this.layoutController.layers) {
+        const children = [...layer.children];
+        for (const child of children) {
+          if (child !== this.newComp && child instanceof Component) {
+            child.destroy();
+          }
+        }
+      }
+      this.layoutController.undoManager.unsuppress();
+
+      const gridWasEnabled = this.layoutController.config.workspaceGridSettings.enabled;
+      this.layoutController.config.updateWorkspaceGridSettings({ enabled: false });
+
+      await this.layoutController.exportLayout();
+
+      this.layoutController.config.updateWorkspaceGridSettings({ enabled: gridWasEnabled });
+    }
   }
 
   /**
-   * Calculates a conenctions offsetVector using its circle's current position
+   * Calculates a connection's offsetVector using its circle's current position
    * @param {Connection} connection 
    */
   calculateConnectionVector(connection) {

@@ -109,14 +109,12 @@
             <div class="small-padding horizontal-padding extra-text center-align">
                 <p>Are you sure you want to create a new layout?<br>This will discard your current work.</p>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="confirmNewLayout" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="confirmNewLayout" class="no-round max extra-text left-button primary-text">
                     <span>Yes, Create New</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#newLayoutConfirmDialog">
+                <button class="no-round max extra-text right-button error" data-ui="#newLayoutConfirmDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
@@ -139,14 +137,12 @@
                     <output class="invalid" id="layoutNameError">Layout name can only contain letters, numbers, hyphens, and spaces.</output>
                 </div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="confirmLayoutName" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="confirmLayoutName" class="no-round max extra-text left-button primary-text">
                     <span>Save</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#layoutNameDialog">
+                <button class="no-round max extra-text right-button error" data-ui="#layoutNameDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
@@ -287,22 +283,39 @@
         </div>
         <div class="componentBrowser" id="componentBrowser"></div>
     </div>
-    <div id="componentEditor" class="hidden">
-        <div id="componentEditorHeader">
-            <span class="componentEditorTitle">Editor</span>
-            <span id="componentEditorClose" class="componentEditorTitle componentEditorTitleButton">X</span>
-        </div>
+    <div id="componentEditor" class="hidden surface-container-high">
+        <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+            <nav>
+                <h6 class="max">Editor</h6>
+                <button class="circle medium transparent" data-ui="#componentEditor">
+                    <i class="medium bold">close</i>
+                </button>
+            </nav>
+        </header>
         <div id="componentEditorContent">
             <div id="componentEditorProperties">
-                <label for="componentScale">Alias: </label>
-                <input type="text" id="componentAlias" placeholder="alias" value="newComponent" pattern="[a-zA-Z0-9_]+">
-                <label for="componentScale">Name: </label>
-                <input type="text" id="componentName" placeholder="name" value="New Component">
-                <label for="componentScale">Category: </label>
-                <select id="componentCategories">
-                </select>
-                <label for="componentScale">Scale: </label>
-                <input type="number" min="0.001" max="2.0" step="0.001" id="componentScale" placeholder="1.0" value="1.0">
+                <div class="field label middle-align large-space border medium vertical-margin" id="componentAliasField">
+                    <input id="componentAlias" type="text" placeholder=" " value="newComponent" pattern="[a-zA-Z0-9_]+" autofocus>
+                    <label>Alias</label>
+                    <output class="invalid" id="componentAliasError">Error goes here</output>
+                </div>
+                <div class="field label middle-align large-space border medium vertical-margin" id="componentNameField">
+                    <input id="componentName" type="text" placeholder=" " value="New Component" autofocus>
+                    <label>Name</label>
+                    <output class="invalid" id="componentNameError">Error goes here</output>
+                </div>
+                <div class="field label suffix middle-align large-space border medium no-margin" id="componentCategoriesField">
+                    <select id="componentCategories">
+                    </select>
+                    <label>Category</label>
+                    <i class="extra">arrow_drop_down</i>
+                    <output class="invalid" id="componentCategoriesError">Error goes here</output>
+                </div>
+                <div class="field label middle-align large-space border medium vertical-margin" id="componentScaleField">
+                    <input id="componentScale" type="number" placeholder=" " min="0.001" max="2.0" step="0.001"  value="1.0" autofocus>
+                    <label>Scale</label>
+                    <output class="invalid" id="componentScaleError">Error goes here</output>
+                </div>
             </div>
             <div id="componentEditorConnections">
                 <div id="componentEditorConnectionsHeader">
@@ -312,11 +325,16 @@
                 <ul id="componentEditorConnectionsList">
                 </ul>
             </div>
-            <div class="componentEditorActions">
-                <button id="componentEditorTest">Test</button>
-                <button id="componentEditorExport">Export</button>
-            </div>
         </div>
+        <hr>
+        <nav class="no-padding no-space no-margin">
+            <button id="componentEditorTest" class="no-round max extra-text left-button primary-text">
+                <span>Test</span>
+            </button>
+            <button id="componentEditorExport" class="no-round max extra-text right-button primary-text">
+                <span>Save</span>
+            </button>
+        </nav>
     </div>
     <div id="connectionEditor" class="hidden" data-connection="-1">
         <div id="connectionEditorHeader">
@@ -519,14 +537,12 @@
                     </nav>
                 </div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="saveLayerDialog" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="saveLayerDialog" class="no-round max extra-text left-button primary-text">
                     <span>Save</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#editLayerDialog">
+                <button class="no-round max extra-text right-button primary-text" data-ui="#editLayerDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
@@ -545,15 +561,13 @@
             <div style="padding-left: 0.5rem; padding-right: 0.5rem;">
                 <div id="partInventoryList" class="scroll" style="max-block-size: 40vh; border-radius: unset !important;"></div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="exportPartInventory" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="exportPartInventory" class="no-round max extra-text left-button primary-text">
                     <i>csv</i>
                     <span>Export</span>
                 </button>
-                <button id="printPartInventory" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="printPartInventory" class="no-round max extra-text right-button primary-text">
                     <i>print</i>
                     <span>Print</span>
                 </button>
@@ -741,18 +755,15 @@
                     </div>
                 </div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="createComponentDialog" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="createComponentDialog" class="no-round max extra-text left-button primary-text">
                     <span>Create</span>
                 </button>
-                <button id="saveComponentDialog" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="saveComponentDialog" class="no-round max extra-text left-button primary-text">
                     <span>Save</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#newCustomComponentDialog">
+                <button class="no-round max extra-text right-button primary-text" data-ui="#newCustomComponentDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
@@ -798,14 +809,12 @@
                     <output id="randomTreesDensityLabel" style="min-width: 5rem; text-align: right; font-size: 1rem !important;">Normal</output>
                 </div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="createRandomTrees" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="createRandomTrees" class="no-round max extra-text left-button primary-text">
                     <span>Create</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#randomTreesDialog">
+                <button class="no-round max extra-text right-button error" data-ui="#randomTreesDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
@@ -825,14 +834,12 @@
                 <p class="small-text bold" style="margin: 0.5rem 0 0.25rem 0.25rem;">Baseplate Color</p>
                 <div id="structureColorGrid"></div>
             </div>
-            <hr style="background-color: var(--outline)">
+            <hr>
             <nav class="no-padding no-space no-margin">
-                <button id="saveStructureColor" class="border no-border no-round max extra-text"
-                    style="border-end-start-radius: 0.5rem !important; border-right-color: var(--outline) !important; border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important;">
+                <button id="saveStructureColor" class="no-round max extra-text left-button primary-text">
                     <span>Save</span>
                 </button>
-                <button class="border no-border no-round max extra-text"
-                    style="border-end-end-radius: 0.5rem !important;" data-ui="#structureColorDialog">
+                <button class="no-round max extra-text right-button error" data-ui="#structureColorDialog">
                     <span>Cancel</span>
                 </button>
             </nav>
