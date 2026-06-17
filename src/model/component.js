@@ -20,6 +20,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [bp_color] The color of the baseplate to place this on, if applicable
  * @property {Number} [opacity] The opacity of the component, if applicable
  * @property {String} [text] The text to display on the component, if applicable
+ * @property {String} [url] The URL of the photo to display, for photo components only
  * @property {String} [font] The font to use for the text, if applicable
  * @property {Number} [font_size] The font size to use for the text, if applicable
  * @property {String} [group] The UUID of the ComponentGroup this component belongs to
@@ -40,6 +41,7 @@ export { SerializedComponent };
  * @property {string} outlineColor The color of the outline
  * @property {number} opacity The opacity of the component
  * @property {string} text The text to display on the component
+ * @property {string} url The URL of the photo to display, for photo components only
  * @property {string} font The font to use for the text
  * @property {number} fontSize The font size to use for the text
  * @property {number} circlePercentage The percentage of circle to display for partial circles (5-95)
@@ -97,7 +99,7 @@ export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(Co
 export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
 const CURVE_ALIASES = new Set(['r104', 'r104a', 'r104b', 'railCurved9V', 'railCurved9VHalf', 'r56', 'r72', 'r88', 'r120']);
-const SWITCH_ALIASES = new Set(['r104SwitchLeft', 'r104SwitchRight', 'railSwitchLeft9V', 'railSwitchRight9V', 'r40SwitchRightTB', 'r40SwitchLeftTB']);
+const SWITCH_ALIASES = new Map([['r104SwitchLeft', true], ['r104SwitchRight', false], ['railSwitchLeft9V', true], ['railSwitchRight9V', false], ['r40SwitchRightTB', true], ['r40SwitchLeftTB', false], ['r104CurvedSwitchRight', true], ['r104CurvedSwitchLeft', false]]);
 
 /**
  * Any thing that can be placed on the layout.
@@ -169,6 +171,13 @@ export class Component extends Container {
   #fontSize;
 
   /**
+   * @type {String}
+   * The URL of the photo to display, if applicable.
+   * This is used for photo components only.
+   */
+  #url;
+
+  /**
    * @type {Number}
    * The opacity of the component, if applicable.
    * This is used for shapes components only.
@@ -213,6 +222,14 @@ export class Component extends Container {
    * @type {Graphics | Sprite | TilingSprite}
    */
   sprite;
+
+  /**
+   * @type {?Graphics}
+   * The rotatable outline drawn behind the photo Sprite. Photo components only.
+   * For non-photo components this is null; for photo components, rotation is
+   * applied to this Graphics and never to `sprite` (which always stays upright).
+   */
+  photoGraphics;
 
   /**
    * @type {?ComponentGroup}
@@ -315,6 +332,17 @@ export class Component extends Container {
         },
       });
       this.sprite.anchor.set(0.5);
+    } else if (this.baseData.type === DataTypes.PHOTO) {
+      this.#text = options.text ?? '';
+      this.#url = options.url ?? '';
+      this.#width = 100;
+      this.#height = 100;
+      this.photoGraphics = new Graphics(Assets.get('photoOutlineSvg'));
+      this.photoGraphics.pivot.set(50, 100);
+      this.sprite = new Sprite(Assets.get(baseData.alias));
+      this.sprite.anchor.set(0.5);
+      this.sprite.setSize(50, 50);
+      this.scale.set(4);
     } else {
       throw new Error(`Unsupported component type: ${this.baseData.type}`);
     }
@@ -322,9 +350,14 @@ export class Component extends Container {
       this.sprite.scale.set(baseData.scale);
     }
 
-    this.sprite.rotation = pose.angle;
+    if (this.baseData.type === DataTypes.PHOTO) {
+      this.rotation = pose.angle;
+      this.sprite.rotation = -pose.angle;
+    } else {
+      this.sprite.rotation = pose.angle;
+    }
     this.position.set(pose.x, pose.y);
-    let bbox = this.sprite.getLocalBounds();
+    let bbox = this._collisionLocalBounds();
     this.layer?.tree.insert({
       id: this.#uuid,
       minX: bbox.minX + pose.x,
@@ -333,7 +366,19 @@ export class Component extends Container {
       maxY: bbox.maxY + pose.y,
       component: this
     });
-    this.addChild(this.sprite);
+    if (this.photoGraphics) {
+      this.addChild(this.photoGraphics);
+      this.photoGraphics.eventMode = 'static';
+      this.photoGraphics.on('pointerdown', this.onStartDrag, this);
+      this.photoGraphics.on('click', Component.onClick, this);
+      this.photoGraphics.on('tap', Component.onClick, this);
+      let containSprite = new Container();
+      containSprite.addChild(this.sprite);
+      containSprite.pivot.set(0, 50);
+      this.addChild(containSprite);
+    } else {
+      this.addChild(this.sprite);
+    }
 
     this.sprite.eventMode = 'static';
     this.sprite.on('pointerdown', this.onStartDrag, this);
@@ -371,13 +416,10 @@ export class Component extends Container {
           conIndex = (conIndex === 1 ? 0 : 1);
         }
       } else if (SWITCH_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias)) {
-        if (connection.component.baseData.alias.includes("Left")) {
+        if (SWITCH_ALIASES.get(connection.component.baseData.alias)) {
           conIndex = 1;
         }
         if (baseData.alias === "railCurved9V") {
-          conIndex = (conIndex === 1 ? 0 : 1);
-        }
-        if (connection.connectionIndex === 2 && (connection.component.baseData.alias === "r40SwitchRightTB" || connection.component.baseData.alias === "r40SwitchLeftTB")) {
           conIndex = (conIndex === 1 ? 0 : 1);
         }
       }
@@ -450,8 +492,11 @@ export class Component extends Container {
       text: this.#text,
       font: this.#font,
       fontSize: this.#fontSize,
-      circlePercentage: this.#circlePercentage
+      circlePercentage: this.#circlePercentage,
     };
+    if (this.baseData.type === DataTypes.PHOTO) {
+      options.url = this.#url;
+    }
     if (this.baseData.onbp !== undefined) {
       options.bpColor = this.#bpColor?.toHex() ?? "";
       delete options.width;
@@ -475,7 +520,7 @@ export class Component extends Container {
     this.group = null;
     this.connections.forEach((connection) => connection.destroy());
     this.connections = null;
-    let bbox = this.sprite.getLocalBounds();
+    let bbox = this._collisionLocalBounds();
     let item = {
       id: this.#uuid,
       minX: bbox.minX + this.position.x,
@@ -489,6 +534,10 @@ export class Component extends Container {
     this.layer = null;
     if (this.baseData.type === DataTypes.SHAPE) {
       this.sprite.destroy();
+    }
+    if (this.baseData.type === DataTypes.PHOTO) {
+      this.photoGraphics?.destroy();
+      this.photoGraphics = null;
     }
     super.destroy();
     this.baseData = null;
@@ -517,10 +566,13 @@ export class Component extends Container {
 
   /**
    * Get position as a Pose
+  /**
+   * Get position as a Pose
    * @returns {Pose}
    */
   getPose() {
-    return new Pose(this.x, this.y, this.sprite.rotation);
+    const angle = this.baseData?.type === DataTypes.PHOTO ? this.rotation : this.sprite.rotation;
+    return new Pose(this.x, this.y, angle);
   }
 
   /**
@@ -596,7 +648,12 @@ export class Component extends Container {
       return;
     } else if (currentConnections.length === 0) {
       this.deleteCollisionTree();
-      this.sprite.rotation += Math.PI / 8;
+      if (this.baseData.type === DataTypes.PHOTO) {
+        this.rotation += Math.PI / 8;
+        this.sprite.rotation = -this.rotation;
+      } else {
+        this.sprite.rotation += Math.PI / 8;
+      }
       if (!this.isDragging) {
         this.insertCollisionTree();
       }
@@ -908,11 +965,31 @@ export class Component extends Container {
    * @param {String} value The new text to set
    */
   set text(value) {
-    if (this.baseData.type !== DataTypes.TEXT) {
+    if (this.baseData.type === DataTypes.TEXT) {
+      this.#text = value;
+      this.sprite.text = value;
+    } else if (this.baseData.type === DataTypes.PHOTO) {
+      this.#text = value;
+    }
+  }
+
+  /**
+   * Get the URL of this photo Component.
+   * @returns {?String} The URL of this photo Component
+   */
+  get url() {
+    return this.#url;
+  }
+
+  /**
+   * Set the URL of this photo Component.
+   * @param {String} value The new URL to set
+   */
+  set url(value) {
+    if (this.baseData.type !== DataTypes.PHOTO) {
       return;
     }
-    this.#text = value;
-    this.sprite.text = value;
+    this.#url = value ?? '';
   }
 
   get units() {
@@ -964,10 +1041,24 @@ export class Component extends Container {
   }
 
   /**
+   * Compute the collision-tree bbox for this component in its local space.
+   * Photo components use a fixed 100x100 box centered on position; everything
+   * else uses the sprite's local bounds.
+   * @returns {{minX: Number, minY: Number, maxX: Number, maxY: Number}}
+   * @private
+   */
+  _collisionLocalBounds() {
+    if (this.baseData.type === DataTypes.PHOTO) {
+      return { minX: -50, minY: -50, maxX: 50, maxY: 50 };
+    }
+    return this.sprite.getLocalBounds();
+  }
+
+  /**
    * Remove this Component from the collision tree.
    */
   deleteCollisionTree() {
-    let bbox = this.sprite.getLocalBounds();
+    let bbox = this._collisionLocalBounds();
     let item = {
       id: this.#uuid,
       minX: bbox.minX + this.position.x,
@@ -983,7 +1074,7 @@ export class Component extends Container {
    * Insert this Component into the collision tree.
    */
   insertCollisionTree() {
-    let bbox = this.sprite.getLocalBounds();
+    let bbox = this._collisionLocalBounds();
     let item = {
       id: this.#uuid,
       minX: bbox.minX + this.position.x,
@@ -1032,6 +1123,9 @@ export class Component extends Container {
     }
     if (data.text !== undefined) {
       options.text = data.text;
+    }
+    if (data.url !== undefined) {
+      options.url = data.url;
     }
     if (data.font !== undefined) {
       options.font = data.font;
@@ -1090,6 +1184,10 @@ export class Component extends Container {
       font_size: this.#fontSize
     };
 
+    if (this.baseData.type === DataTypes.PHOTO) {
+      serialized.url = this.#url ?? '';
+    }
+
     if (this.#circlePercentage !== null && this.#circlePercentage !== undefined) {
       serialized.circle_percentage = this.#circlePercentage;
     }
@@ -1141,13 +1239,14 @@ export class Component extends Container {
       data?.shape === undefined || (typeof data?.shape === 'string' && ['rectangle', 'circle'].includes(data?.shape)),
       data?.color === undefined || (typeof data?.color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.color)),
       data?.outline_color === undefined || (typeof data?.outline_color === 'string' && /^#([0-9A-F]{3}|[0-9A-F]{6})$/i.test(data?.outline_color)),
-      data?.text === undefined || (typeof data?.text === 'string' && data?.text.length > 0),
+      data?.text === undefined || (typeof data?.text === 'string' && (data?.text.length > 0 || data?.type === 'photo')),
       data?.font === undefined || (typeof data?.font === 'string' && data?.font.length > 0),
       data?.font_size === undefined || (typeof data?.font_size === 'number' && data?.font_size > 0),
       data?.opacity === undefined || (typeof data?.opacity === 'number' && data?.opacity >= 0 && data?.opacity <= 1),
       data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0),
       data?.circle_percentage === undefined || (typeof data?.circle_percentage === 'number' && data?.circle_percentage >= 5 && data?.circle_percentage <= 95),
-      data?.locked === undefined || data?.locked === 1
+      data?.locked === undefined || data?.locked === 1,
+      data?.url === undefined || typeof data?.url === 'string'
     ];
     return validations.every(v => v);
   }
@@ -1179,6 +1278,9 @@ export class Component extends Container {
       return;
     }
     if (e.button != 0 || !e.nativeEvent.isPrimary || LayoutController._instance.isSpaceDown) {
+      return;
+    }
+    if (LayoutController.getInstance().readOnly) {
       return;
     }
     if (this.group) {

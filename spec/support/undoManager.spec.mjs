@@ -1,7 +1,7 @@
 import { UndoManager, UNDO_BUFFER_SIZE } from '../../src/controller/undoManager.js';
 import { Component } from '../../src/model/component.js';
 import { ComponentGroup } from '../../src/model/componentGroup.js';
-import { LayoutController } from '../../src/controller/layoutController.js';
+import { DataTypes, LayoutController } from '../../src/controller/layoutController.js';
 import { LayoutLayer } from '../../src/model/layoutLayer.js';
 
 describe('UndoManager', () => {
@@ -441,6 +441,120 @@ describe('UndoManager', () => {
       expect(mockCompB.position.set).toHaveBeenCalledWith(30, 40);
       expect(mockCompB.sprite.rotation).toBe(0.5);
       expect(mockConnA.updateCircle).toHaveBeenCalled();
+    });
+
+    it('restores Component rotation and counter-rotates sprite for undo-rotate of a photo', () => {
+      const mockComp = {
+        uuid: 'p1',
+        baseData: { type: DataTypes.PHOTO },
+        rotation: 1.5,
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: -1.5 },
+        connections: [],
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.returnValue(mockComp),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'rotate',
+        data: {
+          componentUuid: 'p1', layerUuid: 'l1',
+          previousPose: { x: 10, y: 20, angle: 0.7 },
+          previousState: null, childIndex: -1
+        }
+      });
+      undoManager.undo();
+
+      expect(mockComp.position.set).toHaveBeenCalledWith(10, 20);
+      expect(mockComp.rotation).toBe(0.7);
+      expect(mockComp.sprite.rotation).toBe(-0.7);
+    });
+
+    it('restores Component rotation and counter-rotates sprite for undo-move of a photo', () => {
+      const mockComp = {
+        uuid: 'p1',
+        baseData: { type: DataTypes.PHOTO },
+        rotation: 0.4,
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: -0.4 },
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.returnValue(mockComp),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'move',
+        data: { componentUuid: 'p1', layerUuid: 'l1', previousPose: { x: 5, y: 6, angle: 1.1 } }
+      });
+      undoManager.undo();
+
+      expect(mockComp.position.set).toHaveBeenCalledWith(5, 6);
+      expect(mockComp.rotation).toBe(1.1);
+      expect(mockComp.sprite.rotation).toBe(-1.1);
+    });
+
+    it('restores Component rotation and counter-rotates sprite for undo-rotate_group of a photo', () => {
+      const mockPhoto = {
+        uuid: 'p1',
+        baseData: { type: DataTypes.PHOTO },
+        rotation: 2.0,
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: -2.0 },
+        connections: new Map(),
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockTrack = {
+        uuid: 't1',
+        baseData: { type: 'track' },
+        position: { set: jasmine.createSpy('set') },
+        sprite: { rotation: 0 },
+        connections: new Map(),
+        deleteCollisionTree: jasmine.createSpy('deleteCollisionTree'),
+        insertCollisionTree: jasmine.createSpy('insertCollisionTree'),
+        closeConnections: jasmine.createSpy('closeConnections'),
+        getOpenConnections: jasmine.createSpy('getOpenConnections').and.returnValue([])
+      };
+      const mockLayer = {
+        findComponentByUuid: jasmine.createSpy('findComponentByUuid').and.callFake(uuid => {
+          if (uuid === 'p1') return mockPhoto;
+          if (uuid === 't1') return mockTrack;
+          return null;
+        }),
+        findMatchingConnection: jasmine.createSpy('findMatchingConnection')
+      };
+      mockController.findLayerByUuid = jasmine.createSpy('findLayerByUuid').and.returnValue(mockLayer);
+
+      undoManager.record({
+        type: 'rotate_group',
+        data: {
+          layerUuid: 'l1',
+          components: [
+            { componentUuid: 'p1', previousPose: { x: 0, y: 0, angle: 0.3 } },
+            { componentUuid: 't1', previousPose: { x: 9, y: 9, angle: 0.9 } }
+          ]
+        }
+      });
+      undoManager.undo();
+
+      expect(mockPhoto.rotation).toBe(0.3);
+      expect(mockPhoto.sprite.rotation).toBe(-0.3);
+      expect(mockTrack.sprite.rotation).toBe(0.9);
     });
 
     it('restores locked state for undo-lock', () => {

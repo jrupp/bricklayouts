@@ -38,7 +38,9 @@ const DataTypes = Object.freeze({
   /** Represents a text component. */
   TEXT: "text",
   /** Represents a tileable component. */
-  TILEABLE: "tileable"
+  TILEABLE: "tileable",
+  /** Represents a photo component (camera-icon sprite + droplet/pin graphics outline). */
+  PHOTO: "photo"
 });
 export { DataTypes };
 
@@ -466,6 +468,21 @@ export class LayoutController {
      * @type {HTMLMenuElement}
      */
     this.selectionToolMenu = document.getElementById('selToolMenu');
+
+    /**
+     * Read-only photo details balloon shown when a photo component is selected.
+     * @type {HTMLElement}
+     */
+    this.photoDetailsBalloon = document.getElementById('photoDetailsBalloon');
+    /** @type {HTMLElement} */
+    this.photoDetailsTitle = document.getElementById('photoDetailsTitle');
+    /** @type {HTMLImageElement} */
+    this.photoDetailsImg = document.getElementById('photoDetailsImg');
+
+    // Wire photo create/save dialog buttons.
+    document.getElementById('createPhotoDialog')?.addEventListener('click', () => this.onCreatePhoto());
+    document.getElementById('savePhotoDialog')?.addEventListener('click', () => this.onSavePhoto());
+    this.initPhotoDialog();
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolMenuRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
@@ -641,6 +658,16 @@ export class LayoutController {
   }
 
   /**
+   * Returns true if any component in the layout is a photo, which means we
+   * need to also load the photoOutlineSvg asset before constructing components.
+   * @param {SerializedLayout} data
+   * @returns {Boolean}
+   */
+  _layoutHasPhotos(data) {
+    return data.layers.some((layer) => layer.components.some((c) => c.type === 'photo'));
+  }
+
+  /**
    * Fetch layout data for read-only mode from either a public share code or file path.
    * @returns {Promise<Object|null>} The layout data, or null if not found
    */
@@ -715,6 +742,11 @@ export class LayoutController {
         ...browserVisible.slice(0, LayoutController.PRIORITY_ASSET_COUNT).map(t => t.alias)
       ];
       await Assets.load(priorityAliases);
+
+      // Kick off background loading of the photo outline SVG so it's likely
+      // ready by the time the user creates their first photo component.
+      Assets.add({ alias: 'photoOutlineSvg', src: 'photo-outline.svg', data: { parseAsGraphicsContext: true } });
+      Assets.backgroundLoad('photoOutlineSvg');
 
       await Promise.all(allAssets.map(async (track) => {
         if (Assets.cache.has(track.alias)) {
@@ -859,6 +891,10 @@ export class LayoutController {
             this.#selectedTileType = track.alias;
             this.showCreateCustomComponentDialog(track.type, false, track.name)
           });
+        } else if (track.type === DataTypes.PHOTO) {
+          // Do nothing for now
+          //button.addEventListener('click', () => this.showPhotoDialog(false));
+          return;
         } else {
           button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
           button.addEventListener('click', (e) => {
@@ -1055,6 +1091,8 @@ export class LayoutController {
     if (LayoutController.browserDragDistance < DRAG_THRESHOLD && LayoutController.browserDragTrack) {
       if (LayoutController.browserDragTrack.type === DataTypes.TILEABLE) {
         this.showCreateCustomComponentDialog(LayoutController.browserDragTrack.type, false, LayoutController.browserDragTrack.name);
+      } else if (LayoutController.browserDragTrack.type === DataTypes.PHOTO) {
+        this.showPhotoDialog(false);
       } else {
         this.addComponent(LayoutController.browserDragTrack, true);
       }
@@ -1082,6 +1120,9 @@ export class LayoutController {
   async addComponent(track, checkConnections = false, options = {}) {
     if (!Assets.cache.has(track.alias)) {
       await Assets.load(track.alias);
+    }
+    if (track.type === DataTypes.PHOTO && !Assets.cache.has('photoOutlineSvg')) {
+      await Assets.load({ alias: 'photoOutlineSvg', src: 'photo-outline.svg', data: { parseAsGraphicsContext: true } });
     }
     console.log("Create component: " + track.alias);
     var newComp = null;
@@ -1935,7 +1976,157 @@ export class LayoutController {
   }
 
   /**
-   * Reset the layout to a blank state.
+   * Show the photo create/edit dialog. When editing, prefills Title and URL
+   * from the currently selected photo component.
+   * @param {Boolean} [editing=false] Whether the dialog should open in edit mode.
+   */
+  showPhotoDialog(editing = false) {
+    const dialog = document.getElementById('photoComponentDialog');
+    if (!dialog) return;
+    const titleInput = document.getElementById('photoTitle');
+    const urlInput = document.getElementById('photoUrl');
+    const dialogTitleEl = document.getElementById('photoDialogTitle');
+    dialog.classList.toggle('editing', editing);
+    titleInput?.parentElement?.classList.remove('invalid');
+    urlInput?.parentElement?.classList.remove('invalid');
+    if (editing && LayoutController.selectedComponent?.baseData?.type === DataTypes.PHOTO) {
+      if (titleInput) titleInput.value = LayoutController.selectedComponent.text ?? '';
+      if (urlInput) urlInput.value = LayoutController.selectedComponent.url ?? '';
+      if (dialogTitleEl) dialogTitleEl.textContent = 'Edit Photo';
+    } else {
+      if (titleInput) titleInput.value = '';
+      if (urlInput) urlInput.value = '';
+      if (dialogTitleEl) dialogTitleEl.textContent = 'New Photo';
+    }
+    ui('#photoComponentDialog');
+  }
+
+  /** Initializes event listeners for the photo dialog inputs. */
+  initPhotoDialog() {
+    const titleInput = document.getElementById('photoTitle');
+    const urlInput = document.getElementById('photoUrl');
+    const dialog = document.getElementById('photoComponentDialog');
+    const submit = () => {
+      if (dialog?.classList.contains('editing')) {
+        this.onSavePhoto();
+      } else {
+        this.onCreatePhoto();
+      }
+    };
+    [titleInput, urlInput].forEach((input) => {
+      if (!input) return;
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          submit();
+        }
+        if (event.key === 'Escape') {
+          ui('#photoComponentDialog');
+        }
+        event.stopPropagation();
+      });
+      input.addEventListener('input', (event) => {
+        if (event.target.value.length > 0) {
+          event.target.parentElement.classList.remove('invalid');
+        }
+      });
+    });
+  }
+
+  /**
+   * Validate the photo dialog inputs. Title must be non-empty (after trim).
+   * URL must start with `https://` and parse as a valid URL.
+   * @returns {?{ title: String, url: String }} The trimmed values if valid, or null.
+   * @private
+   */
+  _validatePhotoDialogInputs() {
+    const titleInput = document.getElementById('photoTitle');
+    const urlInput = document.getElementById('photoUrl');
+    const title = (titleInput?.value ?? '').trim();
+    const url = (urlInput?.value ?? '').trim();
+    let valid = true;
+    if (title.length === 0) {
+      titleInput?.parentElement?.classList.add('invalid');
+      valid = false;
+    } else {
+      titleInput?.parentElement?.classList.remove('invalid');
+    }
+    let parsedUrl = null;
+    if (url.startsWith('https://')) {
+      try {
+        parsedUrl = new URL(url);
+      } catch (_e) {
+        parsedUrl = null;
+      }
+    }
+    if (!parsedUrl || parsedUrl.protocol !== 'https:' || !parsedUrl.hostname) {
+      urlInput?.parentElement?.classList.add('invalid');
+      valid = false;
+    } else {
+      urlInput?.parentElement?.classList.remove('invalid');
+    }
+    return valid ? { title, url } : null;
+  }
+
+  /**
+   * Locate the layer labeled "Photos", creating it if it doesn't exist, and
+   * set it as the current layer.
+   * @returns {LayoutLayer}
+   */
+  _ensurePhotosLayer() {
+    const existing = this.layers?.find((l) => l.label === 'Photos');
+    if (existing) {
+      this.currentLayer = existing;
+      return existing;
+    }
+    this.newLayer();
+    this.#currentLayer.label = 'Photos';
+    this._applyPhotosLayerInteractivity();
+    this.updateLayerList();
+    return this.#currentLayer;
+  }
+
+  /**
+   * Handler for the Create button in the photo dialog. Creates a new photo
+   * component on the "Photos" layer (creating that layer if needed).
+   */
+  onCreatePhoto() {
+    const validated = this._validatePhotoDialogInputs();
+    if (!validated) return;
+    const { title, url } = validated;
+    const photoAsset = this.trackData.bundles[0].assets.find((a) => a.alias === 'photo');
+    if (!photoAsset) return;
+    this._ensurePhotosLayer();
+    LayoutController.selectComponent(null);
+    this.addComponent(photoAsset, false, { text: title, url });
+    ui('#photoComponentDialog');
+  }
+
+  /**
+   * Handler for the Save button in the photo dialog. Updates the selected
+   * photo component's title and URL and records an undo entry.
+   */
+  onSavePhoto() {
+    const comp = LayoutController.selectedComponent;
+    if (!comp || comp.baseData?.type !== DataTypes.PHOTO || comp.locked) {
+      return;
+    }
+    const validated = this._validatePhotoDialogInputs();
+    if (!validated) return;
+    const { title, url } = validated;
+    const layer = comp.layer || comp.parent;
+    const previousState = comp.serialize();
+    const childIndex = layer ? layer.children.indexOf(comp) : -1;
+    comp.text = title;
+    comp.url = url;
+    this.undoManager.record({
+      type: 'edit',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousState, childIndex }
+    });
+    this._positionSelectionToolbar();
+    ui('#photoComponentDialog');
+  }
+
+  /**
    * @param {Boolean} preserveReadOnly If true, preserves the current readOnly state. If false or undefined, sets readOnly to false.
    */
   reset(preserveReadOnly = false) {
@@ -1999,6 +2190,22 @@ export class LayoutController {
       this.#currentLayer.eventMode = 'passive';
       this.#currentLayer.interactiveChildren = true;
     }
+    this._applyPhotosLayerInteractivity();
+  }
+
+  /**
+   * Force every layer named "Photos" to be interactive even when it is not
+   * the current layer and even in read-only mode. Photo components need to be
+   * clickable for the read-only details balloon to work.
+   */
+  _applyPhotosLayerInteractivity() {
+    if (!this.layers) return;
+    this.layers.forEach((layer) => {
+      if (layer?.label === 'Photos') {
+        layer.eventMode = 'passive';
+        layer.interactiveChildren = true;
+      }
+    });
   }
 
   /**
@@ -2260,60 +2467,62 @@ export class LayoutController {
    */
   onKeyDown(event) {
     this.hideFileMenu();
-    if (LayoutController.dragTarget || LayoutController.selectedComponent) {
-      if (event.key === 'r' && !event.ctrlKey && !event.metaKey) {
-        this.rotateSelectedComponent();
-      }
-    }
-    if (LayoutController.selectedComponent) {
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        this.deleteSelectedComponent();
-      }
-      if (event.key === 'Escape') {
-        LayoutController.selectComponent(null);
-      }
-      if (event.key === 'PageUp') {
-        this.bringSelectedComponentToFront();
-        event.preventDefault();
-      }
-      if (event.key === 'PageDown') {
-        this.sendSelectedComponentToBack();
-        event.preventDefault();
-      }
-      if (event.key === 'd' && (event.ctrlKey || event.metaKey)) {
-        this.duplicateSelectedComponent();
-        event.preventDefault();
-      }
-      if (event.key === 'c' && (event.ctrlKey || event.metaKey)) {
-        this.copySelectedComponent();
-        event.preventDefault();
-      }
-      if (event.key === 'L' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
-        if (LayoutController.selectedComponent.locked) {
-          this.unlockComponent();
-        } else {
-          this.lockComponent();
+    if (!this.readOnly) {
+      if (LayoutController.dragTarget || LayoutController.selectedComponent) {
+        if (event.key === 'r' && !event.ctrlKey && !event.metaKey) {
+          this.rotateSelectedComponent();
         }
+      }
+      if (LayoutController.selectedComponent) {
+        if (event.key === 'Delete' || event.key === 'Backspace') {
+          this.deleteSelectedComponent();
+        }
+        if (event.key === 'Escape') {
+          LayoutController.selectComponent(null);
+        }
+        if (event.key === 'PageUp') {
+          this.bringSelectedComponentToFront();
+          event.preventDefault();
+        }
+        if (event.key === 'PageDown') {
+          this.sendSelectedComponentToBack();
+          event.preventDefault();
+        }
+        if (event.key === 'd' && (event.ctrlKey || event.metaKey)) {
+          this.duplicateSelectedComponent();
+          event.preventDefault();
+        }
+        if (event.key === 'c' && (event.ctrlKey || event.metaKey)) {
+          this.copySelectedComponent();
+          event.preventDefault();
+        }
+        if (event.key === 'L' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
+          if (LayoutController.selectedComponent.locked) {
+            this.unlockComponent();
+          } else {
+            this.lockComponent();
+          }
+          event.preventDefault();
+        }
+        // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
+        if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
+          this.selectConnected();
+          event.preventDefault();
+        }
+      }
+      // Select All (Ctrl+A on Windows/Linux, Cmd+A on Mac)
+      if (event.key === 'a' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+        this.selectAll();
         event.preventDefault();
       }
-      // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
-      if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
-        this.selectConnected();
+      if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
+        this.pasteComponent();
         event.preventDefault();
       }
-    }
-    // Select All (Ctrl+A on Windows/Linux, Cmd+A on Mac)
-    if (event.key === 'a' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
-      this.selectAll();
-      event.preventDefault();
-    }
-    if (event.key === 'v' && (event.ctrlKey || event.metaKey)) {
-      this.pasteComponent();
-      event.preventDefault();
-    }
-    if (LayoutController.dragTarget == null && event.key === 'z' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
-      this.undoManager.undo();
-      event.preventDefault();
+      if (LayoutController.dragTarget == null && event.key === 'z' && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+        this.undoManager.undo();
+        event.preventDefault();
+      }
     }
     if (event.key === '0' && (event.ctrlKey || event.metaKey)) {
       this.workspace.scale.set(this.config.defaultZoom);
@@ -2823,6 +3032,9 @@ export class LayoutController {
     if (unloaded.length > 0) {
       await Assets.load(unloaded);
     }
+    if (this._layoutHasPhotos(data) && !Assets.cache.has('photoOutlineSvg')) {
+      await Assets.load({ alias: 'photoOutlineSvg', src: 'photo-outline.svg', data: { parseAsGraphicsContext: true } });
+    }
 
     this.undoManager.suppress();
     this.reset(true);
@@ -2862,6 +3074,7 @@ export class LayoutController {
       // Clear between layers
       Connection.connectionDB.clear();
     });
+    this._applyPhotosLayerInteractivity();
     if (data.x !== void 0 && data.y !== void 0) {
       this.workspace.position.set(data.x, data.y);
     }
@@ -3456,6 +3669,8 @@ export class LayoutController {
         this.showStructureColorDialog();
       } else if (LayoutController.selectedComponent.baseData.type === DataTypes.TILEABLE) {
         this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true, LayoutController.selectedComponent.baseData.name);
+      } else if (LayoutController.selectedComponent.baseData.type === DataTypes.PHOTO) {
+        this.showPhotoDialog(true);
       } else {
         this.showCreateCustomComponentDialog(LayoutController.selectedComponent.baseData.type, true);
       }
@@ -3917,6 +4132,7 @@ export class LayoutController {
       this.#currentLayer.eventMode = 'none';
       this.#currentLayer.interactiveChildren = false;
     }
+    this._applyPhotosLayerInteractivity();
     this.undoManager.record({
       type: 'layer_add',
       data: { layerUuid: this.#currentLayer.uuid }
@@ -4080,6 +4296,7 @@ export class LayoutController {
     });
     layer.label = layerName;
     layer.alpha = layerOpacity / 100;
+    this._applyPhotosLayerInteractivity();
     this.updateLayerList();
     ui("#editLayerDialog");
   }
@@ -4336,11 +4553,21 @@ export class LayoutController {
    * Show the floating selection toolbar.
    */
   _showSelectionToolbar() {
-    if (!this.selectionToolbar || this.readOnly) return;
+    if (!this.selectionToolbar) return;
     const comp = LayoutController.selectedComponent;
     if (!comp || comp.destroyed) {
       return;
     }
+
+    // In read-only mode, a selected photo gets a dedicated details balloon
+    // instead of the regular editing toolbar. Everything else stays hidden.
+    if (this.readOnly) {
+      if (comp.size === 1 && comp.baseData?.type === DataTypes.PHOTO) {
+        this._showPhotoDetailsBalloon(comp);
+      }
+      return;
+    }
+    this._hidePhotoDetailsBalloon();
 
     if (comp.locked || (comp instanceof ComponentGroup && comp.hasLockedComponents())) {
       this.selectionToolbar.classList.add('locked');
@@ -4348,7 +4575,7 @@ export class LayoutController {
       this.selectionToolbar.classList.remove('locked');
     }
 
-    if (comp.size === 1 && (comp.baseData.type === DataTypes.TILEABLE || comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
+    if (comp.size === 1 && (comp.baseData.type === DataTypes.TILEABLE || comp.baseData.type === DataTypes.TEXT || comp.baseData.type === DataTypes.SHAPE || comp.baseData.type === DataTypes.PHOTO || (comp.baseData.type === DataTypes.BASEPLATE && comp.baseData.alias === "baseplate") || comp.baseData.onbp !== undefined)) {
       this.selectionToolbar.classList.add('editable');
     } else {
       this.selectionToolbar.classList.remove('editable');
@@ -4377,8 +4604,41 @@ export class LayoutController {
    * Hide the floating selection toolbar.
    */
   _hideSelectionToolbar() {
-    if (!this.selectionToolbar) return;
-    this.selectionToolbar.classList.add('hidden');
+    if (this.selectionToolbar) {
+      this.selectionToolbar.classList.add('hidden');
+    }
+    this._hidePhotoDetailsBalloon();
+  }
+
+  /**
+   * Show the read-only photo details balloon for the given photo component.
+   * @param {Component} comp The photo component.
+   */
+  _showPhotoDetailsBalloon(comp) {
+    if (!this.photoDetailsBalloon) return;
+    if (this.photoDetailsTitle) {
+      this.photoDetailsTitle.textContent = comp.text ?? '';
+    }
+    if (this.photoDetailsImg) {
+      this.photoDetailsImg.src = comp.url ?? '';
+    }
+    this.photoDetailsBalloon.classList.remove('hidden');
+    if (this.photoDetailsImg && comp.url && !this.photoDetailsImg.complete) {
+      this.photoDetailsImg.addEventListener('load', () => {
+        this._positionPhotoDetailsBalloon(comp);
+      }, { once: true });
+    }
+  }
+
+  /**
+   * Hide the read-only photo details balloon.
+   */
+  _hidePhotoDetailsBalloon() {
+    if (!this.photoDetailsBalloon) return;
+    this.photoDetailsBalloon.classList.add('hidden');
+    if (this.photoDetailsImg) {
+      this.photoDetailsImg.removeAttribute('src');
+    }
   }
 
   /**
@@ -4389,6 +4649,13 @@ export class LayoutController {
     const comp = LayoutController.selectedComponent;
     if (!comp || comp.destroyed) {
       this._hideSelectionToolbar();
+      return;
+    }
+    // When the photo balloon is showing instead of the toolbar, position it.
+    if (this.readOnly) {
+      if (comp.size === 1 && comp.baseData?.type === DataTypes.PHOTO) {
+        this._positionPhotoDetailsBalloon(comp);
+      }
       return;
     }
     this.selectionToolMenu.classList.remove('left', 'top');
@@ -4423,6 +4690,36 @@ export class LayoutController {
         this.selectionToolMenu.classList.add('top');
       }
     }
+  }
+
+  /**
+   * Position the photo details balloon above or below the selected photo
+   * component, kept within the viewport.
+   * @param {Component} comp The selected photo component.
+   */
+  _positionPhotoDetailsBalloon(comp) {
+    if (!this.photoDetailsBalloon) return;
+    if (this.photoDetailsBalloon.classList.contains('hidden')) return;
+    const gb = comp.getBounds();
+    const screenTop = Math.round(gb.minY);
+    const screenBottom = Math.round(gb.maxY);
+    const compCenterX = Math.round(comp.getGlobalPosition().x);
+    const tbRect = this.photoDetailsBalloon.getBoundingClientRect();
+    const gap = 8;
+    let left = Math.round(compCenterX - tbRect.width / 2);
+    let top = screenTop - tbRect.height - gap;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (left + tbRect.width > vw - 8) left = vw - tbRect.width - 8;
+    if (left < 8) left = 8;
+    if (top < 8) {
+      top = screenBottom + gap;
+      if (top + tbRect.height > vh - 8) {
+        top = Math.max(8, Math.min(vh - tbRect.height - 8, top));
+      }
+    }
+    this.photoDetailsBalloon.style.left = `${left}px`;
+    this.photoDetailsBalloon.style.top = `${top}px`;
   }
 
   _drawSelectBox(currentPosition) {

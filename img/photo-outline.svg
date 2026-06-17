@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <path d="M 50 10 A 40 40 0 0 1 90 50 C 90 75 50 100 50 100 C 50 100 10 75 10 50 A 40 40 0 0 1 50 10 Z
+           M 50 20 A 30 30 0 1 0 50 80 A 20 20 0 1 0 50 20 Z"
+        fill="#000000" fill-rule="evenodd" />
+</svg>

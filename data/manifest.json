@@ -459,6 +459,16 @@
                     "color": "#000000"
                 },
                 {
+                    "alias": "photo",
+                    "name": "Photo",
+                    "category": "custom",
+                    "src": "photo-camera.svg",
+                    "type": "photo",
+                    "data": {
+                        "resolution": 4
+                    }
+                },
+                {
                     "alias": "railDblCross",
                     "src": "7996.png",
                     "category": "9V",
@@ -678,6 +688,181 @@
                     "type": "track"
                 },
                 {
+                    "alias": "r104SwitchRight",
+                    "name": "r104 Switch Right",
+                    "partNumber": "R104SWKIT-R",
+                    "category": "9V",
+                    "src": "r104-switch-right.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                336.1800113034682,
+                                1.0104171387951861,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                304.19894805866767,
+                                1.9884872308576715,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                325.74154148836266,
+                                0.11694532554775691,
+                                0.12566666666666667
+                            ],
+                            "next": 2
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r104SwitchLeft",
+                    "name": "r104 Switch Left",
+                    "partNumber": "R104SWKIT-L",
+                    "category": "9V",
+                    "src": "r104-switch-left.png",
+                    "make": 2,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                336.1800113034682,
+                                0.9895828612048141,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                304.19894805866767,
+                                0.011512769142328448,
+                                0
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                325.74154148836266,
+                                1.8830546744522432,
+                                1.8743333333333333
+                            ],
+                            "next": 2
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r104CurvedSwitchRight",
+                    "name": "R104 Curved Switch Right",
+                    "partNumber": "MBR104CSW-R",
+                    "make": 0,
+                    "category": "9V",
+                    "src": "r104-csw-r.png",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                498.89477848540355,
+                                1.0878844108194452,
+                                1
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                467.2926234741515,
+                                0.09971170928359578,
+                                0.18749999999999992
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                412.9246845224146,
+                                1.9925739562168328,
+                                0.12500000000000014
+                            ],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "r104CurvedSwitchLeft",
+                    "name": "R104 Curved Switch Left",
+                    "category": "9V",
+                    "partNumber": "MBR104CSW-L",
+                    "make": 0,
+                    "src": "r104-csw-l.png",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [
+                                498.89477848540366,
+                                0.9121155891805548,
+                                1
+                            ],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                467.30978403435194,
+                                1.899687507349133,
+                                1.8125
+                            ],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [
+                                412.7958052351494,
+                                0.006979779711992,
+                                1.875
+                            ],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "railStraight9VDouble",
+                    "src": "2865-double.png",
+                    "category": "9V",
+                    "name": "Double Straight Rail",
+                    "partNumber": "TB10300",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [256, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [256, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "railStraight9VHalf",
                     "src": "2865-half.png",
                     "category": "9V",
@@ -797,84 +982,6 @@
                             "next": 0
                         }
                     ]
-                },
-                {
-                    "alias": "r104SwitchLeft",
-                    "name": "r104 Switch Left",
-                    "partNumber": "R104SWKIT-L",
-                    "category": "9V",
-                    "src": "r104-switch-left.png",
-                    "make": 2,
-                    "color": "#6c6e68",
-                    "connections": [
-                        {
-                            "type": 1,
-                            "vector": [
-                                336.1800113034682,
-                                0.9895828612048141,
-                                1
-                            ],
-                            "next": 1
-                        },
-                        {
-                            "type": 1,
-                            "vector": [
-                                304.19894805866767,
-                                0.011512769142328448,
-                                0
-                            ],
-                            "next": 0
-                        },
-                        {
-                            "type": 1,
-                            "vector": [
-                                325.74154148836266,
-                                1.8830546744522432,
-                                1.8743333333333333
-                            ],
-                            "next": 2
-                        }
-                    ],
-                    "type": "track"
-                },
-                {
-                    "alias": "r104SwitchRight",
-                    "name": "r104 Switch Right",
-                    "partNumber": "R104SWKIT-R",
-                    "category": "9V",
-                    "src": "r104-switch-right.png",
-                    "make": 2,
-                    "color": "#6c6e68",
-                    "connections": [
-                        {
-                            "type": 1,
-                            "vector": [
-                                336.1800113034682,
-                                1.0104171387951861,
-                                1
-                            ],
-                            "next": 1
-                        },
-                        {
-                            "type": 1,
-                            "vector": [
-                                304.19894805866767,
-                                1.9884872308576715,
-                                0
-                            ],
-                            "next": 0
-                        },
-                        {
-                            "type": 1,
-                            "vector": [
-                                325.74154148836266,
-                                0.11694532554775691,
-                                0.12566666666666667
-                            ],
-                            "next": 2
-                        }
-                    ],
-                    "type": "track"
                 },
                 {
                     "alias": "r104b",
@@ -1209,6 +1316,18 @@
                     "category": "structures",
                     "src": "wheatfield.png",
                     "type": "tileable"
+                }
+            ]
+        },
+        {
+            "name": "photoOutline",
+            "assets": [
+                {
+                    "alias": "photoOutlineSvg",
+                    "src": "photo-outline.svg",
+                    "data": {
+                        "parseAsGraphicsContext": true
+                    }
                 }
             ]
         }

@@ -136,6 +136,41 @@ body {
 	--_size: 2.4rem;
 }
 
+/* Photo details balloon shown in readOnly mode when a photo component is selected. */
+#photoDetailsBalloon {
+	position: fixed;
+	z-index: 1098;
+	pointer-events: auto;
+	margin-block-start: 0;
+	padding: 0.75rem;
+	max-width: min(80vw, 360px);
+	min-width: 12rem;
+	display: block;
+}
+
+#photoDetailsBalloon.hidden {
+	display: none;
+}
+
+#photoDetailsBalloon .photo-details-inner {
+	display: flex;
+	flex-direction: column;
+	width: 345px;
+	gap: 0.5rem;
+}
+
+#photoDetailsTitle {
+	margin: 0;
+	overflow-wrap: anywhere;
+}
+
+#photoDetailsImg {
+	width: 100%;
+	height: auto;
+	display: block;
+	border-radius: 0.25rem;
+}
+
 #toolbar {
 	position: fixed;
 	box-sizing: content-box;
@@ -213,6 +248,8 @@ body {
 #componentEditor,
 #editorSizeDialog,
 #connectionEditor,
+#photoDetailsBalloon,
+#photoComponentDialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -284,6 +321,8 @@ body {
 [data-dark-mode=true] #componentEditor,
 [data-dark-mode=true] #editorSizeDialog,
 [data-dark-mode=true] #connectionEditor,
+[data-dark-mode=true] #photoDetailsBalloon,
+[data-dark-mode=true] #photoComponentDialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -512,6 +551,7 @@ body {
 #randomTreesDialog,
 #profileModal,
 #authenticationModal,
+#photoComponentDialog,
 #partInventoryDialog {
 	z-index: 1100;
 }
@@ -740,6 +780,15 @@ nav.hidden {
 	display: block;
 }
 
+#savePhotoDialog,
+#photoComponentDialog.editing #createPhotoDialog {
+	display: none;
+}
+
+#photoComponentDialog.editing #savePhotoDialog {
+	display: block;
+}
+
 #componentColorSelect i.fill:before {
   content: "square";
 }
@@ -950,6 +999,8 @@ i.legobrightgreen {
 #layerNameField label,
 #randomTreesWidth + label,
 #randomTreesHeight + label,
+#photoTitle + label,
+#photoUrl + label,
 #componentWidthField label,
 #componentHeightField label,
 #componentColorSelect label,
@@ -965,6 +1016,8 @@ i.legobrightgreen {
 #colorfield input[type=text],
 #subcolorfield input[type=text],
 #layerNameField input[type=text],
+#photoTitle,
+#photoUrl,
 #randomTreesWidth,
 #randomTreesHeight,
 #componentWidthField input[type=number],

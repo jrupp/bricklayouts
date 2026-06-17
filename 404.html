@@ -769,6 +769,50 @@
             </nav>
         </div>
     </dialog>
+    <dialog id="photoComponentDialog" class="no-padding border surface-container-high small-round">
+        <div>
+            <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+                <nav>
+                    <h6 id="photoDialogTitle" class="max">New Photo</h6>
+                    <button class="circle medium transparent" data-ui="#photoComponentDialog">
+                        <i class="medium bold">close</i>
+                    </button>
+                </nav>
+            </header>
+            <div style="padding-left: 0.5rem; padding-right: 0.5rem;">
+                <div class="field label border prefix medium vertical-margin">
+                    <i class="large no-round">title</i>
+                    <input id="photoTitle" type="text" maxlength="120">
+                    <label>Title</label>
+                    <output class="invalid" id="photoTitleError">Error goes here</output>
+                </div>
+                <div class="field label border prefix medium vertical-margin">
+                    <i class="large no-round">link</i>
+                    <input id="photoUrl" type="url" placeholder=" ">
+                    <label>URL</label>
+                    <output class="invalid" id="photoUrlError">Error goes here</output>
+                </div>
+            </div>
+            <hr>
+            <nav class="no-space no-margin top-margin">
+                <button id="createPhotoDialog" class="no-round max extra-text left-button primary-text">
+                    <span>Create</span>
+                </button>
+                <button id="savePhotoDialog" class="no-round max extra-text left-button primary-text">
+                    <span>Save</span>
+                </button>
+                <button class="no-round max extra-text right-button primary-text" data-ui="#photoComponentDialog">
+                    <span>Cancel</span>
+                </button>
+            </nav>
+        </div>
+    </dialog>
+    <nav id="photoDetailsBalloon" class="background small-round small-elevate hidden" aria-label="Photo details">
+        <div class="photo-details-inner">
+            <h6 id="photoDetailsTitle" class="bold"></h6>
+            <img id="photoDetailsImg" alt="">
+        </div>
+    </nav>
     <dialog id="randomTreesDialog" class="no-padding border surface-container-high small-round">
         <div>
             <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">

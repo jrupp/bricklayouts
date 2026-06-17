@@ -108,6 +108,15 @@ describe("LayoutController", function() {
         geiSpy.withArgs('randomTreesHeight').and.returnValue(document.createElement('input'));
         geiSpy.withArgs('componentDialogTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('newCustomComponentDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('photoComponentDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('photoTitle').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('photoUrl').and.returnValue(document.createElement('input'));
+        geiSpy.withArgs('photoDialogTitle').and.returnValue(document.createElement('h6'));
+        geiSpy.withArgs('createPhotoDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('savePhotoDialog').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('photoDetailsBalloon').and.returnValue(document.createElement('nav'));
+        geiSpy.withArgs('photoDetailsTitle').and.returnValue(document.createElement('h6'));
+        geiSpy.withArgs('photoDetailsImg').and.returnValue(document.createElement('img'));
         geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
         const shareContainer = document.createElement('div');
         shareContainer.classList.add('hidden');
@@ -2612,6 +2621,59 @@ describe("LayoutController", function() {
                 }
                 expect(child.connections.length).toBe(0);
             });
+        });
+
+        it("forces Photos layer to be interactive in readOnly mode after deserialize", async function() {
+            /** @type {LayoutController} */
+            const layoutController = window.layoutController;
+            const layoutWithPhoto = {
+                version: 2, date: 1781346758578, x: 0, y: 0, zoom: 0.5,
+                layers: [
+                    {
+                        components: [{
+                            type: "railStraight9V",
+                            pose: { x: 384, y: 384, angle: 0 },
+                            connections: [
+                                { uuid: "466b622f-7e34-4cb1-953b-eb76009508a4", otherConnection: "" },
+                                { uuid: "9182c818-2306-4c1f-9fd4-a73cd0c52221", otherConnection: "" }
+                            ],
+                            color: "#6c6e68"
+                        }],
+                        name: "Layer 1", visible: true, opacity: 100
+                    },
+                    {
+                        components: [{
+                            type: "photo",
+                            pose: { x: 544, y: 496, angle: 2.356194490192344 },
+                            connections: [], width: 100, height: 100,
+                            text: "Hi",
+                            url: "https://www.bricklayouts.com/screenshots/screenshot-hero.png"
+                        }],
+                        name: "Photos", visible: true, opacity: 100
+                    }
+                ],
+                config: {}, metadata: { name: "Test Photo" }
+            };
+            const wasReadOnly = layoutController.readOnly;
+            layoutController.readOnly = true;
+            try {
+                await layoutController._importLayout(layoutWithPhoto);
+                expect(layoutController.layers).toHaveSize(2);
+                const photosLayer = layoutController.layers.find(l => l.label === "Photos");
+                const otherLayer = layoutController.layers.find(l => l.label === "Layer 1");
+                expect(photosLayer).toBeDefined();
+                expect(otherLayer).toBeDefined();
+                expect(photosLayer.eventMode).toBe("passive");
+                expect(photosLayer.interactiveChildren).toBeTrue();
+                expect(otherLayer.eventMode).toBe("none");
+                expect(otherLayer.interactiveChildren).toBeFalse();
+                const photoComp = photosLayer.children.find(c => c.baseData?.type === "photo");
+                expect(photoComp).toBeDefined();
+                expect(photoComp.text).toBe("Hi");
+                expect(photoComp.url).toBe("https://www.bricklayouts.com/screenshots/screenshot-hero.png");
+            } finally {
+                layoutController.readOnly = wasReadOnly;
+            }
         });
     });
 

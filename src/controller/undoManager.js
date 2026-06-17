@@ -1,4 +1,5 @@
 import { Component } from '../model/component.js';
+import { DataTypes } from './layoutController.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Connection } from '../model/connection.js';
 import { LayoutController } from './layoutController.js';
@@ -305,7 +306,12 @@ export class UndoManager {
     comp.deleteCollisionTree();
     comp.closeConnections();
     comp.position.set(data.previousPose.x, data.previousPose.y);
-    comp.sprite.rotation = data.previousPose.angle;
+    if (comp.baseData?.type === DataTypes.PHOTO) {
+      comp.rotation = data.previousPose.angle;
+      comp.sprite.rotation = -data.previousPose.angle;
+    } else {
+      comp.sprite.rotation = data.previousPose.angle;
+    }
     comp.insertCollisionTree();
     const openConnections = comp.getOpenConnections();
     openConnections.forEach((openCon) => {
@@ -329,7 +335,12 @@ export class UndoManager {
       comp.deleteCollisionTree();
       comp.closeConnections();
       comp.position.set(entry.previousPose.x, entry.previousPose.y);
-      comp.sprite.rotation = entry.previousPose.angle;
+      if (comp.baseData?.type === DataTypes.PHOTO) {
+        comp.rotation = entry.previousPose.angle;
+        comp.sprite.rotation = -entry.previousPose.angle;
+      } else {
+        comp.sprite.rotation = entry.previousPose.angle;
+      }
       comp.insertCollisionTree();
       allOpenConnections.push(...comp.getOpenConnections());
     }
@@ -374,7 +385,12 @@ export class UndoManager {
       comp.deleteCollisionTree();
       comp.closeConnections();
       comp.position.set(data.previousPose.x, data.previousPose.y);
-      comp.sprite.rotation = data.previousPose.angle;
+      if (comp.baseData?.type === DataTypes.PHOTO) {
+        comp.rotation = data.previousPose.angle;
+        comp.sprite.rotation = -data.previousPose.angle;
+      } else {
+        comp.sprite.rotation = data.previousPose.angle;
+      }
       comp.insertCollisionTree();
       comp.connections.forEach((connection) => {
         connection.updateCircle();
@@ -401,7 +417,12 @@ export class UndoManager {
       comp.deleteCollisionTree();
       comp.closeConnections();
       comp.position.set(entry.previousPose.x, entry.previousPose.y);
-      comp.sprite.rotation = entry.previousPose.angle;
+      if (comp.baseData?.type === DataTypes.PHOTO) {
+        comp.rotation = entry.previousPose.angle;
+        comp.sprite.rotation = -entry.previousPose.angle;
+      } else {
+        comp.sprite.rotation = entry.previousPose.angle;
+      }
       comp.insertCollisionTree();
       comp.connections.forEach((connection) => {
         connection.updateCircle();
