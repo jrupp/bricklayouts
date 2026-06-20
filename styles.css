@@ -1421,6 +1421,25 @@ i + span.label {
 		border-radius: 50%;
 	}
 
+	#photoDetailsBalloon {
+		position: fixed;
+		z-index: 1098;
+		pointer-events: auto;
+		margin-block-start: 0;
+		padding: 0.75rem;
+		max-width: 100%;
+		left: 0 !important;
+		min-width: 12rem;
+		display: block;
+	}
+
+	#photoDetailsBalloon .photo-details-inner {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		gap: 0.5rem;
+	}
+
 	#configurationEditor {
 		max-width: 48rem;
 		--_margin: calc(5rem + 20px) 0 0 0;
