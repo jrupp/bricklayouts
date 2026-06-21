@@ -30,6 +30,7 @@ jobs:
             --exclude 'node_modules/*' \
             --exclude 'spec/*' \
             --exclude 'scripts/*' \
+            --exclude 'photos/*' \
             --exclude '.devcontainer/*' \
             --exclude '.kiro/*' \
             --exclude '.vscode/*' \
