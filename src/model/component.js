@@ -638,8 +638,9 @@ export class Component extends Container {
   /**
    * Rotate this component.
    * Checks for open connections and rotates accordingly.
+   * @param {Number} [angle] The angle to rotate by in radians. Defaults to PI/8.
    */
-  rotate() {
+  rotate(angle = Math.PI / 8) {
     if (this.#locked) {
       return;
     }
@@ -649,10 +650,10 @@ export class Component extends Container {
     } else if (currentConnections.length === 0) {
       this.deleteCollisionTree();
       if (this.baseData.type === DataTypes.PHOTO) {
-        this.rotation += Math.PI / 8;
+        this.rotation += angle;
         this.sprite.rotation = -this.rotation;
       } else {
-        this.sprite.rotation += Math.PI / 8;
+        this.sprite.rotation += angle;
       }
       if (!this.isDragging) {
         this.insertCollisionTree();

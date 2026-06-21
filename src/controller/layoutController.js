@@ -2469,8 +2469,8 @@ export class LayoutController {
     this.hideFileMenu();
     if (!this.readOnly) {
       if (LayoutController.dragTarget || LayoutController.selectedComponent) {
-        if (event.key === 'r' && !event.ctrlKey && !event.metaKey) {
-          this.rotateSelectedComponent();
+        if (event.key.toLowerCase() === 'r' && !event.ctrlKey && !event.metaKey) {
+          this.rotateSelectedComponent(event.shiftKey);
         }
       }
       if (LayoutController.selectedComponent) {
@@ -3679,14 +3679,16 @@ export class LayoutController {
 
   /**
    * Rotate the selected component.
+   * @param {Boolean} [left=false] If true, rotate left (counter-clockwise); otherwise, rotate right (clockwise).
    * @see {@link LayoutController.selectedComponent}
    * @see {@link Component.rotate}
    */
-  rotateSelectedComponent() {
+  rotateSelectedComponent(left = false) {
+    const rotationAngle = Math.PI / 8;
     this.hideFileMenu();
     if (!LayoutController.selectedComponent) {
       if (LayoutController.dragTarget) {
-        LayoutController.dragTarget.rotate();
+        LayoutController.dragTarget.rotate(left ? -rotationAngle : rotationAngle);
       }
       return;
     }
@@ -3700,7 +3702,7 @@ export class LayoutController {
         componentUuid: c.uuid,
         previousPose: c.getPose().serialize()
       }));
-      comp.rotate();
+      comp.rotate(left ? -rotationAngle : rotationAngle);
       this.undoManager.record({
         type: 'rotate_group',
         data: { layerUuid: layer?.uuid, components: componentPoses }
@@ -3710,7 +3712,7 @@ export class LayoutController {
       const previousPose = comp.getPose().serialize();
       const previousState = usedConnections.length === 1 ? comp.serialize() : null;
       const childIndex = usedConnections.length === 1 ? layer.children.indexOf(comp) : -1;
-      comp.rotate();
+      comp.rotate(left ? -rotationAngle : rotationAngle);
       this.undoManager.record({
         type: 'rotate',
         data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, previousPose, previousState, childIndex }
