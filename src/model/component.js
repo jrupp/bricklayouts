@@ -342,7 +342,7 @@ export class Component extends Container {
       this.sprite = new Sprite(Assets.get(baseData.alias));
       this.sprite.anchor.set(0.5);
       this.sprite.setSize(50, 50);
-      this.scale.set(4);
+      this.scale.set(8);
     } else {
       throw new Error(`Unsupported component type: ${this.baseData.type}`);
     }
