@@ -2880,6 +2880,7 @@ describe("LayoutController", function() {
                 // Connect r104a to the switch at connection 2
                 const switchConnection = switchTrack.connections[2];
                 const curveConnection = r104aComponent.connections[1];
+                switchTrack.closeConnections();
                 curveConnection.connectTo(switchConnection);
 
                 expect(r104aComponent.baseData.alias).toBe("r104a");
@@ -2899,6 +2900,7 @@ describe("LayoutController", function() {
 
                 const switchConnection = switchTrack.connections[2];
                 const curveConnection = r104bComponent.connections[1];
+                switchTrack.closeConnections();
                 curveConnection.connectTo(switchConnection);
 
                 expect(r104bComponent.baseData.alias).toBe("r104b");

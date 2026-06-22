@@ -19,6 +19,7 @@ import '../FileSaver.min.js';
  * @property {Number} type
  * @property {PolarVector} vector
  * @property {Number} next
+ * @property {Number} [c] Curve to one side? 0 for left, 1 for right, undefined for straight
  */
 let ConnectionData;
 export { ConnectionData };

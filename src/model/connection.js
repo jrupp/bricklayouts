@@ -30,8 +30,9 @@ export class Connection {
      * @param {Number} type
      * @param {Number} connectionIndex The index of this connection in the parent component's connections array
      * @param {Number} nextConnectionIndex
+     * @param {Boolean} [curveRight] Whether the next connection should curve to the right or left. Undefined if straight.
      */
-    constructor(parent, offsetVector, type, connectionIndex, nextConnectionIndex) {
+    constructor(parent, offsetVector, type, connectionIndex, nextConnectionIndex, curveRight) {
         this.#uuid = crypto.randomUUID();
         /**
          * @type {Component}
@@ -57,6 +58,10 @@ export class Connection {
          * @type {Number}
          */
         this.nextConnectionIndex = nextConnectionIndex;
+        /**
+         * @type {?Boolean}
+         */
+        this.curveRight = curveRight;
         /**
          * @type {Graphics}
          */

@@ -99,7 +99,6 @@ export const HexToColorName = Object.freeze(Object.fromEntries(Object.entries(Co
 export const DEFAULT_CIRCLE_PERCENTAGE = 80;
 
 const CURVE_ALIASES = new Set(['r104', 'r104a', 'r104b', 'railCurved9V', 'railCurved9VHalf', 'r56', 'r72', 'r88', 'r120']);
-const SWITCH_ALIASES = new Map([['r104SwitchLeft', true], ['r104SwitchRight', false], ['railSwitchLeft9V', true], ['railSwitchRight9V', false], ['r40SwitchRightTB', true], ['r40SwitchLeftTB', false], ['r104CurvedSwitchRight', true], ['r104CurvedSwitchLeft', false]]);
 
 /**
  * Any thing that can be placed on the layout.
@@ -391,7 +390,7 @@ export class Component extends Container {
     this.connections = [];
 
     if (this.baseData.connections) {
-      this.connections = this.baseData.connections.map((connection, index) => new Connection(this, connection.vector, connection.type, index, connection.next));
+      this.connections = this.baseData.connections.map((connection, index) => new Connection(this, connection.vector, connection.type, index, connection.next, connection.c !== void 0 ? connection.c === 1 : undefined));
     }
   }
 
@@ -415,8 +414,8 @@ export class Component extends Container {
         if ((baseData.alias !== "railCurved9V") !== (connection.component.baseData.alias !== "railCurved9V")) {
           conIndex = (conIndex === 1 ? 0 : 1);
         }
-      } else if (SWITCH_ALIASES.has(connection.component.baseData.alias) && CURVE_ALIASES.has(baseData.alias)) {
-        if (SWITCH_ALIASES.get(connection.component.baseData.alias)) {
+      } else if (connection.curveRight !== void 0 && CURVE_ALIASES.has(baseData.alias)) {
+        if (connection.curveRight) {
           conIndex = 1;
         }
         if (baseData.alias === "railCurved9V") {
