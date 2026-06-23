@@ -702,7 +702,7 @@
                     "connections": [
                         {
                             "type": 1,
-                            "vector": [191.99999999999977, 1, 1],
+                            "vector": [192, 1, 1],
                             "next": 0
                         },
                         {
@@ -714,6 +714,40 @@
                         {
                             "type": 1,
                             "vector": [195.89729626962, 1.8144140238819, 1.8125],
+                            "next": 0,
+                            "c": 0
+                        }
+                    ],
+                    "type": "track"
+                },
+                {
+                    "alias": "r40TripleSwitchTB",
+                    "name": "R40 Triple Switch",
+                    "category": "9V",
+                    "src": "r40-triple-switch-tb.png",
+                    "partNumber": "TS-40",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [256, 1, 1],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [256, 0, 0],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [146.76298298817764, 0.26276217120449463, 0.1875],
+                            "next": 0,
+                            "c": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [146.76301210808973, 1.7372380901752182, 1.8125],
                             "next": 0,
                             "c": 0
                         }
