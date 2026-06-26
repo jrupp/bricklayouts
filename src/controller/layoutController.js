@@ -3393,6 +3393,19 @@ export class LayoutController {
   }
 
   /**
+   * Fully reset multi-touch tracking state and detach all touch listeners.
+   * @static
+   */
+  static _clearTouchTracking() {
+    LayoutController.eventCache.clear();
+    LayoutController.previousPinchDistance = -1;
+    const stage = window.app.stage;
+    stage.off('touchend', LayoutController.onTouchEnd);
+    stage.off('touchendoutside', LayoutController.onTouchEnd);
+    stage.off('touchmove', LayoutController.onPinch);
+  }
+
+  /**
    * Handler for the touchend event that manages touch interaction cleanup.
    * Removes the touch point from the event cache and cleans up event listeners
    * when all touch points are released. Also resets pinch gesture tracking
@@ -3403,8 +3416,7 @@ export class LayoutController {
   static onTouchEnd(event) {
     LayoutController.eventCache.delete(event.nativeEvent.pointerId);
     if (LayoutController.eventCache.size === 0) {
-      window.app.stage.off('touchend', LayoutController.onTouchEnd);
-      window.app.stage.off('touchendoutside', LayoutController.onTouchEnd);
+      LayoutController._clearTouchTracking();
     } else if (LayoutController.eventCache.size < 2) {
       LayoutController.previousPinchDistance = -1;
       window.app.stage.off('touchmove', LayoutController.onPinch);
@@ -4550,6 +4562,16 @@ export class LayoutController {
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', debouncedHandler);
     }
+
+    // iOS may suspend the page mid-touch (user switches apps) without firing
+    // touchend, leaving stale pointers in the event cache that cause the next
+    // single-finger pan to be misread as a pinch. Reset touch state whenever
+    // the page is backgrounded.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        LayoutController._clearTouchTracking();
+      }
+    });
   }
 
   /**
