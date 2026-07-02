@@ -66,9 +66,11 @@ export class LayoutLayer extends Container {
         children.forEach(child => {
             if (child instanceof ComponentGroup) {
                 child.addToLayer(this);
+                index = this.children.length - 1;
                 return;
             }
             super.addChildAt(child, index);
+            index++;
             this.overlay.attach(...(child.children.filter((component) => component.renderPipeId == "graphics" && (component.priority ?? false))));
         });
         return children[0];

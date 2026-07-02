@@ -1888,6 +1888,33 @@ describe("LayoutController", function() {
             expect(hideFileMenuSpy).toHaveBeenCalled();
             expect(duplicateComponentSpy).not.toHaveBeenCalled();
         });
+
+        it("preserves z-order of components when duplicating a group", async function() {
+            layoutController.reset();
+            let baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            let treeData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "pineTreeSmall");
+
+            await layoutController.addComponent(baseplateData);
+            LayoutController.selectComponent(null);
+            await layoutController.addComponent(treeData);
+            await layoutController.addComponent(treeData);
+
+            const originalChildren = layoutController.currentLayer.children.filter(c => c instanceof Component);
+            expect(originalChildren.length).toBe(3);
+
+            layoutController.selectAll();
+            layoutController.duplicateSelectedComponent();
+
+            const allChildren = layoutController.currentLayer.children.filter(c => c instanceof Component);
+            expect(allChildren.length).toBe(6);
+
+            const clonedChildren = allChildren.slice(3);
+            for (let i = 0; i < originalChildren.length; i++) {
+                expect(clonedChildren[i].baseData.alias).withContext(
+                    `component at index ${i} should be ${originalChildren[i].baseData.alias}`
+                ).toBe(originalChildren[i].baseData.alias);
+            }
+        });
     });
 
     describe("pasteComponent", function() {
@@ -8623,12 +8650,15 @@ describe("LayoutController", function() {
             const component5 = layoutController.currentLayer.children[4];
             const component6 = layoutController.currentLayer.children[5];
 
+            // Cloned components should maintain the same relative spacing as originals
+            const originalSpacing12 = component2.position.x - component1.position.x;
+            const originalSpacing23 = component3.position.x - component2.position.x;
+            const clonedSpacing45 = component5.position.x - component4.position.x;
+            const clonedSpacing56 = component6.position.x - component5.position.x;
+
             expect(component4.position.y).withContext("component4's y position").toBe(component1.position.y);
-            expect(component4.position.x).withContext("component4's x position").toBe(component1.position.x - 256);
-            expect(component5.position.y).withContext("component5's y position").toBe(component1.position.y);
-            expect(component5.position.x).withContext("component5's x position").toBe(component4.position.x - 256);
-            expect(component6.position.y).withContext("component6's y position").toBe(component1.position.y);
-            expect(component6.position.x).withContext("component6's x position").toBe(component5.position.x - 256);
+            expect(clonedSpacing45).withContext("spacing between clone 1 and 2").toBe(originalSpacing12);
+            expect(clonedSpacing56).withContext("spacing between clone 2 and 3").toBe(originalSpacing23);
 
             // Clean up
             outerGroup.destroy();
@@ -8656,10 +8686,12 @@ describe("LayoutController", function() {
             const component3 = layoutController.currentLayer.children[2];
             const component4 = layoutController.currentLayer.children[3];
 
+            const originalSpacing = component2.position.x - component1.position.x;
+            const clonedSpacing = component4.position.x - component3.position.x;
+
             expect(component3.position.y).toBe(component1.position.y);
-            expect(component3.position.x).toBe(component1.position.x - 256);
             expect(component4.position.y).toBe(component1.position.y);
-            expect(component4.position.x).toBe(component3.position.x - 256);
+            expect(clonedSpacing).withContext("cloned spacing matches original").toBe(originalSpacing);
 
             // Clean up
             simpleGroup.destroy();
