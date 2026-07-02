@@ -306,9 +306,10 @@ export class ComponentGroup {
         function calculateNextToPosition(component, width) {
           let compWidth;
           if (component instanceof ComponentGroup) {
-            const nextBounds = component.getBounds();
-            let localNextBounds = layer.toLocal({x:nextBounds.minX, y:nextBounds.maxX});
-            compWidth = localNextBounds.y - localNextBounds.x;
+            const gb = component.getBounds();
+            const localMin = layer.toLocal({x: gb.minX, y: gb.minY});
+            const localMax = layer.toLocal({x: gb.maxX, y: gb.maxY});
+            compWidth = localMax.x - localMin.x;
           } else {
             compWidth = component.sprite.width;
           }

@@ -1159,33 +1159,33 @@ export class LayoutController {
    * @return {Object} The position and angle for the new component.
    */
   _newComponentPosition(baseData, angle = 0) {
-    /** @type {Pose} */
-    let newPos = { x: 150, y: 274, angle: angle };
-    if (baseData.connections?.length ?? 0 > 0) {
-      newPos = baseData.connections[0].vector.getStartPosition({ x: 512, y: 384, angle: angle });
+    const screenCenter = { x: this.app.screen.width / 2, y: this.app.screen.height / 2 };
+    const layerCenter = this.#currentLayer.toLocal(screenCenter);
+    const snapToSize = this.config.snapToSize;
+
+    if ((baseData.connections?.length ?? 0) > 0) {
+      let connectionPos = { x: layerCenter.x, y: layerCenter.y, angle: angle };
+      if (snapToSize > 0) {
+        connectionPos.x = Math.round(connectionPos.x / snapToSize) * snapToSize;
+        connectionPos.y = Math.round(connectionPos.y / snapToSize) * snapToSize;
+      }
+      let newPos = baseData.connections[0].vector.getStartPosition(connectionPos);
       newPos.x = Math.fround(newPos.x);
       newPos.y = Math.fround(newPos.y);
+      newPos.angle = angle;
+      return newPos;
     } else {
-      // Align to top left corner of component
-      if (baseData.width !== void 0 && baseData.height !== void 0) {
-        newPos.x += baseData.width / 2;
-        newPos.y += baseData.height / 2;
-      } else {
-        /** @type {Texture} */
-        let texture = Assets.get(baseData.alias);
-        if (texture !== void 0) {
-          newPos.x += texture.width / 2;
-          newPos.y += texture.height / 2;
-        }
+      let newPos = { x: layerCenter.x, y: layerCenter.y, angle: angle };
+      if (snapToSize > 0) {
+        const width = baseData.width ?? Assets.get(baseData.alias)?.width ?? 0;
+        const height = baseData.height ?? Assets.get(baseData.alias)?.height ?? 0;
+        const xOffset = (Math.round(width / snapToSize) % 2 === 1) ? snapToSize / 2 : 0;
+        const yOffset = (Math.round(height / snapToSize) % 2 === 1) ? snapToSize / 2 : 0;
+        newPos.x = Math.round((layerCenter.x - xOffset) / snapToSize) * snapToSize + xOffset;
+        newPos.y = Math.round((layerCenter.y - yOffset) / snapToSize) * snapToSize + yOffset;
       }
+      return newPos;
     }
-    newPos = { ...this.#currentLayer.toLocal({x: newPos.x / 2, y: newPos.y / 2}), angle: angle };
-    const snapToSize = this.config.snapToSize;
-    if (snapToSize > 0) {
-      newPos.x = Math.round(newPos.x / snapToSize) * snapToSize;
-      newPos.y = Math.round(newPos.y / snapToSize) * snapToSize;
-    }
-    return newPos;
   }
 
   initCustomComponentUI() {
@@ -1749,10 +1749,7 @@ export class LayoutController {
             continue;
           }
 
-          let offset = 0;
-          if ((selectedTree.width / 16) % 2 === 1) {
-            offset = 8;
-          }
+          const offset = (Math.round(selectedTree.width / snapToSize) % 2 === 1) ? snapToSize / 2 : 0;
           let fits = true;
           for (const existing of placedCircles) {
             const dx = pos.x + offset - existing.x;

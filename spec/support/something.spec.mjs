@@ -1822,6 +1822,43 @@ describe("LayoutController", function() {
             expect(secondDuplicate).not.toBe(originalComponent);
             expect(secondDuplicate.locked).toBe(false);
         });
+
+        it("positions duplicated group to the right consistently regardless of zoom", function() {
+            let baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            layoutController.reset();
+
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            const comp1 = layoutController.currentLayer.children[0];
+            const comp2 = layoutController.currentLayer.children[1];
+            const group = new ComponentGroup();
+            group.addComponent(comp1);
+            group.addComponent(comp2);
+            LayoutController.selectComponent(group);
+
+            layoutController.workspace.scale.set(0.5);
+            layoutController.duplicateSelectedComponent();
+            const clone05 = LayoutController.selectedComponent;
+            const pos05 = clone05.getPose();
+
+            layoutController.reset();
+            layoutController.addComponent(baseplateData);
+            layoutController.addComponent(baseplateData);
+            const comp3 = layoutController.currentLayer.children[0];
+            const comp4 = layoutController.currentLayer.children[1];
+            const group2 = new ComponentGroup();
+            group2.addComponent(comp3);
+            group2.addComponent(comp4);
+            LayoutController.selectComponent(group2);
+
+            layoutController.workspace.scale.set(1.0);
+            layoutController.duplicateSelectedComponent();
+            const clone10 = LayoutController.selectedComponent;
+            const pos10 = clone10.getPose();
+
+            expect(pos05.x).withContext("x position should be zoom-independent").toBeCloseTo(pos10.x, 0);
+            expect(pos05.y).withContext("y position should be zoom-independent").toBeCloseTo(pos10.y, 0);
+        });
     });
 
     describe("duplicateSelectedComponent", function() {
@@ -4129,39 +4166,41 @@ describe("LayoutController", function() {
             layoutController.config.clearWorkspaceSettings();
         });
 
-        it("computes position for track with connections using first connection vector (custom angle, no snap)", function() {
+        it("centers component with connections at viewport center (custom angle, no snap)", function() {
             layoutController.config.workspaceSnapToSize = 0;
             expect(straightTrackData.connections.length).toBeGreaterThan(0);
-            const fakeReturn = { x: 600.31234, y: 401.98761 }; // intentionally non-rounded
+            const fakeReturn = { x: 600.31234, y: 401.98761, angle: 0 };
             const angle = Math.PI / 5;
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
             const spy = spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
             const pos = layoutController._newComponentPosition(straightTrackData, angle);
-            expect(spy).toHaveBeenCalledOnceWith({ x: 512, y: 384, angle });
-            // fround applied before layer transform
+            expect(spy).toHaveBeenCalledOnceWith({ x: layerCenter.x, y: layerCenter.y, angle });
             expect(pos.x).toBeCloseTo(Math.fround(fakeReturn.x), 6);
             expect(pos.y).toBeCloseTo(Math.fround(fakeReturn.y), 6);
             expect(pos.angle).toBe(angle);
         });
 
-        it("computes position for component without connections (default angle, no snap)", function() {
+        it("centers component without connections at viewport center (default angle, no snap)", function() {
             layoutController.config.workspaceSnapToSize = 0;
             expect(baseplateData.connections || []).toHaveSize(0);
-            // expected raw position before layer transform logic: (150,274) + half width/height
-            const expectedX = 150 + (baseplateData.width / 2);
-            const expectedY = 274 + (baseplateData.height / 2);
-            const pos = layoutController._newComponentPosition(baseplateData); // angle defaults to 0
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
+            const pos = layoutController._newComponentPosition(baseplateData);
             expect(pos.angle).toBe(0);
-            // After internal toLocal() trick the coordinates should remain the computed values
-            expect(pos.x).toBeCloseTo(expectedX, 6);
-            expect(pos.y).toBeCloseTo(expectedY, 6);
+            expect(pos.x).toBeCloseTo(layerCenter.x, 6);
+            expect(pos.y).toBeCloseTo(layerCenter.y, 6);
         });
 
         it("snaps position to grid for component without connections when snapToGrid enabled", function() {
             layoutController.config.workspaceSnapToSize = 16;
-            const rawX = 150 + (baseplateData.width / 2);
-            const rawY = 274 + (baseplateData.height / 2);
-            const expectedX = Math.round(rawX / 16) * 16;
-            const expectedY = Math.round(rawY / 16) * 16;
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
+            const expectedX = Math.round(layerCenter.x / 16) * 16;
+            const expectedY = Math.round(layerCenter.y / 16) * 16;
             const pos = layoutController._newComponentPosition(baseplateData);
             expect(pos.x % 16).toBe(0);
             expect(pos.y % 16).toBe(0);
@@ -4169,17 +4208,43 @@ describe("LayoutController", function() {
             expect(pos.y).toBe(expectedY);
         });
 
-        it("snaps position to grid for component with connections when snapToGrid enabled", function() {
+        it("offsets snap by half grid for odd-sized components so edges align to grid", function() {
             layoutController.config.workspaceSnapToSize = 16;
-            const fakeReturn = { x: 593.27, y: 377.61 }; // non multiples of 16 so rounding happens
-            spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
+            const oddData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "pineTreeSmall");
+            expect(oddData).toBeDefined();
+            expect(Math.round(oddData.width / 16) % 2).withContext("pineTreeSmall should be odd grid units wide").toBe(1);
+            const pos = layoutController._newComponentPosition(oddData);
+            expect(pos.x % 16).withContext("center should be at half-grid offset").toBe(8);
+            expect(pos.y % 16).withContext("center should be at half-grid offset").toBe(8);
+            const leftEdge = pos.x - oddData.width / 2;
+            const rightEdge = pos.x + oddData.width / 2;
+            expect(leftEdge % 16).withContext("left edge should align to grid").toBe(0);
+            expect(rightEdge % 16).withContext("right edge should align to grid").toBe(0);
+        });
+
+        it("does not offset snap for even-sized components", function() {
+            layoutController.config.workspaceSnapToSize = 16;
+            const evenData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            expect(evenData).toBeDefined();
+            expect(Math.round(evenData.width / 16) % 2).withContext("baseplate should be even grid units wide").toBe(0);
+            const pos = layoutController._newComponentPosition(evenData);
+            expect(pos.x % 16).withContext("center should be on grid line").toBe(0);
+            expect(pos.y % 16).withContext("center should be on grid line").toBe(0);
+        });
+
+        it("snaps connection position to grid before deriving component center", function() {
+            layoutController.config.workspaceSnapToSize = 16;
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
+            const snappedX = Math.round(layerCenter.x / 16) * 16;
+            const snappedY = Math.round(layerCenter.y / 16) * 16;
+            const fakeReturn = { x: 593.27, y: 377.61, angle: 0 };
+            const spy = spyOn(straightTrackData.connections[0].vector, 'getStartPosition').and.returnValue(fakeReturn);
             const pos = layoutController._newComponentPosition(straightTrackData, 0);
-            const frx = Math.fround(fakeReturn.x);
-            const fry = Math.fround(fakeReturn.y);
-            expect(pos.x).toBe(Math.round(frx / 16) * 16);
-            expect(pos.y).toBe(Math.round(fry / 16) * 16);
-            expect(pos.x % 16).toBe(0);
-            expect(pos.y % 16).toBe(0);
+            expect(spy).toHaveBeenCalledOnceWith({ x: snappedX, y: snappedY, angle: 0 });
+            expect(pos.x).toBe(Math.fround(fakeReturn.x));
+            expect(pos.y).toBe(Math.fround(fakeReturn.y));
         });
 
         it("preserves provided angle for component without connections", function() {
@@ -4192,6 +4257,62 @@ describe("LayoutController", function() {
         it("uses default angle 0 when none provided", function() {
             const pos = layoutController._newComponentPosition(straightTrackData);
             expect(pos.angle).toBe(0);
+        });
+
+        it("centers component at viewport center when zoomed in", function() {
+            layoutController.config.workspaceSnapToSize = 0;
+            layoutController.workspace.scale.set(1.0);
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
+            const pos = layoutController._newComponentPosition(baseplateData);
+            expect(pos.x).toBeCloseTo(layerCenter.x, 6);
+            expect(pos.y).toBeCloseTo(layerCenter.y, 6);
+        });
+
+        it("centers component at viewport center when workspace is panned", function() {
+            layoutController.config.workspaceSnapToSize = 0;
+            layoutController.workspace.position.set(100, 50);
+            const screenCenterX = layoutController.app.screen.width / 2;
+            const screenCenterY = layoutController.app.screen.height / 2;
+            const layerCenter = layoutController.currentLayer.toLocal({x: screenCenterX, y: screenCenterY});
+            const pos = layoutController._newComponentPosition(baseplateData);
+            expect(pos.x).toBeCloseTo(layerCenter.x, 6);
+            expect(pos.y).toBeCloseTo(layerCenter.y, 6);
+        });
+
+        it("never places component entirely off-screen at any zoom/pan (property test)", function() {
+            fc.assert(fc.property(
+                fc.double({min: 0.1, max: 5.0, noNaN: true, noDefaultInfinity: true}),
+                fc.double({min: -2000, max: 2000, noNaN: true, noDefaultInfinity: true}),
+                fc.double({min: -2000, max: 2000, noNaN: true, noDefaultInfinity: true}),
+                fc.constantFrom('railStraight9V', 'baseplate32x32'),
+                (zoom, panX, panY, alias) => {
+                    layoutController.reset();
+                    layoutController.config.clearWorkspaceSettings();
+                    layoutController.workspace.scale.set(zoom);
+                    layoutController.workspace.position.set(panX, panY);
+                    layoutController.config.workspaceSnapToSize = 16;
+
+                    const trackData = layoutController.trackData.bundles[0].assets.find(a => a.alias === alias);
+                    const pos = layoutController._newComponentPosition(trackData, 0);
+
+                    const screenX = pos.x * zoom + panX;
+                    const screenY = pos.y * zoom + panY;
+                    const screenWidth = layoutController.app.screen.width;
+                    const screenHeight = layoutController.app.screen.height;
+                    const margin = 1000;
+
+                    expect(screenX).withContext(`screenX for zoom=${zoom}, pan=(${panX},${panY}), alias=${alias}`)
+                        .toBeGreaterThan(-margin);
+                    expect(screenX).withContext(`screenX for zoom=${zoom}, pan=(${panX},${panY}), alias=${alias}`)
+                        .toBeLessThan(screenWidth + margin);
+                    expect(screenY).withContext(`screenY for zoom=${zoom}, pan=(${panX},${panY}), alias=${alias}`)
+                        .toBeGreaterThan(-margin);
+                    expect(screenY).withContext(`screenY for zoom=${zoom}, pan=(${panX},${panY}), alias=${alias}`)
+                        .toBeLessThan(screenHeight + margin);
+                }
+            ), { numRuns: 200 });
         });
     });
 
