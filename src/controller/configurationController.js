@@ -28,9 +28,7 @@ export class ConfigurationController {
             this.#layoutController._hideSelectionToolbar();
             document.getElementById('configurationEditor').classList.toggle('active');
             // Reload the data into the UI, in case something has changed
-            const configType = this.#tabPanels[0].getAttribute('data-type');
-            this.#switchType(configType);
-            window.ui();
+            this.#switchType('user');
         });
         document.getElementById('configurationEditorClose').addEventListener('click', () => {
             document.getElementById('configurationEditor').classList.remove('active');
@@ -59,7 +57,7 @@ export class ConfigurationController {
             });
         });
 
-        this.#switchTab('general');
+        this.#switchTab('everything');
         this.#switchType('user');
 
         document.getElementById('defaultZoom').addEventListener('input', (ev) => {
@@ -164,7 +162,7 @@ export class ConfigurationController {
     /**
      * 
      * @private
-     * @param {'general'|'appearance'|'grid'} tabId 
+     * @param {'everything'} tabId 
      */
     #switchTab(tabId) {
         this.#tabButtons.forEach((button) => {
@@ -222,5 +220,6 @@ export class ConfigurationController {
         backgroundColor.value = `#${backgroundColorHex}`;
         backgroundColor.nextElementSibling.value = `#${backgroundColorHex}`;
         document.querySelector('#bgcolorfield>i').style.setProperty('--background-color', `#${backgroundColorHex}`);
+        window.ui();
     }
 }

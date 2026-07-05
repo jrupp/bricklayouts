@@ -1008,8 +1008,25 @@ i.legobrightgreen {
 #componentFontOptions label,
 #componentSizeUnitsField label,
 #componentBorderColorField label,
-#componentBorderField > label {
-  font-size: 1.1rem;
+#componentBorderField > label,
+.label-text {
+  font-size: 1.1rem !important;
+}
+
+label.full {
+	inset: -.5rem 0 0 0 !important;
+}
+
+label.full + nav {
+	border-top: 0 none !important;
+}
+
+label.full::before {
+	content: '';
+    width: 1rem;
+    display: block;
+    margin: .5rem 0 0;
+    border-block-start: .0625rem solid var(--outline);
 }
 
 #bgcolorfield input[type=text],
