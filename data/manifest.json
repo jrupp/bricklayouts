@@ -205,11 +205,32 @@
                     "src": "wooden-30x30.png"
                 },
                 {
+                    "alias": "wooden30x40",
+                    "name": "Wooden Table 30\"x40\"",
+                    "make": 0,
+                    "category": "table",
+                    "src": "wooden-30x40.png"
+                },
+                {
                     "alias": "wooden40x40",
                     "name": "Wooden Table 40\"x40\"",
                     "make": 0,
                     "category": "table",
                     "src": "wooden-40x40.png"
+                },
+                {
+                    "alias": "wooden40x50",
+                    "name": "Wooden Table 40\"x50\"",
+                    "make": 0,
+                    "category": "table",
+                    "src": "wooden-40x50.png"
+                },
+                {
+                    "alias": "wooden20x20",
+                    "name": "Wooden Table 20\"x20\"",
+                    "make": 0,
+                    "category": "table",
+                    "src": "wooden-20x20.png"
                 },
                 {
                     "alias": "baseplate32x32brightgreen",
