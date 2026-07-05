@@ -987,6 +987,18 @@ i.legobrightgreen {
 	transition: background var(--speed) var(--easing);
 }
 
+#configLayoutText {
+	display: none;
+}
+
+div[data-type=workspace] > #configDefaultsText {
+	display: none;
+}
+
+div[data-type=workspace] > #configLayoutText {
+	display: block;
+}
+
 #bgcolorfield *,
 #colorfield *,
 #subcolorfield * {
