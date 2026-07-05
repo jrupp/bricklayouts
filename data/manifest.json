@@ -713,6 +713,118 @@
                     "type": "track"
                 },
                 {
+                    "alias": "r40CurvedSwitch90RightTB",
+                    "src": "r40-csw90-r-tb.png",
+                    "name": "R40 Curved Switch 90° Right",
+                    "category": "9V",
+                    "partNumber": "RS-40-90",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [278.28043409481734, 1.1024163823495665, 1],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [213.10776299351622, 0.15450781176886288, 0.25],
+                            "next": 0,
+                            "c": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [240.1225798952245, 1.9476827146198064, 0.125],
+                            "next": 0,
+                            "c": 1
+                        }
+                    ]
+                },
+                {
+                    "alias": "r40CurvedSwitch90LeftTB",
+                    "src": "r40-csw90-l-tb.png",
+                    "name": "R40 Curved Switch 90° Left",
+                    "category": "9V",
+                    "partNumber": "LS-40-90",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [278.28043409481756, 0.8975836176504333, 1],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [213.10781535829076, 1.845492393537963, 1.75],
+                            "next": 0,
+                            "c": 0
+                        },
+                        {
+                            "type": 0,
+                            "vector": [240.12267425996646, 0.05231730869287839, 1.875],
+                            "next": 0,
+                            "c": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "r40CurvedSwitch45RightTB",
+                    "src": "r40-csw45-r-tb.png",
+                    "name": "R40 Curved Switch 45° Right",
+                    "category": "9V",
+                    "partNumber": "RS-40-45",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [252.6024544615511, 1.0608559035744352, 1],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [123.06905886817584, 0.16166826715099866, 0.1875],
+                            "next": 0,
+                            "c": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [241.5432339255222, 1.9527926508183442, 0.0625],
+                            "next": 0,
+                            "c": 1
+                        }
+                    ]
+                },
+                {
+                    "alias": "r40CurvedSwitch45LeftTB",
+                    "src": "r40-csw45-l-tb.png",
+                    "name": "R40 Curved Switch 45° Left",
+                    "category": "9V",
+                    "partNumber": "LS-40-45",
+                    "make": 0,
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [252.11158243920477, 0.939024137928819, 1],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [123.50624865002669, 1.8389587211815739, 1.8125],
+                            "next": 0,
+                            "c": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [242.03783821490813, 0.04711018818474652, 1.9375],
+                            "next": 0,
+                            "c": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "r40SwitchWyeTB",
                     "name": "Wye Switch R40",
                     "category": "9V",
