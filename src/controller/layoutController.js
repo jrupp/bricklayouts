@@ -3337,6 +3337,10 @@ export class LayoutController {
         });
         // Extract components from search results and process through permanent group logic
         const components = a.map(item => item.component);
+        const selected = LayoutController.selectedComponent;
+        if (components.length > 0 && selected instanceof ComponentGroup && selected.isTemporary) {
+          LayoutController.selectComponent(null);
+        }
         const selectionTarget = LayoutController.getInstance().processSelectionBoxResults(components);
         if (selectionTarget) {
           LayoutController.selectComponent(selectionTarget);
