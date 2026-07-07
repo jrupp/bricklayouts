@@ -4795,6 +4795,224 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("onDragMove snapping for odd-sized components", function() {
+        let layoutController;
+        let currentLayer;
+        let baseplateData;
+        let shapeData;
+        let tileableData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            layoutController.config.clearWorkspaceSettings();
+            layoutController.config.workspaceSnapToSize = 16;
+            currentLayer = layoutController.currentLayer;
+            baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate");
+            shapeData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "shape");
+            tileableData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "carrotField");
+        });
+
+        afterEach(function() {
+            LayoutController.dragTarget = null;
+            LayoutController.dragDistance = 0;
+            LayoutController.dragWithAlt = false;
+            LayoutController.selectedComponent = null;
+            layoutController.reset();
+        });
+
+        function simulateDrag(component, startX, startY, endX, endY) {
+            const startEvent = {
+                button: 0,
+                nativeEvent: { isPrimary: true },
+                altKey: false,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: startX, y: startY }),
+                stopImmediatePropagation: jasmine.createSpy('stopImmediatePropagation')
+            };
+            component.onStartDrag(startEvent);
+            const moveEvent = {
+                movementX: endX - startX,
+                movementY: endY - startY,
+                getLocalPosition: jasmine.createSpy('getLocalPosition').and.returnValue({ x: endX, y: endY })
+            };
+            LayoutController.onDragMove(moveEvent);
+        }
+
+        function expectEdgesAlignedToGrid(component, gridSize) {
+            const leftEdge = component.x - component.componentWidth / 2;
+            const rightEdge = component.x + component.componentWidth / 2;
+            const topEdge = component.y - component.componentHeight / 2;
+            const bottomEdge = component.y + component.componentHeight / 2;
+            expect(leftEdge % gridSize).withContext(`left edge ${leftEdge} should align to grid`).toBe(0);
+            expect(rightEdge % gridSize).withContext(`right edge ${rightEdge} should align to grid`).toBe(0);
+            expect(topEdge % gridSize).withContext(`top edge ${topEdge} should align to grid`).toBe(0);
+            expect(bottomEdge % gridSize).withContext(`bottom edge ${bottomEdge} should align to grid`).toBe(0);
+        }
+
+        it("aligns edges of 16x64 baseplate to grid when dragged", function() {
+            const component = new Component(baseplateData, new Pose(100, 100, 0), currentLayer, {width: 16, height: 64});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 32x48 baseplate to grid when dragged", function() {
+            const component = new Component(baseplateData, new Pose(100, 100, 0), currentLayer, {width: 32, height: 48});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 64x64 baseplate to grid when dragged", function() {
+            const component = new Component(baseplateData, new Pose(100, 100, 0), currentLayer, {width: 64, height: 64});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 16x64 shape to grid when dragged", function() {
+            if (!shapeData) { pending("No shape data in manifest"); return; }
+            const component = new Component(shapeData, new Pose(100, 100, 0), currentLayer, {width: 16, height: 64, shape: 'rectangle'});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 32x48 shape to grid when dragged", function() {
+            if (!shapeData) { pending("No shape data in manifest"); return; }
+            const component = new Component(shapeData, new Pose(100, 100, 0), currentLayer, {width: 32, height: 48, shape: 'rectangle'});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 16x64 tileable to grid when dragged", function() {
+            if (!tileableData) { pending("No tileable data in manifest"); return; }
+            const component = new Component(tileableData, new Pose(100, 100, 0), currentLayer, {width: 16, height: 64});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        it("aligns edges of 32x48 tileable to grid when dragged", function() {
+            if (!tileableData) { pending("No tileable data in manifest"); return; }
+            const component = new Component(tileableData, new Pose(100, 100, 0), currentLayer, {width: 32, height: 48});
+            currentLayer.addChild(component);
+            simulateDrag(component, 100, 100, 110, 100);
+            expectEdgesAlignedToGrid(component, 16);
+        });
+
+        function expectRotatedAABBAlignedToGrid(component, gridSize) {
+            const angle = component.getPose().angle;
+            const c = Math.abs(Math.cos(angle));
+            const s = Math.abs(Math.sin(angle));
+            const halfW = (c * component.componentWidth + s * component.componentHeight) / 2;
+            const halfH = (s * component.componentWidth + c * component.componentHeight) / 2;
+            const leftEdge = component.x - halfW;
+            const rightEdge = component.x + halfW;
+            const topEdge = component.y - halfH;
+            const bottomEdge = component.y + halfH;
+            const snap = (v) => Math.round(v / gridSize) * gridSize;
+            expect(leftEdge).withContext(`left edge ${leftEdge} should align to grid`).toBeCloseTo(snap(leftEdge), 5);
+            expect(rightEdge).withContext(`right edge ${rightEdge} should align to grid`).toBeCloseTo(snap(rightEdge), 5);
+            expect(topEdge).withContext(`top edge ${topEdge} should align to grid`).toBeCloseTo(snap(topEdge), 5);
+            expect(bottomEdge).withContext(`bottom edge ${bottomEdge} should align to grid`).toBeCloseTo(snap(bottomEdge), 5);
+        }
+
+        [Math.PI / 2, Math.PI, 1.5 * Math.PI].forEach((rotation) => {
+            it(`aligns edges of 16x64 shape rotated by ${rotation} to grid when dragged`, function() {
+                if (!shapeData) { pending("No shape data in manifest"); return; }
+                const component = new Component(shapeData, new Pose(100, 100, 0), currentLayer, {width: 16, height: 64, shape: 'rectangle'});
+                currentLayer.addChild(component);
+                component.rotate(rotation);
+                simulateDrag(component, 100, 100, 110, 100);
+                expectRotatedAABBAlignedToGrid(component, 16);
+            });
+
+            it(`aligns edges of 32x48 shape rotated by ${rotation} to grid when dragged`, function() {
+                if (!shapeData) { pending("No shape data in manifest"); return; }
+                const component = new Component(shapeData, new Pose(100, 100, 0), currentLayer, {width: 32, height: 48, shape: 'rectangle'});
+                currentLayer.addChild(component);
+                component.rotate(rotation);
+                simulateDrag(component, 100, 100, 110, 100);
+                expectRotatedAABBAlignedToGrid(component, 16);
+            });
+        });
+    });
+
+    describe("_newComponentPosition rotation-aware snapping", function() {
+        let layoutController;
+        let shapeData;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            layoutController.config.clearWorkspaceSettings();
+            layoutController.config.workspaceSnapToSize = 16;
+            shapeData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "shape");
+        });
+
+        afterEach(function() {
+            layoutController.reset();
+        });
+
+        function expectPositionAABBAlignedToGrid(pos, width, height, angle, gridSize) {
+            const c = Math.abs(Math.cos(angle));
+            const s = Math.abs(Math.sin(angle));
+            const halfW = (c * width + s * height) / 2;
+            const halfH = (s * width + c * height) / 2;
+            const snap = (v) => Math.round(v / gridSize) * gridSize;
+            expect(pos.x - halfW).toBeCloseTo(snap(pos.x - halfW), 5);
+            expect(pos.x + halfW).toBeCloseTo(snap(pos.x + halfW), 5);
+            expect(pos.y - halfH).toBeCloseTo(snap(pos.y - halfH), 5);
+            expect(pos.y + halfH).toBeCloseTo(snap(pos.y + halfH), 5);
+        }
+
+        [Math.PI / 2, Math.PI, 1.5 * Math.PI].forEach((rotation) => {
+            it(`aligns 16x64 shape AABB to grid when new position uses angle ${rotation}`, function() {
+                if (!shapeData) { pending("No shape data in manifest"); return; }
+                const baseData = { ...shapeData, width: 16, height: 64 };
+                const pos = layoutController._newComponentPosition(baseData, rotation);
+                expectPositionAABBAlignedToGrid(pos, 16, 64, rotation, 16);
+            });
+
+            it(`aligns 32x48 shape AABB to grid when new position uses angle ${rotation}`, function() {
+                if (!shapeData) { pending("No shape data in manifest"); return; }
+                const baseData = { ...shapeData, width: 32, height: 48 };
+                const pos = layoutController._newComponentPosition(baseData, rotation);
+                expectPositionAABBAlignedToGrid(pos, 32, 48, rotation, 16);
+            });
+        });
+
+        [0, Math.PI / 2, Math.PI, 1.5 * Math.PI].forEach((rotation) => {
+            it(`aligns custom shape (size from options, not baseData) AABB to grid at angle ${rotation}`, function() {
+                if (!shapeData) { pending("No shape data in manifest"); return; }
+                // A custom shape has no width/height on baseData and no texture in Assets.
+                const baseData = { ...shapeData };
+                delete baseData.width;
+                delete baseData.height;
+                const pos = layoutController._newComponentPosition(baseData, rotation, { width: 16, height: 64 });
+                expectPositionAABBAlignedToGrid(pos, 16, 64, rotation, 16);
+            });
+        });
+
+        it("uses options.width/height when baseData size differs (regression: 16x512 custom shape)", function() {
+            if (!shapeData) { pending("No shape data in manifest"); return; }
+            // Simulate the user's browser: screen 1536x825.2, layer center at a fractional local position.
+            const originalScreen = layoutController.app.screen;
+            const originalToLocal = layoutController.currentLayer.toLocal;
+            spyOnProperty(layoutController.app, 'screen').and.returnValue({ width: 1536, height: 825.2 });
+            spyOn(layoutController.currentLayer, 'toLocal').and.returnValue({ x: 1462.9737177346055, y: 768.1421263577912 });
+            try {
+                const pos = layoutController._newComponentPosition(shapeData, 0, { width: 16, height: 512 });
+                expect(pos.x).toBe(1464);
+                expect(pos.y).toBe(768);
+            } finally {
+                // Restore for other tests. Spies get torn down at end of spec anyway.
+            }
+        });
+    });
+
     describe("onKeyDown", function() {
         describe("PageDown key", function() {
             it("should call preventDefault when PageDown is pressed with selected component", function() {
