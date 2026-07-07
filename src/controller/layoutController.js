@@ -1133,7 +1133,7 @@ export class LayoutController {
         return;
       }
     } else {
-      let newPos = this._newComponentPosition(track, 0);
+      let newPos = this._newComponentPosition(track, 0, options);
       newComp = new Component(track, newPos, this.currentLayer, options);
     }
     this.currentLayer.addChild(newComp);
@@ -1154,16 +1154,18 @@ export class LayoutController {
 
   /**
    * Get the position for a new component based on the base data.
-   * @param {TrackData} baseData 
+   * @param {TrackData} baseData
    * @param {Number} [angle=0] Angle to have the new component rotated to.
-   * @return {Object} The position and angle for the new component.
+   * @param {ComponentOptions} [options] Component options; width/height here take precedence over baseData.
+   * @return {Pose} The position and angle for the new component.
    */
-  _newComponentPosition(baseData, angle = 0) {
+  _newComponentPosition(baseData, angle = 0, options = {}) {
     const screenCenter = { x: this.app.screen.width / 2, y: this.app.screen.height / 2 };
     const layerCenter = this.#currentLayer.toLocal(screenCenter);
     const snapToSize = this.config.snapToSize;
 
     if ((baseData.connections?.length ?? 0) > 0) {
+      /** @type {Pose} */
       let connectionPos = { x: layerCenter.x, y: layerCenter.y, angle: angle };
       if (snapToSize > 0) {
         connectionPos.x = Math.round(connectionPos.x / snapToSize) * snapToSize;
@@ -1175,17 +1177,45 @@ export class LayoutController {
       newPos.angle = angle;
       return newPos;
     } else {
+      /** @type {Pose} */
       let newPos = { x: layerCenter.x, y: layerCenter.y, angle: angle };
       if (snapToSize > 0) {
-        const width = baseData.width ?? Assets.get(baseData.alias)?.width ?? 0;
-        const height = baseData.height ?? Assets.get(baseData.alias)?.height ?? 0;
-        const xOffset = (Math.round(width / snapToSize) % 2 === 1) ? snapToSize / 2 : 0;
-        const yOffset = (Math.round(height / snapToSize) % 2 === 1) ? snapToSize / 2 : 0;
-        newPos.x = Math.round((layerCenter.x - xOffset) / snapToSize) * snapToSize + xOffset;
-        newPos.y = Math.round((layerCenter.y - yOffset) / snapToSize) * snapToSize + yOffset;
+        const width = options.width ?? baseData.width ?? Assets.get(baseData.alias)?.width ?? 0;
+        const height = options.height ?? baseData.height ?? Assets.get(baseData.alias)?.height ?? 0;
+        if (width > 0 && height > 0) {
+          const snapped = LayoutController._snapCenterByAABB(layerCenter, width, height, angle, snapToSize);
+          newPos.x = snapped.x;
+          newPos.y = snapped.y;
+        } else {
+          newPos.x = Math.round(layerCenter.x / snapToSize) * snapToSize;
+          newPos.y = Math.round(layerCenter.y / snapToSize) * snapToSize;
+        }
       }
       return newPos;
     }
+  }
+
+  /**
+   * Snap a center position so that the axis-aligned bounding box of a rectangular
+   * component (of the given unrotated width/height, rotated by `angle`) has its
+   * top-left corner on the grid. Works for any rotation because the AABB widens/
+   * shortens based on rotation.
+   * @param {{x: Number, y: Number}} center Unsnapped center position.
+   * @param {Number} width Unrotated width of the component.
+   * @param {Number} height Unrotated height of the component.
+   * @param {Number} angle Rotation angle in radians.
+   * @param {Number} gridSize Grid cell size to snap to.
+   * @returns {{x: Number, y: Number}} The snapped center position.
+   */
+  static _snapCenterByAABB(center, width, height, angle, gridSize) {
+    const cosA = Math.abs(Math.cos(angle));
+    const sinA = Math.abs(Math.sin(angle));
+    const halfW = (cosA * width + sinA * height) / 2;
+    const halfH = (sinA * width + cosA * height) / 2;
+    return {
+      x: Math.round((center.x - halfW) / gridSize) * gridSize + halfW,
+      y: Math.round((center.y - halfH) / gridSize) * gridSize + halfH,
+    };
   }
 
   initCustomComponentUI() {
@@ -3213,8 +3243,27 @@ export class LayoutController {
       // Snap to grid if enabled
       let gridSize = LayoutController.getInstance().config.snapToSize;
       if (gridSize > 0) {
-        a.x = Math.round(a.x / gridSize) * gridSize;
-        a.y = Math.round(a.y / gridSize) * gridSize;
+        const target = LayoutController.dragTarget;
+        const type = target.baseData?.type;
+        const centerAnchored = !target.dragStartConnection && (
+          type === DataTypes.SHAPE ||
+          type === DataTypes.TILEABLE ||
+          type === DataTypes.PHOTO ||
+          type === DataTypes.TEXT
+        );
+        if (centerAnchored && (target.componentWidth ?? 0) > 0 && (target.componentHeight ?? 0) > 0) {
+          // Snap the axis-aligned bounding box's top-left to the grid. This automatically
+          // handles both odd-sized components and arbitrary rotations because the AABB
+          // dimensions already account for rotation.
+          const snapped = LayoutController._snapCenterByAABB(
+            a, target.componentWidth, target.componentHeight, target.getPose().angle, gridSize
+          );
+          a.x = snapped.x;
+          a.y = snapped.y;
+        } else {
+          a.x = Math.round(a.x / gridSize) * gridSize;
+          a.y = Math.round(a.y / gridSize) * gridSize;
+        }
       }
       a.x += LayoutController.dragTarget.dragStartOffset.x;
       a.y += LayoutController.dragTarget.dragStartOffset.y;
@@ -3639,7 +3688,10 @@ export class LayoutController {
     let clone = component.clone(this.currentLayer, connectTo);
     // FIXME: This should only be looking at used external connections
     if (!LayoutController.selectedComponent && clone.getUsedConnections().length === 0) {
-      let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle);
+      let newPos = this._newComponentPosition(clone.baseData, clone.getPose().angle, {
+        width: clone.componentWidth,
+        height: clone.componentHeight
+      });
       clone.deleteCollisionTree();
       clone.position.set(newPos.x, newPos.y);
       clone.insertCollisionTree();
