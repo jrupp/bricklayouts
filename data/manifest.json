@@ -1352,8 +1352,16 @@
                     "make": 1
                 },
                 {
+                    "alias": "10270",
+                    "name": "Bookshop",
+                    "category": "structures",
+                    "src": "10270.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
                     "alias": "10297",
-                    "name": "Botique Hotel",
+                    "name": "Boutique Hotel",
                     "category": "structures",
                     "src": "10297.png",
                     "onbp": "#A0A5A9",
