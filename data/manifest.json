@@ -1460,6 +1460,14 @@
                     "make": 1
                 },
                 {
+                    "alias": "10218",
+                    "name": "Pet Shop",
+                    "category": "structures",
+                    "src": "10218.png",
+                    "onbp": "#237841",
+                    "make": 1
+                },
+                {
                     "alias": "10278",
                     "name": "Police Station",
                     "category": "structures",
