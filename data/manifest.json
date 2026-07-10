@@ -1048,6 +1048,67 @@
                     ]
                 },
                 {
+                    "alias": "r104WyeSwitchTB",
+                    "name": "Wye Switch R104",
+                    "category": "9V",
+                    "partNumber": "WS-104",
+                    "make": 0,
+                    "src": "r104-wye-tb.png",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [328, 1, 1],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [333.667190529587, 0.12363675986416858, 0.125],
+                            "next": 0,
+                            "c": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [333.7808323395216, 1.875808116701338, 1.875],
+                            "next": 0,
+                            "c": 0
+                        }
+                    ]
+                },
+                {
+                    "alias": "r104TripleSwitchTB",
+                    "name": "Triple Switch R104",
+                    "category": "9V",
+                    "partNumber": "TS-104",
+                    "make": 0,
+                    "src": "r104-triple-switch-tb.png",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [328, 1, 1],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [312, 0, 0],
+                            "next": 0
+                        },
+                        {
+                            "type": 1,
+                            "vector": [333.667190529587, 0.12363675986416858, 0.125],
+                            "next": 0,
+                            "c": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [333.7808323395216, 1.875808116701338, 1.875],
+                            "next": 0,
+                            "c": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "railStraight9VDouble",
                     "src": "2865-double.png",
                     "category": "9V",
