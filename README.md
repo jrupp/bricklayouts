@@ -32,7 +32,7 @@ Open your browser to the address shown on your screen.
 #### Headless (CI / automated)
 
 ```shell
-CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
+npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
 #### WSL2 setup

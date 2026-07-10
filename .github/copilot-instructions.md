@@ -24,7 +24,7 @@ SE_MANAGER_PATH=$(pwd)/.github/selenium-manager-offline.sh npx jasmine-browser-r
 
 **For GitHub Actions CI:**
 ```bash
-CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
+npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
 **For local interactive development:**

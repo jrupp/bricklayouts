@@ -80,6 +80,8 @@ body {
 
 #selToolMenuRotate,
 #selToolRotate,
+#selToolFlip,
+#selToolMenuFlip,
 #selToolMenuGroup,
 #selToolMenuUngroup {
 	display: none;
@@ -90,6 +92,14 @@ body {
 }
 
 #selectionToolbar.rotatable li#selToolMenuRotate {
+	display: flex;
+}
+
+#selectionToolbar.flippable > #selToolFlip {
+	display: block;
+}
+
+#selectionToolbar.flippable li#selToolMenuFlip {
 	display: flex;
 }
 
@@ -118,6 +128,7 @@ body {
 
 #selectionToolbar.locked #selToolEdit,
 #selectionToolbar.locked #selToolRotate,
+#selectionToolbar.locked #selToolFlip,
 #selectionToolbar.locked #selToolDelete {
 	display: none;
 }

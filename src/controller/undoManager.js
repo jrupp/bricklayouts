@@ -132,6 +132,9 @@ export class UndoManager {
       case 'lock':
         this.#undoLock(entry.data);
         break;
+      case 'flip':
+        this.#undoFlip(entry.data);
+        break;
       case 'lock_perm_group':
         this.#undoLockPermGroup(entry.data);
         break;
@@ -478,6 +481,21 @@ export class UndoManager {
     const comp = layer.findComponentByUuid(data.componentUuid);
     if (!comp) return;
     comp.locked = data.wasLocked;
+    if (LayoutController.selectedComponent === comp) {
+      this.#controller._showSelectionToolbar();
+      this.#controller._positionSelectionToolbar();
+    }
+  }
+
+  /**
+   * @param {{componentUuid: String, layerUuid: String, wasFlipped: Boolean}} data
+   */
+  #undoFlip(data) {
+    const layer = this.#controller.findLayerByUuid(data.layerUuid);
+    if (!layer) return;
+    const comp = layer.findComponentByUuid(data.componentUuid);
+    if (!comp) return;
+    comp.flipped = data.wasFlipped;
     if (LayoutController.selectedComponent === comp) {
       this.#controller._showSelectionToolbar();
       this.#controller._positionSelectionToolbar();
