@@ -1799,6 +1799,7 @@ export class LayoutController {
           const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
           const angle = angles[Math.floor(Math.random() * 4)];
           const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
+          comp.flipped = (Math.random() < 0.5);
           this.currentLayer.addChild(comp);
 
           placed.push(comp);
