@@ -384,6 +384,10 @@
             <i class="extra">rotate_right</i>
             <div class="tooltip medium-space">Rotate (R)</div>
         </button>
+        <button id="selToolFlip" class="square background">
+            <i class="extra">swap_horiz</i>
+            <div class="tooltip medium-space">Flip (Shift+H)</div>
+        </button>
         <button id="selToolDuplicate" class="square background">
             <i class="extra">library_add</i>
             <div class="tooltip medium-space">Duplicate (<span class="ctrl-key">Ctrl</span>+D)</div>
@@ -438,6 +442,11 @@
                     <i class="large">rotate_right</i>
                     <div class="max"><div>Rotate</div></div>
                     R
+                </li>
+                <li id="selToolMenuFlip" class="hideOnLock" data-ui="#selToolMenu">
+                    <i class="large">swap_horiz</i>
+                    <div class="max"><div>Flip</div></div>
+                    Shift + H
                 </li>
                 <li id="selToolMenuLock" data-ui="#selToolMenu">
                     <i class="large">lock_open</i>

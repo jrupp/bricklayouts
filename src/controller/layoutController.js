@@ -487,6 +487,8 @@ export class LayoutController {
     // Wire toolbar actions to existing handlers
     this.selectionToolbar?.querySelector('#selToolRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolMenuRotate')?.addEventListener('click', () => this.rotateSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolFlip')?.addEventListener('click', () => this.flipSelectedComponent());
+    this.selectionToolbar?.querySelector('#selToolMenuFlip')?.addEventListener('click', () => this.flipSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolMenuDuplicate')?.addEventListener('click', () => this.duplicateSelectedComponent());
     this.selectionToolbar?.querySelector('#selToolCopy')?.addEventListener('click', () => this.copySelectedComponent());
@@ -1797,6 +1799,7 @@ export class LayoutController {
           const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
           const angle = angles[Math.floor(Math.random() * 4)];
           const comp = new Component(selectedTree, new Pose(pos.x + offset, pos.y + offset, angle), this.currentLayer);
+          comp.flipped = (Math.random() < 0.5);
           this.currentLayer.addChild(comp);
 
           placed.push(comp);
@@ -2535,6 +2538,10 @@ export class LayoutController {
         // Select Connected (Ctrl+Shift+A on Windows/Linux, Cmd+Shift+A on Mac)
         if (event.key === 'A' && (event.ctrlKey || event.metaKey) && event.shiftKey) {
           this.selectConnected();
+          event.preventDefault();
+        }
+        if (event.key === 'H' && event.shiftKey && !event.ctrlKey && !event.metaKey) {
+          this.flipSelectedComponent();
           event.preventDefault();
         }
       }
@@ -3788,6 +3795,26 @@ export class LayoutController {
   }
 
   /**
+   * Toggle horizontal flip on the selected component. Only components in the
+   * "structures" category can be flipped. Records an undo entry.
+   */
+  flipSelectedComponent() {
+    this.hideFileMenu();
+    const comp = LayoutController.selectedComponent;
+    if (!comp || !(comp instanceof Component) || comp.destroyed) return;
+    if (!comp.canFlip() || comp.locked) return;
+    const layer = comp.layer || comp.parent;
+    const wasFlipped = comp.flipped;
+    this.undoManager.record({
+      type: 'flip',
+      data: { componentUuid: comp.uuid, layerUuid: layer?.uuid, wasFlipped }
+    });
+    comp.flipped = !wasFlipped;
+    this._showSelectionToolbar();
+    this._positionSelectionToolbar();
+  }
+
+  /**
    * Lock the selected component to prevent editing operations.
    */
   lockComponent() {
@@ -4662,6 +4689,11 @@ export class LayoutController {
       this.selectionToolbar.classList.add('rotatable');
     } else {
       this.selectionToolbar.classList.remove('rotatable');
+    }
+    if (comp.size === 1 && typeof comp.canFlip === 'function' && comp.canFlip()) {
+      this.selectionToolbar.classList.add('flippable');
+    } else {
+      this.selectionToolbar.classList.remove('flippable');
     }
     if (comp instanceof ComponentGroup) {
       if (comp.isTemporary) {

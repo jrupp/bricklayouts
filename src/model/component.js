@@ -26,6 +26,7 @@ import { PolarVector } from "./polarVector.js";
  * @property {String} [group] The UUID of the ComponentGroup this component belongs to
  * @property {Number} [circle_percentage] The percentage of circle to display for partial circles (5-95)
  * @property {Number} [locked] The locked state of the component (1 if locked, omitted if unlocked)
+ * @property {Number} [flip] The flipped state of the component (1 if horizontally flipped, omitted if not; only for structures)
  */
 let SerializedComponent;
 export { SerializedComponent };
@@ -197,6 +198,12 @@ export class Component extends Container {
    */
   #locked;
 
+  /**
+   * @type {Boolean}
+   * Whether this component is horizontally flipped (only supported for structures).
+   */
+  #flipped;
+
   /** @type {String} */
   #uuid;
 
@@ -263,6 +270,7 @@ export class Component extends Container {
 
     this.#uuid = crypto.randomUUID();
     this.#locked = false;
+    this.#flipped = false;
 
     if (this.baseData.type === DataTypes.TRACK) {
       if (this.baseData.onbp !== undefined && options.bpColor !== "") {
@@ -504,10 +512,16 @@ export class Component extends Container {
     if (connectTo) {
       let newComp = Component.fromComponent(this.baseData, connectTo, layer, options);
       if (newComp) {
+        if (this.#flipped && newComp.canFlip()) {
+          newComp.flipped = true;
+        }
         return newComp;
       }
     }
     let newComp = new Component(this.baseData, this.getPose(), layer, options);
+    if (this.#flipped && newComp.canFlip()) {
+      newComp.flipped = true;
+    }
     return newComp;
   }
 
@@ -632,6 +646,15 @@ export class Component extends Container {
   canRotate() {
     const currentConnections = this.getUsedConnections();
     return currentConnections.length <= 1;
+  }
+
+  /**
+   * Checks if this component can be flipped horizontally.
+   * Only components in the "structures" category support flipping.
+   * @returns {Boolean} True if this component can be flipped, false otherwise
+   */
+  canFlip() {
+    return this.baseData?.category === 'structures';
   }
 
   /**
@@ -1017,6 +1040,30 @@ export class Component extends Container {
   }
 
   /**
+   * Get the flipped state of this Component.
+   * @returns {Boolean} True if this Component is horizontally flipped, false otherwise
+   */
+  get flipped() {
+    return this.#flipped;
+  }
+
+  /**
+   * Set the flipped state of this Component. When the value changes,
+   * `sprite.scale.x` is negated to visually mirror the sprite horizontally.
+   * `sprite.scale.y` is never modified.
+   * @param {Boolean} value The new flipped state to set
+   */
+  set flipped(value) {
+    const next = Boolean(value);
+    if (next === this.#flipped) return;
+    if (next && !this.canFlip()) return;
+    this.#flipped = next;
+    if (this.sprite && this.sprite.scale) {
+      this.sprite.scale.x = -this.sprite.scale.x;
+    }
+  }
+
+  /**
    * Get the circle percentage of this Component.
    * @returns {?Number} The circle percentage of this Component
    */
@@ -1160,6 +1207,10 @@ export class Component extends Container {
       newComponent.locked = true;
     }
 
+    if (data?.flip === 1 && newComponent.canFlip()) {
+      newComponent.flipped = true;
+    }
+
     return newComponent;
   }
 
@@ -1211,6 +1262,10 @@ export class Component extends Container {
       serialized.locked = 1;
     }
 
+    if (this.#flipped && this.canFlip()) {
+      serialized.flip = 1;
+    }
+
     return serialized;
   }
 
@@ -1246,6 +1301,7 @@ export class Component extends Container {
       data?.group === undefined || (typeof data?.group === 'string' && data?.group.length > 0),
       data?.circle_percentage === undefined || (typeof data?.circle_percentage === 'number' && data?.circle_percentage >= 5 && data?.circle_percentage <= 95),
       data?.locked === undefined || data?.locked === 1,
+      data?.flip === undefined || data?.flip === 1,
       data?.url === undefined || typeof data?.url === 'string'
     ];
     return validations.every(v => v);

@@ -13,10 +13,10 @@ npm start            # starts local dev server
 
 ```bash
 # Local headless tests (CI)
-CI=true npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
+npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-- ~1016 specs, completes in ~6-9 seconds
+- ~1038 specs, completes in ~6-9 seconds
 - A WebGL patch is applied during CI for PixiJS v8 headless Chrome support
 
 ## Code style

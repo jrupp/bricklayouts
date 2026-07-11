@@ -4176,6 +4176,283 @@ describe("LayoutController", function() {
                 expect(component.connections[1].offsetVector).not.toBe(originalVector1);
             });
         });
+
+        describe("flip behavior", function() {
+            /** @type {TrackData} */
+            let structureData;
+
+            beforeAll(function() {
+                structureData = layoutController.trackData.bundles[0].assets.find((a) => a.category === 'structures' && a.alias === 'aspenTree');
+                expect(structureData).toBeDefined();
+            });
+
+            beforeEach(function() {
+                layoutController.reset();
+            });
+
+            it("canFlip returns true for structures category", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                expect(component.canFlip()).toBeTrue();
+            });
+
+            it("canFlip returns false for non-structures components", function() {
+                layoutController.addComponent(straightTrackData);
+                const track = layoutController.currentLayer.children[0];
+                expect(track.canFlip()).toBeFalse();
+
+                layoutController.reset();
+                layoutController.addComponent(baseplateData);
+                const plate = layoutController.currentLayer.children[0];
+                expect(plate.canFlip()).toBeFalse();
+            });
+
+            it("setting flipped to true negates sprite.scale.x only", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                const originalX = component.sprite.scale.x;
+                const originalY = component.sprite.scale.y;
+
+                component.flipped = true;
+
+                expect(component.flipped).toBeTrue();
+                expect(component.sprite.scale.x).toBe(-originalX);
+                expect(component.sprite.scale.y).toBe(originalY);
+            });
+
+            it("toggling flipped back to false restores original sprite.scale.x", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                const originalX = component.sprite.scale.x;
+                const originalY = component.sprite.scale.y;
+
+                component.flipped = true;
+                component.flipped = false;
+
+                expect(component.flipped).toBeFalse();
+                expect(component.sprite.scale.x).toBe(originalX);
+                expect(component.sprite.scale.y).toBe(originalY);
+            });
+
+            it("setting flipped to its current value is a no-op", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                const originalX = component.sprite.scale.x;
+
+                component.flipped = false; // already false
+                expect(component.sprite.scale.x).toBe(originalX);
+
+                component.flipped = true;
+                const flippedX = component.sprite.scale.x;
+                component.flipped = true; // already true
+                expect(component.sprite.scale.x).toBe(flippedX);
+            });
+
+            it("serializes flipped component with flip: 1", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                component.flipped = true;
+
+                const serialized = component.serialize();
+                expect(serialized.flip).toBe(1);
+            });
+
+            it("does not serialize flip for non-flipped structures", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+
+                const serialized = component.serialize();
+                expect(serialized.hasOwnProperty('flip')).toBeFalse();
+            });
+
+            it("does not serialize flip for non-structures components", function() {
+                layoutController.addComponent(straightTrackData);
+                const component = layoutController.currentLayer.children[0];
+                // Even if we force the field, canFlip() gate must suppress serialization
+                component.flipped = true;
+
+                const serialized = component.serialize();
+                expect(serialized.hasOwnProperty('flip')).toBeFalse();
+            });
+
+            it("deserializes flip: 1 on structures baseData", function() {
+                layoutController.addComponent(structureData);
+                const reference = layoutController.currentLayer.children[0];
+                const referenceScaleX = reference.sprite.scale.x;
+                reference.flipped = true;
+                const data = reference.serialize();
+                layoutController.reset();
+
+                const restored = Component.deserialize(structureData, data, layoutController.currentLayer);
+                expect(restored.flipped).toBeTrue();
+                expect(restored.sprite.scale.x).toBe(-referenceScaleX);
+            });
+
+            it("deserializes missing flip as false", function() {
+                layoutController.addComponent(structureData);
+                const reference = layoutController.currentLayer.children[0];
+                const referenceScaleX = reference.sprite.scale.x;
+                const data = reference.serialize();
+                delete data.flip;
+                layoutController.reset();
+
+                const restored = Component.deserialize(structureData, data, layoutController.currentLayer);
+                expect(restored.flipped).toBeFalse();
+                expect(restored.sprite.scale.x).toBe(referenceScaleX);
+            });
+
+            it("ignores flip: 1 for non-structures baseData on deserialize", function() {
+                layoutController.addComponent(straightTrackData);
+                const reference = layoutController.currentLayer.children[0];
+                const data = reference.serialize();
+                data.flip = 1;
+                layoutController.reset();
+
+                const restored = Component.deserialize(straightTrackData, data, layoutController.currentLayer);
+                expect(restored.flipped).toBeFalse();
+            });
+
+            it("selectionToolbar has flippable class when structures component selected", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                expect(selectionToolbar.classList).toContain('flippable');
+            });
+
+            it("selectionToolbar does not have flippable class for non-structures component", function() {
+                layoutController.addComponent(straightTrackData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                expect(selectionToolbar.classList).not.toContain('flippable');
+            });
+
+            it("flipSelectedComponent toggles flipped and records undo", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                const recordSpy = spyOn(layoutController.undoManager, 'record').and.callThrough();
+
+                layoutController.flipSelectedComponent();
+
+                expect(component.flipped).toBeTrue();
+                expect(recordSpy).toHaveBeenCalledWith(jasmine.objectContaining({
+                    type: 'flip',
+                    data: jasmine.objectContaining({ componentUuid: component.uuid, wasFlipped: false })
+                }));
+
+                layoutController.flipSelectedComponent();
+                expect(component.flipped).toBeFalse();
+            });
+
+            it("flipSelectedComponent does nothing for non-structures components", function() {
+                layoutController.addComponent(straightTrackData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                const originalX = component.sprite.scale.x;
+
+                layoutController.flipSelectedComponent();
+
+                expect(component.flipped).toBeFalse();
+                expect(component.sprite.scale.x).toBe(originalX);
+            });
+
+            it("flipSelectedComponent does nothing for locked structures components", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                component.locked = true;
+                LayoutController.selectComponent(component);
+                const originalX = component.sprite.scale.x;
+
+                layoutController.flipSelectedComponent();
+
+                expect(component.flipped).toBeFalse();
+                expect(component.sprite.scale.x).toBe(originalX);
+            });
+
+            it("undo restores prior flipped state", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                const originalX = component.sprite.scale.x;
+
+                layoutController.flipSelectedComponent();
+                expect(component.flipped).toBeTrue();
+                expect(component.sprite.scale.x).toBe(-originalX);
+
+                layoutController.undoManager.undo();
+                expect(component.flipped).toBeFalse();
+                expect(component.sprite.scale.x).toBe(originalX);
+            });
+
+            it("cloning a flipped component produces a flipped clone", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                const originalX = component.sprite.scale.x;
+                component.flipped = true;
+
+                const clone = component.clone(layoutController.currentLayer);
+
+                expect(clone.flipped).toBeTrue();
+                expect(clone.sprite.scale.x).toBe(-originalX);
+            });
+
+            it("cloning a non-flipped component produces a non-flipped clone", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                const originalX = component.sprite.scale.x;
+
+                const clone = component.clone(layoutController.currentLayer);
+
+                expect(clone.flipped).toBeFalse();
+                expect(clone.sprite.scale.x).toBe(originalX);
+            });
+
+            it("Shift+H hotkey flips the selected structures component", function() {
+                layoutController.addComponent(structureData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                const originalX = component.sprite.scale.x;
+
+                layoutController.onKeyDown({
+                    key: 'H', shiftKey: true, ctrlKey: false, metaKey: false,
+                    preventDefault: () => {}
+                });
+
+                expect(component.flipped).toBeTrue();
+                expect(component.sprite.scale.x).toBe(-originalX);
+            });
+
+            it("Shift+H hotkey does nothing for non-structures selection", function() {
+                layoutController.addComponent(straightTrackData);
+                const component = layoutController.currentLayer.children[0];
+                LayoutController.selectComponent(component);
+                const originalX = component.sprite.scale.x;
+
+                layoutController.onKeyDown({
+                    key: 'H', shiftKey: true, ctrlKey: false, metaKey: false,
+                    preventDefault: () => {}
+                });
+
+                expect(component.flipped).toBeFalse();
+                expect(component.sprite.scale.x).toBe(originalX);
+            });
+
+            it("rejects import data whose flip is not 1", function() {
+                const base = {
+                    type: structureData.alias,
+                    pose: { x: 0, y: 0, angle: 0 },
+                    connections: [],
+                    color: '#237841'
+                };
+
+                expect(Component._validateImportData({ ...base })).toBeTrue();
+                expect(Component._validateImportData({ ...base, flip: 1 })).toBeTrue();
+                expect(Component._validateImportData({ ...base, flip: 0 })).toBeFalse();
+                expect(Component._validateImportData({ ...base, flip: 2 })).toBeFalse();
+                expect(Component._validateImportData({ ...base, flip: true })).toBeFalse();
+                expect(Component._validateImportData({ ...base, flip: '1' })).toBeFalse();
+            });
+        });
     });
 
     describe("_newComponentPosition", function() {
