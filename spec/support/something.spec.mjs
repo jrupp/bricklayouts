@@ -4183,6 +4183,7 @@ describe("LayoutController", function() {
 
             beforeAll(function() {
                 structureData = layoutController.trackData.bundles[0].assets.find((a) => a.category === 'structures' && a.alias === 'aspenTree');
+                expect(structureData).toBeDefined();
             });
 
             beforeEach(function() {

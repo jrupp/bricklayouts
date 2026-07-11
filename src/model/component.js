@@ -1056,6 +1056,7 @@ export class Component extends Container {
   set flipped(value) {
     const next = Boolean(value);
     if (next === this.#flipped) return;
+    if (next && !this.canFlip()) return;
     this.#flipped = next;
     if (this.sprite && this.sprite.scale) {
       this.sprite.scale.x = -this.sprite.scale.x;
