@@ -295,6 +295,14 @@ export class LayoutController {
      */
     this.readOnly = false;
     /**
+     * True while the component Editor is active. When set, destructive
+     * layout operations (delete of the editor's component, cloud save,
+     * download, image export) are blocked. Toggled by `_openImageForEditor`
+     * on entry and `exitEditorMode` on exit.
+     * @type {Boolean}
+     */
+    this.editorMode = false;
+    /**
      * @type {UndoManager}
      */
     this.undoManager = new UndoManager(this);
@@ -433,6 +441,7 @@ export class LayoutController {
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     document.getElementById('buttonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
     document.getElementById('mobileButtonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
+    document.getElementById('componentEditorClose')?.addEventListener('click', this.exitEditorMode.bind(this));
     document.getElementById('confirmNewLayout')?.addEventListener('click', this.onConfirmNewLayout.bind(this));
     document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
@@ -2394,6 +2403,10 @@ export class LayoutController {
    * If in read-only mode, resets layout and updates URL.
    */
   async onNewLayoutClick() {
+    if (this.editorMode) {
+      this.exitEditorMode();
+      return;
+    }
     if (this.readOnly) {
       this.reset();
       await this.exitReadOnlyMode();
@@ -2424,6 +2437,10 @@ export class LayoutController {
    * Uses the layout name for the filename if available.
    */
   downloadLayout() {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return;
+    }
     /** @type {SerializedLayout} */
     const layout = {
       version: CurrentFormatVersion,
@@ -2458,6 +2475,10 @@ export class LayoutController {
    * Export the current layout as an image.
    */
   async exportLayout() {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return;
+    }
     this.hideFileMenu();
     LayoutController.selectComponent(null);
     document.getElementById('exportloading').classList.remove('hidden');
@@ -2597,45 +2618,7 @@ export class LayoutController {
       return;
     }
     if (event.key === '}' && event.ctrlKey && event.shiftKey) {
-      if (LayoutController.editorController) {
-        return;
-      }
-      let input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/png';
-      input.onchange = _ => {
-        if (input.files.length > 1) {
-          console.error("Only one file at a time");
-          // TODO: Show an error, only one file at a time
-          return;
-        }
-        const file = input.files[0];
-        if (file && file.type === 'image/png') {
-          const reader = new FileReader();
-          reader.onload = _ => {
-            this.reset();
-            Assets.add({alias:'newComponent', src:reader.result});
-            Assets.load('newComponent').then((texture) => {
-              import('./editorController.js').then((module) => {
-                if (!LayoutController.editorController) {
-                  LayoutController.editorController = new module.EditorController(this, true);
-                }
-                LayoutController.editorController.show(texture);
-              });
-            });
-          };
-          reader.onabort = (e) => {
-            console.error(e);
-            input = null;
-          };
-          reader.onerror = (e) => {
-            console.error(e);
-            // TODO: Show an error message to user
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      input.click();
+      this._openImageForEditor();
     }
   }
 
@@ -2665,6 +2648,9 @@ export class LayoutController {
    * For unauthenticated users, uses existing local file import.
    */
   async onImportClick() {
+    if (this.editorMode) {
+      this.exitEditorMode();
+    }
     // Check if user is authenticated with cloud access
     const authManager = await this._getAuthManager();
     if (authManager && authManager.isAuthenticated && authManager.hasCloudAccess) {
@@ -2687,8 +2673,117 @@ export class LayoutController {
   }
 
   /**
-   * Opens a local file using the file input dialog.
-   * This is the original onImportClick functionality.
+   * Opens a file picker for a component-source image, validates it, and hands
+   * the resulting Texture to the EditorController. Safe to call repeatedly:
+   * if the EditorController singleton already exists, it is reset before the
+   * new upload is shown. All error paths surface a snackbar to the user.
+   * @private
+   */
+  async _openImageForEditor() {
+    const authManager = await this._getAuthManager();
+    let isAdmin = false;
+    if (authManager) {
+      try {
+        const groups = await authManager.getUserGroups();
+        isAdmin = Array.isArray(groups) && groups.includes('admin');
+      } catch (err) {
+        console.error('Failed to determine admin status:', err);
+      }
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    input.onchange = async () => {
+      if (input.files.length !== 1) {
+        showSnackbar('Please select a single image file', 'error');
+        return;
+      }
+      const file = input.files[0];
+
+      const { validateImageFile, checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+
+      const validation = validateImageFile(file);
+      if (!validation.ok) {
+        showSnackbar(validation.reason, 'error');
+        return;
+      }
+
+      let buffer;
+      try {
+        buffer = await file.arrayBuffer();
+      } catch (err) {
+        console.error('Failed to read image file:', err);
+        showSnackbar('Could not read image file', 'error');
+        return;
+      }
+
+      const magic = checkMagicBytes(buffer);
+      if (!magic.ok || magic.mime !== file.type) {
+        showSnackbar('File does not appear to be a valid image', 'error');
+        return;
+      }
+
+      const blob = new Blob([buffer], { type: magic.mime });
+      // Strip hyphens: PixiJS's asset cache normalizes aliases in a way that
+      // treats hyphens as separators, so `cache.set('foo-bar', tex)` ends up
+      // keyed as `foobar`. Handing the hyphenated form back to Assets.get()
+      // later returns undefined.
+      const alias = 'newComponent' + crypto.randomUUID().replaceAll('-', '');
+
+      // Decode the blob ourselves rather than handing a blob: URL to
+      // Assets.load — PixiJS's asset loader can't infer the format from a
+      // blob URL and refuses to parse it.
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(blob);
+      } catch (err) {
+        console.error('Failed to decode image:', err);
+        showSnackbar('Could not load image', 'error');
+        return;
+      }
+
+      if (bitmap.width * bitmap.height > MAX_DECODED_PIXELS) {
+        showSnackbar('Image is too large', 'error');
+        bitmap.close?.();
+        return;
+      }
+
+      const texture = Texture.from(bitmap);
+      Assets.cache.set(alias, texture);
+
+      const module = await import('./editorController.js');
+      if (LayoutController.editorController) {
+        LayoutController.editorController.reset();
+        LayoutController.editorController.isAdmin = isAdmin;
+      } else {
+        LayoutController.editorController = new module.EditorController(this, isAdmin);
+      }
+      LayoutController.editorController.currentAlias = alias;
+      LayoutController.editorController.baseData.alias = alias;
+      this.reset();
+      this.editorMode = true;
+      document.body.classList.add('editor-mode');
+      LayoutController.editorController.show(texture);
+    };
+    input.click();
+  }
+
+  /**
+   * Tears down editor mode: hides the editor panel, resets the
+   * EditorController singleton, clears the workspace, and removes the
+   * `editor-mode` body class that controls which toolbar buttons are hidden.
+   */
+  exitEditorMode() {
+    document.getElementById('componentEditor')?.classList.add('hidden');
+    LayoutController.editorController?.reset();
+    document.body.classList.remove('editor-mode');
+    this.editorMode = false;
+    this.reset();
+  }
+
+  /**
+   * Opens a native file picker for a JSON layout file and imports it.
    * @private
    */
   _openLocalFile() {
@@ -2902,6 +2997,10 @@ export class LayoutController {
    * @private
    */
   async _saveToCloud(layoutName) {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return;
+    }
     const authManager = await this._getAuthManager();
     if (!authManager) {
       showSnackbar('Authentication not available.', 'error');
@@ -3602,6 +3701,12 @@ export class LayoutController {
   deleteComponent(component) {
     if (component?.locked) {
       return;
+    }
+    if (this.editorMode && LayoutController.editorController) {
+      const editor = LayoutController.editorController;
+      if (component === editor.newComp || editor.testComps?.includes(component)) {
+        return;
+      }
     }
     const layer = component.layer || component.parent;
     const layerUuid = layer?.uuid;

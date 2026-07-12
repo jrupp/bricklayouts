@@ -1,9 +1,10 @@
-import { Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
+import { Assets, Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
 import { LayoutController, DataTypes, TrackData } from "./layoutController.js";
 import { Component, ColorNameToHex } from "../model/component.js";
 import { Connection } from "../model/connection.js";
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
+import { aspectMatches } from '../utils/imageValidation.js';
 import '../FileSaver.min.js';
 
 /**
@@ -37,23 +38,36 @@ export class EditorController {
     this.newComp = null;
 
     /** @type {TrackData} */
-    this.baseData = {
-      alias: 'newComponent',
-      name: 'New Component',
-      category: '9V',
-      src: '',
-      image: null,
-      scale: 1.0,
-      type: DataTypes.TRACK,
-      connections: []
-    };
+    this.baseData = EditorController.#defaultBaseData();
     /**
      * Copies of the component being used for testing
      * @type {Array<Component>}
      */
     this.testComps = new Array();
 
+    /**
+     * PixiJS Assets alias for the currently loaded texture, so it can be
+     * removed from the cache on reset. Set by LayoutController after a
+     * successful upload.
+     * @type {?string}
+     */
+    this.currentAlias = null;
+
     this.#bindEditorEvents();
+  }
+
+  static #defaultBaseData() {
+    return {
+      alias: 'newComponent',
+      name: 'New Component',
+      category: '9V',
+      src: '',
+      image: null,
+      scale: 1.0,
+      make: 0,
+      type: DataTypes.TRACK,
+      connections: []
+    };
   }
 
   #bindEditorEvents() {
@@ -172,16 +186,84 @@ export class EditorController {
   }
 
   /**
-   * Displays the editor with the given texture. First prompts the user
-   * for component size and units, then creates the component at that scale.
+   * Displays the editor with the given texture. Always prompts the user
+   * for component size and units first, then creates the component at that
+   * scale.
    * @param {Texture} texture
    */
   show(texture) {
+    this.setTexture(texture);
+    this.#showSizeDialog();
+  }
+
+  /**
+   * Replaces the editor's current texture and keeps the Assets cache entry
+   * for `currentAlias` in sync. Downstream Component construction reads the
+   * texture from `Assets.get(alias)`, so failing to update the cache after a
+   * crop leaves the component rendering the pre-crop image.
+   * @param {Texture} texture
+   */
+  setTexture(texture) {
     this.texture = texture;
-    if (this.isAdmin) {
-      this.#showEditor(texture.width, texture.height);
-    } else {
-      this.#showSizeDialog();
+    if (this.currentAlias && texture) {
+      Assets.cache.remove(this.currentAlias);
+      Assets.cache.set(this.currentAlias, texture);
+    }
+  }
+
+  /**
+   * Clears editor state so the controller can be re-used for a fresh
+   * component without reloading the page. Destroys any live PixiJS objects,
+   * unloads the current texture from the Assets cache, and removes any
+   * transient dialogs from the DOM.
+   */
+  reset() {
+    if (this.newComp) {
+      this.newComp.destroy();
+      this.newComp = null;
+    }
+    this.testComps.forEach((comp) => comp.destroy());
+    this.testComps.length = 0;
+
+    if (this.currentAlias) {
+      const cached = Assets.cache.get(this.currentAlias);
+      Assets.cache.remove(this.currentAlias);
+      try { cached?.destroy(true); } catch (_e) { /* already destroyed */ }
+      this.currentAlias = null;
+    }
+
+    this.texture = null;
+    this.baseData = EditorController.#defaultBaseData();
+
+    // Reset form inputs so a subsequent editor session starts fresh instead
+    // of inheriting the previous component's category/baseplate/name/etc.
+    // (onComponentSave reads these directly from the DOM.)
+    const scaleInput = document.getElementById('componentScale');
+    if (scaleInput) scaleInput.value = this.baseData.scale;
+    const aliasInput = document.getElementById('componentAlias');
+    if (aliasInput) aliasInput.value = this.baseData.alias;
+    const nameInput = document.getElementById('componentName');
+    if (nameInput) nameInput.value = this.baseData.name;
+    const categories = document.getElementById('componentCategories');
+    if (categories) {
+      const defaultIdx = Array.from(categories.options).findIndex((o) => o.value === this.baseData.category);
+      categories.selectedIndex = defaultIdx >= 0 ? defaultIdx : 0;
+    }
+    const bpToggle = document.getElementById('componentBaseplateToggle');
+    if (bpToggle) bpToggle.checked = false;
+    const bpColor = document.getElementById('componentBaseplateColor');
+    if (bpColor && bpColor.options && bpColor.options.length > 0) bpColor.selectedIndex = 0;
+    document.getElementById('componentBaseplateField')?.classList.add('hidden');
+    document.getElementById('componentBaseplateColorField')?.classList.add('hidden');
+    const connectionsList = document.getElementById('componentEditorConnectionsList');
+    if (connectionsList) connectionsList.innerHTML = '';
+
+    document.getElementById('editorSizeDialog')?.remove();
+    document.getElementById('editorCropDialog')?.remove();
+    const connectionEditor = document.getElementById('connectionEditor');
+    if (connectionEditor) {
+      connectionEditor.classList.add('hidden');
+      connectionEditor.setAttribute('data-connection', '-1');
     }
   }
 
@@ -285,19 +367,11 @@ export class EditorController {
 
     const widthInput = dialog.querySelector('#editorSizeWidth');
     const heightInput = dialog.querySelector('#editorSizeHeight');
-    [widthInput, heightInput, dialog.querySelector('#editorSizeUnits')].forEach((el) => {
-      el.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          closeDialog();
-        }
-        event.stopPropagation();
-      });
-    });
+    const unitsSelect = dialog.querySelector('#editorSizeUnits');
+    const widthError = dialog.querySelector('#editorSizeWidthError');
+    const heightError = dialog.querySelector('#editorSizeHeightError');
 
-    dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', () => {
-      const unitsSelect = dialog.querySelector('#editorSizeUnits');
-      const widthError = dialog.querySelector('#editorSizeWidthError');
-      const heightError = dialog.querySelector('#editorSizeHeightError');
+    const onConfirm = async () => {
       const width = widthInput.value;
       const height = heightInput.value;
 
@@ -325,7 +399,37 @@ export class EditorController {
       const pixelHeight = parseFloat(height) * multiplier;
 
       closeDialog();
+
+      if (this.texture && !aspectMatches(this.texture.width, this.texture.height, pixelWidth, pixelHeight)) {
+        const { ImageCropController } = await import('./imageCropController.js');
+        const cropped = await new ImageCropController().show(this.texture, pixelWidth, pixelHeight);
+        if (!cropped) {
+          this.layoutController.exitEditorMode();
+          return;
+        }
+        this.setTexture(cropped);
+      }
+
       this.#showEditor(pixelWidth, pixelHeight);
+    };
+
+    [widthInput, heightInput, unitsSelect].forEach((el) => {
+      el.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeDialog();
+        } else if (event.key === 'Enter' && !event.isComposing) {
+          event.preventDefault();
+          onConfirm();
+        }
+        event.stopPropagation();
+      });
+    });
+
+    dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', onConfirm);
+    dialog.querySelectorAll('[data-ui="#editorSizeDialog"]').forEach((el) => {
+      el.addEventListener('click', () => {
+        this.layoutController.exitEditorMode();
+      });
     });
 
     ui('#editorSizeDialog');
@@ -566,36 +670,20 @@ export class EditorController {
   }
 
   /**
-   * For admins: Exports the component data to a JSON file so it can be easily added to the manifest later
-   * For everyone else: Exports the newComp as an image.
+   * Generates the component JSON. Admins get a downloadable file; non-admins
+   * get the same JSON logged to the console (temporary — persistence is a
+   * separate follow-up).
    */
   async exportComponent() {
+    const exportData = { ...this.baseData };
+    if (exportData.onbp !== undefined) {
+      exportData.onbp = new Color(this.baseData.onbp).toHex();
+    }
+    const data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'make', 'onbp']);
+    console.log('[component export]', data);
     if (this.isAdmin) {
-      const exportData = { ...this.baseData };
-      if (exportData.onbp !== undefined) {
-        exportData.onbp = new Color(this.baseData.onbp).toHex();
-      }
-      let data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'onbp']);
       const blob = new Blob([data], { type: 'application/json' });
       saveAs(blob, `${this.baseData.alias}.json`);
-    } else {
-      this.layoutController.undoManager.suppress();
-      for (const layer of this.layoutController.layers) {
-        const children = [...layer.children];
-        for (const child of children) {
-          if (child !== this.newComp && child instanceof Component) {
-            child.destroy();
-          }
-        }
-      }
-      this.layoutController.undoManager.unsuppress();
-
-      const gridWasEnabled = this.layoutController.config.workspaceGridSettings.enabled;
-      this.layoutController.config.updateWorkspaceGridSettings({ enabled: false });
-
-      await this.layoutController.exportLayout();
-
-      this.layoutController.config.updateWorkspaceGridSettings({ enabled: gridWasEnabled });
     }
   }
 

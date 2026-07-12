@@ -563,6 +563,7 @@ body {
 #authenticationModal,
 #photoComponentDialog,
 #editorSizeDialog,
+#editorCropDialog,
 #partInventoryDialog {
 	z-index: 1100;
 }
@@ -1851,4 +1852,17 @@ i + span.label {
 
 #profileModal .profileModal-view-invoices article .row {
   align-items: center;
+}
+
+/* Editor mode: hide destructive layout actions (Save to Cloud,
+   Download, Export Image) that make no sense while creating a new
+   component. Toggled by LayoutController._openImageForEditor /
+   exitEditorMode via `body.editor-mode`. */
+body.editor-mode #buttonCloudSave,
+body.editor-mode #buttonDownload,
+body.editor-mode #buttonExport,
+body.editor-mode #mobileButtonCloudSave,
+body.editor-mode #mobileButtonDownload,
+body.editor-mode #mobileButtonExport {
+  display: none;
 }

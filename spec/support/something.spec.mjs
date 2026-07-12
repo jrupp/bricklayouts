@@ -118,6 +118,9 @@ describe("LayoutController", function() {
         geiSpy.withArgs('photoDetailsTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('photoDetailsImg').and.returnValue(document.createElement('img'));
         geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('componentEditorClose').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('componentEditor').and.returnValue(document.createElement('article'));
+        geiSpy.withArgs('cloudSnackbar').and.returnValue(null);
         const shareContainer = document.createElement('div');
         shareContainer.classList.add('hidden');
         geiSpy.withArgs('shareButton-container').and.returnValue(shareContainer);
@@ -11372,6 +11375,131 @@ describe("LayoutController", function() {
             );
             await layoutController.updateCloudMenuVisibility();
             expect(shareContainer.classList.contains('hidden')).toBeFalse();
+        });
+    });
+
+    describe("editorMode guards", function () {
+        let layoutController;
+
+        beforeEach(function () {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            layoutController.editorMode = false;
+            LayoutController.editorController = null;
+        });
+
+        afterEach(function () {
+            layoutController.editorMode = false;
+            LayoutController.editorController = null;
+        });
+
+        it("initializes editorMode to false", function () {
+            expect(layoutController.editorMode).toBeFalse();
+        });
+
+        it("downloadLayout returns early without hiding file menu when in editor mode", function () {
+            layoutController.editorMode = true;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            layoutController.downloadLayout();
+            expect(hideFileMenuSpy).not.toHaveBeenCalled();
+        });
+
+        it("downloadLayout proceeds when not in editor mode", function () {
+            layoutController.editorMode = false;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            layoutController.downloadLayout();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exportLayout returns early without hiding file menu when in editor mode", async function () {
+            layoutController.editorMode = true;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            await layoutController.exportLayout();
+            expect(hideFileMenuSpy).not.toHaveBeenCalled();
+        });
+
+        it("_saveToCloud returns early without calling auth manager when in editor mode", async function () {
+            layoutController.editorMode = true;
+            const authSpy = spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            await layoutController._saveToCloud('MyLayout');
+            expect(authSpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent refuses to delete the editor's newComp when in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            const comp = layoutController.currentLayer.children[0];
+            const destroySpy = spyOn(comp, 'destroy').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: comp, testComps: [] };
+            layoutController.deleteComponent(comp);
+            expect(destroySpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent refuses to delete an editor testComp when in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            const comp = layoutController.currentLayer.children[0];
+            const destroySpy = spyOn(comp, 'destroy').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: null, testComps: [comp] };
+            layoutController.deleteComponent(comp);
+            expect(destroySpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent proceeds for unrelated components even in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            layoutController.addComponent(trackData);
+            const editorsComp = layoutController.currentLayer.children[0];
+            const otherComp = layoutController.currentLayer.children[1];
+            const otherDestroySpy = spyOn(otherComp, 'destroy').and.stub();
+            spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: editorsComp, testComps: [] };
+            layoutController.deleteComponent(otherComp);
+            expect(otherDestroySpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode clears the flag, removes body class, and calls reset", function () {
+            layoutController.editorMode = true;
+            document.body.classList.add('editor-mode');
+            const resetSpy = spyOn(layoutController, 'reset').and.stub();
+            layoutController.exitEditorMode();
+            expect(layoutController.editorMode).toBeFalse();
+            expect(document.body.classList.contains('editor-mode')).toBeFalse();
+            expect(resetSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode resets the EditorController singleton if present", function () {
+            layoutController.editorMode = true;
+            const resetSpy = jasmine.createSpy('editorReset');
+            LayoutController.editorController = { reset: resetSpy };
+            spyOn(layoutController, 'reset').and.stub();
+            layoutController.exitEditorMode();
+            expect(resetSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("onNewLayoutClick exits editor mode first when active", async function () {
+            layoutController.editorMode = true;
+            const exitSpy = spyOn(layoutController, 'exitEditorMode').and.callFake(() => {
+                layoutController.editorMode = false;
+            });
+            spyOn(layoutController, 'hideFileMenu').and.stub();
+            spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            await layoutController.onNewLayoutClick();
+            expect(exitSpy).toHaveBeenCalled();
+        });
+
+        it("onImportClick exits editor mode first when active", async function () {
+            layoutController.editorMode = true;
+            const exitSpy = spyOn(layoutController, 'exitEditorMode').and.callFake(() => {
+                layoutController.editorMode = false;
+            });
+            spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            spyOn(layoutController, '_openLocalFile').and.stub();
+            await layoutController.onImportClick();
+            expect(exitSpy).toHaveBeenCalled();
         });
     });
 });

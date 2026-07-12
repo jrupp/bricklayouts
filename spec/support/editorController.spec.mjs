@@ -1,4 +1,5 @@
 import { EditorController } from "../../src/controller/editorController.js";
+import { Assets } from "../../src/pixi.mjs";
 
 describe("EditorController", function () {
   describe("computePrefill", function () {
@@ -88,6 +89,220 @@ describe("EditorController", function () {
       const texture = { width: 48, height: 96 };
       const result = EditorController.computePrefill(texture.width, texture.height);
       expect(result).toEqual({ width: 3, height: 6, units: 'studs' });
+    });
+  });
+
+  describe("exportComponent", function () {
+    let controller;
+    let saveAsSpy;
+    let logSpy;
+
+    beforeEach(function () {
+      // Fake instance — bypass the constructor's DOM wiring so this spec doesn't
+      // need the full LayoutController bootstrap.
+      controller = Object.create(EditorController.prototype);
+      controller.baseData = {
+        alias: 'testAlias',
+        name: 'Test',
+        category: 'structures',
+        src: '',
+        scale: 1,
+        type: 0,
+        make: 0,
+        connections: []
+      };
+      controller.isAdmin = false;
+      logSpy = spyOn(console, 'log');
+      saveAsSpy = spyOn(window, 'saveAs').and.stub();
+    });
+
+    it("always logs the JSON to console", async function () {
+      await controller.exportComponent();
+      const logged = logSpy.calls.allArgs().find((args) => args[0] === '[component export]');
+      expect(logged).toBeDefined();
+      const parsed = JSON.parse(logged[1]);
+      expect(parsed.alias).toBe('testAlias');
+      expect(parsed.name).toBe('Test');
+    });
+
+    it("does not trigger a file download for non-admins", async function () {
+      controller.isAdmin = false;
+      await controller.exportComponent();
+      expect(saveAsSpy).not.toHaveBeenCalled();
+    });
+
+    it("triggers a file download for admins", async function () {
+      controller.isAdmin = true;
+      await controller.exportComponent();
+      expect(saveAsSpy).toHaveBeenCalledTimes(1);
+      const [blob, filename] = saveAsSpy.calls.mostRecent().args;
+      expect(blob).toEqual(jasmine.any(Blob));
+      expect(filename).toBe('testAlias.json');
+    });
+  });
+
+  describe("setTexture", function () {
+    let controller;
+    const alias = 'test-alias-' + Math.random().toString(36).slice(2);
+
+    beforeEach(function () {
+      controller = Object.create(EditorController.prototype);
+      controller.currentAlias = null;
+      controller.texture = null;
+    });
+
+    afterEach(function () {
+      Assets.cache.remove(alias);
+    });
+
+    it("replaces this.texture", function () {
+      const t1 = { width: 32, height: 32 };
+      const t2 = { width: 16, height: 16 };
+      controller.setTexture(t1);
+      expect(controller.texture).toBe(t1);
+      controller.setTexture(t2);
+      expect(controller.texture).toBe(t2);
+    });
+
+    it("keeps the Assets cache entry in sync with the current alias", function () {
+      // Regression: after crop, Component reads Assets.get(baseData.alias) — if
+      // the cache still points at the pre-crop texture, the component renders
+      // the wrong image (scaled to fit the target size instead of the cropped
+      // region).
+      const original = { width: 512, height: 512, id: 'original' };
+      const cropped = { width: 256, height: 512, id: 'cropped' };
+      controller.currentAlias = alias;
+      controller.setTexture(original);
+      expect(Assets.cache.get(alias)).toBe(original);
+      controller.setTexture(cropped);
+      expect(Assets.cache.get(alias)).toBe(cropped);
+    });
+
+    it("does not touch the cache when currentAlias is unset", function () {
+      const before = Assets.cache.get(alias);
+      controller.currentAlias = null;
+      controller.setTexture({ width: 32, height: 32 });
+      expect(Assets.cache.get(alias)).toBe(before);
+    });
+  });
+
+  describe("reset", function () {
+    let controller;
+    let scaleInput;
+    let aliasInput;
+    let nameInput;
+    let categories;
+    let bpToggle;
+    let bpColor;
+    let bpField;
+    let bpColorField;
+    let connectionsList;
+    let sizeDialog;
+    let cropDialog;
+    let connectionEditor;
+    let geiSpy;
+
+    beforeEach(function () {
+      controller = Object.create(EditorController.prototype);
+      controller.newComp = null;
+      controller.testComps = [];
+      controller.currentAlias = null;
+      controller.texture = null;
+      controller.baseData = { alias: 'x', name: 'x', category: 'x', scale: 5, connections: [], onbp: 0xff0000 };
+
+      scaleInput = document.createElement('input');
+      scaleInput.value = '5';
+      aliasInput = document.createElement('input');
+      aliasInput.value = 'staleAlias';
+      nameInput = document.createElement('input');
+      nameInput.value = 'Stale Name';
+      categories = document.createElement('select');
+      ['9V', 'structures', 'trees'].forEach((v) => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        categories.appendChild(opt);
+      });
+      categories.selectedIndex = 1; // structures
+      bpToggle = document.createElement('input');
+      bpToggle.type = 'checkbox';
+      bpToggle.checked = true;
+      bpColor = document.createElement('select');
+      ['#ff0000', '#00ff00'].forEach((v) => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        bpColor.appendChild(opt);
+      });
+      bpColor.selectedIndex = 1;
+      bpField = document.createElement('div');
+      bpField.classList.remove('hidden');
+      bpColorField = document.createElement('div');
+      bpColorField.classList.remove('hidden');
+      connectionsList = document.createElement('ul');
+      connectionsList.innerHTML = '<li>stale</li>';
+      sizeDialog = document.createElement('dialog');
+      sizeDialog.id = 'editorSizeDialog';
+      document.body.appendChild(sizeDialog);
+      cropDialog = document.createElement('dialog');
+      cropDialog.id = 'editorCropDialog';
+      document.body.appendChild(cropDialog);
+      connectionEditor = document.createElement('div');
+      connectionEditor.setAttribute('data-connection', '3');
+
+      geiSpy = spyOn(document, 'getElementById');
+      geiSpy.and.returnValue(null);
+      geiSpy.withArgs('componentScale').and.returnValue(scaleInput);
+      geiSpy.withArgs('componentAlias').and.returnValue(aliasInput);
+      geiSpy.withArgs('componentName').and.returnValue(nameInput);
+      geiSpy.withArgs('componentCategories').and.returnValue(categories);
+      geiSpy.withArgs('componentBaseplateToggle').and.returnValue(bpToggle);
+      geiSpy.withArgs('componentBaseplateColor').and.returnValue(bpColor);
+      geiSpy.withArgs('componentBaseplateField').and.returnValue(bpField);
+      geiSpy.withArgs('componentBaseplateColorField').and.returnValue(bpColorField);
+      geiSpy.withArgs('componentEditorConnectionsList').and.returnValue(connectionsList);
+      geiSpy.withArgs('editorSizeDialog').and.returnValue(sizeDialog);
+      geiSpy.withArgs('editorCropDialog').and.returnValue(cropDialog);
+      geiSpy.withArgs('connectionEditor').and.returnValue(connectionEditor);
+    });
+
+    afterEach(function () {
+      sizeDialog.remove();
+      cropDialog.remove();
+    });
+
+    it("clears internal state (texture, baseData, testComps)", function () {
+      controller.testComps = [{ destroy: jasmine.createSpy('destroy') }];
+      controller.texture = { width: 32, height: 32 };
+      controller.reset();
+      expect(controller.texture).toBeNull();
+      expect(controller.testComps).toHaveSize(0);
+      expect(controller.baseData.alias).toBe('newComponent');
+      expect(controller.baseData.name).toBe('New Component');
+      expect(controller.baseData.category).toBe('9V');
+    });
+
+    it("resets form inputs so a subsequent session starts fresh", function () {
+      // Regression: category/baseplate/etc. carried over into the next editor
+      // session because onComponentSave re-reads the DOM. reset() must clear
+      // these back to defaults.
+      controller.reset();
+      expect(scaleInput.value).toBe('1');
+      expect(aliasInput.value).toBe('newComponent');
+      expect(nameInput.value).toBe('New Component');
+      expect(categories.options[categories.selectedIndex].value).toBe('9V');
+      expect(bpToggle.checked).toBeFalse();
+      expect(bpColor.selectedIndex).toBe(0);
+      expect(bpField.classList.contains('hidden')).toBeTrue();
+      expect(bpColorField.classList.contains('hidden')).toBeTrue();
+      expect(connectionsList.innerHTML).toBe('');
+    });
+
+    it("removes transient dialogs and hides the connection editor", function () {
+      controller.reset();
+      expect(document.getElementById.calls.any()).toBeTrue();
+      expect(sizeDialog.parentNode).toBeNull();
+      expect(cropDialog.parentNode).toBeNull();
+      expect(connectionEditor.classList.contains('hidden')).toBeTrue();
+      expect(connectionEditor.getAttribute('data-connection')).toBe('-1');
     });
   });
 });
