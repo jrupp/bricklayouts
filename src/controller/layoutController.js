@@ -424,7 +424,7 @@ export class LayoutController {
       this.searchElement.classList.remove('hasInput');
       this.createComponentBrowser();
     });
-    document.getElementById('buttonRotate').addEventListener('click', this.rotateSelectedComponent.bind(this));
+    document.getElementById('buttonRotate').addEventListener('click', () => this.rotateSelectedComponent());
     document.getElementById('buttonRemove').addEventListener('click', this.deleteSelectedComponent.bind(this));
     document.getElementById('buttonDownload').addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('buttonImport').addEventListener('click', this.onImportClick.bind(this));
