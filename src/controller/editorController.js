@@ -1,6 +1,6 @@
-import { FederatedPointerEvent, Texture } from '../pixi.mjs';
+import { Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
 import { LayoutController, DataTypes, TrackData } from "./layoutController.js";
-import { Component } from "../model/component.js";
+import { Component, ColorNameToHex } from "../model/component.js";
 import { Connection } from "../model/connection.js";
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
@@ -95,8 +95,38 @@ export class EditorController {
       }
       document.getElementById('componentCategories').appendChild(option);
     });
-    document.getElementById('componentCategories').addEventListener('change', boundSave);
+    document.getElementById('componentCategories').addEventListener('change', (event) => {
+      if (event.currentTarget.value === 'structures') {
+        document.getElementById('componentBaseplateField').classList.remove('hidden');
+      } else {
+        document.getElementById('componentBaseplateField').classList.add('hidden');
+        document.getElementById('componentBaseplateColorField').classList.add('hidden');
+      }
+      this.onComponentSave();
+    });
     document.getElementById('componentCategories').addEventListener('keydown', (event) => { event.stopPropagation(); });
+    document.getElementById('componentBaseplateToggle').addEventListener('change', (event) => {
+      if (event.currentTarget.checked) {
+        const colorSelect = document.getElementById('componentBaseplateColor');
+        if (colorSelect.options.length > 0) {
+          colorSelect.selectedIndex = 0;
+        }
+        document.getElementById('componentBaseplateColorField').classList.remove('hidden');
+      } else {
+        document.getElementById('componentBaseplateColorField').classList.add('hidden');
+      }
+      this.onComponentSave();
+    });
+    document.getElementById('componentBaseplateToggle').addEventListener('keydown', (event) => { event.stopPropagation(); });
+    Object.entries(ColorNameToHex).forEach(([colorName, colorHex]) => {
+      let menuItem = document.createElement('option');
+      menuItem.value = colorHex;
+      menuItem.title = colorName;
+      menuItem.innerText = colorName.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+      document.getElementById('componentBaseplateColor').appendChild(menuItem);
+    });
+    document.getElementById('componentBaseplateColor').addEventListener('change', boundSave);
+    document.getElementById('componentBaseplateColor').addEventListener('keydown', (event) => { event.stopPropagation(); });
     document.getElementById('componentScale').addEventListener('change', boundSave);
     document.getElementById('componentScale').addEventListener('keydown', (event) => { event.stopPropagation(); });
     document.getElementById('componentEditorConnectionsAdd').addEventListener('click', () => {
@@ -155,16 +185,57 @@ export class EditorController {
     }
   }
 
+  /**
+   * Attempts to compute default width/height/units values that would render
+   * the given pixel dimensions as whole numbers in one of the supported units.
+   * Iterates units in declaration order and returns the first whole-number match.
+   * @param {number} pixelWidth
+   * @param {number} pixelHeight
+   * @returns {?{width: number, height: number, units: string}}
+   */
+  static computePrefill(pixelWidth, pixelHeight) {
+    if (!Number.isFinite(pixelWidth) || !Number.isFinite(pixelHeight)) return null;
+    if (pixelWidth <= 0 || pixelHeight <= 0) return null;
+    const eps = 1e-6;
+    for (const [units, multiplier] of Object.entries(EditorController.UNIT_MULTIPLIERS)) {
+      const wq = pixelWidth / multiplier;
+      const hq = pixelHeight / multiplier;
+      if (Math.abs(wq - Math.round(wq)) < eps && Math.abs(hq - Math.round(hq)) < eps) {
+        return { width: Math.round(wq), height: Math.round(hq), units };
+      }
+    }
+    return null;
+  }
+
   #showSizeDialog() {
+    const existing = document.getElementById('editorSizeDialog');
+    if (existing) {
+      existing.remove();
+    }
     const dialog = document.createElement('dialog');
     dialog.className = 'no-padding border surface-container-high small-round';
     dialog.id = 'editorSizeDialog';
+    const prefill = this.texture
+      ? EditorController.computePrefill(this.texture.width, this.texture.height)
+      : null;
+    const widthValue = prefill ? `value="${prefill.width}"` : '';
+    const heightValue = prefill ? `value="${prefill.height}"` : '';
+    const selectedUnits = prefill ? prefill.units : 'studs';
+    const unitOptions = [
+      ['studs', 'Studs'],
+      ['inches', 'Inches'],
+      ['feet', 'Feet'],
+      ['centimeters', 'Centimeters'],
+      ['millimeters', 'Millimeters']
+    ].map(([value, label]) =>
+      `<option value="${value}"${value === selectedUnits ? ' selected' : ''}>${label}</option>`
+    ).join('');
     dialog.innerHTML = `
       <div>
         <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
           <nav>
             <h6 class="max">Component Size</h6>
-            <button class="circle medium transparent" id="editorSizeDialogClose">
+            <button class="circle medium transparent" data-ui="#editorSizeDialog">
               <i class="medium bold">close</i>
             </button>
           </nav>
@@ -174,7 +245,7 @@ export class EditorController {
             <div class="s8">
               <div class="field label prefix middle-align large-space border medium no-margin">
                 <i class="large no-round">width</i>
-                <input id="editorSizeWidth" type="number" min="1" placeholder=" " autofocus>
+                <input id="editorSizeWidth" type="number" min="1" placeholder=" " ${widthValue} autofocus>
                 <label>Width</label>
                 <output class="invalid" id="editorSizeWidthError"></output>
               </div>
@@ -182,11 +253,7 @@ export class EditorController {
             <div class="s4">
               <div class="field label suffix middle-align large-space border medium no-margin">
                 <select id="editorSizeUnits">
-                  <option value="studs" selected>Studs</option>
-                  <option value="inches">Inches</option>
-                  <option value="feet">Feet</option>
-                  <option value="centimeters">Centimeters</option>
-                  <option value="millimeters">Millimeters</option>
+                  ${unitOptions}
                 </select>
                 <label>Units</label>
                 <i class="extra">arrow_drop_down</i>
@@ -197,7 +264,7 @@ export class EditorController {
             <div class="s8">
               <div class="field label prefix middle-align large-space border medium no-margin">
                 <i class="large no-round">height</i>
-                <input id="editorSizeHeight" type="number" min="1" placeholder=" ">
+                <input id="editorSizeHeight" type="number" min="1" placeholder=" " ${heightValue}>
                 <label>Height</label>
                 <output class="invalid" id="editorSizeHeightError"></output>
               </div>
@@ -207,25 +274,27 @@ export class EditorController {
         <hr>
         <nav class="no-padding no-space no-margin">
           <button class="no-round max extra-text left-button primary-text" id="editorSizeDialogConfirm"><span>Confirm</span></button>
-          <button class="no-round max extra-text right-button error" id="editorSizeDialogCancel"><span>Cancel</span></button>
+          <button class="no-round max extra-text right-button error" data-ui="#editorSizeDialog"><span>Cancel</span></button>
         </nav>
       </div>
     `;
     document.body.appendChild(dialog);
-    dialog.showModal();
-
-    const closeDialog = () => {
-      dialog.close();
-      dialog.remove();
-    };
-
-    dialog.querySelector('#editorSizeDialogClose').addEventListener('click', closeDialog);
-    dialog.querySelector('#editorSizeDialogCancel').addEventListener('click', closeDialog);
     dialog.addEventListener('close', () => dialog.remove());
 
+    const closeDialog = () => ui('#editorSizeDialog');
+
+    const widthInput = dialog.querySelector('#editorSizeWidth');
+    const heightInput = dialog.querySelector('#editorSizeHeight');
+    [widthInput, heightInput, dialog.querySelector('#editorSizeUnits')].forEach((el) => {
+      el.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeDialog();
+        }
+        event.stopPropagation();
+      });
+    });
+
     dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', () => {
-      const widthInput = dialog.querySelector('#editorSizeWidth');
-      const heightInput = dialog.querySelector('#editorSizeHeight');
       const unitsSelect = dialog.querySelector('#editorSizeUnits');
       const widthError = dialog.querySelector('#editorSizeWidthError');
       const heightError = dialog.querySelector('#editorSizeHeightError');
@@ -258,6 +327,8 @@ export class EditorController {
       closeDialog();
       this.#showEditor(pixelWidth, pixelHeight);
     });
+
+    ui('#editorSizeDialog');
   }
 
   /**
@@ -359,7 +430,21 @@ export class EditorController {
     this.baseData.alias = tempAlias;
     this.baseData.name = document.getElementById('componentName').value;
     let categories = document.getElementById('componentCategories');
+    if (this.baseData.category === 'structures' && categories.options[categories.selectedIndex].value !== 'structures') {
+        document.getElementById('componentBaseplateToggle').checked = false;
+        this.baseData.onbp = undefined;
+        this.newComp.baseplateColor = undefined;
+    }
     this.baseData.category = categories.options[categories.selectedIndex].value;
+    if (this.baseData.category === 'structures') {
+      if (document.getElementById('componentBaseplateToggle').checked) {
+          this.baseData.onbp = parseInt(document.getElementById('componentBaseplateColor').value.slice(1), 16);
+          this.newComp.baseplateColor = this.baseData.onbp;
+      } else if (this.baseData.onbp !== undefined) {
+          this.baseData.onbp = undefined;
+          this.newComp.baseplateColor = undefined;
+      }
+    }
   }
 
   /**
@@ -486,7 +571,11 @@ export class EditorController {
    */
   async exportComponent() {
     if (this.isAdmin) {
-      let data = JSON.stringify(this.baseData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next']);
+      const exportData = { ...this.baseData };
+      if (exportData.onbp !== undefined) {
+        exportData.onbp = new Color(this.baseData.onbp).toHex();
+      }
+      let data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'onbp']);
       const blob = new Blob([data], { type: 'application/json' });
       saveAs(blob, `${this.baseData.alias}.json`);
     } else {

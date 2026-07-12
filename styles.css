@@ -382,7 +382,6 @@ body {
 	border: 1px solid black;
 	border-radius: 8px;
 	z-index: 1000;
-	max-height: 50%;
 	min-width: 20rem;
 }
 
@@ -563,6 +562,7 @@ body {
 #profileModal,
 #authenticationModal,
 #photoComponentDialog,
+#editorSizeDialog,
 #partInventoryDialog {
 	z-index: 1100;
 }
