@@ -1,5 +1,6 @@
 import { EditorController } from "../../src/controller/editorController.js";
 import { Assets } from "../../src/pixi.mjs";
+import { PolarVector } from "../../src/model/polarVector.js";
 
 describe("EditorController", function () {
   describe("computePrefill", function () {
@@ -303,6 +304,216 @@ describe("EditorController", function () {
       expect(cropDialog.parentNode).toBeNull();
       expect(connectionEditor.classList.contains('hidden')).toBeTrue();
       expect(connectionEditor.getAttribute('data-connection')).toBe('-1');
+    });
+  });
+
+  describe("texture protection", function () {
+    let controller;
+    const alias = 'test-commit-alias-' + Math.random().toString(36).slice(2);
+
+    function makeTexture() {
+      return { width: 32, height: 32, destroy: jasmine.createSpy('destroy') };
+    }
+
+    beforeEach(function () {
+      controller = Object.create(EditorController.prototype);
+      controller.newComp = null;
+      controller.testComps = [];
+      controller.currentAlias = alias;
+      controller.texture = makeTexture();
+      controller.committed = false;
+      controller.baseData = {
+        alias,
+        name: 'Committed',
+        category: '9V',
+        src: '',
+        image: controller.texture,
+        scale: 1.0,
+        make: 0,
+        type: 0,
+        connections: []
+      };
+      Assets.cache.set(alias, controller.texture);
+    });
+
+    afterEach(function () {
+      Assets.cache.remove(alias);
+    });
+
+    describe("setTexture", function () {
+      it("replaces the cached texture when not committed", function () {
+        const replacement = makeTexture();
+        controller.setTexture(replacement);
+        expect(Assets.cache.get(alias)).toBe(replacement);
+      });
+
+      it("leaves the cache alone when committed", function () {
+        const original = Assets.cache.get(alias);
+        controller.committed = true;
+        controller.setTexture(makeTexture());
+        expect(Assets.cache.get(alias)).toBe(original);
+      });
+
+      it("still updates this.texture when committed (so editor can move on)", function () {
+        controller.committed = true;
+        const next = makeTexture();
+        controller.setTexture(next);
+        expect(controller.texture).toBe(next);
+      });
+    });
+
+    describe("reset", function () {
+      let scaleInput, aliasInput, nameInput, categories, bpToggle, bpColor,
+          bpField, bpColorField, connectionsList, sizeDialog, cropDialog,
+          connectionEditor, geiSpy;
+
+      beforeEach(function () {
+        scaleInput = document.createElement('input');
+        aliasInput = document.createElement('input');
+        nameInput = document.createElement('input');
+        categories = document.createElement('select');
+        ['9V', 'structures'].forEach((v) => {
+          const opt = document.createElement('option');
+          opt.value = v;
+          categories.appendChild(opt);
+        });
+        bpToggle = document.createElement('input');
+        bpToggle.type = 'checkbox';
+        bpColor = document.createElement('select');
+        const opt = document.createElement('option');
+        opt.value = '#ff0000';
+        bpColor.appendChild(opt);
+        bpField = document.createElement('div');
+        bpColorField = document.createElement('div');
+        connectionsList = document.createElement('ul');
+        sizeDialog = document.createElement('dialog');
+        sizeDialog.id = 'editorSizeDialog';
+        document.body.appendChild(sizeDialog);
+        cropDialog = document.createElement('dialog');
+        cropDialog.id = 'editorCropDialog';
+        document.body.appendChild(cropDialog);
+        connectionEditor = document.createElement('div');
+
+        geiSpy = spyOn(document, 'getElementById');
+        geiSpy.and.returnValue(null);
+        geiSpy.withArgs('componentScale').and.returnValue(scaleInput);
+        geiSpy.withArgs('componentAlias').and.returnValue(aliasInput);
+        geiSpy.withArgs('componentName').and.returnValue(nameInput);
+        geiSpy.withArgs('componentCategories').and.returnValue(categories);
+        geiSpy.withArgs('componentBaseplateToggle').and.returnValue(bpToggle);
+        geiSpy.withArgs('componentBaseplateColor').and.returnValue(bpColor);
+        geiSpy.withArgs('componentBaseplateField').and.returnValue(bpField);
+        geiSpy.withArgs('componentBaseplateColorField').and.returnValue(bpColorField);
+        geiSpy.withArgs('componentEditorConnectionsList').and.returnValue(connectionsList);
+        geiSpy.withArgs('editorSizeDialog').and.returnValue(sizeDialog);
+        geiSpy.withArgs('editorCropDialog').and.returnValue(cropDialog);
+        geiSpy.withArgs('connectionEditor').and.returnValue(connectionEditor);
+      });
+
+      afterEach(function () {
+        sizeDialog.remove();
+        cropDialog.remove();
+      });
+
+      it("destroys and removes the cached texture when not committed", function () {
+        const tex = controller.texture;
+        controller.reset();
+        expect(tex.destroy).toHaveBeenCalledWith(true);
+        expect(Assets.cache.get(alias)).toBeUndefined();
+      });
+
+      it("leaves the cached texture intact when committed", function () {
+        const tex = controller.texture;
+        controller.committed = true;
+        controller.reset();
+        expect(tex.destroy).not.toHaveBeenCalled();
+        expect(Assets.cache.get(alias)).toBe(tex);
+      });
+
+      it("clears the committed flag so the next session behaves normally", function () {
+        controller.committed = true;
+        controller.reset();
+        expect(controller.committed).toBeFalse();
+      });
+    });
+  });
+
+  describe("exportComponent commit", function () {
+    let controller;
+    let bundleAssets;
+    let extractSpy;
+    let generatedImage;
+
+    beforeEach(function () {
+      generatedImage = document.createElement('img');
+      bundleAssets = [];
+      extractSpy = jasmine.createSpy('extractTrackImage')
+        .and.returnValue(Promise.resolve(generatedImage));
+      controller = Object.create(EditorController.prototype);
+      controller.isAdmin = false;
+      controller.committed = false;
+      controller.currentAlias = 'ea';
+      controller.texture = { width: 16, height: 16 };
+      controller.baseData = {
+        alias: 'ea',
+        name: 'Exported Alias',
+        category: '9V',
+        src: '',
+        image: controller.texture,
+        scale: 1.0,
+        make: 0,
+        type: 0,
+        connections: [
+          { type: 1, vector: new PolarVector(10, 0.5, 0.25), next: 0 }
+        ]
+      };
+      controller.layoutController = {
+        trackData: { bundles: [{ assets: bundleAssets }] },
+        extractTrackImage: extractSpy
+      };
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
+    });
+
+    it("pushes a copy of baseData onto trackData.bundles[0].assets", async function () {
+      await controller.exportComponent();
+      expect(bundleAssets.length).toBe(1);
+      expect(bundleAssets[0]).not.toBe(controller.baseData);
+      expect(bundleAssets[0].alias).toBe('ea');
+      expect(bundleAssets[0].name).toBe('Exported Alias');
+    });
+
+    it("deep-copies connections so later edits do not clobber the committed track", async function () {
+      await controller.exportComponent();
+      const committed = bundleAssets[0];
+      expect(committed.connections).not.toBe(controller.baseData.connections);
+      expect(committed.connections[0]).not.toBe(controller.baseData.connections[0]);
+      expect(committed.connections[0].vector).not.toBe(controller.baseData.connections[0].vector);
+
+      controller.baseData.connections[0].vector.magnitude = 999;
+      controller.baseData.connections[0].next = 42;
+      expect(committed.connections[0].vector.magnitude).toBe(10);
+      expect(committed.connections[0].next).toBe(0);
+    });
+
+    it("generates a track image via layoutController.extractTrackImage", async function () {
+      await controller.exportComponent();
+      expect(extractSpy).toHaveBeenCalledTimes(1);
+      expect(extractSpy).toHaveBeenCalledWith(bundleAssets[0]);
+      expect(bundleAssets[0].image).toBe(generatedImage);
+    });
+
+    it("sets the committed flag on success", async function () {
+      expect(controller.committed).toBeFalse();
+      await controller.exportComponent();
+      expect(controller.committed).toBeTrue();
+    });
+
+    it("does not commit or throw when no bundle is available", async function () {
+      controller.layoutController = { trackData: { bundles: [] } };
+      await controller.exportComponent();
+      expect(controller.committed).toBeFalse();
+      expect(extractSpy).not.toHaveBeenCalled();
     });
   });
 });
