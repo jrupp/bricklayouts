@@ -53,6 +53,15 @@ export class EditorController {
      */
     this.currentAlias = null;
 
+    /**
+     * True once the current baseData/texture has been handed off to
+     * LayoutController via exportComponent. While set, reset() and
+     * setTexture() must not destroy or replace the cached texture, since the
+     * committed track now owns it.
+     * @type {boolean}
+     */
+    this.committed = false;
+
     this.#bindEditorEvents();
   }
 
@@ -66,7 +75,8 @@ export class EditorController {
       scale: 1.0,
       make: 0,
       type: DataTypes.TRACK,
-      connections: []
+      connections: [],
+      mine: 1
     };
   }
 
@@ -201,11 +211,14 @@ export class EditorController {
    * for `currentAlias` in sync. Downstream Component construction reads the
    * texture from `Assets.get(alias)`, so failing to update the cache after a
    * crop leaves the component rendering the pre-crop image.
+   *
+   * Once the current baseData has been committed via exportComponent, the
+   * cached texture belongs to that committed track and must not be replaced.
    * @param {Texture} texture
    */
   setTexture(texture) {
     this.texture = texture;
-    if (this.currentAlias && texture) {
+    if (this.currentAlias && texture && !this.committed) {
       Assets.cache.remove(this.currentAlias);
       Assets.cache.set(this.currentAlias, texture);
     }
@@ -226,13 +239,16 @@ export class EditorController {
     this.testComps.length = 0;
 
     if (this.currentAlias) {
-      const cached = Assets.cache.get(this.currentAlias);
-      Assets.cache.remove(this.currentAlias);
-      try { cached?.destroy(true); } catch (_e) { /* already destroyed */ }
+      if (!this.committed) {
+        const cached = Assets.cache.get(this.currentAlias);
+        Assets.cache.remove(this.currentAlias);
+        try { cached?.destroy(true); } catch (_e) { /* already destroyed */ }
+      }
       this.currentAlias = null;
     }
 
     this.texture = null;
+    this.committed = false;
     this.baseData = EditorController.#defaultBaseData();
 
     // Reset form inputs so a subsequent editor session starts fresh instead
@@ -673,6 +689,11 @@ export class EditorController {
    * Generates the component JSON. Admins get a downloadable file; non-admins
    * get the same JSON logged to the console (temporary — persistence is a
    * separate follow-up).
+   *
+   * Also hands the current baseData off to LayoutController by deep-copying
+   * it into `trackData.bundles[0].assets` and generating a browser thumbnail.
+   * After a successful hand-off the texture is marked committed so it is not
+   * destroyed by subsequent reset() / setTexture() calls.
    */
   async exportComponent() {
     const exportData = { ...this.baseData };
@@ -684,6 +705,21 @@ export class EditorController {
     if (this.isAdmin) {
       const blob = new Blob([data], { type: 'application/json' });
       saveAs(blob, `${this.baseData.alias}.json`);
+    }
+
+    const bundle = this.layoutController?.trackData?.bundles?.[0];
+    if (bundle && Array.isArray(bundle.assets)) {
+      const trackCopy = {
+        ...this.baseData,
+        connections: this.baseData.connections.map((c) => ({
+          ...c,
+          vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
+        }))
+      };
+      bundle.assets.push(trackCopy);
+      trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
+      this.committed = true;
+      this.layoutController.createComponentBrowser();
     }
   }
 

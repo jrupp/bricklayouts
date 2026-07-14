@@ -10788,10 +10788,10 @@ describe("LayoutController", function() {
             });
         });
 
-        describe("_extractTrackImage", function() {
+        describe("extractTrackImage", function() {
             it("should return an HTMLImageElement with correct className and alt", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
-                let image = await layoutController._extractTrackImage(track);
+                let image = await layoutController.extractTrackImage(track);
                 expect(image).toBeInstanceOf(HTMLImageElement);
                 expect(image.className).toBe("track");
                 expect(image.alt).toBe(track.name);
@@ -10800,7 +10800,7 @@ describe("LayoutController", function() {
             it("should handle onbp overlay compositing", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.onbp !== undefined);
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }
@@ -10809,7 +10809,7 @@ describe("LayoutController", function() {
             it("should handle shape/baseplate color fill", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "baseplate32x32");
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }
@@ -10990,11 +10990,11 @@ describe("LayoutController", function() {
             });
         });
 
-        describe("_extractTrackImage tileable", function() {
+        describe("extractTrackImage tileable", function() {
             it("should extract image from tileable component", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.type === "tileable");
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }

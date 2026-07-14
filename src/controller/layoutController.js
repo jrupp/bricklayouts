@@ -59,6 +59,7 @@ export { DataTypes };
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [onbp] The default baseplate color to render this structure on. The presence of this property indicates the structure is designed to be placed on a baseplate (i.e., has bottom studs).
+ * @property {Number} [mine] Whether this track is user-created and should be shown in the "My MOCs" category (1 for true, 0 or undefined for false).
  */
 let TrackData;
 export { TrackData };
@@ -330,6 +331,7 @@ export class LayoutController {
      * @type {Map<String, String>}
      */
     this.categories = new Map(Object.entries(this.trackData.categories));
+    this.categories.set('mine', 'My MOCs');
     /**
      * @type {Boolean}
      */
@@ -579,7 +581,7 @@ export class LayoutController {
    * @param {TrackData} track
    * @returns {Promise<HTMLImageElement>}
    */
-  async _extractTrackImage(track) {
+  async extractTrackImage(track) {
     let texture = Assets.get(track.alias);
     let image;
     if (track.onbp !== void 0) {
@@ -645,7 +647,7 @@ export class LayoutController {
       await Assets.load(alias);
       const track = this.trackData.bundles[0].assets.find(t => t.alias === alias);
       if (track) {
-        const realImage = await this._extractTrackImage(track);
+        const realImage = await this.extractTrackImage(track);
         this._replacePlaceholderImage(track, realImage);
       }
     }
@@ -762,7 +764,7 @@ export class LayoutController {
 
       await Promise.all(allAssets.map(async (track) => {
         if (Assets.cache.has(track.alias)) {
-          track.image = await this._extractTrackImage(track);
+          track.image = await this.extractTrackImage(track);
         } else {
           track.image = this._createPlaceholderImage(track);
         }
@@ -875,6 +877,18 @@ export class LayoutController {
     } else if (selectedCategory === 'custom') {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
+    } else if (selectedCategory === 'mine') {
+      let mocButton = document.createElement('button');
+      mocButton.title = 'Create MOC';
+      let mocImage = new Image();
+      mocImage.src = 'img/icon-add-black.png';
+      mocImage.className = 'custom';
+      mocButton.appendChild(mocImage);
+      let mocLabel = document.createElement('span');
+      mocLabel.textContent = 'Create MOC';
+      mocButton.appendChild(mocLabel);
+      mocButton.addEventListener('click', () => this._openImageForEditor());
+      this.componentBrowser.appendChild(mocButton);
     }
     if ((selectedCategory === 'structures' && searchQuery.length === 0) || (searchQuery.length > 0 && 'random trees'.includes(searchQuery))) {
       let rtButton = document.createElement('button');
@@ -890,7 +904,7 @@ export class LayoutController {
       this.componentBrowser.appendChild(rtButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory || ((track.mine !== void 0 && selectedCategory === 'mine'))) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text' && (track.mine === void 0 || selectedCategory === 'mine')) {
         let button = document.createElement('button');
         let label = document.createElement('span');
         label.textContent = track.name;
@@ -2387,7 +2401,7 @@ export class LayoutController {
 
     await Promise.all(this.trackData.bundles[0].assets.map(async (track) => {
       if (!track.image) {
-        track.image = await this._extractTrackImage(track);
+        track.image = await this.extractTrackImage(track);
       }
     }));
 
