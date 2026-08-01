@@ -700,7 +700,7 @@ export class EditorController {
     if (exportData.onbp !== undefined) {
       exportData.onbp = new Color(this.baseData.onbp).toHex();
     }
-    const data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'make', 'onbp']);
+    const data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'make', 'onbp', 'mine']);
     console.log('[component export]', data);
     if (this.isAdmin) {
       const blob = new Blob([data], { type: 'application/json' });
