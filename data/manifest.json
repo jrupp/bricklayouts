@@ -1172,6 +1172,27 @@
                     ]
                 },
                 {
+                    "alias": "railStraight9V3L",
+                    "src": "2865-3l.png",
+                    "category": "9V",
+                    "name": "Straight Rail 3L",
+                    "make": 0,
+                    "partNumber": "ST-3-16",
+                    "color": "#6c6e68",
+                    "connections": [
+                        {
+                            "type": 1,
+                            "vector": [24, 0, 0],
+                            "next": 1
+                        },
+                        {
+                            "type": 1,
+                            "vector": [24, 1.0, 1.0],
+                            "next": 0
+                        }
+                    ]
+                },
+                {
                     "alias": "railStraight9V8th",
                     "src": "2865-8th.png",
                     "category": "9V",
