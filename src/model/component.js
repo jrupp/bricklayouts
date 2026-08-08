@@ -728,6 +728,18 @@ export class Component extends Container {
     });
   }
 
+  /**
+   * Walks up this component's group chain to find the highest permanent group it belongs to.
+   * @returns {Component | ComponentGroup} The component itself, or its outermost permanent group.
+   */
+  getTopGroup() {
+    let lastPermanent = this;
+    while (lastPermanent.group && !lastPermanent.group.isTemporary) {
+      lastPermanent = lastPermanent.group;
+    }
+    return lastPermanent;
+  }
+
   _drawShape() {
     this.sprite.clear();
     if (this.#shape === 'circle') {
@@ -1316,7 +1328,9 @@ export class Component extends Container {
       return;
     }
     if (!this.isDragging) {
-      if (this.group && !this.group.isTemporary) {
+      if (e.ctrlKey || e.metaKey) {
+        LayoutController.toggleSelectComponent(this);
+      } else if (this.group && !this.group.isTemporary) {
         LayoutController.selectComponent(this.group);
       } else {
         LayoutController.selectComponent(this);

@@ -164,6 +164,22 @@ export class ComponentGroup {
   }
 
   /**
+   * Walks up a component's group chain to find the ancestor that is a direct member of this group.
+   * @param {Component | ComponentGroup} component
+   * @returns {Component | ComponentGroup | null} The direct member, or null if not a descendant.
+   */
+  findComponent(component) {
+    let node = component;
+    while (node) {
+      if (node.group && node.group.uuid === this.uuid) {
+        return node;
+      }
+      node = node.group;
+    }
+    return null;
+  }
+
+  /**
    * Sets the alpha for all components in the group.
    * @param {number} value - The alpha value to set.
    */

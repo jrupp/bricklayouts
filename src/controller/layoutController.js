@@ -3518,6 +3518,59 @@ export class LayoutController {
     }
   }
 
+  /**
+   * Toggle a component in or out of the current selection (Ctrl/Cmd + click).
+   * Permanent groups are always added or removed as a whole; a component is never
+   * pulled out of a permanent group by this operation.
+   * @param {Component} component - The component that was clicked.
+   */
+  static toggleSelectComponent(component) {
+    const selected = LayoutController.selectedComponent;
+    const unit = component.getTopGroup();
+
+    // Nothing selected, so behave like a normal click.
+    if (!selected) {
+      LayoutController.selectComponent(unit);
+      return;
+    }
+
+    if (selected instanceof ComponentGroup && selected.isTemporary) {
+      const member = selected.findComponent(component);
+      if (member) {
+        member.tint = 0xffffff;
+        selected.removeComponent(member);
+        if (selected.destroyed) {
+          LayoutController.selectComponent(null);
+          return;
+        }
+        if (selected.components.length === 1) {
+          const remaining = selected.components[0];
+          selected.removeComponent(remaining);
+          LayoutController.selectComponent(remaining);
+          return;
+        }
+      } else {
+        selected.addComponent(unit);
+      }
+      selected.tint = 0xffff00;
+      const inst = LayoutController.getInstance();
+      inst._showSelectionToolbar();
+      inst._positionSelectionToolbar();
+      return;
+    }
+
+    if (selected.uuid === unit.uuid) {
+      LayoutController.selectComponent(null);
+      return;
+    }
+
+    LayoutController.selectComponent(null);
+    const tempGroup = new ComponentGroup(true);
+    tempGroup.addComponent(selected);
+    tempGroup.addComponent(unit);
+    LayoutController.selectComponent(tempGroup);
+  }
+
   bringSelectedComponentToFront() {
     this.hideFileMenu();
     if (LayoutController.selectedComponent) {
