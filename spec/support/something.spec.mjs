@@ -1915,6 +1915,42 @@ describe("LayoutController", function() {
                 ).toBe(originalChildren[i].baseData.alias);
             }
         });
+
+        it("preserves z-order of components when duplicating a from a selection box group", async function() {
+            layoutController.reset();
+            let baseplateData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "baseplate32x32");
+            let treeData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "pineTreeSmall");
+
+            await layoutController.addComponent(baseplateData);
+            LayoutController.selectComponent(null);
+            await layoutController.addComponent(treeData);
+            await layoutController.addComponent(treeData);
+
+            const originalChildren = layoutController.currentLayer.children.filter(c => c instanceof Component);
+            expect(originalChildren.length).toBe(3);
+
+            // Rearrange the selection order to test z-order preservation when duplicating from a selection box group.
+            // Since a selection box uses an r-bush to find the components, they are returned in the order they are found in the spatial index, not necessarily the order they were added to the layer.
+            const allComponents = [];
+            allComponents.push(originalChildren[1]);
+            allComponents.push(originalChildren[0]);
+            allComponents.push(originalChildren[2]);
+            const selectionTarget = layoutController.processSelectionBoxResults(allComponents);
+            if (selectionTarget) {
+                LayoutController.selectComponent(selectionTarget);
+            }
+            layoutController.duplicateSelectedComponent();
+
+            const allChildren = layoutController.currentLayer.children.filter(c => c instanceof Component);
+            expect(allChildren.length).toBe(6);
+
+            const clonedChildren = allChildren.slice(3);
+            for (let i = 0; i < originalChildren.length; i++) {
+                expect(clonedChildren[i].baseData.alias).withContext(
+                    `component at index ${i} should be ${originalChildren[i].baseData.alias}`
+                ).toBe(originalChildren[i].baseData.alias);
+            }
+        });
     });
 
     describe("pasteComponent", function() {

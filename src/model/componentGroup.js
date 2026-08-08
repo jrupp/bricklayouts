@@ -252,6 +252,24 @@ export class ComponentGroup {
   }
 
   /**
+   * Lowest index this item occupies in the parent layer's children, used to sort by z-order.
+   * @param {Component|ComponentGroup} item
+   * @returns {Number}
+   */
+  #zOrderKey(item) {
+    const components = item instanceof ComponentGroup ? item.getAllComponents() : [item];
+    let lowest = Number.MAX_SAFE_INTEGER;
+    for (const component of components) {
+      const index = this.parent.children.indexOf(component);
+
+      if (index !== -1 && index < lowest) {
+        lowest = index;
+      }
+    }
+    return lowest;
+  }
+
+  /**
    * Clone the whole component group.
    * @param {LayoutLayer} layer The layer to clone to.
    * @param {Component} [connectTo] The component to connect to.
@@ -282,8 +300,13 @@ export class ComponentGroup {
       }
     };
 
-    // Clone all components in the group
-    for (const component of this.#components) {
+    // Clone in z-order, since group membership order may differ from stacking order
+    const orderedComponents = [...this.#components];
+    if (Array.isArray(this.parent?.children)) {
+      orderedComponents.sort((a, b) => this.#zOrderKey(a) - this.#zOrderKey(b));
+    }
+
+    for (const component of orderedComponents) {
       const newComponent = component.clone(layer);
       mapAllComponents(component, newComponent);
       newGroup.addComponent(newComponent);
