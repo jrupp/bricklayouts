@@ -61,7 +61,7 @@ export class PublicLayoutLoader {
       return {
         layoutId: layoutData.layoutId,
         layoutName: layoutData.layoutName,
-        layoutData: layoutData.layoutData,
+        layoutData: {...layoutData.layoutData, mocs: layoutData.mocs || []},
         shareCode: shareCode,
         isPublic: true,
         readOnly: true, // Public layouts are always read-only

@@ -13,6 +13,7 @@ import layoutFileThree from './layout3.json' with { "type": "json" };
 import layoutFileFour from './layout4.json' with { "type": "json" };
 import layoutFileFiveVOne from './layout5-v1.json' with { "type": "json" };
 import layoutFileFiveVTwo from './layout5-v2.json' with { "type": "json" };
+import layoutFileSix from './layout6.json' with { "type": "json" };
 
 function ui(s) {
 }
@@ -2242,6 +2243,10 @@ describe("LayoutController", function() {
 
         it("fails validation for layout 5 v1", function() {
             expect(LayoutController._validateImportData(layoutFileFiveVOne)).toBeFalse();
+        });
+
+        it("validates layout 6", function() {
+            expect(LayoutController._validateImportData(layoutFileSix)).toBeTrue();
         });
 
         it("throws errors with invalid version", function() {
@@ -11433,17 +11438,17 @@ describe("LayoutController", function() {
             expect(layoutController.editorMode).toBeFalse();
         });
 
-        it("downloadLayout returns early without hiding file menu when in editor mode", function () {
+        it("downloadLayout returns early without hiding file menu when in editor mode", async function () {
             layoutController.editorMode = true;
             const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
-            layoutController.downloadLayout();
+            await layoutController.downloadLayout();
             expect(hideFileMenuSpy).not.toHaveBeenCalled();
         });
 
-        it("downloadLayout proceeds when not in editor mode", function () {
+        it("downloadLayout proceeds when not in editor mode", async function () {
             layoutController.editorMode = false;
             const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
-            layoutController.downloadLayout();
+            await layoutController.downloadLayout();
             expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
         });
 

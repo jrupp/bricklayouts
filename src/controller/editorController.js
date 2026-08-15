@@ -193,6 +193,8 @@ export class EditorController {
       }
     });
     document.getElementById('componentEditorExport').addEventListener('click', this.exportComponent.bind(this));
+    document.getElementById('componentEditorExit')?.addEventListener('click', this.checkExit.bind(this));
+    document.getElementById('componentEditorClose')?.addEventListener('click', this.checkExit.bind(this));
   }
 
   /**
@@ -204,6 +206,57 @@ export class EditorController {
   show(texture) {
     this.setTexture(texture);
     this.#showSizeDialog();
+  }
+
+  /**
+   * Leaves editor mode, first offering to save when the current component has
+   * not been committed yet. Dismissing the dialog keeps the editor open.
+   */
+  checkExit() {
+    if (this.committed) {
+      this.layoutController.exitEditorMode();
+      return;
+    }
+
+    document.getElementById('editorExitDialog')?.remove();
+    const dialog = document.createElement('dialog');
+    dialog.className = 'no-padding border large-width surface-container-high small-round';
+    dialog.id = 'editorExitDialog';
+    dialog.innerHTML = `
+      <div>
+        <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+          <nav>
+            <h6 class="max">Unsaved Changes</h6>
+            <button class="circle medium transparent" data-ui="#editorExitDialog">
+              <i class="medium bold">close</i>
+            </button>
+          </nav>
+        </header>
+        <div class="small-padding horizontal-padding extra-text center-align">
+          <p>You have unsaved changes. Do you want to save before exiting?</p>
+        </div>
+        <hr>
+        <nav class="no-padding no-space no-margin">
+          <button class="no-round max extra-text left-button primary-text" id="editorExitDialogSave"><span>Yes</span></button>
+          <button class="no-round max extra-text right-button error" id="editorExitDialogDiscard"><span>No</span></button>
+        </nav>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => dialog.remove());
+
+    const closeDialog = () => ui('#editorExitDialog');
+
+    dialog.querySelector('#editorExitDialogSave').addEventListener('click', () => {
+      closeDialog();
+      this.exportComponent().then(() => this.layoutController.exitEditorMode());
+    });
+    dialog.querySelector('#editorExitDialogDiscard').addEventListener('click', () => {
+      closeDialog();
+      this.layoutController.exitEditorMode();
+    });
+
+    ui('#editorExitDialog');
   }
 
   /**
@@ -276,6 +329,7 @@ export class EditorController {
 
     document.getElementById('editorSizeDialog')?.remove();
     document.getElementById('editorCropDialog')?.remove();
+    document.getElementById('editorExitDialog')?.remove();
     const connectionEditor = document.getElementById('connectionEditor');
     if (connectionEditor) {
       connectionEditor.classList.add('hidden');
@@ -377,7 +431,13 @@ export class EditorController {
       </div>
     `;
     document.body.appendChild(dialog);
-    dialog.addEventListener('close', () => dialog.remove());
+    let success = false;
+    dialog.addEventListener('close', () => {
+      if (!success) {
+        this.layoutController.exitEditorMode();
+      }
+      dialog.remove();
+    });
 
     const closeDialog = () => ui('#editorSizeDialog');
 
@@ -414,6 +474,7 @@ export class EditorController {
       const pixelWidth = parseFloat(width) * multiplier;
       const pixelHeight = parseFloat(height) * multiplier;
 
+      success = true;
       closeDialog();
 
       if (this.texture && !aspectMatches(this.texture.width, this.texture.height, pixelWidth, pixelHeight)) {
@@ -442,11 +503,6 @@ export class EditorController {
     });
 
     dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', onConfirm);
-    dialog.querySelectorAll('[data-ui="#editorSizeDialog"]').forEach((el) => {
-      el.addEventListener('click', () => {
-        this.layoutController.exitEditorMode();
-      });
-    });
 
     ui('#editorSizeDialog');
   }
@@ -484,10 +540,14 @@ export class EditorController {
       document.getElementById('componentEditorConnections').classList.remove('hidden');
       document.getElementById('componentAliasField').classList.remove('hidden');
       document.getElementById('componentScaleField').classList.remove('hidden');
+      document.getElementById('componentEditorTest').classList.remove('hidden');
+      document.getElementById('componentEditorExit').classList.add('hidden');
     } else {
       document.getElementById('componentEditorConnections').classList.add('hidden');
       document.getElementById('componentAliasField').classList.add('hidden');
       document.getElementById('componentScaleField').classList.add('hidden');
+      document.getElementById('componentEditorTest').classList.add('hidden');
+      document.getElementById('componentEditorExit').classList.remove('hidden');
     }
   }
 
@@ -537,17 +597,24 @@ export class EditorController {
     console.log('Save Component');
     this.baseData.scale = parseFloat(document.getElementById('componentScale').value);
     this.newComp.sprite.scale.set(this.baseData.scale);
-    let tempAlias = document.getElementById('componentAlias').value;
-    
-    // Validate alias - only allow letters, numbers, and underscores
-    const validAlias = tempAlias.replace(/[^a-zA-Z0-9_]/g, '');
-    
-    // Update input field if invalid characters were removed
-    if (validAlias !== tempAlias) {
+    // Only admins get the alias input, so for everyone else the generated alias stands.
+    if (this.isAdmin) {
+      let tempAlias = document.getElementById('componentAlias').value;
+
+      // Validate alias - only allow letters, numbers, and underscores
+      const validAlias = tempAlias.replace(/[^a-zA-Z0-9_]/g, '');
+
+      // Update input field if invalid characters were removed
+      if (validAlias !== tempAlias) {
         document.getElementById('componentAlias').value = validAlias;
         tempAlias = validAlias;
+      }
+      if (tempAlias !== this.baseData.alias) {
+        // A different alias is a different component, so the previous commit no longer applies.
+        this.committed = false;
+      }
+      this.baseData.alias = tempAlias;
     }
-    this.baseData.alias = tempAlias;
     this.baseData.name = document.getElementById('componentName').value;
     let categories = document.getElementById('componentCategories');
     if (this.baseData.category === 'structures' && categories.options[categories.selectedIndex].value !== 'structures') {
@@ -716,9 +783,19 @@ export class EditorController {
           vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
         }))
       };
-      bundle.assets.push(trackCopy);
-      trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
-      this.committed = true;
+      if (this.committed) {
+        // If already committed, the image is already set, but the other properties may need to be updated
+        /** @type {TrackData} */
+        const existingAsset = bundle.assets.find(asset => asset.alias === trackCopy.alias);
+        if (existingAsset) {
+          Object.assign(existingAsset, trackCopy);
+          existingAsset.image = await this.layoutController.extractTrackImage(existingAsset);
+        }
+      } else {
+        bundle.assets.push(trackCopy);
+        trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
+        this.committed = true;
+      }
       this.layoutController.createComponentBrowser();
     }
   }

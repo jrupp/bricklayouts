@@ -79,6 +79,27 @@ let LayoutMetadata;
 export { LayoutMetadata };
 
 /**
+ * A custom (user-created) MOC embedded in a downloaded layout file, so the
+ * layout can be reopened without the MOC being present in the manifest.
+ * @typedef {Object} SerializedMoc
+ * @property {String} alias
+ * @property {String} name
+ * @property {String} category
+ * @property {String} textureData The component's texture as an image data URL.
+ * @property {Number} [scale]
+ * @property {Number} [make]
+ * @property {DataTypes} [type]
+ * @property {Array<Object>} [connections]
+ * @property {Number} [color]
+ * @property {Number} [width]
+ * @property {Number} [height]
+ * @property {Number} [onbp]
+ * @property {Number} [isTree]
+ */
+let SerializedMoc;
+export { SerializedMoc };
+
+/**
  * @typedef {Object} SerializedLayout
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
@@ -88,6 +109,7 @@ export { LayoutMetadata };
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
  * @property {SerializedConfiguration} config The configuration settings for the layout.
  * @property {LayoutMetadata} [metadata] Optional metadata for cloud storage and naming.
+ * @property {Array<SerializedMoc>} [mocs] Custom MOCs used by this layout, embedded so they survive a round trip.
  */
 let SerializedLayout;
 export { SerializedLayout };
@@ -95,6 +117,9 @@ export { SerializedLayout };
 /**
  * The current version of the serialized file format.
  * @type {Number}
+ * @constant
+ * @readonly
+ * @default 2
  */
 const CurrentFormatVersion = 2;
 export { CurrentFormatVersion };
@@ -103,6 +128,7 @@ export { CurrentFormatVersion };
  * Drag thresholds for component movement.
  * @type {Number}
  * @constant
+ * @default 8.0
  */
 const DRAG_THRESHOLD = 8.0;
 
@@ -110,6 +136,7 @@ const DRAG_THRESHOLD = 8.0;
  * Drag threshold for movement of components with connections.
  * @type {Number}
  * @constant
+ * @default 16.0
  */
 const DRAG_THRESHOLD_CONNECTION = 16.0;
 
@@ -117,8 +144,25 @@ const DRAG_THRESHOLD_CONNECTION = 16.0;
  * Index of the "All" category in the category dropdown.
  * @type {Number}
  * @constant
+ * @default 0
  */
 const ALL_CATEGORY_INDEX = 0;
+
+/**
+ * TrackData properties persisted for a custom MOC embedded in a layout file.
+ * `image` and `src` are deliberately excluded; the texture travels as an
+ * embedded data URL in `textureData` instead.
+ * @type {Array<String>}
+ * @constant
+ */
+const MOC_TRACK_KEYS = ['alias', 'name', 'category', 'scale', 'make', 'type', 'connections', 'color', 'width', 'height', 'onbp', 'isTree'];
+
+/**
+ * Image data URLs accepted for an embedded custom MOC texture.
+ * @type {RegExp}
+ * @constant
+ */
+const MOC_TEXTURE_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
 
 export class LayoutController {
   static _instance = null;
@@ -443,7 +487,6 @@ export class LayoutController {
     document.getElementById('buttonExport').addEventListener('click', this.exportLayout.bind(this));
     document.getElementById('buttonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
     document.getElementById('mobileButtonNewLayout')?.addEventListener('click', this.onNewLayoutClick.bind(this));
-    document.getElementById('componentEditorClose')?.addEventListener('click', this.exitEditorMode.bind(this));
     document.getElementById('confirmNewLayout')?.addEventListener('click', this.onConfirmNewLayout.bind(this));
     document.getElementById('mobileButtonDownload')?.addEventListener('click', this.downloadLayout.bind(this));
     document.getElementById('mobileButtonImport')?.addEventListener('click', this.onImportClick.bind(this));
@@ -2450,7 +2493,7 @@ export class LayoutController {
    * Download the current layout as a JSON file.
    * Uses the layout name for the filename if available.
    */
-  downloadLayout() {
+  async downloadLayout() {
     if (this.editorMode) {
       showSnackbar('Not available in editor mode', 'error');
       return;
@@ -2473,6 +2516,17 @@ export class LayoutController {
       };
     }
 
+    const mocs = new Map();
+    layout.layers.forEach(layer => {
+      if (layer.mocs !== void 0 && layer.mocs !== null) {
+        layer.mocs.forEach(moc => mocs.set(moc, true));
+        delete layer.mocs;
+      }
+    });
+    if (mocs.size > 0) {
+      layout.mocs = await this._serializeMocs(Array.from(mocs.keys()));
+    }
+
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
 
     // Use layout name for filename if available, converting spaces to underscores
@@ -2483,6 +2537,125 @@ export class LayoutController {
 
     saveAs(blob, filename);
     this.hideFileMenu();
+  }
+
+  /**
+   * Serialize the TrackData of user-created MOCs, embedding each one's texture
+   * as a base64 data URL so the layout file is self-contained.
+   * @param {Array<String>} aliases Asset aliases of the MOCs to serialize
+   * @returns {Promise<Array<SerializedMoc>>}
+   * @private
+   */
+  async _serializeMocs(aliases) {
+    const serializedMocs = new Array();
+    for (const alias of aliases) {
+      const track = this.trackData.bundles[0].assets.find((t) => t.alias === alias);
+      const texture = Assets.get(alias);
+      if (!track || !texture) {
+        console.warn(`Custom MOC "${alias}" is not loaded; omitting it from the downloaded layout`);
+        continue;
+      }
+      /** @type {SerializedMoc} */
+      const serialized = {};
+      MOC_TRACK_KEYS.forEach((key) => {
+        if (track[key] !== void 0) {
+          serialized[key] = track[key];
+        }
+      });
+      try {
+        serialized.textureData = await this.app.renderer.extract.base64({ target: texture, format: 'png' });
+      } catch (error) {
+        console.error(`Failed to extract texture for custom MOC "${alias}":`, error);
+        continue;
+      }
+      serializedMocs.push(serialized);
+    }
+    return serializedMocs;
+  }
+
+  /**
+   * Register custom MOCs embedded in a layout file so their components can be
+   * deserialized. Aliases that already exist in the track data are left
+   * untouched.
+   * @param {Array<SerializedMoc>} mocs
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _loadLayoutMocs(mocs) {
+    const assets = this.trackData.bundles[0].assets;
+    let added = false;
+    const needToLoad = new Array();
+    for (const moc of mocs) {
+      if (!moc?.alias || typeof moc.alias !== 'string' || assets.some((t) => t.alias === moc.alias)) {
+        continue;
+      }
+      /** @type {TrackData} */
+      const track = { src: '' };
+      if (moc.textureData !== void 0 && moc.textureData !== null) {
+        let texture;
+        try {
+          texture = await this._textureFromDataUrl(moc.textureData);
+        } catch (error) {
+          console.error(`Failed to load texture for custom MOC "${moc.alias}":`, error);
+          continue;
+        } finally {
+          Assets.cache.set(moc.alias, texture);
+        }
+      } else if (moc.src !== void 0 && moc.src !== null) {
+        track.src = moc.src;
+        Assets.add({alias: moc.alias, src: moc.src});
+      } else {
+        console.warn(`Custom MOC "${moc.alias}" has no texture data or source; it will be omitted from the layout`);
+        continue;
+      }
+      MOC_TRACK_KEYS.forEach((key) => {
+        if (moc[key] !== void 0) {
+          track[key] = moc[key];
+        }
+      });
+      track.mine = 1;
+      this._processTrackMetadata(track);
+      assets.push(track);
+      if (Assets.cache.has(moc.alias)) {
+        track.image = await this.extractTrackImage(track);
+      } else {
+        track.image = this._createPlaceholderImage(track);
+        needToLoad.push(moc.alias);
+      }
+      added = true;
+    }
+    if (added) {
+      this.createComponentBrowser();
+      if (needToLoad.length > 0) {
+        this._backgroundLoadRemaining(needToLoad);
+      }
+    }
+  }
+
+  /**
+   * Decode an embedded MOC texture data URL into a Texture.
+   * @param {String} dataUrl
+   * @returns {Promise<Texture>}
+   * @throws {Error} If the data URL is malformed or the image cannot be decoded
+   * @private
+   */
+  async _textureFromDataUrl(dataUrl) {
+    if (typeof dataUrl !== 'string' || !MOC_TEXTURE_DATA_URL.test(dataUrl)) {
+      throw new Error('Unsupported or malformed texture data');
+    }
+    const blob = await (await fetch(dataUrl)).blob();
+    const buffer = await blob.arrayBuffer();
+    const { checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+    const magic = checkMagicBytes(buffer);
+    if (!magic.ok || magic.mime !== blob.type) {
+      throw new Error('Texture data is not a valid image');
+    }
+    const bitmap = await createImageBitmap(blob);
+    if (bitmap.width * bitmap.height > MAX_DECODED_PIXELS) {
+      bitmap.close?.();
+      throw new Error('Texture is too large');
+    }
+    return Texture.from(bitmap);
   }
 
   /**
@@ -3042,11 +3215,20 @@ export class LayoutController {
         }
       };
 
+      const mocs = new Map();
+      layoutData.layers.forEach(layer => {
+        if (layer.mocs !== void 0 && layer.mocs !== null) {
+          layer.mocs.forEach(moc => mocs.set(moc, true));
+          delete layer.mocs;
+        }
+      });
+
       // Get existing layout ID if updating
       const layoutId = this.#layoutMetadata.cloudId || null;
       const result = await cloudFeatures.cloudStorage.saveLayout(
         layoutData,
         layoutName,
+        Array.from(mocs.keys()),
         this,
         layoutId
       );
@@ -3175,6 +3357,9 @@ export class LayoutController {
    * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
    */
   async _importLayout(data, cloudInfo = null) {
+    if (Array.isArray(data.mocs) && data.mocs.length > 0) {
+      await this._loadLayoutMocs(data.mocs);
+    }
     const neededAliases = this._extractLayoutAliases(data);
     const unloaded = neededAliases.filter(a => !Assets.cache.has(a));
     if (unloaded.length > 0) {
@@ -3249,16 +3434,20 @@ export class LayoutController {
       data?.y === undefined || (typeof data?.y === 'number'),
       data?.zoom === undefined || (typeof data?.zoom === 'number' && data?.zoom > 0.0),
       data?.layers,
-      data?.layers?.length > 0
+      data?.layers?.length > 0,
+      data?.mocs === undefined || (Array.isArray(data.mocs) && data.mocs.every(moc => moc
+        && typeof moc.alias === 'string' && moc.alias.length > 0
+        && typeof moc.name === 'string'
+        && typeof moc.textureData === 'string'))
     ]
     if (validations.every(v => v) === false) {
       return false;
     }
-    // TODO: Add validation that checks every component in every layer to see if the `type` can't be found in the manifest
     if (data.hasOwnProperty('config') && Configuration.validateImportData(data.config) === false) {
       return false;
     }
-    return data.layers.every(layer => LayoutLayer._validateImportData(layer));
+    const mocAliases = new Set((data.mocs ?? []).map(moc => moc.alias));
+    return data.layers.every(layer => LayoutLayer._validateImportData(layer, mocAliases));
   }
 
   /**

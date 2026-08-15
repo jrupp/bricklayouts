@@ -469,7 +469,8 @@ describe("EditorController", function () {
       };
       controller.layoutController = {
         trackData: { bundles: [{ assets: bundleAssets }] },
-        extractTrackImage: extractSpy
+        extractTrackImage: extractSpy,
+        createComponentBrowser: jasmine.createSpy('createComponentBrowser')
       };
       spyOn(console, 'log');
       spyOn(window, 'saveAs').and.stub();
@@ -514,6 +515,271 @@ describe("EditorController", function () {
       await controller.exportComponent();
       expect(controller.committed).toBeFalse();
       expect(extractSpy).not.toHaveBeenCalled();
+    });
+
+    describe("after the first commit", function () {
+      beforeEach(async function () {
+        await controller.exportComponent();
+      });
+
+      it("never adds another asset no matter how many times it is saved", async function () {
+        await controller.exportComponent();
+        await controller.exportComponent();
+        await controller.exportComponent();
+        expect(bundleAssets.length).toBe(1);
+        expect(controller.committed).toBeTrue();
+      });
+
+      it("updates the existing asset in place with the edited properties", async function () {
+        const existing = bundleAssets[0];
+        controller.baseData.name = 'Renamed';
+        controller.baseData.category = 'structures';
+        controller.baseData.scale = 2.5;
+        controller.baseData.onbp = 0x00ff00;
+        await controller.exportComponent();
+        expect(bundleAssets[0]).toBe(existing);
+        expect(existing.name).toBe('Renamed');
+        expect(existing.category).toBe('structures');
+        expect(existing.scale).toBe(2.5);
+        expect(existing.onbp).toBe(0x00ff00);
+      });
+
+      it("regenerates the track image for the existing asset", async function () {
+        const existing = bundleAssets[0];
+        const updatedImage = document.createElement('img');
+        extractSpy.and.returnValue(Promise.resolve(updatedImage));
+        await controller.exportComponent();
+        expect(extractSpy).toHaveBeenCalledTimes(2);
+        expect(extractSpy.calls.mostRecent().args[0]).toBe(existing);
+        expect(existing.image).toBe(updatedImage);
+      });
+
+      it("deep-copies edited connections into the existing asset", async function () {
+        const existing = bundleAssets[0];
+        controller.baseData.connections = [
+          { type: 2, vector: new PolarVector(20, 1.0, 0.5), next: 1 },
+          { type: 3, vector: new PolarVector(30, 1.5, 0.75), next: 0 }
+        ];
+        await controller.exportComponent();
+        expect(existing.connections.length).toBe(2);
+        expect(existing.connections).not.toBe(controller.baseData.connections);
+        expect(existing.connections[0]).not.toBe(controller.baseData.connections[0]);
+        expect(existing.connections[0].vector).not.toBe(controller.baseData.connections[0].vector);
+        expect(existing.connections[1].vector.magnitude).toBe(30);
+
+        controller.baseData.connections[0].vector.magnitude = 999;
+        expect(existing.connections[0].vector.magnitude).toBe(20);
+      });
+
+      it("refreshes the component browser on every save", async function () {
+        await controller.exportComponent();
+        expect(controller.layoutController.createComponentBrowser).toHaveBeenCalledTimes(2);
+      });
+
+      it("leaves the bundle untouched when the alias no longer matches an asset", async function () {
+        const existing = bundleAssets[0];
+        controller.baseData.alias = 'renamedAlias';
+        controller.baseData.name = 'Renamed';
+        await controller.exportComponent();
+        expect(bundleAssets.length).toBe(1);
+        expect(bundleAssets[0]).toBe(existing);
+        expect(existing.alias).toBe('ea');
+        expect(existing.name).toBe('Exported Alias');
+        expect(extractSpy).toHaveBeenCalledTimes(1);
+      });
+
+      it("updates the matching asset when the bundle holds several assets", async function () {
+        bundleAssets.unshift({ alias: 'other', name: 'Other' });
+        const existing = bundleAssets[1];
+        controller.baseData.name = 'Renamed';
+        await controller.exportComponent();
+        expect(bundleAssets.length).toBe(2);
+        expect(bundleAssets[0].name).toBe('Other');
+        expect(bundleAssets[1]).toBe(existing);
+        expect(existing.name).toBe('Renamed');
+      });
+
+      it("adds a second asset once an alias change has cleared the committed flag", async function () {
+        // onComponentSave clears `committed` when an admin renames the alias,
+        // which makes the next export a fresh component rather than an update.
+        controller.committed = false;
+        controller.baseData.alias = 'renamedAlias';
+        await controller.exportComponent();
+        expect(bundleAssets.length).toBe(2);
+        expect(bundleAssets[0].alias).toBe('ea');
+        expect(bundleAssets[1].alias).toBe('renamedAlias');
+        expect(controller.committed).toBeTrue();
+      });
+    });
+  });
+
+  describe("onComponentSave", function () {
+    let controller;
+    let scaleInput;
+    let aliasInput;
+    let nameInput;
+    let categories;
+    let bpToggle;
+    let bpColor;
+    let geiSpy;
+
+    beforeEach(function () {
+      controller = Object.create(EditorController.prototype);
+      controller.isAdmin = true;
+      controller.committed = true;
+      controller.baseData = {
+        alias: 'originalAlias',
+        name: 'Original',
+        category: '9V',
+        connections: []
+      };
+      controller.newComp = { sprite: { scale: { set: jasmine.createSpy('set') } } };
+
+      scaleInput = document.createElement('input');
+      scaleInput.value = '1';
+      aliasInput = document.createElement('input');
+      aliasInput.value = 'originalAlias';
+      nameInput = document.createElement('input');
+      nameInput.value = 'Original';
+      categories = document.createElement('select');
+      ['9V', 'structures', 'trees'].forEach((v) => {
+        const opt = document.createElement('option');
+        opt.value = v;
+        categories.appendChild(opt);
+      });
+      categories.selectedIndex = 0;
+      bpToggle = document.createElement('input');
+      bpToggle.type = 'checkbox';
+      bpColor = document.createElement('select');
+      const colorOpt = document.createElement('option');
+      colorOpt.value = '#ff0000';
+      bpColor.appendChild(colorOpt);
+
+      spyOn(console, 'log');
+      geiSpy = spyOn(document, 'getElementById').and.returnValue(null);
+      geiSpy.withArgs('componentScale').and.returnValue(scaleInput);
+      geiSpy.withArgs('componentAlias').and.returnValue(aliasInput);
+      geiSpy.withArgs('componentName').and.returnValue(nameInput);
+      geiSpy.withArgs('componentCategories').and.returnValue(categories);
+      geiSpy.withArgs('componentBaseplateToggle').and.returnValue(bpToggle);
+      geiSpy.withArgs('componentBaseplateColor').and.returnValue(bpColor);
+    });
+
+    it("keeps the committed flag when an admin saves without renaming", function () {
+      nameInput.value = 'Renamed';
+      controller.onComponentSave();
+      expect(controller.baseData.alias).toBe('originalAlias');
+      expect(controller.baseData.name).toBe('Renamed');
+      expect(controller.committed).toBeTrue();
+    });
+
+    it("clears the committed flag when an admin changes the alias", function () {
+      aliasInput.value = 'brandNewAlias';
+      controller.onComponentSave();
+      expect(controller.baseData.alias).toBe('brandNewAlias');
+      expect(controller.committed).toBeFalse();
+    });
+
+    it("compares the sanitized alias, so illegal characters alone do not clear the flag", function () {
+      aliasInput.value = 'original-Alias!';
+      controller.onComponentSave();
+      expect(aliasInput.value).toBe('originalAlias');
+      expect(controller.baseData.alias).toBe('originalAlias');
+      expect(controller.committed).toBeTrue();
+    });
+
+    it("sanitizes a renamed alias and clears the committed flag", function () {
+      aliasInput.value = 'brand new-alias!';
+      controller.onComponentSave();
+      expect(aliasInput.value).toBe('brandnewalias');
+      expect(controller.baseData.alias).toBe('brandnewalias');
+      expect(controller.committed).toBeFalse();
+    });
+
+    it("does not read the alias input for non-admins", function () {
+      controller.isAdmin = false;
+      aliasInput.value = 'someoneElsesAlias';
+      controller.onComponentSave();
+      expect(document.getElementById).not.toHaveBeenCalledWith('componentAlias');
+      expect(controller.baseData.alias).toBe('originalAlias');
+      expect(controller.committed).toBeTrue();
+    });
+
+    it("still saves the other fields for non-admins", function () {
+      controller.isAdmin = false;
+      nameInput.value = 'Renamed';
+      scaleInput.value = '2.5';
+      categories.selectedIndex = 2;
+      controller.onComponentSave();
+      expect(controller.baseData.name).toBe('Renamed');
+      expect(controller.baseData.scale).toBe(2.5);
+      expect(controller.baseData.category).toBe('trees');
+      expect(controller.newComp.sprite.scale.set).toHaveBeenCalledWith(2.5);
+    });
+  });
+
+  describe("checkExit", function () {
+    let controller;
+    let exitSpy;
+    let exportSpy;
+
+    beforeEach(function () {
+      if (!window.ui) {
+        window.ui = () => {};
+      }
+      spyOn(window, 'ui').and.stub();
+      exitSpy = jasmine.createSpy('exitEditorMode');
+      exportSpy = spyOn(EditorController.prototype, 'exportComponent').and.resolveTo(undefined);
+      controller = Object.create(EditorController.prototype);
+      controller.committed = false;
+      controller.layoutController = { exitEditorMode: exitSpy };
+    });
+
+    afterEach(function () {
+      document.getElementById('editorExitDialog')?.remove();
+    });
+
+    it("exits immediately without prompting when the component is committed", function () {
+      controller.committed = true;
+      controller.checkExit();
+      expect(exitSpy).toHaveBeenCalledTimes(1);
+      expect(document.getElementById('editorExitDialog')).toBeNull();
+    });
+
+    it("shows the unsaved-changes prompt instead of exiting when not committed", function () {
+      controller.checkExit();
+      const dialog = document.getElementById('editorExitDialog');
+      expect(dialog).not.toBeNull();
+      expect(dialog.textContent).toContain('You have unsaved changes. Do you want to save before exiting?');
+      expect(window.ui).toHaveBeenCalledWith('#editorExitDialog');
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(exportSpy).not.toHaveBeenCalled();
+    });
+
+    it("exits without saving when the user answers No", function () {
+      controller.checkExit();
+      document.getElementById('editorExitDialogDiscard').click();
+      expect(exportSpy).not.toHaveBeenCalled();
+      expect(exitSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves first and exits after the export resolves when the user answers Yes", async function () {
+      let resolveExport;
+      exportSpy.and.returnValue(new Promise((resolve) => { resolveExport = resolve; }));
+      controller.checkExit();
+      document.getElementById('editorExitDialogSave').click();
+      expect(exportSpy).toHaveBeenCalledTimes(1);
+      expect(exitSpy).not.toHaveBeenCalled();
+      resolveExport();
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(exitSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("replaces a previously opened prompt instead of stacking dialogs", function () {
+      controller.checkExit();
+      controller.checkExit();
+      expect(document.querySelectorAll('#editorExitDialog').length).toBe(1);
     });
   });
 });
