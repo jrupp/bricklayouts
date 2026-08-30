@@ -731,11 +731,10 @@ export class LayoutController {
   async _fetchReadOnlyLayoutData() {
     const urlPath = window.location.pathname;
     const rawFilename = urlPath.substring(1);
-
-    const publicLayoutLoader = new PublicLayoutLoader();
-    const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
+    const shareCode = PublicLayoutLoader.extractShareCodeFromPath(urlPath);
 
     if (shareCode) {
+      const publicLayoutLoader = new PublicLayoutLoader();
       const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
       return { layoutData: publicLayoutData.layoutData, layoutName: publicLayoutData.layoutName, source: 'public' };
     }
