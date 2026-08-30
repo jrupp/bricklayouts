@@ -24,6 +24,7 @@ npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 - Follow [AirBnB JavaScript style guide](https://github.com/airbnb/javascript)
 - ES modules (`import`/`export`), not CommonJS (`require`)
 - 2-space indentation, semicolons required
+- 100-character line length. Avoid having lines of code that are longer than 100 characters (including whitespace)
 - Blank lines must not contain spaces or tabs
 
 ## Project structure

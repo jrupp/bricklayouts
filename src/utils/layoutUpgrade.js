@@ -1,6 +1,6 @@
-import { DataTypes, CurrentFormatVersion, SerializedLayout } from "../controller/layoutController.js";
-import { SerializedComponent } from "../model/component.js";
-import { isApproxMultiple } from "./utils.js";
+import { DataTypes, CurrentFormatVersion, SerializedLayout } from '../controller/layoutController.js';
+import { SerializedComponent } from '../model/component.js';
+import { isApproxMultiple } from './utils.js';
 
 /**
  * Upgrades the layout data to the current format version.
@@ -8,7 +8,7 @@ import { isApproxMultiple } from "./utils.js";
  */
 export function upgradeLayout(data) {
   if (!data || data?.version === CurrentFormatVersion) {
-    return data;
+    return;
   }
 
   // Perform upgrade steps based on the current version
