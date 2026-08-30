@@ -15,7 +15,7 @@ await Assets.init({ basePath: '/img/', manifest: path.toAbsolute('../data/manife
 window.app = app;
 window.assets = Assets;
 Color.prototype.toYiq = function () {
-  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
+  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) / 1000) * 255;
 };
 // Fallback UI function if CDN libraries are blocked
 if (typeof window.ui !== 'function') {
@@ -32,13 +32,13 @@ function listenOnDevicePixelRatio() {
   }
   matchMedia(
     `(resolution: ${window.devicePixelRatio}dppx)`
-  ).addEventListener("change", onChange, { once: true });
+  ).addEventListener('change', onChange, { once: true });
 }
 listenOnDevicePixelRatio();
 const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
 layoutController.initWindowEvents();
-new ConfigurationController();
+new ConfigurationController(); // eslint-disable-line no-new
 InventoryController.getInstance();
 
 // Initialize authentication using singleton pattern
