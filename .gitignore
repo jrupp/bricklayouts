@@ -5,3 +5,4 @@ src/cloud
 spec/cloud
 .cloud-private
 .kiro/specs
+openapi.json

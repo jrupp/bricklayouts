@@ -2460,7 +2460,7 @@ export class LayoutController {
    */
   async onNewLayoutClick() {
     if (this.editorMode) {
-      this.exitEditorMode();
+      await this.exitEditorMode(false);
       return;
     }
     if (this.readOnly) {
@@ -2835,7 +2835,7 @@ export class LayoutController {
    */
   async onImportClick() {
     if (this.editorMode) {
-      this.exitEditorMode();
+      await this.exitEditorMode(false);
     }
     // Check if user is authenticated with cloud access
     const authManager = await this._getAuthManager();
@@ -2947,6 +2947,9 @@ export class LayoutController {
       }
       LayoutController.editorController.currentAlias = alias;
       LayoutController.editorController.baseData.alias = alias;
+      // Preserve the user's current layout so it can be restored on editor exit.
+      const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import('../utils/layoutPreservation.js');
+      await new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY }).save();
       this.reset();
       this.editorMode = true;
       document.body.classList.add('editor-mode');
@@ -2959,13 +2962,22 @@ export class LayoutController {
    * Tears down editor mode: hides the editor panel, resets the
    * EditorController singleton, clears the workspace, and removes the
    * `editor-mode` body class that controls which toolbar buttons are hidden.
+   * @param {Boolean} [restore=true] When true, restores the layout that was open
+   *   before the editor was entered. When false, the preserved layout is discarded. Default true.
    */
-  exitEditorMode() {
+  async exitEditorMode(restore = true) {
     document.getElementById('componentEditor')?.classList.add('hidden');
     LayoutController.editorController?.reset();
     document.body.classList.remove('editor-mode');
     this.editorMode = false;
     this.reset();
+    const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import('../utils/layoutPreservation.js');
+    const preservation = new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY });
+    if (restore) {
+      await preservation.restore();
+    } else {
+      preservation.clear();
+    }
   }
 
   /**

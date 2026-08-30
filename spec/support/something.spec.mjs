@@ -4,6 +4,7 @@ import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
+import { EDITOR_LAYOUT_KEY } from "../../src/utils/layoutPreservation.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
@@ -11502,23 +11503,56 @@ describe("LayoutController", function() {
             expect(otherDestroySpy).toHaveBeenCalledTimes(1);
         });
 
-        it("exitEditorMode clears the flag, removes body class, and calls reset", function () {
+        it("exitEditorMode clears the flag, removes body class, and calls reset", async function () {
+            sessionStorage.removeItem(EDITOR_LAYOUT_KEY);
             layoutController.editorMode = true;
             document.body.classList.add('editor-mode');
             const resetSpy = spyOn(layoutController, 'reset').and.stub();
-            layoutController.exitEditorMode();
+            await layoutController.exitEditorMode();
             expect(layoutController.editorMode).toBeFalse();
             expect(document.body.classList.contains('editor-mode')).toBeFalse();
             expect(resetSpy).toHaveBeenCalledTimes(1);
         });
 
-        it("exitEditorMode resets the EditorController singleton if present", function () {
+        it("exitEditorMode resets the EditorController singleton if present", async function () {
+            sessionStorage.removeItem(EDITOR_LAYOUT_KEY);
             layoutController.editorMode = true;
             const resetSpy = jasmine.createSpy('editorReset');
             LayoutController.editorController = { reset: resetSpy };
             spyOn(layoutController, 'reset').and.stub();
-            layoutController.exitEditorMode();
+            await layoutController.exitEditorMode();
             expect(resetSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode restores a preserved layout on exit", async function () {
+            const payload = {
+                type: 'local',
+                layoutData: { version: 2, x: 1, y: 2, zoom: 1, layers: [], config: {} },
+                timestamp: Date.now(),
+            };
+            sessionStorage.setItem(EDITOR_LAYOUT_KEY, JSON.stringify(payload));
+            layoutController.editorMode = true;
+            spyOn(layoutController, 'reset').and.stub();
+            const importSpy = spyOn(layoutController, '_importLayout').and.returnValue(Promise.resolve());
+            await layoutController.exitEditorMode();
+            expect(importSpy).toHaveBeenCalledTimes(1);
+            expect(importSpy.calls.mostRecent().args[0]).toEqual(payload.layoutData);
+            expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+        });
+
+        it("exitEditorMode discards the preserved layout when restore is false", async function () {
+            const payload = {
+                type: 'local',
+                layoutData: { version: 2, x: 1, y: 2, zoom: 1, layers: [], config: {} },
+                timestamp: Date.now(),
+            };
+            sessionStorage.setItem(EDITOR_LAYOUT_KEY, JSON.stringify(payload));
+            layoutController.editorMode = true;
+            spyOn(layoutController, 'reset').and.stub();
+            const importSpy = spyOn(layoutController, '_importLayout').and.returnValue(Promise.resolve());
+            await layoutController.exitEditorMode(false);
+            expect(importSpy).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
         });
 
         it("onNewLayoutClick exits editor mode first when active", async function () {
@@ -11529,7 +11563,7 @@ describe("LayoutController", function() {
             spyOn(layoutController, 'hideFileMenu').and.stub();
             spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
             await layoutController.onNewLayoutClick();
-            expect(exitSpy).toHaveBeenCalled();
+            expect(exitSpy).toHaveBeenCalledWith(false);
         });
 
         it("onImportClick exits editor mode first when active", async function () {
@@ -11540,7 +11574,7 @@ describe("LayoutController", function() {
             spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
             spyOn(layoutController, '_openLocalFile').and.stub();
             await layoutController.onImportClick();
-            expect(exitSpy).toHaveBeenCalled();
+            expect(exitSpy).toHaveBeenCalledWith(false);
         });
     });
 });
