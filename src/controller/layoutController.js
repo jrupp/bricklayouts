@@ -93,7 +93,7 @@ export { LayoutMetadata };
  * @property {Number} [color]
  * @property {Number} [width]
  * @property {Number} [height]
- * @property {Number} [onbp]
+ * @property {String} [onbp] The default baseplate color as a hex string (e.g. "#237841").
  * @property {Number} [isTree]
  */
 let SerializedMoc;
@@ -2561,6 +2561,10 @@ export class LayoutController {
           serialized[key] = track[key];
         }
       });
+      // `onbp` is a number in memory; persist it as a hex color string.
+      if (typeof serialized.onbp === 'number') {
+        serialized.onbp = new Color(serialized.onbp).toHex();
+      }
       try {
         serialized.textureData = await this.app.renderer.extract.base64({ target: texture, format: 'png' });
       } catch (error) {

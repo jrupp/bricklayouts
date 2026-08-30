@@ -10830,6 +10830,40 @@ describe("LayoutController", function() {
             });
         });
 
+        describe("_serializeMocs", function() {
+            const alias = "serializeMocOnbpTest";
+
+            beforeEach(function() {
+                layoutController.trackData.bundles[0].assets.push({
+                    alias, name: "Onbp MOC", type: DataTypes.TRACK, onbp: 2324545,
+                });
+                Assets.cache.set(alias, {});
+                spyOn(layoutController.app.renderer.extract, "base64")
+                    .and.resolveTo("data:image/png;base64,AAAA");
+            });
+
+            afterEach(function() {
+                let assets = layoutController.trackData.bundles[0].assets;
+                let index = assets.findIndex((t) => t.alias === alias);
+                if (index !== -1) {
+                    assets.splice(index, 1);
+                }
+                Assets.cache.remove(alias);
+            });
+
+            it("should serialize onbp as a hex color string", async function() {
+                let mocs = await layoutController._serializeMocs([alias]);
+                expect(mocs.length).toBe(1);
+                expect(mocs[0].onbp).toBe("#237841");
+            });
+
+            it("should round-trip onbp back to a number when loaded", function() {
+                let track = { alias: "roundtrip", name: "Roundtrip", onbp: "#237841" };
+                layoutController._processTrackMetadata(track);
+                expect(track.onbp).toBe(2324545);
+            });
+        });
+
         describe("extractTrackImage", function() {
             it("should return an HTMLImageElement with correct className and alt", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
