@@ -60,6 +60,7 @@ class AuthenticationManager {
     this.config = null;
     this.sdkLoaded = false;
     this.cloudFeatures = null; // Stores loaded private cloud features
+    this.cloudStorage = null; // Shared CloudStorageManager, available without a subscription
   }
 
   /**
@@ -1144,8 +1145,10 @@ class AuthenticationManager {
         import('../cloud/profileModal.js')
       ]);
 
-      // Initialize private cloud features
-      const cloudStorage = new CloudStorageManager(this);
+      // Initialize private cloud features, reusing the CloudStorageManager that
+      // getCloudStorage() may already have created for MOC access.
+      const cloudStorage = this.cloudStorage ?? new CloudStorageManager(this);
+      this.cloudStorage = cloudStorage;
       const fileDialog = new FileDialog(cloudStorage, layoutController);
       const profileModal = ProfileModal.getInstance(this);
 
@@ -1239,6 +1242,7 @@ class AuthenticationManager {
       this.cloudFeatures.fileDialog.destroy();
     }
     this.cloudFeatures = null;
+    this.cloudStorage = null;
   }
 
   /**
@@ -1247,6 +1251,30 @@ class AuthenticationManager {
    */
   getCloudFeatures() {
     return this.cloudFeatures;
+  }
+
+  /**
+   * Lazily creates the shared CloudStorageManager for any signed-in user.
+   * Unlike loadPrivateCloudFeatures(), this does not require cloud access,
+   * because the MOC endpoints are open to all authenticated users regardless of
+   * subscription. Callers that need the layout endpoints must still check
+   * hasCloudAccess.
+   * @returns {Promise<Object|null>} The CloudStorageManager, or null when signed out
+   */
+  async getCloudStorage() {
+    if (!this.isAuthenticated) {
+      return null;
+    }
+    if (!this.cloudStorage) {
+      try {
+        const { CloudStorageManager } = await import('../cloud/cloudStorageController.js');
+        this.cloudStorage = new CloudStorageManager(this);
+      } catch (error) {
+        console.error('Failed to load cloud storage:', error);
+        return null;
+      }
+    }
+    return this.cloudStorage;
   }
 
 }

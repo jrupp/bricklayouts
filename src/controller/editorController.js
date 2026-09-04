@@ -24,6 +24,13 @@ export class EditorController {
   };
 
   /**
+   * The in-flight exportComponent() call, or null when none is running. Keeps a
+   * second commit from starting while the first is still saving to the cloud.
+   * @type {?Promise<void>}
+   */
+  #exporting = null;
+
+  /**
    * @param {LayoutController} layoutController
    * @param {boolean} [isAdmin=false]
    */
@@ -753,6 +760,31 @@ export class EditorController {
   }
 
   /**
+   * Commits the component, guarding against re-entry. The cloud save inside
+   * blocks on a network round-trip for several seconds, during which the editor
+   * stays interactive; without this guard a second commit (the Commit button
+   * again, or Save from the exit dialog) would run before `mocId` is set and
+   * create a duplicate cloud MOC.
+   *
+   * A commit that arrives while one is in flight joins the existing one rather
+   * than starting another, so metadata edited in between is not picked up until
+   * the next commit.
+   * @returns {Promise<void>}
+   */
+  async exportComponent() {
+    if (this.#exporting) {
+      return this.#exporting;
+    }
+    const exportButton = document.getElementById('componentEditorExport');
+    exportButton?.setAttribute('disabled', 'disabled');
+    this.#exporting = this.#exportComponent().finally(() => {
+      this.#exporting = null;
+      exportButton?.removeAttribute('disabled');
+    });
+    return this.#exporting;
+  }
+
+  /**
    * Generates the component JSON. Admins get a downloadable file; non-admins
    * get the same JSON logged to the console (temporary — persistence is a
    * separate follow-up).
@@ -762,7 +794,7 @@ export class EditorController {
    * After a successful hand-off the texture is marked committed so it is not
    * destroyed by subsequent reset() / setTexture() calls.
    */
-  async exportComponent() {
+  async #exportComponent() {
     const exportData = { ...this.baseData };
     if (exportData.onbp !== undefined) {
       exportData.onbp = new Color(this.baseData.onbp).toHex();
@@ -774,29 +806,40 @@ export class EditorController {
       saveAs(blob, `${this.baseData.alias}.json`);
     }
 
-    const bundle = this.layoutController?.trackData?.bundles?.[0];
-    if (bundle && Array.isArray(bundle.assets)) {
-      const trackCopy = {
-        ...this.baseData,
-        connections: this.baseData.connections.map((c) => ({
-          ...c,
-          vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
-        }))
-      };
-      if (this.committed) {
-        // If already committed, the image is already set, but the other properties may need to be updated
-        /** @type {TrackData} */
-        const existingAsset = bundle.assets.find(asset => asset.alias === trackCopy.alias);
-        if (existingAsset) {
-          Object.assign(existingAsset, trackCopy);
-          existingAsset.image = await this.layoutController.extractTrackImage(existingAsset);
-        }
-      } else {
-        bundle.assets.push(trackCopy);
-        trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
-        this.committed = true;
+    const bundle = this.layoutController.trackData.bundles[0];
+    const trackCopy = {
+      ...this.baseData,
+      connections: this.baseData.connections.map((c) => ({
+        ...c,
+        vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
+      }))
+    };
+    if (this.committed) {
+      // Already committed: the image is set, but other properties may need updating
+      /** @type {TrackData} */
+      const existingAsset = bundle.assets.find(asset => asset.alias === trackCopy.alias);
+      if (existingAsset) {
+        Object.assign(existingAsset, trackCopy);
+        existingAsset.image = await this.layoutController.extractTrackImage(existingAsset);
       }
-      this.layoutController.createComponentBrowser();
+    } else {
+      bundle.assets.push(trackCopy);
+      trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
+      this.committed = true;
+    }
+    this.layoutController.createComponentBrowser();
+
+    // Persist to cloud when signed in; saveMocToCloud self-guards for
+    // unauthenticated users. The local commit has already succeeded, so a cloud
+    // failure must never reject: callers chain exitEditorMode() off this promise.
+    const newAlias = await this.layoutController.saveMocToCloud(trackCopy.alias)
+      .catch((error) => {
+        console.error('Failed to save MOC to the cloud:', error);
+        return null;
+      });
+    if (newAlias) {
+      this.baseData.alias = newAlias;
+      this.currentAlias = newAlias;
     }
   }
 

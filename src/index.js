@@ -54,6 +54,12 @@ if (authManager.isAuthenticated && authManager.hasCloudAccess) {
   await authManager.loadPrivateCloudFeatures();
 }
 
+// Custom MOCs are available to every signed-in user, subscription or not.
+// Fire-and-forget so a slow MOC list never delays startup.
+if (authManager.isAuthenticated) {
+  layoutController.loadCloudMocs();
+}
+
 // Update cloud menu visibility based on authentication state
 await layoutController.updateCloudMenuVisibility();
 

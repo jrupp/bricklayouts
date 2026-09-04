@@ -186,6 +186,8 @@ export class LayoutPreservation {
       s3Key: loaded.s3Key,
       lastSaved: loaded.updatedAt || loaded.createdAt,
       version: loaded.layoutData.version,
+      isPublic: loaded.isPublic || false,
+      shareCode: loaded.shareCode || null,
     });
     if (loaded.layoutName) {
       layoutController.setLayoutName(loaded.layoutName);

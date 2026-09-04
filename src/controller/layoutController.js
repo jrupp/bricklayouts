@@ -85,7 +85,10 @@ export { LayoutMetadata };
  * @property {String} alias
  * @property {String} name
  * @property {String} category
- * @property {String} textureData The component's texture as an image data URL.
+ * @property {String} [textureData] The component's texture as an image data URL.
+ *   Required in layout files, which are untrusted; see _validateImportData.
+ * @property {String} [src] A URL to fetch the texture from. Only ever supplied by
+ *   the server (cloud and public layouts); never accepted from a layout file.
  * @property {Number} [scale]
  * @property {Number} [make]
  * @property {DataTypes} [type]
@@ -156,6 +159,15 @@ const ALL_CATEGORY_INDEX = 0;
  * @constant
  */
 const MOC_TRACK_KEYS = ['alias', 'name', 'category', 'scale', 'make', 'type', 'connections', 'color', 'width', 'height', 'onbp', 'isTree'];
+
+/**
+ * TrackData properties accepted by the cloud MOC endpoints. The API rejects
+ * anything else, and `connections`, `make`, `width` and `height` are not yet
+ * round-tripped by the API, so they are deliberately omitted.
+ * @type {Array<String>}
+ * @constant
+ */
+const MOC_CLOUD_KEYS = ['name', 'category', 'scale', 'type', 'onbp'];
 
 /**
  * Image data URLs accepted for an embedded custom MOC texture.
@@ -2539,6 +2551,33 @@ export class LayoutController {
   }
 
   /**
+   * Copy the given keys off a MOC track, normalizing `onbp` from its in-memory
+   * numeric form to a hex color string. Shared by layout-file serialization and
+   * the cloud MOC payloads so the two cannot drift apart.
+   * @param {TrackData} track The track to read from
+   * @param {Array<String>} [keys] Keys to copy; defaults to the layout-file set
+   * @param {*} [absentValue] Value to use for keys missing from the track. When
+   *   omitted the key is left out entirely; pass `null` to explicitly clear it.
+   * @returns {Object}
+   * @private
+   */
+  _serializeMocTrack(track, keys = MOC_TRACK_KEYS, absentValue = void 0) {
+    const serialized = {};
+    keys.forEach((key) => {
+      if (track[key] !== void 0) {
+        serialized[key] = track[key];
+      } else if (absentValue !== void 0) {
+        serialized[key] = absentValue;
+      }
+    });
+    // `onbp` is a number in memory; persist it as a hex color string.
+    if (typeof serialized.onbp === 'number') {
+      serialized.onbp = new Color(serialized.onbp).toHex();
+    }
+    return serialized;
+  }
+
+  /**
    * Serialize the TrackData of user-created MOCs, embedding each one's texture
    * as a base64 data URL so the layout file is self-contained.
    * @param {Array<String>} aliases Asset aliases of the MOCs to serialize
@@ -2555,16 +2594,7 @@ export class LayoutController {
         continue;
       }
       /** @type {SerializedMoc} */
-      const serialized = {};
-      MOC_TRACK_KEYS.forEach((key) => {
-        if (track[key] !== void 0) {
-          serialized[key] = track[key];
-        }
-      });
-      // `onbp` is a number in memory; persist it as a hex color string.
-      if (typeof serialized.onbp === 'number') {
-        serialized.onbp = new Color(serialized.onbp).toHex();
-      }
+      const serialized = this._serializeMocTrack(track);
       try {
         serialized.textureData = await this.app.renderer.extract.base64({ target: texture, format: 'png' });
       } catch (error) {
@@ -2595,16 +2625,18 @@ export class LayoutController {
       /** @type {TrackData} */
       const track = { src: '' };
       if (moc.textureData !== void 0 && moc.textureData !== null) {
-        let texture;
         try {
-          texture = await this._textureFromDataUrl(moc.textureData);
+          // Only cache on success: caching an undefined texture would leave the
+          // alias looking loaded to Assets.cache.has() checks further down.
+          Assets.cache.set(moc.alias, await this._textureFromDataUrl(moc.textureData));
         } catch (error) {
           console.error(`Failed to load texture for custom MOC "${moc.alias}":`, error);
           continue;
-        } finally {
-          Assets.cache.set(moc.alias, texture);
         }
       } else if (moc.src !== void 0 && moc.src !== null) {
+        // Only server-supplied MOCs reach this branch (cloud/public layouts and
+        // listMocs); the URL is loaded as-is, so _validateImportData keeps `src`
+        // out of untrusted local layout files.
         track.src = moc.src;
         Assets.add({alias: moc.alias, src: moc.src});
       } else {
@@ -2616,6 +2648,11 @@ export class LayoutController {
           track[key] = moc[key];
         }
       });
+      // Only MOCs coming from the cloud carry an id; it is deliberately absent
+      // from MOC_TRACK_KEYS so downloaded layouts stay portable between accounts.
+      if (moc.mocId !== void 0) {
+        track.mocId = moc.mocId;
+      }
       track.mine = 1;
       this._processTrackMetadata(track);
       assets.push(track);
@@ -2633,6 +2670,173 @@ export class LayoutController {
         this._backgroundLoadRemaining(needToLoad);
       }
     }
+  }
+
+  /**
+   * Gets the CloudStorageManager for the signed-in user. The MOC endpoints are
+   * open to any authenticated user, so this deliberately does not require cloud
+   * access (a subscription) the way the layout endpoints do.
+   * @returns {Promise<?Object>} The cloud storage manager, or null if unavailable
+   * @private
+   */
+  async _getCloudStorage() {
+    const authManager = await this._getAuthManager();
+    if (!authManager || !authManager.isAuthenticated) {
+      return null;
+    }
+    return (await authManager.getCloudStorage?.()) ?? null;
+  }
+
+  /**
+   * Persist a custom MOC to cloud storage. Creates the MOC (metadata + image
+   * upload) the first time and re-keys its local alias to `moc<mocId>` so it
+   * matches what the cloud returns on subsequent loads. If the MOC has already
+   * been committed (its track carries a `mocId`), only its metadata is updated;
+   * the image cannot be changed after creation.
+   * Failures are surfaced via snackbar and never thrown, since the local commit
+   * has already succeeded by the time this runs.
+   * @param {String} alias The alias of the MOC track to save
+   * @returns {Promise<?String>} The new alias if it was re-keyed, otherwise null
+   */
+  async saveMocToCloud(alias) {
+    try {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        return null;
+      }
+      const track = this.trackData.bundles[0].assets.find((t) => t.alias === alias);
+      if (!track) {
+        return null;
+      }
+      // Absent keys are sent as null so clearing a value locally (removing a
+      // MOC's baseplate color, say) also clears it in the cloud. This also keeps
+      // the payload non-empty, which PUT /mocs/{mocId} requires.
+      const metadata = this._serializeMocTrack(track, MOC_CLOUD_KEYS, null);
+      if (track.mocId) {
+        await cloudStorage.updateMoc(track.mocId, metadata);
+        showSnackbar('MOC updated in the cloud.', 'success');
+        return null;
+      }
+      showSnackbar('Saving MOC to the cloud...', 'info');
+      const [serialized] = await this._serializeMocs([alias]);
+      if (!serialized) {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
+      const { mocId, uploadUrl } = await cloudStorage.createMoc(metadata);
+      const blob = await (await fetch(serialized.textureData)).blob();
+      await cloudStorage.uploadMocImage(uploadUrl, blob);
+      const newAlias = this._rekeyMocAlias(alias, `moc${mocId}`, mocId);
+      showSnackbar('MOC saved to the cloud.', 'success');
+      return newAlias;
+    } catch (error) {
+      console.error(`Failed to save MOC "${alias}" to the cloud:`, error);
+      showSnackbar(error.message || 'Failed to save MOC to the cloud.', 'error');
+      return null;
+    }
+  }
+
+  /**
+   * Map MOC asset aliases to the cloud MOC ids the layout endpoints expect.
+   * Aliases without a cloud id are MOCs that only exist locally; the API rejects
+   * ids it cannot resolve, so they are dropped rather than sent.
+   * @param {Array<String>} aliases
+   * @returns {Array<String>} The cloud ids of the MOCs that have been synced
+   * @private
+   */
+  _mocIdsForAliases(aliases) {
+    const assets = this.trackData.bundles[0].assets;
+    return aliases
+      .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
+      .filter((mocId) => typeof mocId === 'string');
+  }
+
+  /**
+   * Re-key a MOC track and its cached texture from one alias to another and
+   * stamp it with its cloud id. Used after a MOC is first created in the cloud.
+   * @param {String} oldAlias
+   * @param {String} newAlias
+   * @param {String} mocId
+   * @returns {String} The new alias
+   * @private
+   */
+  _rekeyMocAlias(oldAlias, newAlias, mocId) {
+    const track = this.trackData.bundles[0].assets.find((t) => t.alias === oldAlias);
+    if (!track) {
+      return oldAlias;
+    }
+    if (oldAlias !== newAlias && Assets.cache.has(oldAlias)) {
+      const texture = Assets.cache.get(oldAlias);
+      Assets.cache.set(newAlias, texture);
+      Assets.cache.remove(oldAlias);
+    }
+    track.alias = newAlias;
+    track.mocId = mocId;
+    this.createComponentBrowser();
+    return newAlias;
+  }
+
+  /**
+   * Load the current user's cloud MOCs and add them to the component browser.
+   * Intended to run asynchronously during startup so it does not block loading.
+   * Errors are logged and swallowed since this is a background enhancement.
+   * @returns {Promise<void>}
+   */
+  async loadCloudMocs() {
+    try {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        return;
+      }
+      const mocs = await cloudStorage.listMocs();
+      if (Array.isArray(mocs) && mocs.length > 0) {
+        await this._loadLayoutMocs(mocs);
+      }
+    } catch (error) {
+      console.error('Failed to load cloud MOCs:', error);
+    }
+  }
+
+  /**
+   * Drop the signed-in user's cloud MOCs from the component browser on logout so
+   * the next person to sign in does not inherit them.
+   *
+   * MOCs still placed in the current layout keep their track entry: the layout
+   * serializes against it, so discarding it would silently drop those pieces from
+   * the next download. Their cloud id is cleared instead, which demotes them to
+   * ordinary local MOCs — they stay usable and still travel inside layout files,
+   * but they are no longer tied to an account that may not own them. Committing
+   * an edit to one afterwards creates a fresh cloud MOC.
+   * @returns {Number} The number of MOC tracks removed from the browser
+   */
+  removeCloudMocs() {
+    const assets = this.trackData.bundles[0].assets;
+    const inUse = new Set();
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.mocId) {
+          inUse.add(child.baseData.alias);
+        }
+      });
+    });
+
+    const removable = assets.filter((track) => track.mocId && !inUse.has(track.alias));
+    assets.forEach((track) => {
+      if (track.mocId && inUse.has(track.alias)) {
+        delete track.mocId;
+      }
+    });
+    removable.forEach((track) => {
+      assets.splice(assets.indexOf(track), 1);
+      if (Assets.cache.has(track.alias)) {
+        Assets.cache.remove(track.alias);
+      }
+    });
+
+    if (removable.length > 0) {
+      this.createComponentBrowser();
+    }
+    return removable.length;
   }
 
   /**
@@ -3243,7 +3447,7 @@ export class LayoutController {
       const result = await cloudFeatures.cloudStorage.saveLayout(
         layoutData,
         layoutName,
-        Array.from(mocs.keys()),
+        this._mocIdsForAliases(Array.from(mocs.keys())),
         this,
         layoutId
       );
@@ -3393,15 +3597,13 @@ export class LayoutController {
       this.setLayoutName(data.metadata.name || null);
     }
 
-    // If loaded from cloud, track cloud-specific metadata
+    // If loaded from cloud, track cloud-specific metadata. updateCloudMetadata is
+    // the single place that knows the full cloud field set, so callers get
+    // isPublic/shareCode too rather than a subset.
     if (cloudInfo) {
-      this.#layoutMetadata.cloudId = cloudInfo.cloudId || null;
-      this.#layoutMetadata.s3Key = cloudInfo.s3Key || null;
-      this.#layoutMetadata.lastSaved = cloudInfo.lastSaved || null;
-      this.#layoutMetadata.source = 'cloud';
-      this.#layoutMetadata.version = cloudInfo.version || 1;
+      this.updateCloudMetadata(cloudInfo);
     } else {
-      this.#layoutMetadata.source = 'local';
+      this.clearCloudMetadata();
     }
 
     if (data.config) {
@@ -3450,6 +3652,11 @@ export class LayoutController {
       data?.zoom === undefined || (typeof data?.zoom === 'number' && data?.zoom > 0.0),
       data?.layers,
       data?.layers?.length > 0,
+      // `textureData` is required and `src` is deliberately rejected. This only
+      // ever validates untrusted local files, and an embedded data URL is checked
+      // by _textureFromDataUrl (magic bytes, mime, decoded size) whereas a `src`
+      // URL would be fetched as-is. Server-supplied layouts may use `src`; they
+      // are imported without passing through here.
       data?.mocs === undefined || (Array.isArray(data.mocs) && data.mocs.every(moc => moc
         && typeof moc.alias === 'string' && moc.alias.length > 0
         && typeof moc.name === 'string'

@@ -2,6 +2,60 @@ import { EditorController } from "../../src/controller/editorController.js";
 import { Assets } from "../../src/pixi.mjs";
 import { PolarVector } from "../../src/model/polarVector.js";
 
+/**
+ * Element ids the EditorController constructor binds listeners to. Building
+ * them lets specs construct a real instance, which is required for anything
+ * that touches the class's private fields — `Object.create(prototype)` does not
+ * install those.
+ */
+const EDITOR_ELEMENT_IDS = [
+  'componentAlias', 'componentBaseplateColor', 'componentBaseplateColorField',
+  'componentBaseplateField', 'componentBaseplateToggle', 'componentCategories',
+  'componentEditorClose', 'componentEditorConnectionsAdd', 'componentEditorConnectionsList',
+  'componentEditorExit', 'componentEditorExport', 'componentEditorTest', 'componentName',
+  'componentScale', 'connectionAngle', 'connectionAngleLock', 'connectionEditor',
+  'connectionEditorClose', 'connectionEditorRefresh', 'connectionExitAngle',
+  'connectionMagnitude', 'connectionMagnitudeLock', 'connectionNext', 'connectionType'
+];
+
+/**
+ * Injects the editor's DOM and the `Slip` global so `new EditorController(...)`
+ * can bind its events. Slip normally arrives via a script tag in index.html;
+ * stubbing it here keeps these specs independent of spec execution order.
+ * @returns {HTMLDivElement} The container, for removal in afterEach
+ */
+function createEditorDom() {
+  if (!window.Slip) {
+    window.Slip = class Slip {};
+  }
+  const container = document.createElement('div');
+  container.id = 'editorSpecFixture';
+  EDITOR_ELEMENT_IDS.forEach((id) => {
+    // componentCategories has <option> children appended to it during binding.
+    const element = document.createElement(id === 'componentCategories' ? 'select' : 'input');
+    element.id = id;
+    container.appendChild(element);
+  });
+  document.body.appendChild(container);
+  return container;
+}
+
+/**
+ * A LayoutController stand-in with the surface EditorController touches.
+ * @returns {Object}
+ */
+function createFakeLayoutController() {
+  return {
+    categories: new Map([['structures', 'Structures']]),
+    trackData: { bundles: [{ assets: [] }] },
+    extractTrackImage: jasmine.createSpy('extractTrackImage')
+      .and.returnValue(Promise.resolve({})),
+    createComponentBrowser: jasmine.createSpy('createComponentBrowser'),
+    saveMocToCloud: jasmine.createSpy('saveMocToCloud')
+      .and.returnValue(Promise.resolve(null)),
+  };
+}
+
 describe("EditorController", function () {
   describe("computePrefill", function () {
     it("returns studs when both dimensions are multiples of 16", function () {
@@ -97,11 +151,13 @@ describe("EditorController", function () {
     let controller;
     let saveAsSpy;
     let logSpy;
+    let fixture;
 
     beforeEach(function () {
-      // Fake instance — bypass the constructor's DOM wiring so this spec doesn't
-      // need the full LayoutController bootstrap.
-      controller = Object.create(EditorController.prototype);
+      logSpy = spyOn(console, 'log');
+      saveAsSpy = spyOn(window, 'saveAs').and.stub();
+      fixture = createEditorDom();
+      controller = new EditorController(createFakeLayoutController(), false);
       controller.baseData = {
         alias: 'testAlias',
         name: 'Test',
@@ -112,9 +168,10 @@ describe("EditorController", function () {
         make: 0,
         connections: []
       };
-      controller.isAdmin = false;
-      logSpy = spyOn(console, 'log');
-      saveAsSpy = spyOn(window, 'saveAs').and.stub();
+    });
+
+    afterEach(function () {
+      fixture.remove();
     });
 
     it("always logs the JSON to console", async function () {
@@ -139,6 +196,106 @@ describe("EditorController", function () {
       const [blob, filename] = saveAsSpy.calls.mostRecent().args;
       expect(blob).toEqual(jasmine.any(Blob));
       expect(filename).toBe('testAlias.json');
+    });
+  });
+
+  describe("exportComponent cloud save", function () {
+    let controller;
+    let layoutController;
+    let fixture;
+    let exportButton;
+
+    beforeEach(function () {
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
+      fixture = createEditorDom();
+      exportButton = document.getElementById('componentEditorExport');
+      layoutController = createFakeLayoutController();
+      // A real instance, not Object.create: exportComponent's re-entrancy guard
+      // lives in a private field, which only a real construction installs.
+      controller = new EditorController(layoutController, false);
+      controller.baseData = {
+        alias: 'testAlias',
+        name: 'Test',
+        category: 'structures',
+        src: '',
+        scale: 1,
+        type: 0,
+        make: 0,
+        connections: []
+      };
+      controller.committed = false;
+      controller.currentAlias = 'testAlias';
+    });
+
+    afterEach(function () {
+      fixture.remove();
+    });
+
+    it("saves the committed MOC to the cloud with its alias", async function () {
+      await controller.exportComponent();
+      expect(layoutController.saveMocToCloud).toHaveBeenCalledWith('testAlias');
+    });
+
+    it("syncs the alias when the cloud save re-keys it", async function () {
+      layoutController.saveMocToCloud.and.returnValue(Promise.resolve('mocNEW'));
+      await controller.exportComponent();
+      expect(controller.baseData.alias).toBe('mocNEW');
+      expect(controller.currentAlias).toBe('mocNEW');
+    });
+
+    it("keeps the original alias when no re-key happens", async function () {
+      await controller.exportComponent();
+      expect(controller.baseData.alias).toBe('testAlias');
+      expect(controller.currentAlias).toBe('testAlias');
+    });
+
+    it("does not reject when the cloud save fails, so the editor closes", async function () {
+      layoutController.saveMocToCloud.and.returnValue(Promise.reject(new Error('offline')));
+      spyOn(console, 'error');
+
+      await expectAsync(controller.exportComponent()).toBeResolved();
+      expect(controller.baseData.alias).toBe('testAlias');
+    });
+
+    it("joins the in-flight commit instead of creating a duplicate cloud MOC", async function () {
+      // The guard is set synchronously, so the second call lands while the first
+      // is still awaiting its cloud save.
+      const first = controller.exportComponent();
+      const second = controller.exportComponent();
+
+      await Promise.all([first, second]);
+
+      expect(layoutController.saveMocToCloud).toHaveBeenCalledTimes(1);
+      expect(layoutController.trackData.bundles[0].assets.length).toBe(1);
+    });
+
+    it("allows a later commit once the in-flight one has settled", async function () {
+      await controller.exportComponent();
+      await controller.exportComponent();
+
+      expect(layoutController.saveMocToCloud).toHaveBeenCalledTimes(2);
+    });
+
+    it("disables the commit button while the commit is in flight", async function () {
+      let releaseSave;
+      layoutController.saveMocToCloud.and.returnValue(
+        new Promise((resolve) => { releaseSave = resolve; })
+      );
+
+      const pending = controller.exportComponent();
+      expect(exportButton.hasAttribute('disabled')).toBeTrue();
+
+      releaseSave(null);
+      await pending;
+      expect(exportButton.hasAttribute('disabled')).toBeFalse();
+    });
+
+    it("re-enables the commit button when the commit fails", async function () {
+      layoutController.extractTrackImage.and.returnValue(Promise.reject(new Error('boom')));
+
+      await expectAsync(controller.exportComponent()).toBeRejected();
+      expect(exportButton.hasAttribute('disabled')).toBeFalse();
     });
   });
 
@@ -443,14 +600,20 @@ describe("EditorController", function () {
     let bundleAssets;
     let extractSpy;
     let generatedImage;
+    let fixture;
 
     beforeEach(function () {
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
       generatedImage = document.createElement('img');
       bundleAssets = [];
       extractSpy = jasmine.createSpy('extractTrackImage')
         .and.returnValue(Promise.resolve(generatedImage));
-      controller = Object.create(EditorController.prototype);
-      controller.isAdmin = false;
+      fixture = createEditorDom();
+      const layoutController = createFakeLayoutController();
+      layoutController.trackData = { bundles: [{ assets: bundleAssets }] };
+      layoutController.extractTrackImage = extractSpy;
+      controller = new EditorController(layoutController, false);
       controller.committed = false;
       controller.currentAlias = 'ea';
       controller.texture = { width: 16, height: 16 };
@@ -467,13 +630,10 @@ describe("EditorController", function () {
           { type: 1, vector: new PolarVector(10, 0.5, 0.25), next: 0 }
         ]
       };
-      controller.layoutController = {
-        trackData: { bundles: [{ assets: bundleAssets }] },
-        extractTrackImage: extractSpy,
-        createComponentBrowser: jasmine.createSpy('createComponentBrowser')
-      };
-      spyOn(console, 'log');
-      spyOn(window, 'saveAs').and.stub();
+    });
+
+    afterEach(function () {
+      fixture.remove();
     });
 
     it("pushes a copy of baseData onto trackData.bundles[0].assets", async function () {
@@ -508,13 +668,6 @@ describe("EditorController", function () {
       expect(controller.committed).toBeFalse();
       await controller.exportComponent();
       expect(controller.committed).toBeTrue();
-    });
-
-    it("does not commit or throw when no bundle is available", async function () {
-      controller.layoutController = { trackData: { bundles: [] } };
-      await controller.exportComponent();
-      expect(controller.committed).toBeFalse();
-      expect(extractSpy).not.toHaveBeenCalled();
     });
 
     describe("after the first commit", function () {
