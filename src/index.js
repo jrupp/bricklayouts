@@ -2,10 +2,31 @@ import { ConfigurationController } from './controller/configurationController.js
 import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
-import { SubscriptionDialogController } from './controller/subscriptionDialogController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
 import { clearOrphanedPreservation } from './utils/preservationKeys.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
+
+// The subscription dialog is only opened at startup by the ?subscribe=true deep
+// link or by a pendingSubscribe intent left behind by an earlier visit, and both
+// are readable synchronously. Start the fetch here rather than importing the
+// module statically: a visitor who is not entering the subscribe flow never
+// downloads it at all, while one who is gets the whole startup sequence -- Pixi
+// init, the manifest fetch, layoutController.init(), the Cognito round-trip --
+// to cover the request. That matters because the signed-out branch at the bottom
+// of this file shows the dialog with no await in front of it, so a cold fetch
+// there would stall someone who arrived ready to pay.
+const loadParams = new URLSearchParams(window.location.search);
+let wantsSubscribeDialog = loadParams.get('subscribe') === 'true';
+if (!wantsSubscribeDialog) {
+  try {
+    wantsSubscribeDialog = sessionStorage.getItem('pendingSubscribe') === 'true';
+  } catch (error) {
+    // Web Storage is switched off in this privacy mode; the URL alone decides.
+  }
+}
+const subscriptionDialogReady = wantsSubscribeDialog
+  ? import('./controller/subscriptionDialogController.js')
+  : null;
 
 const canvasContainer = document.getElementById('canvasContainer');
 document.body.style.setProperty('--canvas-bg', '#93bee2');
@@ -112,6 +133,10 @@ if (subscribeParam === 'true' || pendingSubscribe === 'true') {
     cleanUrl.searchParams.delete('subscribe');
     window.history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search);
   }
+  // Prefetched at the top of this file. The ?? covers the case where the intent
+  // appeared after that check, so the dialog still opens rather than throwing.
+  const { SubscriptionDialogController } = await (subscriptionDialogReady
+    ?? import('./controller/subscriptionDialogController.js'));
   if (authManager.isAuthenticated) {
     const hasAccess = await authManager.hasFeatureAccess('subscription');
     if (!hasAccess) {
@@ -121,7 +146,8 @@ if (subscribeParam === 'true' || pendingSubscribe === 'true') {
     }
   } else {
     sessionStorage.setItem('pendingSubscribe', 'true');
-    SubscriptionDialogController.getInstance().show('Sign in or create an account to subscribe.', 'Get Started');
+    SubscriptionDialogController.getInstance()
+      .show('Sign in or create an account to subscribe.', 'Get Started');
   }
 }
 
