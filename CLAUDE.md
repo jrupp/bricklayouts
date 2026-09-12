@@ -16,7 +16,7 @@ npm start            # starts local dev server
 npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-- ~1076 specs, completes in ~6-9 seconds
+- ~1230 specs, completes in ~6-9 seconds
 - A WebGL patch is applied during CI for PixiJS v8 headless Chrome support
 
 ## Code style
@@ -24,6 +24,7 @@ npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 - Follow [AirBnB JavaScript style guide](https://github.com/airbnb/javascript)
 - ES modules (`import`/`export`), not CommonJS (`require`)
 - 2-space indentation, semicolons required
+- 100-character line length. Avoid having lines of code that are longer than 100 characters (including whitespace)
 - Blank lines must not contain spaces or tabs
 
 ## Project structure

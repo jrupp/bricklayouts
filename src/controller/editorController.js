@@ -1,9 +1,10 @@
-import { Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
+import { Assets, Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
 import { LayoutController, DataTypes, TrackData } from "./layoutController.js";
 import { Component, ColorNameToHex } from "../model/component.js";
 import { Connection } from "../model/connection.js";
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
+import { aspectMatches } from '../utils/imageValidation.js';
 import '../FileSaver.min.js';
 
 /**
@@ -23,6 +24,13 @@ export class EditorController {
   };
 
   /**
+   * The in-flight exportComponent() call, or null when none is running. Keeps a
+   * second commit from starting while the first is still saving to the cloud.
+   * @type {?Promise<void>}
+   */
+  #exporting = null;
+
+  /**
    * @param {LayoutController} layoutController
    * @param {boolean} [isAdmin=false]
    */
@@ -37,23 +45,46 @@ export class EditorController {
     this.newComp = null;
 
     /** @type {TrackData} */
-    this.baseData = {
-      alias: 'newComponent',
-      name: 'New Component',
-      category: '9V',
-      src: '',
-      image: null,
-      scale: 1.0,
-      type: DataTypes.TRACK,
-      connections: []
-    };
+    this.baseData = EditorController.#defaultBaseData();
     /**
      * Copies of the component being used for testing
      * @type {Array<Component>}
      */
     this.testComps = new Array();
 
+    /**
+     * PixiJS Assets alias for the currently loaded texture, so it can be
+     * removed from the cache on reset. Set by LayoutController after a
+     * successful upload.
+     * @type {?string}
+     */
+    this.currentAlias = null;
+
+    /**
+     * True once the current baseData/texture has been handed off to
+     * LayoutController via exportComponent. While set, reset() and
+     * setTexture() must not destroy or replace the cached texture, since the
+     * committed track now owns it.
+     * @type {boolean}
+     */
+    this.committed = false;
+
     this.#bindEditorEvents();
+  }
+
+  static #defaultBaseData() {
+    return {
+      alias: 'newComponent',
+      name: 'New Component',
+      category: '9V',
+      src: '',
+      image: null,
+      scale: 1.0,
+      make: 0,
+      type: DataTypes.TRACK,
+      connections: [],
+      mine: 1
+    };
   }
 
   #bindEditorEvents() {
@@ -169,19 +200,147 @@ export class EditorController {
       }
     });
     document.getElementById('componentEditorExport').addEventListener('click', this.exportComponent.bind(this));
+    document.getElementById('componentEditorExit')?.addEventListener('click', this.checkExit.bind(this));
+    document.getElementById('componentEditorClose')?.addEventListener('click', this.checkExit.bind(this));
   }
 
   /**
-   * Displays the editor with the given texture. First prompts the user
-   * for component size and units, then creates the component at that scale.
+   * Displays the editor with the given texture. Always prompts the user
+   * for component size and units first, then creates the component at that
+   * scale.
    * @param {Texture} texture
    */
   show(texture) {
+    this.setTexture(texture);
+    this.#showSizeDialog();
+  }
+
+  /**
+   * Leaves editor mode, first offering to save when the current component has
+   * not been committed yet. Dismissing the dialog keeps the editor open.
+   */
+  checkExit() {
+    if (this.committed) {
+      this.layoutController.exitEditorMode();
+      return;
+    }
+
+    document.getElementById('editorExitDialog')?.remove();
+    const dialog = document.createElement('dialog');
+    dialog.className = 'no-padding border large-width surface-container-high small-round';
+    dialog.id = 'editorExitDialog';
+    dialog.innerHTML = `
+      <div>
+        <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+          <nav>
+            <h6 class="max">Unsaved Changes</h6>
+            <button class="circle medium transparent" data-ui="#editorExitDialog">
+              <i class="medium bold">close</i>
+            </button>
+          </nav>
+        </header>
+        <div class="small-padding horizontal-padding extra-text center-align">
+          <p>You have unsaved changes. Do you want to save before exiting?</p>
+        </div>
+        <hr>
+        <nav class="no-padding no-space no-margin">
+          <button class="no-round max extra-text left-button primary-text" id="editorExitDialogSave"><span>Yes</span></button>
+          <button class="no-round max extra-text right-button error" id="editorExitDialogDiscard"><span>No</span></button>
+        </nav>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => dialog.remove());
+
+    const closeDialog = () => ui('#editorExitDialog');
+
+    dialog.querySelector('#editorExitDialogSave').addEventListener('click', () => {
+      closeDialog();
+      this.exportComponent().then(() => this.layoutController.exitEditorMode());
+    });
+    dialog.querySelector('#editorExitDialogDiscard').addEventListener('click', () => {
+      closeDialog();
+      this.layoutController.exitEditorMode();
+    });
+
+    ui('#editorExitDialog');
+  }
+
+  /**
+   * Replaces the editor's current texture and keeps the Assets cache entry
+   * for `currentAlias` in sync. Downstream Component construction reads the
+   * texture from `Assets.get(alias)`, so failing to update the cache after a
+   * crop leaves the component rendering the pre-crop image.
+   *
+   * Once the current baseData has been committed via exportComponent, the
+   * cached texture belongs to that committed track and must not be replaced.
+   * @param {Texture} texture
+   */
+  setTexture(texture) {
     this.texture = texture;
-    if (this.isAdmin) {
-      this.#showEditor(texture.width, texture.height);
-    } else {
-      this.#showSizeDialog();
+    if (this.currentAlias && texture && !this.committed) {
+      Assets.cache.remove(this.currentAlias);
+      Assets.cache.set(this.currentAlias, texture);
+    }
+  }
+
+  /**
+   * Clears editor state so the controller can be re-used for a fresh
+   * component without reloading the page. Destroys any live PixiJS objects,
+   * unloads the current texture from the Assets cache, and removes any
+   * transient dialogs from the DOM.
+   */
+  reset() {
+    if (this.newComp) {
+      this.newComp.destroy();
+      this.newComp = null;
+    }
+    this.testComps.forEach((comp) => comp.destroy());
+    this.testComps.length = 0;
+
+    if (this.currentAlias) {
+      if (!this.committed) {
+        const cached = Assets.cache.get(this.currentAlias);
+        Assets.cache.remove(this.currentAlias);
+        try { cached?.destroy(true); } catch (_e) { /* already destroyed */ }
+      }
+      this.currentAlias = null;
+    }
+
+    this.texture = null;
+    this.committed = false;
+    this.baseData = EditorController.#defaultBaseData();
+
+    // Reset form inputs so a subsequent editor session starts fresh instead
+    // of inheriting the previous component's category/baseplate/name/etc.
+    // (onComponentSave reads these directly from the DOM.)
+    const scaleInput = document.getElementById('componentScale');
+    if (scaleInput) scaleInput.value = this.baseData.scale;
+    const aliasInput = document.getElementById('componentAlias');
+    if (aliasInput) aliasInput.value = this.baseData.alias;
+    const nameInput = document.getElementById('componentName');
+    if (nameInput) nameInput.value = this.baseData.name;
+    const categories = document.getElementById('componentCategories');
+    if (categories) {
+      const defaultIdx = Array.from(categories.options).findIndex((o) => o.value === this.baseData.category);
+      categories.selectedIndex = defaultIdx >= 0 ? defaultIdx : 0;
+    }
+    const bpToggle = document.getElementById('componentBaseplateToggle');
+    if (bpToggle) bpToggle.checked = false;
+    const bpColor = document.getElementById('componentBaseplateColor');
+    if (bpColor && bpColor.options && bpColor.options.length > 0) bpColor.selectedIndex = 0;
+    document.getElementById('componentBaseplateField')?.classList.add('hidden');
+    document.getElementById('componentBaseplateColorField')?.classList.add('hidden');
+    const connectionsList = document.getElementById('componentEditorConnectionsList');
+    if (connectionsList) connectionsList.innerHTML = '';
+
+    document.getElementById('editorSizeDialog')?.remove();
+    document.getElementById('editorCropDialog')?.remove();
+    document.getElementById('editorExitDialog')?.remove();
+    const connectionEditor = document.getElementById('connectionEditor');
+    if (connectionEditor) {
+      connectionEditor.classList.add('hidden');
+      connectionEditor.setAttribute('data-connection', '-1');
     }
   }
 
@@ -279,25 +438,23 @@ export class EditorController {
       </div>
     `;
     document.body.appendChild(dialog);
-    dialog.addEventListener('close', () => dialog.remove());
+    let success = false;
+    dialog.addEventListener('close', () => {
+      if (!success) {
+        this.layoutController.exitEditorMode();
+      }
+      dialog.remove();
+    });
 
     const closeDialog = () => ui('#editorSizeDialog');
 
     const widthInput = dialog.querySelector('#editorSizeWidth');
     const heightInput = dialog.querySelector('#editorSizeHeight');
-    [widthInput, heightInput, dialog.querySelector('#editorSizeUnits')].forEach((el) => {
-      el.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-          closeDialog();
-        }
-        event.stopPropagation();
-      });
-    });
+    const unitsSelect = dialog.querySelector('#editorSizeUnits');
+    const widthError = dialog.querySelector('#editorSizeWidthError');
+    const heightError = dialog.querySelector('#editorSizeHeightError');
 
-    dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', () => {
-      const unitsSelect = dialog.querySelector('#editorSizeUnits');
-      const widthError = dialog.querySelector('#editorSizeWidthError');
-      const heightError = dialog.querySelector('#editorSizeHeightError');
+    const onConfirm = async () => {
       const width = widthInput.value;
       const height = heightInput.value;
 
@@ -324,9 +481,35 @@ export class EditorController {
       const pixelWidth = parseFloat(width) * multiplier;
       const pixelHeight = parseFloat(height) * multiplier;
 
+      success = true;
       closeDialog();
+
+      if (this.texture && !aspectMatches(this.texture.width, this.texture.height, pixelWidth, pixelHeight)) {
+        const { ImageCropController } = await import('./imageCropController.js');
+        const cropped = await new ImageCropController().show(this.texture, pixelWidth, pixelHeight);
+        if (!cropped) {
+          this.layoutController.exitEditorMode();
+          return;
+        }
+        this.setTexture(cropped);
+      }
+
       this.#showEditor(pixelWidth, pixelHeight);
+    };
+
+    [widthInput, heightInput, unitsSelect].forEach((el) => {
+      el.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          closeDialog();
+        } else if (event.key === 'Enter' && !event.isComposing) {
+          event.preventDefault();
+          onConfirm();
+        }
+        event.stopPropagation();
+      });
     });
+
+    dialog.querySelector('#editorSizeDialogConfirm').addEventListener('click', onConfirm);
 
     ui('#editorSizeDialog');
   }
@@ -364,10 +547,14 @@ export class EditorController {
       document.getElementById('componentEditorConnections').classList.remove('hidden');
       document.getElementById('componentAliasField').classList.remove('hidden');
       document.getElementById('componentScaleField').classList.remove('hidden');
+      document.getElementById('componentEditorTest').classList.remove('hidden');
+      document.getElementById('componentEditorExit').classList.add('hidden');
     } else {
       document.getElementById('componentEditorConnections').classList.add('hidden');
       document.getElementById('componentAliasField').classList.add('hidden');
       document.getElementById('componentScaleField').classList.add('hidden');
+      document.getElementById('componentEditorTest').classList.add('hidden');
+      document.getElementById('componentEditorExit').classList.remove('hidden');
     }
   }
 
@@ -417,17 +604,24 @@ export class EditorController {
     console.log('Save Component');
     this.baseData.scale = parseFloat(document.getElementById('componentScale').value);
     this.newComp.sprite.scale.set(this.baseData.scale);
-    let tempAlias = document.getElementById('componentAlias').value;
-    
-    // Validate alias - only allow letters, numbers, and underscores
-    const validAlias = tempAlias.replace(/[^a-zA-Z0-9_]/g, '');
-    
-    // Update input field if invalid characters were removed
-    if (validAlias !== tempAlias) {
+    // Only admins get the alias input, so for everyone else the generated alias stands.
+    if (this.isAdmin) {
+      let tempAlias = document.getElementById('componentAlias').value;
+
+      // Validate alias - only allow letters, numbers, and underscores
+      const validAlias = tempAlias.replace(/[^a-zA-Z0-9_]/g, '');
+
+      // Update input field if invalid characters were removed
+      if (validAlias !== tempAlias) {
         document.getElementById('componentAlias').value = validAlias;
         tempAlias = validAlias;
+      }
+      if (tempAlias !== this.baseData.alias) {
+        // A different alias is a different component, so the previous commit no longer applies.
+        this.committed = false;
+      }
+      this.baseData.alias = tempAlias;
     }
-    this.baseData.alias = tempAlias;
     this.baseData.name = document.getElementById('componentName').value;
     let categories = document.getElementById('componentCategories');
     if (this.baseData.category === 'structures' && categories.options[categories.selectedIndex].value !== 'structures') {
@@ -566,36 +760,86 @@ export class EditorController {
   }
 
   /**
-   * For admins: Exports the component data to a JSON file so it can be easily added to the manifest later
-   * For everyone else: Exports the newComp as an image.
+   * Commits the component, guarding against re-entry. The cloud save inside
+   * blocks on a network round-trip for several seconds, during which the editor
+   * stays interactive; without this guard a second commit (the Commit button
+   * again, or Save from the exit dialog) would run before `mocId` is set and
+   * create a duplicate cloud MOC.
+   *
+   * A commit that arrives while one is in flight joins the existing one rather
+   * than starting another, so metadata edited in between is not picked up until
+   * the next commit.
+   * @returns {Promise<void>}
    */
   async exportComponent() {
+    if (this.#exporting) {
+      return this.#exporting;
+    }
+    const exportButton = document.getElementById('componentEditorExport');
+    exportButton?.setAttribute('disabled', 'disabled');
+    this.#exporting = this.#exportComponent().finally(() => {
+      this.#exporting = null;
+      exportButton?.removeAttribute('disabled');
+    });
+    return this.#exporting;
+  }
+
+  /**
+   * Generates the component JSON. Admins get a downloadable file; non-admins
+   * get the same JSON logged to the console (temporary — persistence is a
+   * separate follow-up).
+   *
+   * Also hands the current baseData off to LayoutController by deep-copying
+   * it into `trackData.bundles[0].assets` and generating a browser thumbnail.
+   * After a successful hand-off the texture is marked committed so it is not
+   * destroyed by subsequent reset() / setTexture() calls.
+   */
+  async #exportComponent() {
+    const exportData = { ...this.baseData };
+    if (exportData.onbp !== undefined) {
+      exportData.onbp = new Color(this.baseData.onbp).toHex();
+    }
+    const data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'make', 'onbp', 'mine']);
+    console.log('[component export]', data);
     if (this.isAdmin) {
-      const exportData = { ...this.baseData };
-      if (exportData.onbp !== undefined) {
-        exportData.onbp = new Color(this.baseData.onbp).toHex();
-      }
-      let data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'onbp']);
       const blob = new Blob([data], { type: 'application/json' });
       saveAs(blob, `${this.baseData.alias}.json`);
-    } else {
-      this.layoutController.undoManager.suppress();
-      for (const layer of this.layoutController.layers) {
-        const children = [...layer.children];
-        for (const child of children) {
-          if (child !== this.newComp && child instanceof Component) {
-            child.destroy();
-          }
-        }
+    }
+
+    const bundle = this.layoutController.trackData.bundles[0];
+    const trackCopy = {
+      ...this.baseData,
+      connections: this.baseData.connections.map((c) => ({
+        ...c,
+        vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
+      }))
+    };
+    if (this.committed) {
+      // Already committed: the image is set, but other properties may need updating
+      /** @type {TrackData} */
+      const existingAsset = bundle.assets.find(asset => asset.alias === trackCopy.alias);
+      if (existingAsset) {
+        Object.assign(existingAsset, trackCopy);
+        existingAsset.image = await this.layoutController.extractTrackImage(existingAsset);
       }
-      this.layoutController.undoManager.unsuppress();
+    } else {
+      bundle.assets.push(trackCopy);
+      trackCopy.image = await this.layoutController.extractTrackImage(trackCopy);
+      this.committed = true;
+    }
+    this.layoutController.createComponentBrowser();
 
-      const gridWasEnabled = this.layoutController.config.workspaceGridSettings.enabled;
-      this.layoutController.config.updateWorkspaceGridSettings({ enabled: false });
-
-      await this.layoutController.exportLayout();
-
-      this.layoutController.config.updateWorkspaceGridSettings({ enabled: gridWasEnabled });
+    // Persist to cloud when signed in; saveMocToCloud self-guards for
+    // unauthenticated users. The local commit has already succeeded, so a cloud
+    // failure must never reject: callers chain exitEditorMode() off this promise.
+    const newAlias = await this.layoutController.saveMocToCloud(trackCopy.alias)
+      .catch((error) => {
+        console.error('Failed to save MOC to the cloud:', error);
+        return null;
+      });
+    if (newAlias) {
+      this.baseData.alias = newAlias;
+      this.currentAlias = newAlias;
     }
   }
 

@@ -964,7 +964,7 @@ class AuthenticationModal {
       this.dialogElement.classList.remove(
         'mode-login', 'mode-signup', 'mode-presignup',
         'mode-success', 'mode-confirm',
-        'mode-forgotpw', 'mode-resetpw'
+        'mode-forgotpw', 'mode-resetpw',
       );
       this.dialogElement.classList.add(`mode-${mode}`);
 
@@ -1114,7 +1114,7 @@ class AuthenticationModal {
     this._createDialogElement();
     this.setMode(mode || this.currentMode || 'login');
     this.onSuccess = onSuccess;
-    ui("#authenticationModal");
+    ui('#authenticationModal');
   }
 
   /**
@@ -1131,7 +1131,7 @@ class AuthenticationModal {
     this.setMode('success');
   }
 
-    /**
+  /**
    * Shows the confirmation code screen after login
    * @private
    * @param {string} message - Message to display
@@ -1240,9 +1240,9 @@ class AuthenticationModal {
       await this.authManager.signInWithModal({ email, password });
       const needsEmailVerification = await this.authManager.needsEmailVerification();
       if (needsEmailVerification) {
-        this._showConfirmView("");
+        this._showConfirmView('');
       } else {
-        ui("#authenticationModal");
+        ui('#authenticationModal');
       }
     } catch (error) {
       console.error('Login failed:', error);
@@ -1283,11 +1283,9 @@ class AuthenticationModal {
       return;
     }
 
-
     if (!this._isValidName(name)) {
-      let nameError = "Name is required.";
-      if (name.length > 100)
-        nameError = "Name must be less than 100 characters long.";
+      let nameError = 'Name is required.';
+      if (name.length > 100) nameError = 'Name must be less than 100 characters long.';
       nameInput.parentElement.querySelector('output.invalid').textContent = nameError;
       nameInput.parentElement.classList.add('invalid');
       nameInput.focus();
@@ -1346,7 +1344,7 @@ class AuthenticationModal {
 
     try {
       await this.authManager.signInWithGooglePopup();
-      ui("#authenticationModal");
+      ui('#authenticationModal');
     } catch (error) {
       console.error('Google auth failed:', error);
       this._showMessage(error.message || 'Google sign in failed. Please try again.', 'error');

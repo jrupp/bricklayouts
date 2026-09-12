@@ -234,7 +234,25 @@ class AccountMenuController {
   async handlePostLoginUpdates() {
     this.updateMenuState();
     await this._loadPrivateCloudFeaturesIfNeeded();
+    this._loadCloudMocs();
     await this._updateCloudMenuVisibility();
+  }
+
+  /**
+   * Loads the user's cloud MOCs into the component browser. Available to every
+   * signed-in user, subscription or not, and fire-and-forget so it never delays
+   * the post-login UI updates.
+   * @private
+   */
+  _loadCloudMocs() {
+    if (!this.authManager?.isAuthenticated) {
+      return;
+    }
+    try {
+      LayoutController.getInstance()?.loadCloudMocs();
+    } catch (error) {
+      console.error('Failed to load cloud MOCs:', error);
+    }
   }
 
   /**
@@ -326,8 +344,12 @@ class AccountMenuController {
 
   async _logoutCleanup() {
     const layoutController = LayoutController.getInstance();
-    if (layoutController && layoutController.isCloudLayout()) {
-      layoutController.reset();
+    if (layoutController) {
+      if (layoutController.isCloudLayout()) {
+        layoutController.reset();
+      }
+      // After the reset, so MOCs freed by it are no longer counted as in use.
+      layoutController.removeCloudMocs();
     }
     this.updateMenuState();
     await this._updateCloudMenuVisibility();

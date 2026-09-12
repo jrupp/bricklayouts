@@ -1,9 +1,12 @@
-import { DataTypes, LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
+import {
+    CurrentFormatVersion, DataTypes, LayoutController, SerializedLayout, TrackData
+} from "../../src/controller/layoutController.js";
 import { Component, DEFAULT_CIRCLE_PERCENTAGE } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
+import { EDITOR_LAYOUT_KEY } from "../../src/utils/layoutPreservation.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
@@ -13,6 +16,7 @@ import layoutFileThree from './layout3.json' with { "type": "json" };
 import layoutFileFour from './layout4.json' with { "type": "json" };
 import layoutFileFiveVOne from './layout5-v1.json' with { "type": "json" };
 import layoutFileFiveVTwo from './layout5-v2.json' with { "type": "json" };
+import layoutFileSix from './layout6.json' with { "type": "json" };
 
 function ui(s) {
 }
@@ -118,6 +122,9 @@ describe("LayoutController", function() {
         geiSpy.withArgs('photoDetailsTitle').and.returnValue(document.createElement('h6'));
         geiSpy.withArgs('photoDetailsImg').and.returnValue(document.createElement('img'));
         geiSpy.withArgs('newLayoutConfirmDialog').and.returnValue(document.createElement('dialog'));
+        geiSpy.withArgs('componentEditorClose').and.returnValue(document.createElement('button'));
+        geiSpy.withArgs('componentEditor').and.returnValue(document.createElement('article'));
+        geiSpy.withArgs('cloudSnackbar').and.returnValue(null);
         const shareContainer = document.createElement('div');
         shareContainer.classList.add('hidden');
         geiSpy.withArgs('shareButton-container').and.returnValue(shareContainer);
@@ -2239,6 +2246,10 @@ describe("LayoutController", function() {
 
         it("fails validation for layout 5 v1", function() {
             expect(LayoutController._validateImportData(layoutFileFiveVOne)).toBeFalse();
+        });
+
+        it("validates layout 6", function() {
+            expect(LayoutController._validateImportData(layoutFileSix)).toBeTrue();
         });
 
         it("throws errors with invalid version", function() {
@@ -10821,10 +10832,44 @@ describe("LayoutController", function() {
             });
         });
 
-        describe("_extractTrackImage", function() {
+        describe("_serializeMocs", function() {
+            const alias = "serializeMocOnbpTest";
+
+            beforeEach(function() {
+                layoutController.trackData.bundles[0].assets.push({
+                    alias, name: "Onbp MOC", type: DataTypes.TRACK, onbp: 2324545,
+                });
+                Assets.cache.set(alias, {});
+                spyOn(layoutController.app.renderer.extract, "base64")
+                    .and.resolveTo("data:image/png;base64,AAAA");
+            });
+
+            afterEach(function() {
+                let assets = layoutController.trackData.bundles[0].assets;
+                let index = assets.findIndex((t) => t.alias === alias);
+                if (index !== -1) {
+                    assets.splice(index, 1);
+                }
+                Assets.cache.remove(alias);
+            });
+
+            it("should serialize onbp as a hex color string", async function() {
+                let mocs = await layoutController._serializeMocs([alias]);
+                expect(mocs.length).toBe(1);
+                expect(mocs[0].onbp).toBe("#237841");
+            });
+
+            it("should round-trip onbp back to a number when loaded", function() {
+                let track = { alias: "roundtrip", name: "Roundtrip", onbp: "#237841" };
+                layoutController._processTrackMetadata(track);
+                expect(track.onbp).toBe(2324545);
+            });
+        });
+
+        describe("extractTrackImage", function() {
             it("should return an HTMLImageElement with correct className and alt", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "railStraight9V");
-                let image = await layoutController._extractTrackImage(track);
+                let image = await layoutController.extractTrackImage(track);
                 expect(image).toBeInstanceOf(HTMLImageElement);
                 expect(image.className).toBe("track");
                 expect(image.alt).toBe(track.name);
@@ -10833,7 +10878,7 @@ describe("LayoutController", function() {
             it("should handle onbp overlay compositing", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.onbp !== undefined);
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }
@@ -10842,7 +10887,7 @@ describe("LayoutController", function() {
             it("should handle shape/baseplate color fill", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.alias === "baseplate32x32");
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }
@@ -11023,11 +11068,11 @@ describe("LayoutController", function() {
             });
         });
 
-        describe("_extractTrackImage tileable", function() {
+        describe("extractTrackImage tileable", function() {
             it("should extract image from tileable component", async function() {
                 let track = layoutController.trackData.bundles[0].assets.find(t => t.type === "tileable");
                 if (track) {
-                    let image = await layoutController._extractTrackImage(track);
+                    let image = await layoutController.extractTrackImage(track);
                     expect(image).toBeInstanceOf(HTMLImageElement);
                     expect(image.className).toBe("track");
                 }
@@ -11408,6 +11453,320 @@ describe("LayoutController", function() {
             );
             await layoutController.updateCloudMenuVisibility();
             expect(shareContainer.classList.contains('hidden')).toBeFalse();
+        });
+    });
+
+    describe("editorMode guards", function () {
+        let layoutController;
+
+        beforeEach(function () {
+            layoutController = window.layoutController;
+            layoutController.reset();
+            layoutController.editorMode = false;
+            LayoutController.editorController = null;
+        });
+
+        afterEach(function () {
+            layoutController.editorMode = false;
+            LayoutController.editorController = null;
+        });
+
+        it("initializes editorMode to false", function () {
+            expect(layoutController.editorMode).toBeFalse();
+        });
+
+        it("downloadLayout returns early without hiding file menu when in editor mode", async function () {
+            layoutController.editorMode = true;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            await layoutController.downloadLayout();
+            expect(hideFileMenuSpy).not.toHaveBeenCalled();
+        });
+
+        it("downloadLayout proceeds when not in editor mode", async function () {
+            layoutController.editorMode = false;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            await layoutController.downloadLayout();
+            expect(hideFileMenuSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exportLayout returns early without hiding file menu when in editor mode", async function () {
+            layoutController.editorMode = true;
+            const hideFileMenuSpy = spyOn(layoutController, 'hideFileMenu').and.stub();
+            await layoutController.exportLayout();
+            expect(hideFileMenuSpy).not.toHaveBeenCalled();
+        });
+
+        it("_saveToCloud returns early without calling auth manager when in editor mode", async function () {
+            layoutController.editorMode = true;
+            const authSpy = spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            await layoutController._saveToCloud('MyLayout');
+            expect(authSpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent refuses to delete the editor's newComp when in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            const comp = layoutController.currentLayer.children[0];
+            const destroySpy = spyOn(comp, 'destroy').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: comp, testComps: [] };
+            layoutController.deleteComponent(comp);
+            expect(destroySpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent refuses to delete an editor testComp when in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            const comp = layoutController.currentLayer.children[0];
+            const destroySpy = spyOn(comp, 'destroy').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: null, testComps: [comp] };
+            layoutController.deleteComponent(comp);
+            expect(destroySpy).not.toHaveBeenCalled();
+        });
+
+        it("deleteComponent proceeds for unrelated components even in editor mode", function () {
+            const trackData = layoutController.trackData.bundles[0].assets.find((a) => a.alias == "railStraight9V");
+            layoutController.addComponent(trackData);
+            layoutController.addComponent(trackData);
+            const editorsComp = layoutController.currentLayer.children[0];
+            const otherComp = layoutController.currentLayer.children[1];
+            const otherDestroySpy = spyOn(otherComp, 'destroy').and.stub();
+            spyOn(layoutController, '_hideSelectionToolbar').and.stub();
+            layoutController.editorMode = true;
+            LayoutController.editorController = { newComp: editorsComp, testComps: [] };
+            layoutController.deleteComponent(otherComp);
+            expect(otherDestroySpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode clears the flag, removes body class, and calls reset", async function () {
+            sessionStorage.removeItem(EDITOR_LAYOUT_KEY);
+            layoutController.editorMode = true;
+            document.body.classList.add('editor-mode');
+            const resetSpy = spyOn(layoutController, 'reset').and.stub();
+            await layoutController.exitEditorMode();
+            expect(layoutController.editorMode).toBeFalse();
+            expect(document.body.classList.contains('editor-mode')).toBeFalse();
+            expect(resetSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode resets the EditorController singleton if present", async function () {
+            sessionStorage.removeItem(EDITOR_LAYOUT_KEY);
+            layoutController.editorMode = true;
+            const resetSpy = jasmine.createSpy('editorReset');
+            LayoutController.editorController = { reset: resetSpy };
+            spyOn(layoutController, 'reset').and.stub();
+            await layoutController.exitEditorMode();
+            expect(resetSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it("exitEditorMode restores a preserved layout on exit", async function () {
+            const payload = {
+                type: 'local',
+                layoutData: { version: 2, x: 1, y: 2, zoom: 1, layers: [], config: {} },
+                timestamp: Date.now(),
+            };
+            sessionStorage.setItem(EDITOR_LAYOUT_KEY, JSON.stringify(payload));
+            layoutController.editorMode = true;
+            spyOn(layoutController, 'reset').and.stub();
+            const importSpy = spyOn(layoutController, '_importLayout').and.returnValue(Promise.resolve());
+            await layoutController.exitEditorMode();
+            expect(importSpy).toHaveBeenCalledTimes(1);
+            expect(importSpy.calls.mostRecent().args[0]).toEqual(payload.layoutData);
+            expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+        });
+
+        it("exitEditorMode discards the preserved layout when restore is false", async function () {
+            const payload = {
+                type: 'local',
+                layoutData: { version: 2, x: 1, y: 2, zoom: 1, layers: [], config: {} },
+                timestamp: Date.now(),
+            };
+            sessionStorage.setItem(EDITOR_LAYOUT_KEY, JSON.stringify(payload));
+            layoutController.editorMode = true;
+            spyOn(layoutController, 'reset').and.stub();
+            const importSpy = spyOn(layoutController, '_importLayout').and.returnValue(Promise.resolve());
+            await layoutController.exitEditorMode(false);
+            expect(importSpy).not.toHaveBeenCalled();
+            expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+        });
+
+        it("onNewLayoutClick exits editor mode first when active", async function () {
+            layoutController.editorMode = true;
+            const exitSpy = spyOn(layoutController, 'exitEditorMode').and.callFake(() => {
+                layoutController.editorMode = false;
+            });
+            spyOn(layoutController, 'hideFileMenu').and.stub();
+            spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            await layoutController.onNewLayoutClick();
+            expect(exitSpy).toHaveBeenCalledWith(false);
+        });
+
+        it("onImportClick exits editor mode first when active", async function () {
+            layoutController.editorMode = true;
+            const exitSpy = spyOn(layoutController, 'exitEditorMode').and.callFake(() => {
+                layoutController.editorMode = false;
+            });
+            spyOn(layoutController, '_getAuthManager').and.returnValue(Promise.resolve(null));
+            spyOn(layoutController, '_openLocalFile').and.stub();
+            await layoutController.onImportClick();
+            expect(exitSpy).toHaveBeenCalledWith(false);
+        });
+    });
+
+    describe("_saveToCloud MOC gate", function () {
+        let lc;
+        let saveLayout;
+        let track;
+
+        beforeEach(function () {
+            lc = window.layoutController;
+            lc.reset();
+            lc.editorMode = false;
+            track = {
+                alias: 'local1', name: 'Castle', category: 'structures',
+                scale: 1, type: 'track', mine: 1,
+            };
+            lc.trackData.bundles[0].assets.push(track);
+            // A placed MOC component holds its track by reference, exactly as the
+            // real deserialization path leaves it, so re-keying the track updates
+            // what the component serializes.
+            const fakeComponent = Object.create(Component.prototype);
+            fakeComponent.baseData = track;
+            const fakeLayer = {
+                children: [fakeComponent],
+                destroy() {},
+                serialize() {
+                    return {
+                        components: this.children.map((c) => ({ type: c.baseData.alias })),
+                        mocs: this.children.map((c) => c.baseData.alias),
+                    };
+                },
+            };
+            lc.layers = [fakeLayer];
+            saveLayout = jasmine.createSpy('saveLayout').and.returnValue(Promise.resolve({
+                layoutId: 'L1', s3Key: 'k', lastSaved: 'now',
+            }));
+            spyOn(lc, '_getAuthManager').and.returnValue(Promise.resolve({
+                getCloudFeatures: () => ({ cloudStorage: { saveLayout } }),
+            }));
+            spyOn(lc, 'updateCloudMenuVisibility').and.stub();
+        });
+
+        afterEach(function () {
+            const assets = lc.trackData.bundles[0].assets;
+            const idx = assets.indexOf(track);
+            if (idx >= 0) {
+                assets.splice(idx, 1);
+            }
+            lc.reset();
+        });
+
+        it("abandons the layout save when the user declines to upload local MOCs", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+            const saveSpy = spyOn(lc, 'saveMocToCloud');
+
+            await lc._saveToCloud('MyLayout');
+
+            expect(saveLayout).not.toHaveBeenCalled();
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it("uploads local MOCs then saves the layout referencing the new alias and id", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(true));
+            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
+                // Mimic _rekeyMocAlias: the shared track (and thus the placed
+                // component's baseData) is re-keyed to its cloud alias.
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve('mocnew1');
+            });
+
+            await lc._saveToCloud('MyLayout');
+
+            expect(saveLayout).toHaveBeenCalled();
+            const args = saveLayout.calls.mostRecent().args;
+            // Re-serialization happened after the upload: components reference the
+            // re-keyed alias, and the mocs argument carries the new cloud id.
+            expect(args[0].layers[0].components[0].type).toBe('mocnew1');
+            expect(args[2]).toContain('new1');
+        });
+
+        it("reports success and failure through its return value", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
+
+            lc._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve('mocnew1');
+            });
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(true);
+        });
+
+        it("returns false when the cloud save itself throws", async function () {
+            track.mocId = 'already-there';
+            saveLayout.and.returnValue(Promise.reject(new Error('offline')));
+            spyOn(console, 'error');
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
+        });
+    });
+
+    describe("_openLocalFile MOC id stripping", function () {
+        it("does not carry a mocId from a local file through to the import", async function () {
+            const lc = window.layoutController;
+            lc.readOnly = false;
+            // A hand-edited layout file claiming a MOC id the user does not own.
+            const layout = {
+                version: CurrentFormatVersion,
+                date: "2021-09-01T00:00:00.000Z",
+                layers: [{ components: [] }],
+                config: {},
+                mocs: [{
+                    alias: 'forged',
+                    name: 'Forged MOC',
+                    textureData: 'data:image/png;base64,AAAA',
+                    mocId: 'someone-elses-id',
+                }],
+            };
+
+            // _openLocalFile builds its own <input type="file">; hand it one we
+            // control so the change event can be driven from the spec.
+            const fakeInput = { type: '', accept: '', onchange: null, onerror: null, click() {} };
+            const createSpy = spyOn(document, 'createElement').and.callFake((tag) => {
+                if (tag === 'input') {
+                    return fakeInput;
+                }
+                return createSpy.and.originalFn.call(document, tag);
+            });
+            lc._openLocalFile();
+            createSpy.and.callThrough();
+
+            let imported;
+            let importDone;
+            const waitForImport = new Promise((resolve) => { importDone = resolve; });
+            spyOn(lc, '_importLayout').and.callFake(async (data) => {
+                imported = data;
+                importDone();
+            });
+
+            fakeInput.files = [new File(
+                [JSON.stringify(layout)],
+                'layout.json',
+                { type: 'application/json' }
+            )];
+            fakeInput.onchange();
+            await waitForImport;
+
+            expect(imported.mocs.length).toBe(1);
+            expect(imported.mocs[0].alias).toBe('forged');
+            expect('mocId' in imported.mocs[0]).toBeFalse();
         });
     });
 });

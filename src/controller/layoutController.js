@@ -8,6 +8,7 @@ import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
 import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
+import { validateMocForCloud } from '../utils/mocValidation.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
@@ -59,6 +60,7 @@ export { DataTypes };
  * @property {Number} [width] The width of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [height] The height of the component, in pixels. Only used for shapes and baseplates.
  * @property {Number} [onbp] The default baseplate color to render this structure on. The presence of this property indicates the structure is designed to be placed on a baseplate (i.e., has bottom studs).
+ * @property {Number} [mine] Whether this track is user-created and should be shown in the "My MOCs" category (1 for true, 0 or undefined for false).
  */
 let TrackData;
 export { TrackData };
@@ -78,6 +80,30 @@ let LayoutMetadata;
 export { LayoutMetadata };
 
 /**
+ * A custom (user-created) MOC embedded in a downloaded layout file, so the
+ * layout can be reopened without the MOC being present in the manifest.
+ * @typedef {Object} SerializedMoc
+ * @property {String} alias
+ * @property {String} name
+ * @property {String} category
+ * @property {String} [textureData] The component's texture as an image data URL.
+ *   Required in layout files, which are untrusted; see _validateImportData.
+ * @property {String} [src] A URL to fetch the texture from. Only ever supplied by
+ *   the server (cloud and public layouts); never accepted from a layout file.
+ * @property {Number} [scale]
+ * @property {Number} [make]
+ * @property {DataTypes} [type]
+ * @property {Array<Object>} [connections]
+ * @property {Number} [color]
+ * @property {Number} [width]
+ * @property {Number} [height]
+ * @property {String} [onbp] The default baseplate color as a hex string (e.g. "#237841").
+ * @property {Number} [isTree]
+ */
+let SerializedMoc;
+export { SerializedMoc };
+
+/**
  * @typedef {Object} SerializedLayout
  * @property {Number} version The version number of the format of this layout.
  * @property {Number} date The timestamp of when this layout was saved, in milliseconds since epoch.
@@ -87,13 +113,27 @@ export { LayoutMetadata };
  * @property {Array<SerializedLayoutLayer>} layers The layers of the layout.
  * @property {SerializedConfiguration} config The configuration settings for the layout.
  * @property {LayoutMetadata} [metadata] Optional metadata for cloud storage and naming.
+ * @property {Array<SerializedMoc>} [mocs] Custom MOCs used by this layout, embedded so they survive a round trip.
  */
 let SerializedLayout;
 export { SerializedLayout };
 
 /**
+ * @typedef {Object} MocUploadResult
+ * @property {Boolean} ok True when every referenced MOC is in the cloud.
+ * @property {?String} reason Null on success, otherwise one of 'declined',
+ *   'batchTooLarge', 'mocLimitReached' or 'uploadFailed'.
+ * @property {?Number} limit The account's MOC cap, set only for 'mocLimitReached'.
+ */
+let MocUploadResult;
+export { MocUploadResult };
+
+/**
  * The current version of the serialized file format.
  * @type {Number}
+ * @constant
+ * @readonly
+ * @default 2
  */
 const CurrentFormatVersion = 2;
 export { CurrentFormatVersion };
@@ -102,6 +142,7 @@ export { CurrentFormatVersion };
  * Drag thresholds for component movement.
  * @type {Number}
  * @constant
+ * @default 8.0
  */
 const DRAG_THRESHOLD = 8.0;
 
@@ -109,6 +150,7 @@ const DRAG_THRESHOLD = 8.0;
  * Drag threshold for movement of components with connections.
  * @type {Number}
  * @constant
+ * @default 16.0
  */
 const DRAG_THRESHOLD_CONNECTION = 16.0;
 
@@ -116,8 +158,43 @@ const DRAG_THRESHOLD_CONNECTION = 16.0;
  * Index of the "All" category in the category dropdown.
  * @type {Number}
  * @constant
+ * @default 0
  */
 const ALL_CATEGORY_INDEX = 0;
+
+/**
+ * TrackData properties persisted for a custom MOC embedded in a layout file.
+ * `image` and `src` are deliberately excluded; the texture travels as an
+ * embedded data URL in `textureData` instead.
+ * @type {Array<String>}
+ * @constant
+ */
+const MOC_TRACK_KEYS = ['alias', 'name', 'category', 'scale', 'make', 'type', 'connections', 'color', 'width', 'height', 'onbp', 'isTree'];
+
+/**
+ * TrackData properties accepted by the cloud MOC endpoints. The API rejects
+ * anything else, and `connections`, `make`, `width` and `height` are not yet
+ * round-tripped by the API, so they are deliberately omitted.
+ * @type {Array<String>}
+ * @constant
+ */
+const MOC_CLOUD_KEYS = ['name', 'category', 'scale', 'type', 'onbp'];
+
+/**
+ * Image data URLs accepted for an embedded custom MOC texture.
+ * @type {RegExp}
+ * @constant
+ */
+const MOC_TEXTURE_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Maximum number of local-only MOCs that will be uploaded to the cloud in a
+ * single "save layout" batch. A hand-edited layout file could otherwise embed
+ * hundreds of MOC entries and fire a create+upload round trip for each.
+ * @type {Number}
+ * @constant
+ */
+const MAX_MOC_UPLOAD_BATCH = 20;
 
 export class LayoutController {
   static _instance = null;
@@ -295,6 +372,14 @@ export class LayoutController {
      */
     this.readOnly = false;
     /**
+     * True while the component Editor is active. When set, destructive
+     * layout operations (delete of the editor's component, cloud save,
+     * download, image export) are blocked. Toggled by `_openImageForEditor`
+     * on entry and `exitEditorMode` on exit.
+     * @type {Boolean}
+     */
+    this.editorMode = false;
+    /**
      * @type {UndoManager}
      */
     this.undoManager = new UndoManager(this);
@@ -322,6 +407,7 @@ export class LayoutController {
      * @type {Map<String, String>}
      */
     this.categories = new Map(Object.entries(this.trackData.categories));
+    this.categories.set('mine', 'My MOCs');
     /**
      * @type {Boolean}
      */
@@ -570,7 +656,7 @@ export class LayoutController {
    * @param {TrackData} track
    * @returns {Promise<HTMLImageElement>}
    */
-  async _extractTrackImage(track) {
+  async extractTrackImage(track) {
     let texture = Assets.get(track.alias);
     let image;
     if (track.onbp !== void 0) {
@@ -636,7 +722,7 @@ export class LayoutController {
       await Assets.load(alias);
       const track = this.trackData.bundles[0].assets.find(t => t.alias === alias);
       if (track) {
-        const realImage = await this._extractTrackImage(track);
+        const realImage = await this.extractTrackImage(track);
         this._replacePlaceholderImage(track, realImage);
       }
     }
@@ -677,11 +763,10 @@ export class LayoutController {
   async _fetchReadOnlyLayoutData() {
     const urlPath = window.location.pathname;
     const rawFilename = urlPath.substring(1);
-
-    const publicLayoutLoader = new PublicLayoutLoader();
-    const shareCode = publicLayoutLoader.extractShareCodeFromPath(urlPath);
+    const shareCode = PublicLayoutLoader.extractShareCodeFromPath(urlPath);
 
     if (shareCode) {
+      const publicLayoutLoader = new PublicLayoutLoader();
       const publicLayoutData = await publicLayoutLoader.loadPublicLayout(shareCode);
       return { layoutData: publicLayoutData.layoutData, layoutName: publicLayoutData.layoutName, source: 'public' };
     }
@@ -753,7 +838,7 @@ export class LayoutController {
 
       await Promise.all(allAssets.map(async (track) => {
         if (Assets.cache.has(track.alias)) {
-          track.image = await this._extractTrackImage(track);
+          track.image = await this.extractTrackImage(track);
         } else {
           track.image = this._createPlaceholderImage(track);
         }
@@ -866,6 +951,18 @@ export class LayoutController {
     } else if (selectedCategory === 'custom') {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
+    } else if (selectedCategory === 'mine') {
+      let mocButton = document.createElement('button');
+      mocButton.title = 'Create MOC';
+      let mocImage = new Image();
+      mocImage.src = 'img/icon-add-black.png';
+      mocImage.className = 'custom';
+      mocButton.appendChild(mocImage);
+      let mocLabel = document.createElement('span');
+      mocLabel.textContent = 'Create MOC';
+      mocButton.appendChild(mocLabel);
+      mocButton.addEventListener('click', () => this._openImageForEditor());
+      this.componentBrowser.appendChild(mocButton);
     }
     if ((selectedCategory === 'structures' && searchQuery.length === 0) || (searchQuery.length > 0 && 'random trees'.includes(searchQuery))) {
       let rtButton = document.createElement('button');
@@ -881,7 +978,10 @@ export class LayoutController {
       this.componentBrowser.appendChild(rtButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory || ((track.mine !== void 0 && selectedCategory === 'mine'))) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+        if (this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX && searchQuery.length === 0 && track.mine !== void 0) {
+          return;
+        }
         let button = document.createElement('button');
         let label = document.createElement('span');
         label.textContent = track.name;
@@ -906,6 +1006,22 @@ export class LayoutController {
               this.addComponent(track, true);
             }
           });
+        }
+        if (track.mine !== void 0) {
+          let trash = document.createElement('i');
+          trash.classList.add('large', 'black-text');
+          trash.textContent = 'delete';
+          trash.style.cssText = 'pointer-events: all; position: absolute; top: 5px; right: 5px; text-shadow: -1px -1px 0 white,1px -1px 0 white,-1px  1px 0 white,1px  1px 0 white';
+          trash.addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); // Prevent the pointerdown from triggering the button's pointerdown event
+          });
+          trash.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the click from triggering the button's click event
+            // deleteMoc reports all of its own failures, so nothing to catch here.
+            this.deleteMoc(track.alias);
+          });
+          button.appendChild(trash);
+          button.classList.add('mine');
         }
         this.componentBrowser.appendChild(button);
       }
@@ -2378,7 +2494,7 @@ export class LayoutController {
 
     await Promise.all(this.trackData.bundles[0].assets.map(async (track) => {
       if (!track.image) {
-        track.image = await this._extractTrackImage(track);
+        track.image = await this.extractTrackImage(track);
       }
     }));
 
@@ -2394,6 +2510,10 @@ export class LayoutController {
    * If in read-only mode, resets layout and updates URL.
    */
   async onNewLayoutClick() {
+    if (this.editorMode) {
+      await this.exitEditorMode(false);
+      return;
+    }
     if (this.readOnly) {
       this.reset();
       await this.exitReadOnlyMode();
@@ -2423,7 +2543,11 @@ export class LayoutController {
    * Download the current layout as a JSON file.
    * Uses the layout name for the filename if available.
    */
-  downloadLayout() {
+  async downloadLayout() {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return;
+    }
     /** @type {SerializedLayout} */
     const layout = {
       version: CurrentFormatVersion,
@@ -2442,6 +2566,17 @@ export class LayoutController {
       };
     }
 
+    const mocs = new Map();
+    layout.layers.forEach(layer => {
+      if (layer.mocs !== void 0 && layer.mocs !== null) {
+        layer.mocs.forEach(moc => mocs.set(moc, true));
+        delete layer.mocs;
+      }
+    });
+    if (mocs.size > 0) {
+      layout.mocs = await this._serializeMocs(Array.from(mocs.keys()));
+    }
+
     const blob = new Blob([JSON.stringify(layout)], { type: 'application/json' });
 
     // Use layout name for filename if available, converting spaces to underscores
@@ -2455,9 +2590,840 @@ export class LayoutController {
   }
 
   /**
+   * Copy the given keys off a MOC track, normalizing `onbp` from its in-memory
+   * numeric form to a hex color string. Shared by layout-file serialization and
+   * the cloud MOC payloads so the two cannot drift apart.
+   * @param {TrackData} track The track to read from
+   * @param {Array<String>} [keys] Keys to copy; defaults to the layout-file set
+   * @param {*} [absentValue] Value to use for keys missing from the track. When
+   *   omitted the key is left out entirely; pass `null` to explicitly clear it.
+   * @returns {Object}
+   * @private
+   */
+  _serializeMocTrack(track, keys = MOC_TRACK_KEYS, absentValue = void 0) {
+    const serialized = {};
+    keys.forEach((key) => {
+      if (track[key] !== void 0) {
+        serialized[key] = track[key];
+      } else if (absentValue !== void 0) {
+        serialized[key] = absentValue;
+      }
+    });
+    // `onbp` is a number in memory; persist it as a hex color string.
+    if (typeof serialized.onbp === 'number') {
+      serialized.onbp = new Color(serialized.onbp).toHex();
+    }
+    return serialized;
+  }
+
+  /**
+   * Serialize the TrackData of user-created MOCs, embedding each one's texture
+   * as a base64 data URL so the layout file is self-contained.
+   * @param {Array<String>} aliases Asset aliases of the MOCs to serialize
+   * @returns {Promise<Array<SerializedMoc>>}
+   * @private
+   */
+  async _serializeMocs(aliases) {
+    const serializedMocs = new Array();
+    for (const alias of aliases) {
+      const track = this.trackData.bundles[0].assets.find((t) => t.alias === alias);
+      const texture = Assets.get(alias);
+      if (!track || !texture) {
+        console.warn(`Custom MOC "${alias}" is not loaded; omitting it from the downloaded layout`);
+        continue;
+      }
+      /** @type {SerializedMoc} */
+      const serialized = this._serializeMocTrack(track);
+      try {
+        serialized.textureData = await this.app.renderer.extract.base64({ target: texture, format: 'png' });
+      } catch (error) {
+        console.error(`Failed to extract texture for custom MOC "${alias}":`, error);
+        continue;
+      }
+      serializedMocs.push(serialized);
+    }
+    return serializedMocs;
+  }
+
+  /**
+   * Register custom MOCs embedded in a layout file so their components can be
+   * deserialized. Aliases that already exist in the track data are left
+   * untouched.
+   * @param {Array<SerializedMoc>} mocs
+   * @returns {Promise<void>}
+   * @private
+   */
+  async _loadLayoutMocs(mocs) {
+    const assets = this.trackData.bundles[0].assets;
+    let added = false;
+    const needToLoad = new Array();
+    for (const moc of mocs) {
+      if (!moc?.alias || typeof moc.alias !== 'string' || assets.some((t) => t.alias === moc.alias)) {
+        continue;
+      }
+      /** @type {TrackData} */
+      const track = { src: '' };
+      if (moc.textureData !== void 0 && moc.textureData !== null) {
+        try {
+          // Only cache on success: caching an undefined texture would leave the
+          // alias looking loaded to Assets.cache.has() checks further down.
+          Assets.cache.set(moc.alias, await this._textureFromDataUrl(moc.textureData));
+        } catch (error) {
+          console.error(`Failed to load texture for custom MOC "${moc.alias}":`, error);
+          continue;
+        }
+      } else if (moc.src !== void 0 && moc.src !== null) {
+        // Only server-supplied MOCs reach this branch (cloud/public layouts and
+        // listMocs); the URL is loaded as-is, so _validateImportData keeps `src`
+        // out of untrusted local layout files.
+        track.src = moc.src;
+        Assets.add({alias: moc.alias, src: moc.src});
+      } else {
+        console.warn(`Custom MOC "${moc.alias}" has no texture data or source; it will be omitted from the layout`);
+        continue;
+      }
+      MOC_TRACK_KEYS.forEach((key) => {
+        if (moc[key] !== void 0) {
+          track[key] = moc[key];
+        }
+      });
+      // Only MOCs coming from the cloud carry an id; it is deliberately absent
+      // from MOC_TRACK_KEYS so downloaded layouts stay portable between accounts.
+      // Restricted to strings so a non-string id from any path cannot be stamped
+      // onto a track (local files have `mocId` stripped at the input boundary).
+      if (typeof moc.mocId === 'string') {
+        track.mocId = moc.mocId;
+      }
+      track.mine = 1;
+      this._processTrackMetadata(track);
+      assets.push(track);
+      if (Assets.cache.has(moc.alias)) {
+        track.image = await this.extractTrackImage(track);
+      } else {
+        track.image = this._createPlaceholderImage(track);
+        needToLoad.push(moc.alias);
+      }
+      added = true;
+    }
+    if (added) {
+      this.createComponentBrowser();
+      if (needToLoad.length > 0) {
+        this._backgroundLoadRemaining(needToLoad);
+      }
+    }
+  }
+
+  /**
+   * Gets the CloudStorageManager for the signed-in user. The MOC endpoints are
+   * open to any authenticated user, so this deliberately does not require cloud
+   * access (a subscription) the way the layout endpoints do.
+   * @returns {Promise<?Object>} The cloud storage manager, or null if unavailable
+   * @private
+   */
+  async _getCloudStorage() {
+    const authManager = await this._getAuthManager();
+    if (!authManager || !authManager.isAuthenticated) {
+      return null;
+    }
+    return (await authManager.getCloudStorage?.()) ?? null;
+  }
+
+  /**
+   * Persist a custom MOC to cloud storage. Creates the MOC (metadata + image
+   * upload) the first time and re-keys its local alias to `moc<mocId>` so it
+   * matches what the cloud returns on subsequent loads. If the MOC has already
+   * been committed (its track carries a `mocId`), only its metadata is updated;
+   * the image cannot be changed after creation.
+   * Failures are surfaced via snackbar and never thrown, since the local commit
+   * has already succeeded by the time this runs. The one exception is the MOC
+   * storage limit: it is terminal and account-wide rather than a problem with
+   * this particular MOC, so a caller uploading a batch has to be able to stop.
+   * @param {String} alias The alias of the MOC track to save
+   * @returns {Promise<?String>} The new alias if it was re-keyed, otherwise null
+   * @throws {CloudStorageError} Only with code `MOC_LIMIT_REACHED`, after the
+   *   failure has already been reported to the user
+   */
+  async saveMocToCloud(alias) {
+    try {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        return null;
+      }
+      const track = this.trackData.bundles[0].assets.find((t) => t.alias === alias);
+      if (!track) {
+        return null;
+      }
+      const check = validateMocForCloud(track, {
+        categories: this.categories,
+        texture: Assets.get(alias),
+      });
+      if (!check.ok) {
+        showSnackbar(`Cannot save MOC to the cloud: ${check.reason}`, 'error');
+        return null;
+      }
+      // Absent keys are sent as null so clearing a value locally also clears it
+      // in the cloud, and so the payload stays non-empty, which
+      // PUT /mocs/{mocId} requires. In practice only `onbp` can be absent here:
+      // validateMocForCloud above requires name, category, scale and type.
+      const metadata = this._serializeMocTrack(track, MOC_CLOUD_KEYS, null);
+      if (track.mocId) {
+        await cloudStorage.updateMoc(track.mocId, metadata);
+        showSnackbar('MOC updated in the cloud.', 'success');
+        return null;
+      }
+      showSnackbar('Saving MOC to the cloud...', 'info');
+      const [serialized] = await this._serializeMocs([alias]);
+      if (!serialized) {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
+      // `textureData` is produced by the renderer's PNG extractor, but assert it
+      // before handing the bytes to fetch() so a future change here cannot ship
+      // an unexpected payload to the presigned upload. Both checks run before
+      // createMoc: bailing out afterwards would leave an imageless MOC record in
+      // the cloud, and every retry would orphan another one.
+      if (!MOC_TEXTURE_DATA_URL.test(serialized.textureData)) {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
+      const blob = await (await fetch(serialized.textureData)).blob();
+      if (blob.type !== 'image/png') {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
+      const { mocId, uploadUrl } = await cloudStorage.createMoc(metadata);
+      await cloudStorage.uploadMocImage(uploadUrl, blob);
+      const newAlias = this._rekeyMocAlias(alias, `moc${mocId}`, mocId);
+      showSnackbar('MOC saved to the cloud.', 'success');
+      return newAlias;
+    } catch (error) {
+      console.error(`Failed to save MOC "${alias}" to the cloud:`, error);
+      showSnackbar(error.message || 'Failed to save MOC to the cloud.', 'error');
+      if (error.code === 'MOC_LIMIT_REACHED') {
+        throw error;
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Map MOC asset aliases to the cloud MOC ids the layout endpoints expect.
+   * Aliases without a cloud id are MOCs that only exist locally; the API rejects
+   * ids it cannot resolve, so they are dropped rather than sent.
+   * @param {Array<String>} aliases
+   * @returns {Array<String>} The cloud ids of the MOCs that have been synced
+   * @private
+   */
+  _mocIdsForAliases(aliases) {
+    const assets = this.trackData.bundles[0].assets;
+    return aliases
+      .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
+      .filter((mocId) => typeof mocId === 'string');
+  }
+
+  /**
+   * Ensure every custom MOC placed in the layout exists in the cloud before the
+   * layout itself is saved. MOCs that only exist locally (no `mocId`) are
+   * detected, the user is prompted, and on confirmation each is uploaded.
+   *
+   * A layout that referenced a local-only MOC would silently drop that piece
+   * when reloaded from the cloud, so on decline or any upload failure the whole
+   * layout save is abandoned.
+   * @returns {Promise<MocUploadResult>} `ok` is true when every referenced MOC
+   *   is in the cloud. On failure, `reason` says why so the caller can explain
+   *   it in its own terms, and `limit` carries the account's MOC cap when the
+   *   storage limit was what stopped the batch.
+   * @private
+   */
+  async _ensureMocsInCloud() {
+    // A placed component's `baseData` is the very object held in trackData
+    // (see Component.deserialize), so the tracks are collected directly rather
+    // than looked up by alias. A Set dedupes an alias used by several
+    // components, and the same identity is what lets saveMocToCloud's re-key
+    // below be observed through `mocId`.
+    const pending = new Set();
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.mine && !child.baseData.mocId) {
+          pending.add(child.baseData);
+        }
+      });
+    });
+    if (pending.size === 0) {
+      return { ok: true, reason: null, limit: null };
+    }
+
+    if (pending.size > MAX_MOC_UPLOAD_BATCH) {
+      showSnackbar(
+        `This layout has more than ${MAX_MOC_UPLOAD_BATCH} MOCs that are not saved to the `
+        + 'cloud. Please save some of them individually first.',
+        'error'
+      );
+      return { ok: false, reason: 'batchTooLarge', limit: null };
+    }
+
+    const tracks = Array.from(pending);
+    if (!(await this._confirmUploadMocs(tracks))) {
+      return { ok: false, reason: 'declined', limit: null };
+    }
+
+    let limit = null;
+    let limitReached = false;
+    try {
+      // Serial: saveMocToCloud rebuilds the component browser and emits ordered
+      // snackbars, and each create is a two-request round trip.
+      for (const track of tracks) {
+        await this.saveMocToCloud(track.alias);
+      }
+    } catch (error) {
+      if (error.code !== 'MOC_LIMIT_REACHED') {
+        throw error;
+      }
+      // The cap is account-wide, so every remaining MOC would fail the same
+      // way. Abandon the rest of the batch rather than firing a request per
+      // MOC that is guaranteed to be refused.
+      limitReached = true;
+      limit = error.details?.limit ?? null;
+    }
+    // saveMocToCloud mutates the same track object, so `mocId` is the success
+    // test (it returns null both on failure and on the metadata-update path).
+    // Tracks the aborted batch never reached have no `mocId` either, so they
+    // are counted as failed, which is what they are.
+    const failed = tracks.filter((track) => !track.mocId);
+    if (failed.length > 0) {
+      showSnackbar(
+        limitReached
+          // saveMocToCloud already reported the cause, so this only has to say
+          // what it means for the batch. No "layout not saved": the preservation
+          // path calls this when no layout save is in progress.
+          ? `${failed.length} MOC(s) could not be saved to the cloud.`
+          : `Could not save ${failed.length} MOC(s) to the cloud. Layout not saved.`,
+        'error'
+      );
+      return {
+        ok: false,
+        reason: limitReached ? 'mocLimitReached' : 'uploadFailed',
+        limit,
+      };
+    }
+    return { ok: true, reason: null, limit: null };
+  }
+
+  /**
+   * Prompt the user to upload local-only MOCs before saving the layout to the
+   * cloud. Built dynamically (rather than in index.html) so the "404.html must
+   * match index.html" rule is not dragged in. MOC names are attacker-controlled
+   * (they come straight out of a local layout file), so they are inserted with
+   * `textContent`, never `innerHTML`.
+   * @param {Array<TrackData>} tracks The local-only MOC tracks
+   * @returns {Promise<Boolean>} True if the user chose to continue
+   * @private
+   */
+  _confirmUploadMocs(tracks) {
+    return new Promise((resolve) => {
+      document.getElementById('uploadMocsDialog')?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = 'uploadMocsDialog';
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max">MOCs Not Saved to the Cloud</h6>
+              <button class="circle medium transparent" data-ui="#uploadMocsDialog">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text">
+            <p id="uploadMocsMessage"></p>
+            <p>To continue, these MOCs will be saved to your cloud account. Do you want to continue?</p>
+          </div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text left-button primary-text" id="uploadMocsConfirm"><span>Yes</span></button>
+            <button class="no-round max extra-text right-button error" id="uploadMocsCancel"><span>No</span></button>
+          </nav>
+        </div>
+      `;
+      const names = tracks.map((track) => this._mocDisplayName(track));
+      dialog.querySelector('#uploadMocsMessage').textContent =
+        `This layout contains ${tracks.length} MOC(s) that are not currently stored in `
+        + `your account: ${names.join(', ')}.`;
+      document.body.appendChild(dialog);
+
+      let outcome = false;
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve(outcome);
+      });
+      const closeDialog = () => ui('#uploadMocsDialog');
+      dialog.querySelector('#uploadMocsConfirm').addEventListener('click', () => {
+        outcome = true;
+        closeDialog();
+      });
+      dialog.querySelector('#uploadMocsCancel').addEventListener('click', () => {
+        outcome = false;
+        closeDialog();
+      });
+
+      ui('#uploadMocsDialog');
+    });
+  }
+
+  /**
+   * Re-key a MOC track and its cached texture from one alias to another and
+   * stamp it with its cloud id. Used after a MOC is first created in the cloud.
+   * @param {String} oldAlias
+   * @param {String} newAlias
+   * @param {String} mocId
+   * @returns {String} The new alias
+   * @private
+   */
+  _rekeyMocAlias(oldAlias, newAlias, mocId) {
+    const track = this.trackData.bundles[0].assets.find((t) => t.alias === oldAlias);
+    if (!track) {
+      return oldAlias;
+    }
+    if (oldAlias !== newAlias && Assets.cache.has(oldAlias)) {
+      const texture = Assets.cache.get(oldAlias);
+      Assets.cache.set(newAlias, texture);
+      Assets.cache.remove(oldAlias);
+    }
+    track.alias = newAlias;
+    track.mocId = mocId;
+    this.createComponentBrowser();
+    return newAlias;
+  }
+
+  /**
+   * Load the current user's cloud MOCs and add them to the component browser.
+   * Intended to run asynchronously during startup so it does not block loading.
+   * Errors are logged and swallowed since this is a background enhancement.
+   * @returns {Promise<void>}
+   */
+  async loadCloudMocs() {
+    try {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        return;
+      }
+      const mocs = await cloudStorage.listMocs();
+      if (Array.isArray(mocs) && mocs.length > 0) {
+        await this._loadLayoutMocs(mocs);
+      }
+    } catch (error) {
+      console.error('Failed to load cloud MOCs:', error);
+    }
+  }
+
+  /**
+   * Drop the signed-in user's cloud MOCs from the component browser on logout so
+   * the next person to sign in does not inherit them.
+   *
+   * MOCs still placed in the current layout keep their track entry: the layout
+   * serializes against it, so discarding it would silently drop those pieces from
+   * the next download. Their cloud id is cleared instead, which demotes them to
+   * ordinary local MOCs — they stay usable and still travel inside layout files,
+   * but they are no longer tied to an account that may not own them. Committing
+   * an edit to one afterwards creates a fresh cloud MOC.
+   * @returns {Number} The number of MOC tracks removed from the browser
+   */
+  removeCloudMocs() {
+    const assets = this.trackData.bundles[0].assets;
+    const inUse = new Set();
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.mocId) {
+          inUse.add(child.baseData.alias);
+        }
+      });
+    });
+
+    const removable = assets.filter((track) => track.mocId && !inUse.has(track.alias));
+    assets.forEach((track) => {
+      if (track.mocId && inUse.has(track.alias)) {
+        delete track.mocId;
+      }
+    });
+    removable.forEach((track) => {
+      assets.splice(assets.indexOf(track), 1);
+      if (Assets.cache.has(track.alias)) {
+        Assets.cache.remove(track.alias);
+      }
+    });
+
+    if (removable.length > 0) {
+      this.createComponentBrowser();
+    }
+    return removable.length;
+  }
+
+  /**
+   * The name to show a user for a MOC track, falling back to its alias.
+   * @param {TrackData} track
+   * @returns {String}
+   * @private
+   */
+  _mocDisplayName(track) {
+    return typeof track.name === 'string' && track.name.trim().length > 0
+      ? track.name : track.alias;
+  }
+
+  /**
+   * Find every component in the open layout built from the given MOC.
+   * @param {String} alias
+   * @returns {Array<Component>}
+   * @private
+   */
+  _findMocUsage(alias) {
+    const found = [];
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.alias === alias) {
+          found.push(child);
+        }
+      });
+    });
+    return found;
+  }
+
+  /**
+   * Delete a MOC from the component browser and, when it is a cloud MOC, from
+   * the user's account. Every failure is reported to the user here, so callers
+   * do not need to handle the returned promise.
+   * @param {String} alias The alias of the MOC track to delete
+   * @returns {Promise<void>}
+   */
+  async deleteMoc(alias) {
+    if (this.readOnly) {
+      return;
+    }
+
+    // Before anything else, including the track lookup. Entering the editor
+    // preserves the real layout to sessionStorage and resets the workspace, so
+    // `this.layers` is empty and the usage check below would wrongly report the
+    // MOC as unused. The preserved payload names its MOCs by alias and carries
+    // no texture, so deleting one would make exitEditorMode's restore throw.
+    if (this.editorMode) {
+      await this._showMocEditorModeDialog();
+      return;
+    }
+
+    const assets = this.trackData.bundles[0].assets;
+    let track = assets.find((t) => t.alias === alias);
+    if (!track) {
+      return;
+    }
+
+    if (this._findMocUsage(alias).length > 0) {
+      await this._showMocInUseDialog(track);
+      return;
+    }
+
+    if (!(await this._confirmDeleteMoc(track))) {
+      return;
+    }
+
+    // The confirm dialog awaits, so the layout may have changed under it.
+    track = assets.find((t) => t.alias === alias);
+    if (!track) {
+      return;
+    }
+    if (this._findMocUsage(alias).length > 0) {
+      await this._showMocInUseDialog(track);
+      return;
+    }
+
+    const name = this._mocDisplayName(track);
+
+    if (track.mocId) {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        // Removing it locally would orphan the cloud record with no way back to it.
+        showSnackbar('Sign in to delete a MOC from your account.', 'error');
+        return;
+      }
+      try {
+        await cloudStorage.deleteMoc(track.mocId);
+      } catch (error) {
+        if (error.code === 'MOC_IN_USE') {
+          await this._showMocBlockedDialog(track, error);
+          return;
+        }
+        if (error.code !== 'NOT_FOUND') {
+          console.error(`Failed to delete MOC "${alias}" from the cloud:`, error);
+          showSnackbar(error.message || 'Failed to delete MOC.', 'error');
+          return;
+        }
+        // Already gone in the cloud: fall through and clean up locally.
+      }
+    }
+
+    this._removeMocLocally(alias);
+    showSnackbar(`Deleted "${name}".`, 'success');
+  }
+
+  /**
+   * Remove a MOC's track, texture and any lingering references to it from the
+   * running app. The cloud side, if any, has already been dealt with.
+   * @param {String} alias
+   * @private
+   */
+  _removeMocLocally(alias) {
+    const assets = this.trackData.bundles[0].assets;
+    const index = assets.findIndex((t) => t.alias === alias);
+    if (index >= 0) {
+      assets.splice(index, 1);
+    }
+    // Only the cache entry is dropped, not Assets.unload(): an in-flight
+    // background load or an already-extracted browser image may still hold the
+    // texture. Assets.add also leaves a resolver entry with no public removal
+    // API, which is harmless because the alias is derived from the mocId.
+    if (Assets.cache.has(alias)) {
+      Assets.cache.remove(alias);
+    }
+
+    if (this.copiedComponent) {
+      const members = this.copiedComponent instanceof ComponentGroup
+        ? this.copiedComponent.getAllComponents() : [this.copiedComponent];
+      if (members.some((member) => member.baseData?.alias === alias)) {
+        if (this.copiedComponent instanceof ComponentGroup && this.copiedComponent.isTemporary) {
+          this.copiedComponent.isTemporary = false;
+        }
+        this.copiedComponent.destroy();
+        this.copiedComponent = null;
+      }
+    }
+
+    this.undoManager?.clearIfReferencesAlias(alias);
+    this.createComponentBrowser();
+  }
+
+  /**
+   * Ask the user to confirm deleting a MOC. Built dynamically, like
+   * {@link _confirmUploadMocs}, so index.html and 404.html stay untouched.
+   * @param {TrackData} track
+   * @returns {Promise<Boolean>} True if the user confirmed
+   * @private
+   */
+  _confirmDeleteMoc(track) {
+    return new Promise((resolve) => {
+      document.getElementById('deleteMocDialog')?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = 'deleteMocDialog';
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding"
+            style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max">Delete MOC?</h6>
+              <button class="circle medium transparent" data-ui="#deleteMocDialog">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text">
+            <p id="deleteMocMessage"></p>
+          </div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text left-button primary-text"
+              id="deleteMocConfirm"><span>Yes, Delete</span></button>
+            <button class="no-round max extra-text right-button error"
+              id="deleteMocCancel"><span>Cancel</span></button>
+          </nav>
+        </div>
+      `;
+      // MOC names come from the server or a local layout file, so textContent.
+      dialog.querySelector('#deleteMocMessage').textContent = track.mocId
+        ? `Delete "${this._mocDisplayName(track)}"? It will be removed from your account `
+          + 'and from this browser.'
+        : `Delete "${this._mocDisplayName(track)}"? It only exists in this browser and `
+          + 'cannot be recovered.';
+      document.body.appendChild(dialog);
+
+      let outcome = false;
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve(outcome);
+      });
+      const closeDialog = () => ui('#deleteMocDialog');
+      dialog.querySelector('#deleteMocConfirm').addEventListener('click', () => {
+        outcome = true;
+        closeDialog();
+      });
+      dialog.querySelector('#deleteMocCancel').addEventListener('click', () => {
+        outcome = false;
+        closeDialog();
+      });
+
+      ui('#deleteMocDialog');
+    });
+  }
+
+  /**
+   * Build and show a dismiss-only dialog explaining why a MOC was not deleted.
+   * @param {String} id The dialog element id
+   * @param {String} title The header text
+   * @param {function(HTMLElement): void} buildBody Fills the body element
+   * @returns {Promise<void>} Resolves when the dialog closes
+   * @private
+   */
+  _showMocNoticeDialog(id, title, buildBody) {
+    return new Promise((resolve) => {
+      document.getElementById(id)?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = id;
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding"
+            style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max" id="${id}Title"></h6>
+              <button class="circle medium transparent" data-ui="#${id}">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text" id="${id}Body"></div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text primary-text"
+              id="${id}Ok"><span>OK</span></button>
+          </nav>
+        </div>
+      `;
+      dialog.querySelector(`#${id}Title`).textContent = title;
+      buildBody(dialog.querySelector(`#${id}Body`));
+      document.body.appendChild(dialog);
+
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve();
+      });
+      dialog.querySelector(`#${id}Ok`).addEventListener('click', () => ui(`#${id}`));
+
+      ui(`#${id}`);
+    });
+  }
+
+  /**
+   * Tell the user that MOCs cannot be deleted while the editor is open.
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocEditorModeDialog() {
+    return this._showMocNoticeDialog('mocEditorModeDialog', 'Exit the Editor', (body) => {
+      const message = document.createElement('p');
+      message.textContent = 'You must exit the Editor to delete MOCs.';
+      body.appendChild(message);
+    });
+  }
+
+  /**
+   * Tell the user the MOC is still placed in the layout they have open.
+   * @param {TrackData} track
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocInUseDialog(track) {
+    return this._showMocNoticeDialog('mocInUseDialog', 'MOC In Use', (body) => {
+      const message = document.createElement('p');
+      message.textContent = `The layout you have open is using "${this._mocDisplayName(track)}". `
+        + 'Close the layout before deleting the MOC.';
+      body.appendChild(message);
+    });
+  }
+
+  /**
+   * Explain a cloud refusal to delete a MOC, naming the caller's own layouts
+   * that still reference it. Everything here is server-supplied, so it is
+   * rendered with textContent and must tolerate a missing or malformed
+   * `details` payload.
+   * @param {TrackData} track
+   * @param {CloudStorageError} error The MOC_IN_USE error
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocBlockedDialog(track, error) {
+    return this._showMocNoticeDialog('mocBlockedDialog', 'Cannot Delete MOC', (body) => {
+      const lead = document.createElement('p');
+      lead.textContent = error?.message
+        || `"${this._mocDisplayName(track)}" is still used by one or more layouts.`;
+      body.appendChild(lead);
+
+      const details = error?.details;
+      if (!details || typeof details !== 'object') {
+        return;
+      }
+
+      if (Array.isArray(details.layouts) && details.layouts.length > 0) {
+        const scroll = document.createElement('div');
+        scroll.className = 'scroll';
+        scroll.style.maxBlockSize = '40vh';
+        const list = document.createElement('ul');
+        list.className = 'list border';
+        details.layouts.forEach((layout) => {
+          const item = document.createElement('li');
+          item.textContent = layout?.layoutName || layout?.layoutId || '';
+          list.appendChild(item);
+        });
+        scroll.appendChild(list);
+        body.appendChild(scroll);
+      }
+
+      if (details.otherOwnerCount > 0) {
+        const shared = document.createElement('p');
+        shared.textContent = `Also used by ${details.otherOwnerCount} layout(s) belonging to `
+          + 'other users you have shared this MOC with.';
+        body.appendChild(shared);
+      }
+
+      if (details.truncated) {
+        const truncated = document.createElement('p');
+        truncated.textContent = 'This MOC is used by more layouts than could be listed.';
+        body.appendChild(truncated);
+      }
+    });
+  }
+
+  /**
+   * Decode an embedded MOC texture data URL into a Texture.
+   * @param {String} dataUrl
+   * @returns {Promise<Texture>}
+   * @throws {Error} If the data URL is malformed or the image cannot be decoded
+   * @private
+   */
+  async _textureFromDataUrl(dataUrl) {
+    if (typeof dataUrl !== 'string' || !MOC_TEXTURE_DATA_URL.test(dataUrl)) {
+      throw new Error('Unsupported or malformed texture data');
+    }
+    const blob = await (await fetch(dataUrl)).blob();
+    const buffer = await blob.arrayBuffer();
+    const { checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+    const magic = checkMagicBytes(buffer);
+    if (!magic.ok || magic.mime !== blob.type) {
+      throw new Error('Texture data is not a valid image');
+    }
+    const bitmap = await createImageBitmap(blob);
+    if (bitmap.width * bitmap.height > MAX_DECODED_PIXELS) {
+      bitmap.close?.();
+      throw new Error('Texture is too large');
+    }
+    return Texture.from(bitmap);
+  }
+
+  /**
    * Export the current layout as an image.
    */
   async exportLayout() {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return;
+    }
     this.hideFileMenu();
     LayoutController.selectComponent(null);
     document.getElementById('exportloading').classList.remove('hidden');
@@ -2597,45 +3563,7 @@ export class LayoutController {
       return;
     }
     if (event.key === '}' && event.ctrlKey && event.shiftKey) {
-      if (LayoutController.editorController) {
-        return;
-      }
-      let input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/png';
-      input.onchange = _ => {
-        if (input.files.length > 1) {
-          console.error("Only one file at a time");
-          // TODO: Show an error, only one file at a time
-          return;
-        }
-        const file = input.files[0];
-        if (file && file.type === 'image/png') {
-          const reader = new FileReader();
-          reader.onload = _ => {
-            this.reset();
-            Assets.add({alias:'newComponent', src:reader.result});
-            Assets.load('newComponent').then((texture) => {
-              import('./editorController.js').then((module) => {
-                if (!LayoutController.editorController) {
-                  LayoutController.editorController = new module.EditorController(this, true);
-                }
-                LayoutController.editorController.show(texture);
-              });
-            });
-          };
-          reader.onabort = (e) => {
-            console.error(e);
-            input = null;
-          };
-          reader.onerror = (e) => {
-            console.error(e);
-            // TODO: Show an error message to user
-          };
-          reader.readAsDataURL(file);
-        }
-      };
-      input.click();
+      this._openImageForEditor();
     }
   }
 
@@ -2665,6 +3593,9 @@ export class LayoutController {
    * For unauthenticated users, uses existing local file import.
    */
   async onImportClick() {
+    if (this.editorMode) {
+      await this.exitEditorMode(false);
+    }
     // Check if user is authenticated with cloud access
     const authManager = await this._getAuthManager();
     if (authManager && authManager.isAuthenticated && authManager.hasCloudAccess) {
@@ -2687,8 +3618,129 @@ export class LayoutController {
   }
 
   /**
-   * Opens a local file using the file input dialog.
-   * This is the original onImportClick functionality.
+   * Opens a file picker for a component-source image, validates it, and hands
+   * the resulting Texture to the EditorController. Safe to call repeatedly:
+   * if the EditorController singleton already exists, it is reset before the
+   * new upload is shown. All error paths surface a snackbar to the user.
+   * @private
+   */
+  async _openImageForEditor() {
+    const authManager = await this._getAuthManager();
+    let isAdmin = false;
+    if (authManager) {
+      try {
+        const groups = await authManager.getUserGroups();
+        isAdmin = Array.isArray(groups) && groups.includes('admin');
+      } catch (err) {
+        console.error('Failed to determine admin status:', err);
+      }
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/gif,image/webp';
+    input.onchange = async () => {
+      if (input.files.length !== 1) {
+        showSnackbar('Please select a single image file', 'error');
+        return;
+      }
+      const file = input.files[0];
+
+      const { validateImageFile, checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+
+      const validation = validateImageFile(file);
+      if (!validation.ok) {
+        showSnackbar(validation.reason, 'error');
+        return;
+      }
+
+      let buffer;
+      try {
+        buffer = await file.arrayBuffer();
+      } catch (err) {
+        console.error('Failed to read image file:', err);
+        showSnackbar('Could not read image file', 'error');
+        return;
+      }
+
+      const magic = checkMagicBytes(buffer);
+      if (!magic.ok || magic.mime !== file.type) {
+        showSnackbar('File does not appear to be a valid image', 'error');
+        return;
+      }
+
+      const blob = new Blob([buffer], { type: magic.mime });
+      // Strip hyphens: PixiJS's asset cache normalizes aliases in a way that
+      // treats hyphens as separators, so `cache.set('foo-bar', tex)` ends up
+      // keyed as `foobar`. Handing the hyphenated form back to Assets.get()
+      // later returns undefined.
+      const alias = 'newComponent' + crypto.randomUUID().replaceAll('-', '');
+
+      // Decode the blob ourselves rather than handing a blob: URL to
+      // Assets.load — PixiJS's asset loader can't infer the format from a
+      // blob URL and refuses to parse it.
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(blob);
+      } catch (err) {
+        console.error('Failed to decode image:', err);
+        showSnackbar('Could not load image', 'error');
+        return;
+      }
+
+      if (bitmap.width * bitmap.height > MAX_DECODED_PIXELS) {
+        showSnackbar('Image is too large', 'error');
+        bitmap.close?.();
+        return;
+      }
+
+      const texture = Texture.from(bitmap);
+      Assets.cache.set(alias, texture);
+
+      const module = await import('./editorController.js');
+      if (LayoutController.editorController) {
+        LayoutController.editorController.reset();
+        LayoutController.editorController.isAdmin = isAdmin;
+      } else {
+        LayoutController.editorController = new module.EditorController(this, isAdmin);
+      }
+      LayoutController.editorController.currentAlias = alias;
+      LayoutController.editorController.baseData.alias = alias;
+      // Preserve the user's current layout so it can be restored on editor exit.
+      const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import('../utils/layoutPreservation.js');
+      await new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY }).save();
+      this.reset();
+      this.editorMode = true;
+      document.body.classList.add('editor-mode');
+      LayoutController.editorController.show(texture);
+    };
+    input.click();
+  }
+
+  /**
+   * Tears down editor mode: hides the editor panel, resets the
+   * EditorController singleton, clears the workspace, and removes the
+   * `editor-mode` body class that controls which toolbar buttons are hidden.
+   * @param {Boolean} [restore=true] When true, restores the layout that was open
+   *   before the editor was entered. When false, the preserved layout is discarded. Default true.
+   */
+  async exitEditorMode(restore = true) {
+    document.getElementById('componentEditor')?.classList.add('hidden');
+    LayoutController.editorController?.reset();
+    document.body.classList.remove('editor-mode');
+    this.editorMode = false;
+    this.reset();
+    const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import('../utils/layoutPreservation.js');
+    const preservation = new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY });
+    if (restore) {
+      await preservation.restore();
+    } else {
+      preservation.clear();
+    }
+  }
+
+  /**
+   * Opens a native file picker for a JSON layout file and imports it.
    * @private
    */
   _openLocalFile() {
@@ -2718,6 +3770,11 @@ export class LayoutController {
               // TODO: Show an error message to user
               return;
             }
+            // Strip any `mocId` at the untrusted-input boundary (same place `src`
+            // is rejected): a hand-edited file could otherwise stamp a MOC with
+            // an id the saving user does not own, which _mocIdsForAliases would
+            // then submit as their own MOC. Local MOCs earn a fresh id on upload.
+            data.mocs?.forEach((moc) => { delete moc.mocId; });
             if (this.readOnly) {
               this.reset();
               await this.exitReadOnlyMode();
@@ -2895,23 +3952,35 @@ export class LayoutController {
     input.addEventListener('input', onInput);
   }
 
-
   /**
    * Saves the current layout to cloud storage.
    * @param {string} layoutName - The name for the layout
+   * @returns {Promise<Boolean>} True if the layout was saved to the cloud
    * @private
    */
   async _saveToCloud(layoutName) {
+    if (this.editorMode) {
+      showSnackbar('Not available in editor mode', 'error');
+      return false;
+    }
     const authManager = await this._getAuthManager();
     if (!authManager) {
       showSnackbar('Authentication not available.', 'error');
-      return;
+      return false;
     }
 
     const cloudFeatures = authManager.getCloudFeatures();
     if (!cloudFeatures || !cloudFeatures.cloudStorage) {
       showSnackbar('Cloud storage not available.', 'error');
-      return;
+      return false;
+    }
+
+    // Detect MOCs that only exist locally and offer to upload them first. This
+    // must run before anything is serialized: a "Yes" re-keys each MOC's alias
+    // to `moc<mocId>`, and the serialized components must reference the new
+    // alias. On "No" or any upload failure, abandon the layout save entirely.
+    if (!(await this._ensureMocsInCloud()).ok) {
+      return false;
     }
 
     try {
@@ -2929,11 +3998,20 @@ export class LayoutController {
         }
       };
 
+      const mocs = new Map();
+      layoutData.layers.forEach(layer => {
+        if (layer.mocs !== void 0 && layer.mocs !== null) {
+          layer.mocs.forEach(moc => mocs.set(moc, true));
+          delete layer.mocs;
+        }
+      });
+
       // Get existing layout ID if updating
       const layoutId = this.#layoutMetadata.cloudId || null;
       const result = await cloudFeatures.cloudStorage.saveLayout(
         layoutData,
         layoutName,
+        this._mocIdsForAliases(Array.from(mocs.keys())),
         this,
         layoutId
       );
@@ -2945,9 +4023,11 @@ export class LayoutController {
 
       showSnackbar('Layout saved to cloud!', 'success');
       this.updateCloudMenuVisibility();
+      return true;
     } catch (error) {
       console.error('Failed to save layout to cloud:', error);
       showSnackbar(error.message || 'Failed to save layout.', 'error');
+      return false;
     }
   }
 
@@ -3062,6 +4142,9 @@ export class LayoutController {
    * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
    */
   async _importLayout(data, cloudInfo = null) {
+    if (Array.isArray(data.mocs) && data.mocs.length > 0) {
+      await this._loadLayoutMocs(data.mocs);
+    }
     const neededAliases = this._extractLayoutAliases(data);
     const unloaded = neededAliases.filter(a => !Assets.cache.has(a));
     if (unloaded.length > 0) {
@@ -3080,15 +4163,13 @@ export class LayoutController {
       this.setLayoutName(data.metadata.name || null);
     }
 
-    // If loaded from cloud, track cloud-specific metadata
+    // If loaded from cloud, track cloud-specific metadata. updateCloudMetadata is
+    // the single place that knows the full cloud field set, so callers get
+    // isPublic/shareCode too rather than a subset.
     if (cloudInfo) {
-      this.#layoutMetadata.cloudId = cloudInfo.cloudId || null;
-      this.#layoutMetadata.s3Key = cloudInfo.s3Key || null;
-      this.#layoutMetadata.lastSaved = cloudInfo.lastSaved || null;
-      this.#layoutMetadata.source = 'cloud';
-      this.#layoutMetadata.version = cloudInfo.version || 1;
+      this.updateCloudMetadata(cloudInfo);
     } else {
-      this.#layoutMetadata.source = 'local';
+      this.clearCloudMetadata();
     }
 
     if (data.config) {
@@ -3136,16 +4217,25 @@ export class LayoutController {
       data?.y === undefined || (typeof data?.y === 'number'),
       data?.zoom === undefined || (typeof data?.zoom === 'number' && data?.zoom > 0.0),
       data?.layers,
-      data?.layers?.length > 0
+      data?.layers?.length > 0,
+      // `textureData` is required and `src` is deliberately rejected. This only
+      // ever validates untrusted local files, and an embedded data URL is checked
+      // by _textureFromDataUrl (magic bytes, mime, decoded size) whereas a `src`
+      // URL would be fetched as-is. Server-supplied layouts may use `src`; they
+      // are imported without passing through here.
+      data?.mocs === undefined || (Array.isArray(data.mocs) && data.mocs.every(moc => moc
+        && typeof moc.alias === 'string' && moc.alias.length > 0
+        && typeof moc.name === 'string'
+        && typeof moc.textureData === 'string'))
     ]
     if (validations.every(v => v) === false) {
       return false;
     }
-    // TODO: Add validation that checks every component in every layer to see if the `type` can't be found in the manifest
     if (data.hasOwnProperty('config') && Configuration.validateImportData(data.config) === false) {
       return false;
     }
-    return data.layers.every(layer => LayoutLayer._validateImportData(layer));
+    const mocAliases = new Set((data.mocs ?? []).map(moc => moc.alias));
+    return data.layers.every(layer => LayoutLayer._validateImportData(layer, mocAliases));
   }
 
   /**
@@ -3655,6 +4745,12 @@ export class LayoutController {
   deleteComponent(component) {
     if (component?.locked) {
       return;
+    }
+    if (this.editorMode && LayoutController.editorController) {
+      const editor = LayoutController.editorController;
+      if (component === editor.newComp || editor.testComps?.includes(component)) {
+        return;
+      }
     }
     const layer = component.layer || component.parent;
     const layerUuid = layer?.uuid;
