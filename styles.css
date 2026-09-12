@@ -1358,10 +1358,17 @@ i + span.label {
 	text-overflow: ellipsis;
 }
 
+.componentBrowser>button.mine>i {
+	display: none;
+}
+
 @media (hover:hover) {
 	.componentBrowser>button:hover {
 		background: var(--component-hover);
 		opacity: 1;
+	}
+	.componentBrowser>button.mine:hover>i {
+		display: inline-flex;
 	}
 }
 

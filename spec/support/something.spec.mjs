@@ -1,4 +1,6 @@
-import { DataTypes, LayoutController, SerializedLayout, TrackData } from "../../src/controller/layoutController.js";
+import {
+    CurrentFormatVersion, DataTypes, LayoutController, SerializedLayout, TrackData
+} from "../../src/controller/layoutController.js";
 import { Component, DEFAULT_CIRCLE_PERCENTAGE } from "../../src/model/component.js";
 import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
@@ -11609,6 +11611,162 @@ describe("LayoutController", function() {
             spyOn(layoutController, '_openLocalFile').and.stub();
             await layoutController.onImportClick();
             expect(exitSpy).toHaveBeenCalledWith(false);
+        });
+    });
+
+    describe("_saveToCloud MOC gate", function () {
+        let lc;
+        let saveLayout;
+        let track;
+
+        beforeEach(function () {
+            lc = window.layoutController;
+            lc.reset();
+            lc.editorMode = false;
+            track = {
+                alias: 'local1', name: 'Castle', category: 'structures',
+                scale: 1, type: 'track', mine: 1,
+            };
+            lc.trackData.bundles[0].assets.push(track);
+            // A placed MOC component holds its track by reference, exactly as the
+            // real deserialization path leaves it, so re-keying the track updates
+            // what the component serializes.
+            const fakeComponent = Object.create(Component.prototype);
+            fakeComponent.baseData = track;
+            const fakeLayer = {
+                children: [fakeComponent],
+                destroy() {},
+                serialize() {
+                    return {
+                        components: this.children.map((c) => ({ type: c.baseData.alias })),
+                        mocs: this.children.map((c) => c.baseData.alias),
+                    };
+                },
+            };
+            lc.layers = [fakeLayer];
+            saveLayout = jasmine.createSpy('saveLayout').and.returnValue(Promise.resolve({
+                layoutId: 'L1', s3Key: 'k', lastSaved: 'now',
+            }));
+            spyOn(lc, '_getAuthManager').and.returnValue(Promise.resolve({
+                getCloudFeatures: () => ({ cloudStorage: { saveLayout } }),
+            }));
+            spyOn(lc, 'updateCloudMenuVisibility').and.stub();
+        });
+
+        afterEach(function () {
+            const assets = lc.trackData.bundles[0].assets;
+            const idx = assets.indexOf(track);
+            if (idx >= 0) {
+                assets.splice(idx, 1);
+            }
+            lc.reset();
+        });
+
+        it("abandons the layout save when the user declines to upload local MOCs", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+            const saveSpy = spyOn(lc, 'saveMocToCloud');
+
+            await lc._saveToCloud('MyLayout');
+
+            expect(saveLayout).not.toHaveBeenCalled();
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it("uploads local MOCs then saves the layout referencing the new alias and id", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(true));
+            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
+                // Mimic _rekeyMocAlias: the shared track (and thus the placed
+                // component's baseData) is re-keyed to its cloud alias.
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve('mocnew1');
+            });
+
+            await lc._saveToCloud('MyLayout');
+
+            expect(saveLayout).toHaveBeenCalled();
+            const args = saveLayout.calls.mostRecent().args;
+            // Re-serialization happened after the upload: components reference the
+            // re-keyed alias, and the mocs argument carries the new cloud id.
+            expect(args[0].layers[0].components[0].type).toBe('mocnew1');
+            expect(args[2]).toContain('new1');
+        });
+
+        it("reports success and failure through its return value", async function () {
+            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
+
+            lc._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve('mocnew1');
+            });
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(true);
+        });
+
+        it("returns false when the cloud save itself throws", async function () {
+            track.mocId = 'already-there';
+            saveLayout.and.returnValue(Promise.reject(new Error('offline')));
+            spyOn(console, 'error');
+
+            await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
+        });
+    });
+
+    describe("_openLocalFile MOC id stripping", function () {
+        it("does not carry a mocId from a local file through to the import", async function () {
+            const lc = window.layoutController;
+            lc.readOnly = false;
+            // A hand-edited layout file claiming a MOC id the user does not own.
+            const layout = {
+                version: CurrentFormatVersion,
+                date: "2021-09-01T00:00:00.000Z",
+                layers: [{ components: [] }],
+                config: {},
+                mocs: [{
+                    alias: 'forged',
+                    name: 'Forged MOC',
+                    textureData: 'data:image/png;base64,AAAA',
+                    mocId: 'someone-elses-id',
+                }],
+            };
+
+            // _openLocalFile builds its own <input type="file">; hand it one we
+            // control so the change event can be driven from the spec.
+            const fakeInput = { type: '', accept: '', onchange: null, onerror: null, click() {} };
+            const createSpy = spyOn(document, 'createElement').and.callFake((tag) => {
+                if (tag === 'input') {
+                    return fakeInput;
+                }
+                return createSpy.and.originalFn.call(document, tag);
+            });
+            lc._openLocalFile();
+            createSpy.and.callThrough();
+
+            let imported;
+            let importDone;
+            const waitForImport = new Promise((resolve) => { importDone = resolve; });
+            spyOn(lc, '_importLayout').and.callFake(async (data) => {
+                imported = data;
+                importDone();
+            });
+
+            fakeInput.files = [new File(
+                [JSON.stringify(layout)],
+                'layout.json',
+                { type: 'application/json' }
+            )];
+            fakeInput.onchange();
+            await waitForImport;
+
+            expect(imported.mocs.length).toBe(1);
+            expect(imported.mocs[0].alias).toBe('forged');
+            expect('mocId' in imported.mocs[0]).toBeFalse();
         });
     });
 });

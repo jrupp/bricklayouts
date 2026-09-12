@@ -20,6 +20,10 @@ describe("LayoutController cloud MOCs", function () {
 
     beforeEach(function () {
       controller = Object.create(LayoutController.prototype);
+      controller.categories = new Map([
+        ['structures', 'Structures'],
+        ['mine', 'My MOCs'],
+      ]);
       cloudStorage = {
         createMoc: jasmine.createSpy('createMoc')
           .and.returnValue(Promise.resolve({ mocId: 'uuid-1', uploadUrl: 'https://up.example' })),
@@ -47,7 +51,7 @@ describe("LayoutController cloud MOCs", function () {
         alias: 'myMoc', name: 'My MOC', category: 'structures', scale: 1, type: 'track',
       };
       controller.trackData = { bundles: [{ assets: [track] }] };
-      Assets.cache.set('myMoc', { id: 'texture' });
+      Assets.cache.set('myMoc', { width: 64, height: 64 });
       spyOn(controller, '_serializeMocs').and.returnValue(Promise.resolve([{
         name: 'My MOC',
         category: 'structures',
@@ -76,6 +80,7 @@ describe("LayoutController cloud MOCs", function () {
         category: 'structures', scale: 1, type: 'track', onbp: 0x237841,
       };
       controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('mocuuid-1', { width: 64, height: 64 });
       const serializeSpy = spyOn(controller, '_serializeMocs');
 
       const result = await controller.saveMocToCloud('mocuuid-1');
@@ -88,16 +93,36 @@ describe("LayoutController cloud MOCs", function () {
       expect(serializeSpy).not.toHaveBeenCalled();
     });
 
-    it("sends null for cloud fields that have been cleared locally", async function () {
+    it("sends null for an onbp that has been cleared locally", async function () {
       // The MOC previously had a baseplate color; the user has since removed it.
-      const track = { alias: 'mocuuid-1', mocId: 'uuid-1', name: 'X', type: 'track' };
+      // `onbp` is the only cloud field that can legitimately be absent here —
+      // validateMocForCloud requires name, category, scale and type — so it is
+      // the only one the null-clearing behaviour still applies to.
+      const track = {
+        alias: 'mocuuid-1', mocId: 'uuid-1', name: 'X',
+        category: 'structures', scale: 1, type: 'track',
+      };
       controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('mocuuid-1', { width: 64, height: 64 });
 
       await controller.saveMocToCloud('mocuuid-1');
 
       expect(cloudStorage.updateMoc).toHaveBeenCalledWith('uuid-1', {
-        name: 'X', category: null, scale: null, type: 'track', onbp: null,
+        name: 'X', category: 'structures', scale: 1, type: 'track', onbp: null,
       });
+    });
+
+    it("refuses to update a MOC that is missing a required cloud field", async function () {
+      // The counterpart to the test above: the fields that used to be sent as
+      // null can no longer reach the API at all.
+      const track = { alias: 'mocuuid-1', mocId: 'uuid-1', name: 'X', type: 'track' };
+      controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('mocuuid-1', { width: 64, height: 64 });
+
+      const result = await controller.saveMocToCloud('mocuuid-1');
+
+      expect(result).toBeNull();
+      expect(cloudStorage.updateMoc).not.toHaveBeenCalled();
     });
 
     it("does nothing when cloud storage is unavailable", async function () {
@@ -112,8 +137,12 @@ describe("LayoutController cloud MOCs", function () {
     });
 
     it("resolves to null instead of throwing when the cloud save fails", async function () {
-      const track = { alias: 'mocuuid-1', mocId: 'uuid-1', name: 'X', type: 'track' };
+      const track = {
+        alias: 'mocuuid-1', mocId: 'uuid-1', name: 'X',
+        category: 'structures', scale: 1, type: 'track',
+      };
       controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('mocuuid-1', { width: 64, height: 64 });
       cloudStorage.updateMoc.and.returnValue(Promise.reject(new Error('boom')));
       spyOn(console, 'error');
 
@@ -125,6 +154,74 @@ describe("LayoutController cloud MOCs", function () {
       spyOn(console, 'error');
 
       await expectAsync(controller.saveMocToCloud('myMoc')).toBeResolvedTo(null);
+    });
+
+    it("rejects a MOC that fails validation without calling the API", async function () {
+      const track = {
+        alias: 'myMoc', name: 'My MOC', category: 'bogus', scale: 1, type: 'track',
+      };
+      controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('myMoc', { width: 64, height: 64 });
+      spyOn(controller, '_serializeMocs');
+
+      const result = await controller.saveMocToCloud('myMoc');
+
+      expect(result).toBeNull();
+      expect(cloudStorage.createMoc).not.toHaveBeenCalled();
+      expect(cloudStorage.updateMoc).not.toHaveBeenCalled();
+    });
+
+    it("does not create a cloud MOC when the texture is not a PNG data URL", async function () {
+      const track = {
+        alias: 'myMoc', name: 'My MOC', category: 'structures', scale: 1, type: 'track',
+      };
+      controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('myMoc', { width: 64, height: 64 });
+      spyOn(controller, '_serializeMocs').and.returnValue(Promise.resolve([{
+        name: 'My MOC', category: 'structures', scale: 1, type: 'track',
+        textureData: 'not-a-data-url',
+      }]));
+
+      const result = await controller.saveMocToCloud('myMoc');
+
+      expect(result).toBeNull();
+      expect(cloudStorage.uploadMocImage).not.toHaveBeenCalled();
+      // Bailing out after createMoc would leave an imageless MOC record behind.
+      expect(cloudStorage.createMoc).not.toHaveBeenCalled();
+    });
+
+    it("rethrows the MOC storage limit so a batch upload can stop", async function () {
+      // The one failure that is not swallowed: it is account-wide, not a problem
+      // with this MOC, so the caller has to be able to abandon the rest.
+      const track = {
+        alias: 'myMoc', name: 'My MOC', category: 'structures', scale: 1, type: 'track',
+      };
+      controller.trackData = { bundles: [{ assets: [track] }] };
+      Assets.cache.set('myMoc', { width: 64, height: 64 });
+      spyOn(controller, '_serializeMocs').and.returnValue(Promise.resolve([{
+        name: 'My MOC', category: 'structures', scale: 1, type: 'track',
+        textureData: 'data:image/png;base64,AAAA',
+      }]));
+      const limitError = new Error('Subscription is required to store more than 10 MOCs');
+      limitError.code = 'MOC_LIMIT_REACHED';
+      limitError.details = { reason: 'mocLimitReached', limit: 10, current: 10 };
+      cloudStorage.createMoc.and.returnValue(Promise.reject(limitError));
+      spyOn(console, 'error');
+
+      // showSnackbar reuses a single element, so seed a sentinel rather than
+      // relying on its absence: a leftover from another spec would otherwise
+      // make this assertion depend on execution order.
+      const snackbar = document.getElementById('cloudSnackbar')
+        || document.body.appendChild(Object.assign(
+          document.createElement('div'), { id: 'cloudSnackbar' }
+        ));
+      snackbar.textContent = 'SENTINEL';
+
+      await expectAsync(controller.saveMocToCloud('myMoc')).toBeRejectedWith(limitError);
+      // The user is told why before the error travels on.
+      expect(snackbar.textContent)
+        .toContain('Subscription is required to store more than 10 MOCs');
+      expect(track.mocId).toBeUndefined();
     });
   });
 
@@ -187,6 +284,25 @@ describe("LayoutController cloud MOCs", function () {
 
       expect(assets.find((t) => t.alias === 'mocuuid-9').mocId).toBe('uuid-9');
       expect(assets.find((t) => t.alias === 'localMoc').mocId).toBeUndefined();
+    });
+
+    it("does not stamp a non-string mocId onto a track", async function () {
+      const controller = Object.create(LayoutController.prototype);
+      const assets = [];
+      controller.trackData = { bundles: [{ assets }] };
+      spyOn(controller, 'createComponentBrowser').and.stub();
+      spyOn(controller, '_backgroundLoadRemaining').and.stub();
+
+      await controller._loadLayoutMocs([
+        {
+          alias: 'forged', mocId: { toString: () => 'evil' },
+          src: 'https://img.example/e.png', name: 'E',
+        },
+        { alias: 'forged2', mocId: 12345, src: 'https://img.example/f.png', name: 'F' },
+      ]);
+
+      expect(assets.find((t) => t.alias === 'forged').mocId).toBeUndefined();
+      expect(assets.find((t) => t.alias === 'forged2').mocId).toBeUndefined();
     });
   });
 
@@ -306,6 +422,146 @@ describe("LayoutController cloud MOCs", function () {
 
       expect(controller._mocIdsForAliases(['mocuuid-1', 'localOnly', 'missing']))
         .toEqual(['uuid-1']);
+    });
+  });
+
+  describe("_ensureMocsInCloud", function () {
+    let controller;
+
+    beforeEach(function () {
+      controller = Object.create(LayoutController.prototype);
+      spyOn(controller, 'saveMocToCloud');
+      spyOn(controller, '_confirmUploadMocs');
+    });
+
+    it("resolves true without prompting when every MOC already has a cloud id", async function () {
+      controller.layers = [
+        { children: [makeComponent({ alias: 'a', mine: 1, mocId: 'id-a' })] },
+        { children: [makeComponent({ alias: 'b', mine: 1, mocId: 'id-b' })] },
+      ];
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: true, reason: null }));
+      expect(controller._confirmUploadMocs).not.toHaveBeenCalled();
+      expect(controller.saveMocToCloud).not.toHaveBeenCalled();
+    });
+
+    it("ignores stock tracks and things that are not Components", async function () {
+      controller.layers = [
+        { children: [makeComponent({ alias: 'r104' }), { notAComponent: true }] },
+      ];
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: true, reason: null }));
+      expect(controller._confirmUploadMocs).not.toHaveBeenCalled();
+    });
+
+    it("resolves false and uploads nothing when the user declines", async function () {
+      controller.layers = [{ children: [makeComponent({ alias: 'a', mine: 1 })] }];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(false));
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: false, reason: 'declined' }));
+      expect(controller._confirmUploadMocs).toHaveBeenCalled();
+      expect(controller.saveMocToCloud).not.toHaveBeenCalled();
+    });
+
+    it("uploads each pending MOC in order and resolves true on success", async function () {
+      const a = { alias: 'a', mine: 1 };
+      const b = { alias: 'b', mine: 1 };
+      controller.layers = [
+        { children: [makeComponent(a)] },
+        { children: [makeComponent(b)] },
+      ];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+      const order = [];
+      controller.saveMocToCloud.and.callFake((alias) => {
+        order.push(alias);
+        (alias === 'a' ? a : b).mocId = `id-${alias}`;
+        return Promise.resolve(`moc-${alias}`);
+      });
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: true, reason: null }));
+      expect(order).toEqual(['a', 'b']);
+      expect(controller.saveMocToCloud).toHaveBeenCalledTimes(2);
+    });
+
+    it("uploads a MOC placed several times only once", async function () {
+      // Components hold their track by reference, so the same MOC placed twice
+      // must not be uploaded twice.
+      const a = { alias: 'a', mine: 1 };
+      controller.layers = [
+        { children: [makeComponent(a), makeComponent(a)] },
+        { children: [makeComponent(a)] },
+      ];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+      controller.saveMocToCloud.and.callFake(() => {
+        a.mocId = 'id-a';
+        return Promise.resolve('moc-a');
+      });
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: true, reason: null }));
+      expect(controller.saveMocToCloud).toHaveBeenCalledTimes(1);
+      expect(controller._confirmUploadMocs).toHaveBeenCalledWith([a]);
+    });
+
+    it("aborts and warns when an upload leaves a MOC without a cloud id", async function () {
+      controller.layers = [{ children: [makeComponent({ alias: 'a', mine: 1 })] }];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+      controller.saveMocToCloud.and.returnValue(Promise.resolve(null));
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: false, reason: 'uploadFailed' }));
+    });
+
+    it("refuses to prompt when more than the batch limit are pending", async function () {
+      const children = [];
+      for (let i = 0; i < 21; i += 1) {
+        children.push(makeComponent({ alias: `a${i}`, mine: 1 }));
+      }
+      controller.layers = [{ children }];
+
+      await expectAsync(controller._ensureMocsInCloud())
+        .toBeResolvedTo(jasmine.objectContaining({ ok: false, reason: 'batchTooLarge' }));
+      expect(controller._confirmUploadMocs).not.toHaveBeenCalled();
+    });
+
+    it("abandons the rest of the batch when the account hits its MOC limit", async function () {
+      // The cap is account-wide, so the third MOC must never be attempted.
+      const a = { alias: 'a', mine: 1 };
+      const b = { alias: 'b', mine: 1 };
+      const c = { alias: 'c', mine: 1 };
+      controller.layers = [{
+        children: [makeComponent(a), makeComponent(b), makeComponent(c)],
+      }];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+      controller.saveMocToCloud.and.callFake((alias) => {
+        if (alias === 'a') {
+          a.mocId = 'id-a';
+          return Promise.resolve('moc-a');
+        }
+        const error = new Error('Subscription is required to store more than 10 MOCs');
+        error.code = 'MOC_LIMIT_REACHED';
+        error.details = { reason: 'mocLimitReached', limit: 10, current: 10 };
+        return Promise.reject(error);
+      });
+
+      await expectAsync(controller._ensureMocsInCloud()).toBeResolvedTo({
+        ok: false,
+        reason: 'mocLimitReached',
+        limit: 10,
+      });
+      expect(controller.saveMocToCloud).toHaveBeenCalledTimes(2);
+    });
+
+    it("lets a non-limit error from saveMocToCloud propagate", async function () {
+      controller.layers = [{ children: [makeComponent({ alias: 'a', mine: 1 })] }];
+      controller._confirmUploadMocs.and.returnValue(Promise.resolve(true));
+      controller.saveMocToCloud.and.returnValue(Promise.reject(new Error('boom')));
+
+      await expectAsync(controller._ensureMocsInCloud()).toBeRejectedWithError('boom');
     });
   });
 });

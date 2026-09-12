@@ -4,6 +4,7 @@ import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
 import { SubscriptionDialogController } from './controller/subscriptionDialogController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
+import { clearOrphanedPreservation } from './utils/layoutPreservation.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
 
 const canvasContainer = document.getElementById('canvasContainer');
@@ -55,10 +56,11 @@ if (authManager.isAuthenticated && authManager.hasCloudAccess) {
 }
 
 // Custom MOCs are available to every signed-in user, subscription or not.
-// Fire-and-forget so a slow MOC list never delays startup.
-if (authManager.isAuthenticated) {
-  layoutController.loadCloudMocs();
-}
+// Startup is not blocked on it, but the promise is held: a preserved layout can
+// place cloud MOCs, and restoring it before their tracks are registered would
+// leave those components unable to resolve their alias.
+const cloudMocsReady = authManager.isAuthenticated
+  ? layoutController.loadCloudMocs() : Promise.resolve();
 
 // Update cloud menu visibility based on authentication state
 await layoutController.updateCloudMenuVisibility();
@@ -69,9 +71,18 @@ const checkoutSessionId = checkoutParams.get('session_id');
 const checkoutCancelled = checkoutParams.get('checkout');
 const portalReturn = checkoutParams.get('portal_return');
 
+// Anything left in storage that the branch below is not about to consume is
+// orphaned, and a MOC deleted since it was written would make it throw on restore.
+clearOrphanedPreservation(window.location.search, {
+  session: sessionStorage,
+  local: localStorage,
+});
+
 if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === 'true') {
   // Dynamically import SubscriptionService only for checkout/portal return flows
   import('./cloud/subscriptionService.js').then(async ({ SubscriptionService }) => {
+    // The restore below can place cloud MOCs, so their tracks must exist first.
+    await cloudMocsReady;
     const subscriptionService = new SubscriptionService(authManager);
     try {
       if (checkoutSessionId) {

@@ -8,6 +8,7 @@ import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
 import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
+import { validateMocForCloud } from '../utils/mocValidation.js';
 import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
@@ -118,6 +119,16 @@ let SerializedLayout;
 export { SerializedLayout };
 
 /**
+ * @typedef {Object} MocUploadResult
+ * @property {Boolean} ok True when every referenced MOC is in the cloud.
+ * @property {?String} reason Null on success, otherwise one of 'declined',
+ *   'batchTooLarge', 'mocLimitReached' or 'uploadFailed'.
+ * @property {?Number} limit The account's MOC cap, set only for 'mocLimitReached'.
+ */
+let MocUploadResult;
+export { MocUploadResult };
+
+/**
  * The current version of the serialized file format.
  * @type {Number}
  * @constant
@@ -175,6 +186,15 @@ const MOC_CLOUD_KEYS = ['name', 'category', 'scale', 'type', 'onbp'];
  * @constant
  */
 const MOC_TEXTURE_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
+/**
+ * Maximum number of local-only MOCs that will be uploaded to the cloud in a
+ * single "save layout" batch. A hand-edited layout file could otherwise embed
+ * hundreds of MOC entries and fire a create+upload round trip for each.
+ * @type {Number}
+ * @constant
+ */
+const MAX_MOC_UPLOAD_BATCH = 20;
 
 export class LayoutController {
   static _instance = null;
@@ -958,7 +978,10 @@ export class LayoutController {
       this.componentBrowser.appendChild(rtButton);
     }
     this.trackData.bundles[0].assets.forEach(/** @param {TrackData} track */(track) => {
-      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory || ((track.mine !== void 0 && selectedCategory === 'mine'))) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text' && (track.mine === void 0 || selectedCategory === 'mine')) {
+      if ((this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX || track.category === selectedCategory || ((track.mine !== void 0 && selectedCategory === 'mine'))) && (searchQuery.length === 0 || track.name.toLowerCase().includes(searchQuery)) && track.alias !== 'baseplate' && track.alias !== 'shape' && track.alias !== 'text') {
+        if (this.groupSelect.selectedIndex == ALL_CATEGORY_INDEX && searchQuery.length === 0 && track.mine !== void 0) {
+          return;
+        }
         let button = document.createElement('button');
         let label = document.createElement('span');
         label.textContent = track.name;
@@ -983,6 +1006,22 @@ export class LayoutController {
               this.addComponent(track, true);
             }
           });
+        }
+        if (track.mine !== void 0) {
+          let trash = document.createElement('i');
+          trash.classList.add('large', 'black-text');
+          trash.textContent = 'delete';
+          trash.style.cssText = 'pointer-events: all; position: absolute; top: 5px; right: 5px; text-shadow: -1px -1px 0 white,1px -1px 0 white,-1px  1px 0 white,1px  1px 0 white';
+          trash.addEventListener('pointerdown', (e) => {
+            e.stopPropagation(); // Prevent the pointerdown from triggering the button's pointerdown event
+          });
+          trash.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent the click from triggering the button's click event
+            // deleteMoc reports all of its own failures, so nothing to catch here.
+            this.deleteMoc(track.alias);
+          });
+          button.appendChild(trash);
+          button.classList.add('mine');
         }
         this.componentBrowser.appendChild(button);
       }
@@ -2650,7 +2689,9 @@ export class LayoutController {
       });
       // Only MOCs coming from the cloud carry an id; it is deliberately absent
       // from MOC_TRACK_KEYS so downloaded layouts stay portable between accounts.
-      if (moc.mocId !== void 0) {
+      // Restricted to strings so a non-string id from any path cannot be stamped
+      // onto a track (local files have `mocId` stripped at the input boundary).
+      if (typeof moc.mocId === 'string') {
         track.mocId = moc.mocId;
       }
       track.mine = 1;
@@ -2694,9 +2735,13 @@ export class LayoutController {
    * been committed (its track carries a `mocId`), only its metadata is updated;
    * the image cannot be changed after creation.
    * Failures are surfaced via snackbar and never thrown, since the local commit
-   * has already succeeded by the time this runs.
+   * has already succeeded by the time this runs. The one exception is the MOC
+   * storage limit: it is terminal and account-wide rather than a problem with
+   * this particular MOC, so a caller uploading a batch has to be able to stop.
    * @param {String} alias The alias of the MOC track to save
    * @returns {Promise<?String>} The new alias if it was re-keyed, otherwise null
+   * @throws {CloudStorageError} Only with code `MOC_LIMIT_REACHED`, after the
+   *   failure has already been reported to the user
    */
   async saveMocToCloud(alias) {
     try {
@@ -2708,9 +2753,18 @@ export class LayoutController {
       if (!track) {
         return null;
       }
-      // Absent keys are sent as null so clearing a value locally (removing a
-      // MOC's baseplate color, say) also clears it in the cloud. This also keeps
-      // the payload non-empty, which PUT /mocs/{mocId} requires.
+      const check = validateMocForCloud(track, {
+        categories: this.categories,
+        texture: Assets.get(alias),
+      });
+      if (!check.ok) {
+        showSnackbar(`Cannot save MOC to the cloud: ${check.reason}`, 'error');
+        return null;
+      }
+      // Absent keys are sent as null so clearing a value locally also clears it
+      // in the cloud, and so the payload stays non-empty, which
+      // PUT /mocs/{mocId} requires. In practice only `onbp` can be absent here:
+      // validateMocForCloud above requires name, category, scale and type.
       const metadata = this._serializeMocTrack(track, MOC_CLOUD_KEYS, null);
       if (track.mocId) {
         await cloudStorage.updateMoc(track.mocId, metadata);
@@ -2723,8 +2777,21 @@ export class LayoutController {
         showSnackbar('Failed to save MOC to the cloud.', 'error');
         return null;
       }
-      const { mocId, uploadUrl } = await cloudStorage.createMoc(metadata);
+      // `textureData` is produced by the renderer's PNG extractor, but assert it
+      // before handing the bytes to fetch() so a future change here cannot ship
+      // an unexpected payload to the presigned upload. Both checks run before
+      // createMoc: bailing out afterwards would leave an imageless MOC record in
+      // the cloud, and every retry would orphan another one.
+      if (!MOC_TEXTURE_DATA_URL.test(serialized.textureData)) {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
       const blob = await (await fetch(serialized.textureData)).blob();
+      if (blob.type !== 'image/png') {
+        showSnackbar('Failed to save MOC to the cloud.', 'error');
+        return null;
+      }
+      const { mocId, uploadUrl } = await cloudStorage.createMoc(metadata);
       await cloudStorage.uploadMocImage(uploadUrl, blob);
       const newAlias = this._rekeyMocAlias(alias, `moc${mocId}`, mocId);
       showSnackbar('MOC saved to the cloud.', 'success');
@@ -2732,6 +2799,9 @@ export class LayoutController {
     } catch (error) {
       console.error(`Failed to save MOC "${alias}" to the cloud:`, error);
       showSnackbar(error.message || 'Failed to save MOC to the cloud.', 'error');
+      if (error.code === 'MOC_LIMIT_REACHED') {
+        throw error;
+      }
       return null;
     }
   }
@@ -2749,6 +2819,156 @@ export class LayoutController {
     return aliases
       .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
       .filter((mocId) => typeof mocId === 'string');
+  }
+
+  /**
+   * Ensure every custom MOC placed in the layout exists in the cloud before the
+   * layout itself is saved. MOCs that only exist locally (no `mocId`) are
+   * detected, the user is prompted, and on confirmation each is uploaded.
+   *
+   * A layout that referenced a local-only MOC would silently drop that piece
+   * when reloaded from the cloud, so on decline or any upload failure the whole
+   * layout save is abandoned.
+   * @returns {Promise<MocUploadResult>} `ok` is true when every referenced MOC
+   *   is in the cloud. On failure, `reason` says why so the caller can explain
+   *   it in its own terms, and `limit` carries the account's MOC cap when the
+   *   storage limit was what stopped the batch.
+   * @private
+   */
+  async _ensureMocsInCloud() {
+    // A placed component's `baseData` is the very object held in trackData
+    // (see Component.deserialize), so the tracks are collected directly rather
+    // than looked up by alias. A Set dedupes an alias used by several
+    // components, and the same identity is what lets saveMocToCloud's re-key
+    // below be observed through `mocId`.
+    const pending = new Set();
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.mine && !child.baseData.mocId) {
+          pending.add(child.baseData);
+        }
+      });
+    });
+    if (pending.size === 0) {
+      return { ok: true, reason: null, limit: null };
+    }
+
+    if (pending.size > MAX_MOC_UPLOAD_BATCH) {
+      showSnackbar(
+        `This layout has more than ${MAX_MOC_UPLOAD_BATCH} MOCs that are not saved to the `
+        + 'cloud. Please save some of them individually first.',
+        'error'
+      );
+      return { ok: false, reason: 'batchTooLarge', limit: null };
+    }
+
+    const tracks = Array.from(pending);
+    if (!(await this._confirmUploadMocs(tracks))) {
+      return { ok: false, reason: 'declined', limit: null };
+    }
+
+    let limit = null;
+    let limitReached = false;
+    try {
+      // Serial: saveMocToCloud rebuilds the component browser and emits ordered
+      // snackbars, and each create is a two-request round trip.
+      for (const track of tracks) {
+        await this.saveMocToCloud(track.alias);
+      }
+    } catch (error) {
+      if (error.code !== 'MOC_LIMIT_REACHED') {
+        throw error;
+      }
+      // The cap is account-wide, so every remaining MOC would fail the same
+      // way. Abandon the rest of the batch rather than firing a request per
+      // MOC that is guaranteed to be refused.
+      limitReached = true;
+      limit = error.details?.limit ?? null;
+    }
+    // saveMocToCloud mutates the same track object, so `mocId` is the success
+    // test (it returns null both on failure and on the metadata-update path).
+    // Tracks the aborted batch never reached have no `mocId` either, so they
+    // are counted as failed, which is what they are.
+    const failed = tracks.filter((track) => !track.mocId);
+    if (failed.length > 0) {
+      showSnackbar(
+        limitReached
+          // saveMocToCloud already reported the cause, so this only has to say
+          // what it means for the batch. No "layout not saved": the preservation
+          // path calls this when no layout save is in progress.
+          ? `${failed.length} MOC(s) could not be saved to the cloud.`
+          : `Could not save ${failed.length} MOC(s) to the cloud. Layout not saved.`,
+        'error'
+      );
+      return {
+        ok: false,
+        reason: limitReached ? 'mocLimitReached' : 'uploadFailed',
+        limit,
+      };
+    }
+    return { ok: true, reason: null, limit: null };
+  }
+
+  /**
+   * Prompt the user to upload local-only MOCs before saving the layout to the
+   * cloud. Built dynamically (rather than in index.html) so the "404.html must
+   * match index.html" rule is not dragged in. MOC names are attacker-controlled
+   * (they come straight out of a local layout file), so they are inserted with
+   * `textContent`, never `innerHTML`.
+   * @param {Array<TrackData>} tracks The local-only MOC tracks
+   * @returns {Promise<Boolean>} True if the user chose to continue
+   * @private
+   */
+  _confirmUploadMocs(tracks) {
+    return new Promise((resolve) => {
+      document.getElementById('uploadMocsDialog')?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = 'uploadMocsDialog';
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max">MOCs Not Saved to the Cloud</h6>
+              <button class="circle medium transparent" data-ui="#uploadMocsDialog">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text">
+            <p id="uploadMocsMessage"></p>
+            <p>To continue, these MOCs will be saved to your cloud account. Do you want to continue?</p>
+          </div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text left-button primary-text" id="uploadMocsConfirm"><span>Yes</span></button>
+            <button class="no-round max extra-text right-button error" id="uploadMocsCancel"><span>No</span></button>
+          </nav>
+        </div>
+      `;
+      const names = tracks.map((track) => this._mocDisplayName(track));
+      dialog.querySelector('#uploadMocsMessage').textContent =
+        `This layout contains ${tracks.length} MOC(s) that are not currently stored in `
+        + `your account: ${names.join(', ')}.`;
+      document.body.appendChild(dialog);
+
+      let outcome = false;
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve(outcome);
+      });
+      const closeDialog = () => ui('#uploadMocsDialog');
+      dialog.querySelector('#uploadMocsConfirm').addEventListener('click', () => {
+        outcome = true;
+        closeDialog();
+      });
+      dialog.querySelector('#uploadMocsCancel').addEventListener('click', () => {
+        outcome = false;
+        closeDialog();
+      });
+
+      ui('#uploadMocsDialog');
+    });
   }
 
   /**
@@ -2837,6 +3057,337 @@ export class LayoutController {
       this.createComponentBrowser();
     }
     return removable.length;
+  }
+
+  /**
+   * The name to show a user for a MOC track, falling back to its alias.
+   * @param {TrackData} track
+   * @returns {String}
+   * @private
+   */
+  _mocDisplayName(track) {
+    return typeof track.name === 'string' && track.name.trim().length > 0
+      ? track.name : track.alias;
+  }
+
+  /**
+   * Find every component in the open layout built from the given MOC.
+   * @param {String} alias
+   * @returns {Array<Component>}
+   * @private
+   */
+  _findMocUsage(alias) {
+    const found = [];
+    this.layers.forEach((layer) => {
+      layer.children.forEach((child) => {
+        if (child instanceof Component && child.baseData?.alias === alias) {
+          found.push(child);
+        }
+      });
+    });
+    return found;
+  }
+
+  /**
+   * Delete a MOC from the component browser and, when it is a cloud MOC, from
+   * the user's account. Every failure is reported to the user here, so callers
+   * do not need to handle the returned promise.
+   * @param {String} alias The alias of the MOC track to delete
+   * @returns {Promise<void>}
+   */
+  async deleteMoc(alias) {
+    if (this.readOnly) {
+      return;
+    }
+
+    // Before anything else, including the track lookup. Entering the editor
+    // preserves the real layout to sessionStorage and resets the workspace, so
+    // `this.layers` is empty and the usage check below would wrongly report the
+    // MOC as unused. The preserved payload names its MOCs by alias and carries
+    // no texture, so deleting one would make exitEditorMode's restore throw.
+    if (this.editorMode) {
+      await this._showMocEditorModeDialog();
+      return;
+    }
+
+    const assets = this.trackData.bundles[0].assets;
+    let track = assets.find((t) => t.alias === alias);
+    if (!track) {
+      return;
+    }
+
+    if (this._findMocUsage(alias).length > 0) {
+      await this._showMocInUseDialog(track);
+      return;
+    }
+
+    if (!(await this._confirmDeleteMoc(track))) {
+      return;
+    }
+
+    // The confirm dialog awaits, so the layout may have changed under it.
+    track = assets.find((t) => t.alias === alias);
+    if (!track) {
+      return;
+    }
+    if (this._findMocUsage(alias).length > 0) {
+      await this._showMocInUseDialog(track);
+      return;
+    }
+
+    const name = this._mocDisplayName(track);
+
+    if (track.mocId) {
+      const cloudStorage = await this._getCloudStorage();
+      if (!cloudStorage) {
+        // Removing it locally would orphan the cloud record with no way back to it.
+        showSnackbar('Sign in to delete a MOC from your account.', 'error');
+        return;
+      }
+      try {
+        await cloudStorage.deleteMoc(track.mocId);
+      } catch (error) {
+        if (error.code === 'MOC_IN_USE') {
+          await this._showMocBlockedDialog(track, error);
+          return;
+        }
+        if (error.code !== 'NOT_FOUND') {
+          console.error(`Failed to delete MOC "${alias}" from the cloud:`, error);
+          showSnackbar(error.message || 'Failed to delete MOC.', 'error');
+          return;
+        }
+        // Already gone in the cloud: fall through and clean up locally.
+      }
+    }
+
+    this._removeMocLocally(alias);
+    showSnackbar(`Deleted "${name}".`, 'success');
+  }
+
+  /**
+   * Remove a MOC's track, texture and any lingering references to it from the
+   * running app. The cloud side, if any, has already been dealt with.
+   * @param {String} alias
+   * @private
+   */
+  _removeMocLocally(alias) {
+    const assets = this.trackData.bundles[0].assets;
+    const index = assets.findIndex((t) => t.alias === alias);
+    if (index >= 0) {
+      assets.splice(index, 1);
+    }
+    // Only the cache entry is dropped, not Assets.unload(): an in-flight
+    // background load or an already-extracted browser image may still hold the
+    // texture. Assets.add also leaves a resolver entry with no public removal
+    // API, which is harmless because the alias is derived from the mocId.
+    if (Assets.cache.has(alias)) {
+      Assets.cache.remove(alias);
+    }
+
+    if (this.copiedComponent) {
+      const members = this.copiedComponent instanceof ComponentGroup
+        ? this.copiedComponent.getAllComponents() : [this.copiedComponent];
+      if (members.some((member) => member.baseData?.alias === alias)) {
+        if (this.copiedComponent instanceof ComponentGroup && this.copiedComponent.isTemporary) {
+          this.copiedComponent.isTemporary = false;
+        }
+        this.copiedComponent.destroy();
+        this.copiedComponent = null;
+      }
+    }
+
+    this.undoManager?.clearIfReferencesAlias(alias);
+    this.createComponentBrowser();
+  }
+
+  /**
+   * Ask the user to confirm deleting a MOC. Built dynamically, like
+   * {@link _confirmUploadMocs}, so index.html and 404.html stay untouched.
+   * @param {TrackData} track
+   * @returns {Promise<Boolean>} True if the user confirmed
+   * @private
+   */
+  _confirmDeleteMoc(track) {
+    return new Promise((resolve) => {
+      document.getElementById('deleteMocDialog')?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = 'deleteMocDialog';
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding"
+            style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max">Delete MOC?</h6>
+              <button class="circle medium transparent" data-ui="#deleteMocDialog">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text">
+            <p id="deleteMocMessage"></p>
+          </div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text left-button primary-text"
+              id="deleteMocConfirm"><span>Yes, Delete</span></button>
+            <button class="no-round max extra-text right-button error"
+              id="deleteMocCancel"><span>Cancel</span></button>
+          </nav>
+        </div>
+      `;
+      // MOC names come from the server or a local layout file, so textContent.
+      dialog.querySelector('#deleteMocMessage').textContent = track.mocId
+        ? `Delete "${this._mocDisplayName(track)}"? It will be removed from your account `
+          + 'and from this browser.'
+        : `Delete "${this._mocDisplayName(track)}"? It only exists in this browser and `
+          + 'cannot be recovered.';
+      document.body.appendChild(dialog);
+
+      let outcome = false;
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve(outcome);
+      });
+      const closeDialog = () => ui('#deleteMocDialog');
+      dialog.querySelector('#deleteMocConfirm').addEventListener('click', () => {
+        outcome = true;
+        closeDialog();
+      });
+      dialog.querySelector('#deleteMocCancel').addEventListener('click', () => {
+        outcome = false;
+        closeDialog();
+      });
+
+      ui('#deleteMocDialog');
+    });
+  }
+
+  /**
+   * Build and show a dismiss-only dialog explaining why a MOC was not deleted.
+   * @param {String} id The dialog element id
+   * @param {String} title The header text
+   * @param {function(HTMLElement): void} buildBody Fills the body element
+   * @returns {Promise<void>} Resolves when the dialog closes
+   * @private
+   */
+  _showMocNoticeDialog(id, title, buildBody) {
+    return new Promise((resolve) => {
+      document.getElementById(id)?.remove();
+      const dialog = document.createElement('dialog');
+      dialog.className = 'no-padding border large-width surface-container-high small-round';
+      dialog.id = id;
+      dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding"
+            style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max" id="${id}Title"></h6>
+              <button class="circle medium transparent" data-ui="#${id}">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text" id="${id}Body"></div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text primary-text"
+              id="${id}Ok"><span>OK</span></button>
+          </nav>
+        </div>
+      `;
+      dialog.querySelector(`#${id}Title`).textContent = title;
+      buildBody(dialog.querySelector(`#${id}Body`));
+      document.body.appendChild(dialog);
+
+      dialog.addEventListener('close', () => {
+        dialog.remove();
+        resolve();
+      });
+      dialog.querySelector(`#${id}Ok`).addEventListener('click', () => ui(`#${id}`));
+
+      ui(`#${id}`);
+    });
+  }
+
+  /**
+   * Tell the user that MOCs cannot be deleted while the editor is open.
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocEditorModeDialog() {
+    return this._showMocNoticeDialog('mocEditorModeDialog', 'Exit the Editor', (body) => {
+      const message = document.createElement('p');
+      message.textContent = 'You must exit the Editor to delete MOCs.';
+      body.appendChild(message);
+    });
+  }
+
+  /**
+   * Tell the user the MOC is still placed in the layout they have open.
+   * @param {TrackData} track
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocInUseDialog(track) {
+    return this._showMocNoticeDialog('mocInUseDialog', 'MOC In Use', (body) => {
+      const message = document.createElement('p');
+      message.textContent = `The layout you have open is using "${this._mocDisplayName(track)}". `
+        + 'Close the layout before deleting the MOC.';
+      body.appendChild(message);
+    });
+  }
+
+  /**
+   * Explain a cloud refusal to delete a MOC, naming the caller's own layouts
+   * that still reference it. Everything here is server-supplied, so it is
+   * rendered with textContent and must tolerate a missing or malformed
+   * `details` payload.
+   * @param {TrackData} track
+   * @param {CloudStorageError} error The MOC_IN_USE error
+   * @returns {Promise<void>}
+   * @private
+   */
+  _showMocBlockedDialog(track, error) {
+    return this._showMocNoticeDialog('mocBlockedDialog', 'Cannot Delete MOC', (body) => {
+      const lead = document.createElement('p');
+      lead.textContent = error?.message
+        || `"${this._mocDisplayName(track)}" is still used by one or more layouts.`;
+      body.appendChild(lead);
+
+      const details = error?.details;
+      if (!details || typeof details !== 'object') {
+        return;
+      }
+
+      if (Array.isArray(details.layouts) && details.layouts.length > 0) {
+        const scroll = document.createElement('div');
+        scroll.className = 'scroll';
+        scroll.style.maxBlockSize = '40vh';
+        const list = document.createElement('ul');
+        list.className = 'list border';
+        details.layouts.forEach((layout) => {
+          const item = document.createElement('li');
+          item.textContent = layout?.layoutName || layout?.layoutId || '';
+          list.appendChild(item);
+        });
+        scroll.appendChild(list);
+        body.appendChild(scroll);
+      }
+
+      if (details.otherOwnerCount > 0) {
+        const shared = document.createElement('p');
+        shared.textContent = `Also used by ${details.otherOwnerCount} layout(s) belonging to `
+          + 'other users you have shared this MOC with.';
+        body.appendChild(shared);
+      }
+
+      if (details.truncated) {
+        const truncated = document.createElement('p');
+        truncated.textContent = 'This MOC is used by more layouts than could be listed.';
+        body.appendChild(truncated);
+      }
+    });
   }
 
   /**
@@ -3219,6 +3770,11 @@ export class LayoutController {
               // TODO: Show an error message to user
               return;
             }
+            // Strip any `mocId` at the untrusted-input boundary (same place `src`
+            // is rejected): a hand-edited file could otherwise stamp a MOC with
+            // an id the saving user does not own, which _mocIdsForAliases would
+            // then submit as their own MOC. Local MOCs earn a fresh id on upload.
+            data.mocs?.forEach((moc) => { delete moc.mocId; });
             if (this.readOnly) {
               this.reset();
               await this.exitReadOnlyMode();
@@ -3396,27 +3952,35 @@ export class LayoutController {
     input.addEventListener('input', onInput);
   }
 
-
   /**
    * Saves the current layout to cloud storage.
    * @param {string} layoutName - The name for the layout
+   * @returns {Promise<Boolean>} True if the layout was saved to the cloud
    * @private
    */
   async _saveToCloud(layoutName) {
     if (this.editorMode) {
       showSnackbar('Not available in editor mode', 'error');
-      return;
+      return false;
     }
     const authManager = await this._getAuthManager();
     if (!authManager) {
       showSnackbar('Authentication not available.', 'error');
-      return;
+      return false;
     }
 
     const cloudFeatures = authManager.getCloudFeatures();
     if (!cloudFeatures || !cloudFeatures.cloudStorage) {
       showSnackbar('Cloud storage not available.', 'error');
-      return;
+      return false;
+    }
+
+    // Detect MOCs that only exist locally and offer to upload them first. This
+    // must run before anything is serialized: a "Yes" re-keys each MOC's alias
+    // to `moc<mocId>`, and the serialized components must reference the new
+    // alias. On "No" or any upload failure, abandon the layout save entirely.
+    if (!(await this._ensureMocsInCloud()).ok) {
+      return false;
     }
 
     try {
@@ -3459,9 +4023,11 @@ export class LayoutController {
 
       showSnackbar('Layout saved to cloud!', 'success');
       this.updateCloudMenuVisibility();
+      return true;
     } catch (error) {
       console.error('Failed to save layout to cloud:', error);
       showSnackbar(error.message || 'Failed to save layout.', 'error');
+      return false;
     }
   }
 

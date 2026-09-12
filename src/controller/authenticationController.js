@@ -632,12 +632,6 @@ class AuthenticationManager {
       return false;
     }
 
-    // Check user permissions for cloud storage using JWT groups
-    //const groups = await this.getUserGroups();
-    //if (!groups.includes('cloud-users')) {
-    //  return false;
-    //}
-
     const emailVerified = await this.getEmailVerified();
     if (emailVerified) {
       return true;
@@ -997,7 +991,6 @@ class AuthenticationManager {
 
     switch (feature) {
       case 'cloud-storage':
-        //return groups.includes('cloud-users');
         return this.hasCloudAccessAsync();
       case 'admin':
         return groups.includes('admin');

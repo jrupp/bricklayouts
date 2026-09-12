@@ -16,7 +16,7 @@ npm start            # starts local dev server
 npx jasmine-browser-runner runSpecs --config=spec/support/jasmine-browser.ci.mjs
 ```
 
-- ~1197 specs, completes in ~6-9 seconds
+- ~1230 specs, completes in ~6-9 seconds
 - A WebGL patch is applied during CI for PixiJS v8 headless Chrome support
 
 ## Code style
