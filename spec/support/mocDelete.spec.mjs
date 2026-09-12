@@ -31,12 +31,18 @@ function uiToggle(selector) {
 }
 
 const DIALOG_IDS = [
-  'deleteMocDialog', 'mocEditorModeDialog', 'mocInUseDialog', 'mocBlockedDialog',
+  'deleteMocDialog', 'mocEditorModeDialog', 'mocInUseDialog',
 ];
 
+/**
+ * Deleting a MOC is mostly local work: a downloaded layout file can embed MOCs,
+ * so a signed-out user must be able to delete them with no cloud code loaded.
+ * Only the account side is delegated, to CloudMocSync.deleteRemote, which is
+ * faked here and covered for real in spec/cloud/cloudMocSync.spec.mjs.
+ */
 describe("LayoutController MOC deletion", function () {
   let controller;
-  let cloudStorage;
+  let cloudMocs;
   let track;
 
   beforeEach(function () {
@@ -48,8 +54,8 @@ describe("LayoutController MOC deletion", function () {
     track = {
       alias: 'myMoc', name: 'My MOC', mine: 1, category: 'mine', scale: 1, type: 'track',
     };
-    cloudStorage = {
-      deleteMoc: jasmine.createSpy('deleteMoc').and.returnValue(Promise.resolve(true)),
+    cloudMocs = {
+      deleteRemote: jasmine.createSpy('deleteRemote').and.returnValue(Promise.resolve('deleted')),
     };
 
     controller = Object.create(LayoutController.prototype);
@@ -62,7 +68,9 @@ describe("LayoutController MOC deletion", function () {
       clearIfReferencesAlias: jasmine.createSpy('clearIfReferencesAlias'),
     };
     spyOn(controller, 'createComponentBrowser').and.stub();
-    spyOn(controller, '_getCloudStorage').and.returnValue(Promise.resolve(cloudStorage));
+    // Signed in with cloud MOC support already loaded, which is the state any
+    // user who owns a cloud MOC is in. The signed-out case is set up per-test.
+    controller._cloudMocs = cloudMocs;
   });
 
   afterEach(function () {
@@ -75,7 +83,6 @@ describe("LayoutController MOC deletion", function () {
     spyOn(controller, '_confirmDeleteMoc').and.returnValue(Promise.resolve(confirm));
     spyOn(controller, '_showMocEditorModeDialog').and.returnValue(Promise.resolve());
     spyOn(controller, '_showMocInUseDialog').and.returnValue(Promise.resolve());
-    spyOn(controller, '_showMocBlockedDialog').and.returnValue(Promise.resolve());
   }
 
   describe("deleteMoc", function () {
@@ -90,7 +97,7 @@ describe("LayoutController MOC deletion", function () {
 
       expect(controller._showMocEditorModeDialog).toHaveBeenCalled();
       expect(controller._confirmDeleteMoc).not.toHaveBeenCalled();
-      expect(cloudStorage.deleteMoc).not.toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
       expect(controller.trackData.bundles[0].assets).toContain(track);
     });
 
@@ -113,7 +120,7 @@ describe("LayoutController MOC deletion", function () {
 
       expect(controller._showMocInUseDialog).toHaveBeenCalledWith(track);
       expect(controller._confirmDeleteMoc).not.toHaveBeenCalled();
-      expect(cloudStorage.deleteMoc).not.toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
       expect(controller.trackData.bundles[0].assets).toContain(track);
     });
 
@@ -122,7 +129,7 @@ describe("LayoutController MOC deletion", function () {
 
       await controller.deleteMoc('myMoc');
 
-      expect(cloudStorage.deleteMoc).not.toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
       expect(controller.trackData.bundles[0].assets).toContain(track);
       expect(controller.createComponentBrowser).not.toHaveBeenCalled();
     });
@@ -150,8 +157,20 @@ describe("LayoutController MOC deletion", function () {
       expect(controller.trackData.bundles[0].assets).not.toContain(track);
       expect(Assets.cache.has('myMoc')).toBeFalse();
       expect(controller.createComponentBrowser).toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
+    });
+
+    it("deletes a local-only MOC for a signed-out user", async function () {
+      // The case the whole split exists for: a MOC that arrived inside a
+      // downloaded layout file, deleted with no cloud module loaded at all.
+      delete controller._cloudMocs;
+      spyOn(controller, '_getCloudStorage').and.returnValue(Promise.resolve(null));
+      stubDialogs();
+
+      await controller.deleteMoc('myMoc');
+
+      expect(controller.trackData.bundles[0].assets).not.toContain(track);
       expect(controller._getCloudStorage).not.toHaveBeenCalled();
-      expect(cloudStorage.deleteMoc).not.toHaveBeenCalled();
     });
 
     it("deletes a cloud MOC from the account and then locally", async function () {
@@ -160,7 +179,7 @@ describe("LayoutController MOC deletion", function () {
 
       await controller.deleteMoc('myMoc');
 
-      expect(cloudStorage.deleteMoc).toHaveBeenCalledWith('uuid-1');
+      expect(cloudMocs.deleteRemote).toHaveBeenCalledWith(track);
       expect(controller.trackData.bundles[0].assets).not.toContain(track);
     });
 
@@ -168,52 +187,35 @@ describe("LayoutController MOC deletion", function () {
       track.mocId = 'uuid-1';
       Assets.cache.set('myMoc', { width: 64, height: 64 });
       stubDialogs();
-      const error = new Error('MOC is used by 1 layout(s) and cannot be deleted.');
-      error.code = 'MOC_IN_USE';
-      error.details = { blockingLayoutCount: 1, layouts: [], otherOwnerCount: 0 };
-      cloudStorage.deleteMoc.and.returnValue(Promise.reject(error));
+      cloudMocs.deleteRemote.and.returnValue(Promise.resolve('blocked'));
 
       await controller.deleteMoc('myMoc');
 
-      expect(controller._showMocBlockedDialog).toHaveBeenCalledWith(track, error);
       expect(controller.trackData.bundles[0].assets).toContain(track);
       expect(Assets.cache.has('myMoc')).toBeTrue();
     });
 
-    it("removes a MOC the cloud has already lost", async function () {
+    it("keeps the MOC when the cloud delete fails", async function () {
       track.mocId = 'uuid-1';
       stubDialogs();
-      const error = new Error('MOC not found.');
-      error.code = 'NOT_FOUND';
-      cloudStorage.deleteMoc.and.returnValue(Promise.reject(error));
-
-      await controller.deleteMoc('myMoc');
-
-      expect(controller.trackData.bundles[0].assets).not.toContain(track);
-    });
-
-    it("keeps the MOC on any other cloud error", async function () {
-      track.mocId = 'uuid-1';
-      stubDialogs();
-      cloudStorage.deleteMoc.and.returnValue(Promise.reject(new Error('offline')));
-      spyOn(console, 'error');
+      cloudMocs.deleteRemote.and.returnValue(Promise.resolve('failed'));
 
       await controller.deleteMoc('myMoc');
 
       expect(controller.trackData.bundles[0].assets).toContain(track);
-      expect(controller._showMocBlockedDialog).not.toHaveBeenCalled();
     });
 
     it("keeps a cloud MOC when the user is no longer signed in", async function () {
       // Removing it locally would orphan the cloud record with no way back.
       track.mocId = 'uuid-1';
       stubDialogs();
-      controller._getCloudStorage.and.returnValue(Promise.resolve(null));
+      delete controller._cloudMocs;
+      spyOn(controller, '_getCloudStorage').and.returnValue(Promise.resolve(null));
 
       await controller.deleteMoc('myMoc');
 
       expect(controller.trackData.bundles[0].assets).toContain(track);
-      expect(cloudStorage.deleteMoc).not.toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
     });
 
     it("ignores an alias that has no track", async function () {
@@ -338,64 +340,6 @@ describe("LayoutController MOC deletion", function () {
 
       expect(document.getElementById('mocInUseDialog').textContent)
         .toContain('The layout you have open is using "My MOC".');
-    });
-
-    it("lists the blocking layouts, the shared count and the truncation note", function () {
-      const error = new Error('MOC is used by 3 layout(s) and cannot be deleted.');
-      error.details = {
-        blockingLayoutCount: 3,
-        layouts: [
-          { layoutId: 'l-1', layoutName: 'Town Center' },
-          { layoutId: 'l-2', layoutName: 'Train Yard' },
-        ],
-        ownLayoutCount: 2,
-        otherOwnerCount: 1,
-        truncated: true,
-      };
-
-      controller._showMocBlockedDialog(track, error);
-
-      const dialog = document.getElementById('mocBlockedDialog');
-      expect(dialog.textContent).toContain('MOC is used by 3 layout(s)');
-      expect(dialog.textContent).toContain('Town Center');
-      expect(dialog.textContent).toContain('Train Yard');
-      expect(dialog.textContent).toContain('Also used by 1 layout(s)');
-      expect(dialog.textContent).toContain('more layouts than could be listed');
-      expect(dialog.querySelectorAll('li').length).toBe(2);
-    });
-
-    it("uses the layout id when a blocking layout has no name", function () {
-      const error = new Error('Blocked.');
-      error.details = { layouts: [{ layoutId: 'l-1' }] };
-
-      controller._showMocBlockedDialog(track, error);
-
-      expect(document.getElementById('mocBlockedDialog').querySelector('li').textContent)
-        .toBe('l-1');
-    });
-
-    it("renders layout names as text rather than markup", function () {
-      const error = new Error('Blocked.');
-      error.details = { layouts: [{ layoutName: '<img src=x onerror="window.x=1">' }] };
-
-      controller._showMocBlockedDialog(track, error);
-
-      const item = document.getElementById('mocBlockedDialog').querySelector('li');
-      expect(item.querySelector('img')).toBeNull();
-      expect(item.textContent).toBe('<img src=x onerror="window.x=1">');
-    });
-
-    it("degrades to the message alone when details are missing or malformed", function () {
-      const error = new Error('Blocked.');
-
-      expect(() => controller._showMocBlockedDialog(track, error)).not.toThrow();
-      expect(document.getElementById('mocBlockedDialog').textContent).toContain('Blocked.');
-      expect(document.getElementById('mocBlockedDialog').querySelectorAll('li').length).toBe(0);
-
-      document.getElementById('mocBlockedDialog').remove();
-      error.details = 'not an object';
-      expect(() => controller._showMocBlockedDialog(track, error)).not.toThrow();
-      expect(document.getElementById('mocBlockedDialog').textContent).toContain('Blocked.');
     });
 
     it("replaces a previously opened dialog instead of stacking them", function () {

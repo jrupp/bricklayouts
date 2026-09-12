@@ -11618,6 +11618,7 @@ describe("LayoutController", function() {
         let lc;
         let saveLayout;
         let track;
+        let cloudMocs;
 
         beforeEach(function () {
             lc = window.layoutController;
@@ -11651,6 +11652,20 @@ describe("LayoutController", function() {
                 getCloudFeatures: () => ({ cloudStorage: { saveLayout } }),
             }));
             spyOn(lc, 'updateCloudMenuVisibility').and.stub();
+            // Cloud MOC support is loaded at sign-in and reached through this
+            // handle. Faking it here keeps the gate's own behaviour, which is
+            // covered in spec/cloud/cloudMocSync.spec.mjs, out of the way.
+            cloudMocs = {
+                ensureMocsInCloud: jasmine.createSpy('ensureMocsInCloud')
+                    .and.returnValue(Promise.resolve({ ok: true, reason: null, limit: null })),
+                mocIdsForAliases: (aliases) => {
+                    const assets = lc.trackData.bundles[0].assets;
+                    return aliases
+                        .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
+                        .filter((mocId) => typeof mocId === 'string');
+                },
+            };
+            lc._cloudMocs = cloudMocs;
         });
 
         afterEach(function () {
@@ -11659,29 +11674,34 @@ describe("LayoutController", function() {
             if (idx >= 0) {
                 assets.splice(idx, 1);
             }
+            lc._cloudMocs = null;
             lc.reset();
         });
 
+        /** Mimics a successful upload, which re-keys the track in place. */
+        function rekeyOnUpload() {
+            cloudMocs.ensureMocsInCloud.and.callFake(() => {
+                // The shared track (and thus the placed component's baseData) is
+                // re-keyed to its cloud alias, exactly as _rekeyMocAlias leaves it.
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === 'local1');
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve({ ok: true, reason: null, limit: null });
+            });
+        }
+
         it("abandons the layout save when the user declines to upload local MOCs", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
-            const saveSpy = spyOn(lc, 'saveMocToCloud');
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await lc._saveToCloud('MyLayout');
 
             expect(saveLayout).not.toHaveBeenCalled();
-            expect(saveSpy).not.toHaveBeenCalled();
         });
 
         it("uploads local MOCs then saves the layout referencing the new alias and id", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                // Mimic _rekeyMocAlias: the shared track (and thus the placed
-                // component's baseData) is re-keyed to its cloud alias.
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await lc._saveToCloud('MyLayout');
 
@@ -11694,17 +11714,13 @@ describe("LayoutController", function() {
         });
 
         it("reports success and failure through its return value", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
 
-            lc._confirmUploadMocs.and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(true);
         });
