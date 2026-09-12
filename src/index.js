@@ -4,7 +4,7 @@ import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
 import { SubscriptionDialogController } from './controller/subscriptionDialogController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
-import { clearOrphanedPreservation } from './utils/layoutPreservation.js';
+import { clearOrphanedPreservation } from './utils/preservationKeys.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
 
 const canvasContainer = document.getElementById('canvasContainer');
