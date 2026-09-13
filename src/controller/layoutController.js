@@ -2757,8 +2757,12 @@ export class LayoutController {
         if (!cloudStorage) {
           return null;
         }
+        // Passed through so the module can tell creating a MOC (which the API
+        // gates on cloud access) from listing, updating and deleting (which it
+        // does not).
+        const authManager = await this._getAuthManager();
         const { CloudMocSync } = await import('../cloud/cloudMocSync.js');
-        return new CloudMocSync(cloudStorage, this);
+        return new CloudMocSync(cloudStorage, this, authManager);
       } catch (error) {
         console.error('Failed to load cloud MOC support:', error);
         return null;
