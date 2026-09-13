@@ -11384,14 +11384,31 @@ describe("LayoutController", function() {
         });
     });
 
+    // Who among the signed-in may see the share button is account policy and
+    // lives in CloudLayoutSave, which is only fetched for signed-in users. What
+    // is asserted here is the half that must work with that module absent:
+    // hiding, and handing off when it is present. The button's own enabled and
+    // titled states are covered by spec/cloud/cloudLayoutSave.spec.mjs.
     describe('share button visibility', () => {
         let shareContainer;
-        let shareBtn;
+
+        /** A signed-in, cloud-enabled account. */
+        function signedIn() {
+            return Promise.resolve({
+                isAuthenticated: true,
+                hasCloudAccess: true,
+                getUserGroups: () => Promise.resolve(['subscription']),
+            });
+        }
 
         beforeEach(() => {
             shareContainer = document.getElementById('shareButton-container');
-            shareBtn = document.getElementById('shareButton');
             layoutController.clearCloudMetadata();
+        });
+
+        afterEach(() => {
+            // The controller is a singleton shared by every suite in this file.
+            layoutController.disableCloudMocs();
         });
 
         it('hides share button when not authenticated', async () => {
@@ -11404,55 +11421,29 @@ describe("LayoutController", function() {
 
         it('hides share button when readOnly is true', async () => {
             layoutController.readOnly = true;
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
             await layoutController.updateCloudMenuVisibility();
             expect(shareContainer.classList.contains('hidden')).toBeTrue();
             layoutController.readOnly = false;
         });
 
-        it('disables share button for non-cloud layouts', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+        it('hides share button when cloud layout support cannot be loaded', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout').and.returnValue(Promise.resolve(null));
             await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeTrue();
-            expect(shareBtn.title).toBe('Save your layout to share it');
+            expect(shareContainer.classList.contains('hidden')).toBeTrue();
         });
 
-        it('enables share button for cloud layouts', async () => {
-            layoutController.updateCloudMetadata({ cloudId: 'test-id' });
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
-            await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeFalse();
-            expect(shareBtn.title).toBe('Share your layout');
-        });
+        it('hands the container to cloud layout support when signed in', async () => {
+            const applyShareVisibility = jasmine.createSpy('applyShareVisibility')
+                .and.returnValue(Promise.resolve());
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout')
+                .and.returnValue(Promise.resolve({ applyShareVisibility }));
 
-        it('shows share button when authenticated subscriber', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
             await layoutController.updateCloudMenuVisibility();
-            expect(shareContainer.classList.contains('hidden')).toBeFalse();
+
+            expect(applyShareVisibility).toHaveBeenCalledWith(shareContainer);
         });
     });
 

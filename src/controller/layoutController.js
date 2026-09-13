@@ -6,9 +6,8 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
+import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
-import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
 import '../FileSaver.min.js';
@@ -333,6 +332,20 @@ export class LayoutController {
    * @type {?Promise<?CloudMocSync>}
    */
   _cloudMocsReady = null;
+
+  /**
+   * Cloud layout save and share policy, once the user is signed in and has cloud
+   * access. Null otherwise, which hides the cloud menu items.
+   * @type {?CloudLayoutSave}
+   */
+  _cloudLayout = null;
+
+  /**
+   * The in-flight enableCloudLayout() import. Same purpose as
+   * {@link _cloudMocsReady}.
+   * @type {?Promise<?CloudLayoutSave>}
+   */
+  _cloudLayoutReady = null;
 
   /**
    * 
@@ -2767,6 +2780,46 @@ export class LayoutController {
   disableCloudMocs() {
     this._cloudMocs = null;
     this._cloudMocsReady = null;
+    this._cloudLayout = null;
+    this._cloudLayoutReady = null;
+  }
+
+  /**
+   * Load the cloud layout save and share policy for the signed-in user.
+   *
+   * Reached from updateCloudMenuVisibility(), which already runs at startup and
+   * after every login, so the import lands with the rest of the sign-in work
+   * rather than in front of the Save to Cloud button.
+   *
+   * Unlike enableCloudMocs() this requires cloud access, because the layout
+   * endpoints do; the MOC endpoints mostly do not.
+   * @returns {Promise<?CloudLayoutSave>} Null without a signed-in, cloud-enabled user
+   */
+  async enableCloudLayout() {
+    if (this._cloudLayout) {
+      return this._cloudLayout;
+    }
+    if (this._cloudLayoutReady) {
+      return this._cloudLayoutReady;
+    }
+    this._cloudLayoutReady = (async () => {
+      try {
+        const authManager = await this._getAuthManager();
+        if (!authManager || !authManager.isAuthenticated || !authManager.hasCloudAccess) {
+          return null;
+        }
+        const { CloudLayoutSave } = await import('../cloud/cloudLayoutSave.js');
+        return new CloudLayoutSave(authManager, this);
+      } catch (error) {
+        console.error('Failed to load cloud layout support:', error);
+        return null;
+      }
+    })();
+    this._cloudLayout = await this._cloudLayoutReady;
+    if (!this._cloudLayout) {
+      this._cloudLayoutReady = null;
+    }
+    return this._cloudLayout;
   }
 
   /**
@@ -3521,6 +3574,8 @@ export class LayoutController {
   async onCloudSaveClick() {
     this.hideFileMenu();
 
+    // These two checks stay here so a signed-out or cloud-less user gets the
+    // right message without any of the cloud code being fetched.
     const authManager = await this._getAuthManager();
     if (!authManager || !authManager.isAuthenticated) {
       showSnackbar('Please sign in to save layouts to the cloud.', 'error');
@@ -3532,40 +3587,15 @@ export class LayoutController {
       return;
     }
 
-    /** @type {Array<string>} */
-    const groups = await authManager.getUserGroups();
-    if (groups.includes('post-sub')) {
-      const cloudFeatures = authManager.getCloudFeatures();
-      if (cloudFeatures && cloudFeatures.fileDialog) {
-        this.hideFileMenu();
-        await cloudFeatures.fileDialog.showPostSubSelectionIfNeeded();
-        return;
-      }
-    }
-
-    if (!this.#layoutMetadata.cloudId) {
-      if (!groups.includes('subscription') && !groups.includes('admin')) {
-        const cloudFeatures = authManager.getCloudFeatures();
-        if (!cloudFeatures || !cloudFeatures.cloudStorage) {
-          showSnackbar('Cloud storage not available.', 'error');
-          return;
-        }
-        /** @type {number} */
-        const layoutCount = await cloudFeatures.cloudStorage.getLayoutCount();
-        if (layoutCount >= 1) {
-          SubscriptionDialogController.getInstance()
-            .show('You\'ve reached the free layout limit. To save more layouts, please upgrade your subscription.', 'Upgrade Required');
-          return;
-        }
-      }
-    }
-
-    if (!this.#layoutMetadata.name) {
-      this._showLayoutNameDialog();
+    // Loaded at sign-in by updateCloudMenuVisibility, so this resolves without
+    // a fetch. Everything past this point is account policy.
+    const cloudLayout = await this.enableCloudLayout();
+    if (!cloudLayout) {
+      showSnackbar('Cloud storage not available.', 'error');
       return;
     }
 
-    await this._saveToCloud(this.#layoutMetadata.name);
+    await cloudLayout.onCloudSaveClick();
   }
 
   /**
@@ -3788,64 +3818,23 @@ export class LayoutController {
     }
 
     const shareContainer = document.getElementById('shareButton-container');
-    if (shareContainer) {
-      if (this.readOnly || !authManager || !authManager.isAuthenticated) {
-        shareContainer.classList.add('hidden');
-      } else {
-        let groups = [];
-        try {
-          groups = await authManager.getUserGroups();
-        } catch (e) {
-          // Token parsing can fail — treat as non-subscriber
-        }
-        const isSubscriber = groups.includes('subscription') || groups.includes('admin');
-        if (isSubscriber) {
-          shareContainer.classList.remove('hidden');
-          const shareBtn = document.getElementById('shareButton');
-          if (shareBtn) {
-            if (this.isCloudLayout()) {
-              shareBtn.disabled = false;
-              shareBtn.title = 'Share your layout';
-            } else {
-              shareBtn.disabled = true;
-              shareBtn.title = 'Save your layout to share it';
-            }
-
-            if (!shareBtn.dataset.iconSet) {
-              const icon = document.getElementById('shareButtonIcon');
-              if (icon) {
-                if (isIOSBrowser()) {
-                  icon.textContent = 'ios_share';
-                } else if (isAndroidBrowser()) {
-                  icon.textContent = 'share';
-                } else {
-                  icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l7 7-7 7v-4.5c-5 0-8.5 1.5-11 5 1-5 4-10 11-10.5V5z"/></svg>';
-                }
-                shareBtn.dataset.iconSet = 'true';
-              }
-            }
-
-            if (!shareBtn.dataset.listenerAttached) {
-              shareBtn.addEventListener('click', async () => {
-                try {
-                  const { ShareDialogController } = await import('../cloud/shareDialogController.js');
-                  const shareDialog = ShareDialogController.getInstance(
-                    authManager.getCloudFeatures().cloudStorage,
-                    this
-                  );
-                  shareDialog.show();
-                } catch (e) {
-                  showSnackbar('Unable to open share dialog.', 'error');
-                }
-              });
-              shareBtn.dataset.listenerAttached = 'true';
-            }
-          }
-        } else {
-          shareContainer.classList.add('hidden');
-        }
-      }
+    if (!shareContainer) {
+      return;
     }
+    // Hidden is the default in the markup, and the only outcome a signed-out or
+    // read-only visitor can reach, so it is decided here without loading
+    // anything. Who among the signed-in may actually see the button is account
+    // policy, and lives with the rest of it.
+    if (this.readOnly || !authManager || !authManager.isAuthenticated) {
+      shareContainer.classList.add('hidden');
+      return;
+    }
+    const cloudLayout = await this.enableCloudLayout();
+    if (!cloudLayout) {
+      shareContainer.classList.add('hidden');
+      return;
+    }
+    await cloudLayout.applyShareVisibility(shareContainer);
   }
 
   /**
