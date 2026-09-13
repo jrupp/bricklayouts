@@ -6,10 +6,8 @@ import { Connection } from '../model/connection.js';
 import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
-import { getOptionIndexByValue, isValidLayoutName, isMac, isIOSBrowser, isAndroidBrowser } from '../utils/utils.js';
+import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
 import { showSnackbar } from '../utils/snackbar.js';
-import { validateMocForCloud } from '../utils/mocValidation.js';
-import { SubscriptionDialogController } from './subscriptionDialogController.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
 import '../FileSaver.min.js';
@@ -119,16 +117,6 @@ let SerializedLayout;
 export { SerializedLayout };
 
 /**
- * @typedef {Object} MocUploadResult
- * @property {Boolean} ok True when every referenced MOC is in the cloud.
- * @property {?String} reason Null on success, otherwise one of 'declined',
- *   'batchTooLarge', 'mocLimitReached' or 'uploadFailed'.
- * @property {?Number} limit The account's MOC cap, set only for 'mocLimitReached'.
- */
-let MocUploadResult;
-export { MocUploadResult };
-
-/**
  * The current version of the serialized file format.
  * @type {Number}
  * @constant
@@ -172,29 +160,14 @@ const ALL_CATEGORY_INDEX = 0;
 const MOC_TRACK_KEYS = ['alias', 'name', 'category', 'scale', 'make', 'type', 'connections', 'color', 'width', 'height', 'onbp', 'isTree'];
 
 /**
- * TrackData properties accepted by the cloud MOC endpoints. The API rejects
- * anything else, and `connections`, `make`, `width` and `height` are not yet
- * round-tripped by the API, so they are deliberately omitted.
- * @type {Array<String>}
- * @constant
- */
-const MOC_CLOUD_KEYS = ['name', 'category', 'scale', 'type', 'onbp'];
-
-/**
- * Image data URLs accepted for an embedded custom MOC texture.
+ * Image data URLs accepted for an embedded custom MOC texture. Exported because
+ * cloudMocSync.js asserts the same shape before uploading, and a second copy of
+ * this pattern would be a place for the two to drift apart.
  * @type {RegExp}
  * @constant
  */
 const MOC_TEXTURE_DATA_URL = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
-
-/**
- * Maximum number of local-only MOCs that will be uploaded to the cloud in a
- * single "save layout" batch. A hand-edited layout file could otherwise embed
- * hundreds of MOC entries and fire a create+upload round trip for each.
- * @type {Number}
- * @constant
- */
-const MAX_MOC_UPLOAD_BATCH = 20;
+export { MOC_TEXTURE_DATA_URL };
 
 export class LayoutController {
   static _instance = null;
@@ -339,6 +312,40 @@ export class LayoutController {
    * @type {LayoutMetadata}
    */
   #layoutMetadata = {};
+
+  /**
+   * Cloud MOC support, once the user is known to be signed in. Null while signed
+   * out, which is what makes every cloud MOC delegate below a no-op rather than
+   * a failed import.
+   *
+   * Deliberately a public field rather than a `#` private one: the specs build
+   * controllers with Object.create(LayoutController.prototype), which does not
+   * install private fields, and reading one on such an object throws. Here the
+   * resulting `undefined` means exactly what the specs want it to mean.
+   * @type {?CloudMocSync}
+   */
+  _cloudMocs = null;
+
+  /**
+   * The in-flight enableCloudMocs() import, so that a click arriving between
+   * sign-in and the module landing waits for it instead of starting a second one.
+   * @type {?Promise<?CloudMocSync>}
+   */
+  _cloudMocsReady = null;
+
+  /**
+   * Cloud layout save and share policy, once the user is signed in and has cloud
+   * access. Null otherwise, which hides the cloud menu items.
+   * @type {?CloudLayoutSave}
+   */
+  _cloudLayout = null;
+
+  /**
+   * The in-flight enableCloudLayout() import. Same purpose as
+   * {@link _cloudMocsReady}.
+   * @type {?Promise<?CloudLayoutSave>}
+   */
+  _cloudLayoutReady = null;
 
   /**
    * 
@@ -2729,334 +2736,158 @@ export class LayoutController {
   }
 
   /**
-   * Persist a custom MOC to cloud storage. Creates the MOC (metadata + image
-   * upload) the first time and re-keys its local alias to `moc<mocId>` so it
-   * matches what the cloud returns on subsequent loads. If the MOC has already
-   * been committed (its track carries a `mocId`), only its metadata is updated;
-   * the image cannot be changed after creation.
-   * Failures are surfaced via snackbar and never thrown, since the local commit
-   * has already succeeded by the time this runs. The one exception is the MOC
-   * storage limit: it is terminal and account-wide rather than a problem with
-   * this particular MOC, so a caller uploading a batch has to be able to stop.
+   * Load cloud MOC support and bind it to the signed-in user.
+   *
+   * Called from the two places that already know the auth state -- startup with
+   * a restored session, and the post-login update -- so the import is paid for
+   * while the user is watching the app come up, never in front of a click.
+   * Safe to call repeatedly; concurrent callers share the one in-flight import.
+   * @returns {Promise<?CloudMocSync>} Null when nobody is signed in
+   */
+  async enableCloudMocs() {
+    if (this._cloudMocs) {
+      return this._cloudMocs;
+    }
+    if (this._cloudMocsReady) {
+      return this._cloudMocsReady;
+    }
+    this._cloudMocsReady = (async () => {
+      try {
+        const cloudStorage = await this._getCloudStorage();
+        if (!cloudStorage) {
+          return null;
+        }
+        // Passed through so the module can tell creating a MOC (which the API
+        // gates on cloud access) from listing, updating and deleting (which it
+        // does not).
+        const authManager = await this._getAuthManager();
+        const { CloudMocSync } = await import('../cloud/cloudMocSync.js');
+        return new CloudMocSync(cloudStorage, this, authManager);
+      } catch (error) {
+        console.error('Failed to load cloud MOC support:', error);
+        return null;
+      }
+    })();
+    this._cloudMocs = await this._cloudMocsReady;
+    // Never leave a failed or signed-out attempt cached as the in-flight
+    // promise: a later sign-in would keep resolving to that same null.
+    if (!this._cloudMocs) {
+      this._cloudMocsReady = null;
+    }
+    return this._cloudMocs;
+  }
+
+  /**
+   * Drop cloud MOC support on logout so nothing keeps talking to the account
+   * that just signed out.
+   */
+  disableCloudMocs() {
+    this._cloudMocs = null;
+    this._cloudMocsReady = null;
+    this._cloudLayout = null;
+    this._cloudLayoutReady = null;
+  }
+
+  /**
+   * Load the cloud layout save and share policy for the signed-in user.
+   *
+   * Reached from updateCloudMenuVisibility(), which already runs at startup and
+   * after every login, so the import lands with the rest of the sign-in work
+   * rather than in front of the Save to Cloud button.
+   *
+   * Unlike enableCloudMocs() this requires cloud access, because the layout
+   * endpoints do; the MOC endpoints mostly do not.
+   * @returns {Promise<?CloudLayoutSave>} Null without a signed-in, cloud-enabled user
+   */
+  async enableCloudLayout() {
+    if (this._cloudLayout) {
+      return this._cloudLayout;
+    }
+    if (this._cloudLayoutReady) {
+      return this._cloudLayoutReady;
+    }
+    this._cloudLayoutReady = (async () => {
+      try {
+        const authManager = await this._getAuthManager();
+        if (!authManager || !authManager.isAuthenticated || !authManager.hasCloudAccess) {
+          return null;
+        }
+        const { CloudLayoutSave } = await import('../cloud/cloudLayoutSave.js');
+        return new CloudLayoutSave(authManager, this);
+      } catch (error) {
+        console.error('Failed to load cloud layout support:', error);
+        return null;
+      }
+    })();
+    this._cloudLayout = await this._cloudLayoutReady;
+    if (!this._cloudLayout) {
+      this._cloudLayoutReady = null;
+    }
+    return this._cloudLayout;
+  }
+
+  /**
+   * Persist a custom MOC to cloud storage. A no-op for a signed-out user, who
+   * has nowhere to save it to.
+   *
+   * The enableCloudMocs() call is normally already resolved -- sign-in loaded
+   * it -- and is here so that a MOC committed in a session where that wiring
+   * did not run still saves, rather than silently doing nothing.
    * @param {String} alias The alias of the MOC track to save
    * @returns {Promise<?String>} The new alias if it was re-keyed, otherwise null
    * @throws {CloudStorageError} Only with code `MOC_LIMIT_REACHED`, after the
    *   failure has already been reported to the user
    */
   async saveMocToCloud(alias) {
-    try {
-      const cloudStorage = await this._getCloudStorage();
-      if (!cloudStorage) {
-        return null;
-      }
-      const track = this.trackData.bundles[0].assets.find((t) => t.alias === alias);
-      if (!track) {
-        return null;
-      }
-      const check = validateMocForCloud(track, {
-        categories: this.categories,
-        texture: Assets.get(alias),
-      });
-      if (!check.ok) {
-        showSnackbar(`Cannot save MOC to the cloud: ${check.reason}`, 'error');
-        return null;
-      }
-      // Absent keys are sent as null so clearing a value locally also clears it
-      // in the cloud, and so the payload stays non-empty, which
-      // PUT /mocs/{mocId} requires. In practice only `onbp` can be absent here:
-      // validateMocForCloud above requires name, category, scale and type.
-      const metadata = this._serializeMocTrack(track, MOC_CLOUD_KEYS, null);
-      if (track.mocId) {
-        await cloudStorage.updateMoc(track.mocId, metadata);
-        showSnackbar('MOC updated in the cloud.', 'success');
-        return null;
-      }
-      showSnackbar('Saving MOC to the cloud...', 'info');
-      const [serialized] = await this._serializeMocs([alias]);
-      if (!serialized) {
-        showSnackbar('Failed to save MOC to the cloud.', 'error');
-        return null;
-      }
-      // `textureData` is produced by the renderer's PNG extractor, but assert it
-      // before handing the bytes to fetch() so a future change here cannot ship
-      // an unexpected payload to the presigned upload. Both checks run before
-      // createMoc: bailing out afterwards would leave an imageless MOC record in
-      // the cloud, and every retry would orphan another one.
-      if (!MOC_TEXTURE_DATA_URL.test(serialized.textureData)) {
-        showSnackbar('Failed to save MOC to the cloud.', 'error');
-        return null;
-      }
-      const blob = await (await fetch(serialized.textureData)).blob();
-      if (blob.type !== 'image/png') {
-        showSnackbar('Failed to save MOC to the cloud.', 'error');
-        return null;
-      }
-      const { mocId, uploadUrl } = await cloudStorage.createMoc(metadata);
-      await cloudStorage.uploadMocImage(uploadUrl, blob);
-      const newAlias = this._rekeyMocAlias(alias, `moc${mocId}`, mocId);
-      showSnackbar('MOC saved to the cloud.', 'success');
-      return newAlias;
-    } catch (error) {
-      console.error(`Failed to save MOC "${alias}" to the cloud:`, error);
-      showSnackbar(error.message || 'Failed to save MOC to the cloud.', 'error');
-      if (error.code === 'MOC_LIMIT_REACHED') {
-        throw error;
-      }
-      return null;
-    }
+    return (await this.enableCloudMocs())?.saveMoc(alias) ?? null;
   }
 
   /**
    * Map MOC asset aliases to the cloud MOC ids the layout endpoints expect.
-   * Aliases without a cloud id are MOCs that only exist locally; the API rejects
-   * ids it cannot resolve, so they are dropped rather than sent.
    * @param {Array<String>} aliases
    * @returns {Array<String>} The cloud ids of the MOCs that have been synced
    * @private
    */
   _mocIdsForAliases(aliases) {
-    const assets = this.trackData.bundles[0].assets;
-    return aliases
-      .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
-      .filter((mocId) => typeof mocId === 'string');
+    return this._cloudMocs?.mocIdsForAliases(aliases) ?? [];
   }
 
   /**
    * Ensure every custom MOC placed in the layout exists in the cloud before the
-   * layout itself is saved. MOCs that only exist locally (no `mocId`) are
-   * detected, the user is prompted, and on confirmation each is uploaded.
-   *
-   * A layout that referenced a local-only MOC would silently drop that piece
-   * when reloaded from the cloud, so on decline or any upload failure the whole
-   * layout save is abandoned.
-   * @returns {Promise<MocUploadResult>} `ok` is true when every referenced MOC
-   *   is in the cloud. On failure, `reason` says why so the caller can explain
-   *   it in its own terms, and `limit` carries the account's MOC cap when the
-   *   storage limit was what stopped the batch.
+   * layout itself is saved. See the MocUploadResult typedef in cloudMocSync.js.
+   * @returns {Promise<Object>} `ok` is true when every referenced MOC is in the
+   *   cloud; `reason` and `limit` say why not. Signed out, this reports
+   *   'uploadFailed': the caller is about to save a cloud layout, which it
+   *   cannot do either.
    * @private
    */
   async _ensureMocsInCloud() {
-    // A placed component's `baseData` is the very object held in trackData
-    // (see Component.deserialize), so the tracks are collected directly rather
-    // than looked up by alias. A Set dedupes an alias used by several
-    // components, and the same identity is what lets saveMocToCloud's re-key
-    // below be observed through `mocId`.
-    const pending = new Set();
-    this.layers.forEach((layer) => {
-      layer.children.forEach((child) => {
-        if (child instanceof Component && child.baseData?.mine && !child.baseData.mocId) {
-          pending.add(child.baseData);
-        }
-      });
-    });
-    if (pending.size === 0) {
-      return { ok: true, reason: null, limit: null };
-    }
-
-    if (pending.size > MAX_MOC_UPLOAD_BATCH) {
-      showSnackbar(
-        `This layout has more than ${MAX_MOC_UPLOAD_BATCH} MOCs that are not saved to the `
-        + 'cloud. Please save some of them individually first.',
-        'error'
-      );
-      return { ok: false, reason: 'batchTooLarge', limit: null };
-    }
-
-    const tracks = Array.from(pending);
-    if (!(await this._confirmUploadMocs(tracks))) {
-      return { ok: false, reason: 'declined', limit: null };
-    }
-
-    let limit = null;
-    let limitReached = false;
-    try {
-      // Serial: saveMocToCloud rebuilds the component browser and emits ordered
-      // snackbars, and each create is a two-request round trip.
-      for (const track of tracks) {
-        await this.saveMocToCloud(track.alias);
-      }
-    } catch (error) {
-      if (error.code !== 'MOC_LIMIT_REACHED') {
-        throw error;
-      }
-      // The cap is account-wide, so every remaining MOC would fail the same
-      // way. Abandon the rest of the batch rather than firing a request per
-      // MOC that is guaranteed to be refused.
-      limitReached = true;
-      limit = error.details?.limit ?? null;
-    }
-    // saveMocToCloud mutates the same track object, so `mocId` is the success
-    // test (it returns null both on failure and on the metadata-update path).
-    // Tracks the aborted batch never reached have no `mocId` either, so they
-    // are counted as failed, which is what they are.
-    const failed = tracks.filter((track) => !track.mocId);
-    if (failed.length > 0) {
-      showSnackbar(
-        limitReached
-          // saveMocToCloud already reported the cause, so this only has to say
-          // what it means for the batch. No "layout not saved": the preservation
-          // path calls this when no layout save is in progress.
-          ? `${failed.length} MOC(s) could not be saved to the cloud.`
-          : `Could not save ${failed.length} MOC(s) to the cloud. Layout not saved.`,
-        'error'
-      );
-      return {
-        ok: false,
-        reason: limitReached ? 'mocLimitReached' : 'uploadFailed',
-        limit,
-      };
-    }
-    return { ok: true, reason: null, limit: null };
-  }
-
-  /**
-   * Prompt the user to upload local-only MOCs before saving the layout to the
-   * cloud. Built dynamically (rather than in index.html) so the "404.html must
-   * match index.html" rule is not dragged in. MOC names are attacker-controlled
-   * (they come straight out of a local layout file), so they are inserted with
-   * `textContent`, never `innerHTML`.
-   * @param {Array<TrackData>} tracks The local-only MOC tracks
-   * @returns {Promise<Boolean>} True if the user chose to continue
-   * @private
-   */
-  _confirmUploadMocs(tracks) {
-    return new Promise((resolve) => {
-      document.getElementById('uploadMocsDialog')?.remove();
-      const dialog = document.createElement('dialog');
-      dialog.className = 'no-padding border large-width surface-container-high small-round';
-      dialog.id = 'uploadMocsDialog';
-      dialog.innerHTML = `
-        <div>
-          <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
-            <nav>
-              <h6 class="max">MOCs Not Saved to the Cloud</h6>
-              <button class="circle medium transparent" data-ui="#uploadMocsDialog">
-                <i class="medium bold">close</i>
-              </button>
-            </nav>
-          </header>
-          <div class="small-padding horizontal-padding extra-text">
-            <p id="uploadMocsMessage"></p>
-            <p>To continue, these MOCs will be saved to your cloud account. Do you want to continue?</p>
-          </div>
-          <hr>
-          <nav class="no-padding no-space no-margin">
-            <button class="no-round max extra-text left-button primary-text" id="uploadMocsConfirm"><span>Yes</span></button>
-            <button class="no-round max extra-text right-button error" id="uploadMocsCancel"><span>No</span></button>
-          </nav>
-        </div>
-      `;
-      const names = tracks.map((track) => this._mocDisplayName(track));
-      dialog.querySelector('#uploadMocsMessage').textContent =
-        `This layout contains ${tracks.length} MOC(s) that are not currently stored in `
-        + `your account: ${names.join(', ')}.`;
-      document.body.appendChild(dialog);
-
-      let outcome = false;
-      dialog.addEventListener('close', () => {
-        dialog.remove();
-        resolve(outcome);
-      });
-      const closeDialog = () => ui('#uploadMocsDialog');
-      dialog.querySelector('#uploadMocsConfirm').addEventListener('click', () => {
-        outcome = true;
-        closeDialog();
-      });
-      dialog.querySelector('#uploadMocsCancel').addEventListener('click', () => {
-        outcome = false;
-        closeDialog();
-      });
-
-      ui('#uploadMocsDialog');
-    });
-  }
-
-  /**
-   * Re-key a MOC track and its cached texture from one alias to another and
-   * stamp it with its cloud id. Used after a MOC is first created in the cloud.
-   * @param {String} oldAlias
-   * @param {String} newAlias
-   * @param {String} mocId
-   * @returns {String} The new alias
-   * @private
-   */
-  _rekeyMocAlias(oldAlias, newAlias, mocId) {
-    const track = this.trackData.bundles[0].assets.find((t) => t.alias === oldAlias);
-    if (!track) {
-      return oldAlias;
-    }
-    if (oldAlias !== newAlias && Assets.cache.has(oldAlias)) {
-      const texture = Assets.cache.get(oldAlias);
-      Assets.cache.set(newAlias, texture);
-      Assets.cache.remove(oldAlias);
-    }
-    track.alias = newAlias;
-    track.mocId = mocId;
-    this.createComponentBrowser();
-    return newAlias;
+    const cloudMocs = await this.enableCloudMocs();
+    return cloudMocs
+      ? cloudMocs.ensureMocsInCloud()
+      : { ok: false, reason: 'uploadFailed', limit: null };
   }
 
   /**
    * Load the current user's cloud MOCs and add them to the component browser.
    * Intended to run asynchronously during startup so it does not block loading.
-   * Errors are logged and swallowed since this is a background enhancement.
    * @returns {Promise<void>}
    */
   async loadCloudMocs() {
-    try {
-      const cloudStorage = await this._getCloudStorage();
-      if (!cloudStorage) {
-        return;
-      }
-      const mocs = await cloudStorage.listMocs();
-      if (Array.isArray(mocs) && mocs.length > 0) {
-        await this._loadLayoutMocs(mocs);
-      }
-    } catch (error) {
-      console.error('Failed to load cloud MOCs:', error);
-    }
+    await (await this.enableCloudMocs())?.listAndRegister();
   }
 
   /**
    * Drop the signed-in user's cloud MOCs from the component browser on logout so
    * the next person to sign in does not inherit them.
    *
-   * MOCs still placed in the current layout keep their track entry: the layout
-   * serializes against it, so discarding it would silently drop those pieces from
-   * the next download. Their cloud id is cleared instead, which demotes them to
-   * ordinary local MOCs — they stay usable and still travel inside layout files,
-   * but they are no longer tied to an account that may not own them. Committing
-   * an edit to one afterwards creates a fresh cloud MOC.
+   * Synchronous, and deliberately reads the already-loaded module rather than
+   * awaiting enableCloudMocs(): by the time anyone can log out, signing in has
+   * long since loaded it.
    * @returns {Number} The number of MOC tracks removed from the browser
    */
   removeCloudMocs() {
-    const assets = this.trackData.bundles[0].assets;
-    const inUse = new Set();
-    this.layers.forEach((layer) => {
-      layer.children.forEach((child) => {
-        if (child instanceof Component && child.baseData?.mocId) {
-          inUse.add(child.baseData.alias);
-        }
-      });
-    });
-
-    const removable = assets.filter((track) => track.mocId && !inUse.has(track.alias));
-    assets.forEach((track) => {
-      if (track.mocId && inUse.has(track.alias)) {
-        delete track.mocId;
-      }
-    });
-    removable.forEach((track) => {
-      assets.splice(assets.indexOf(track), 1);
-      if (Assets.cache.has(track.alias)) {
-        Assets.cache.remove(track.alias);
-      }
-    });
-
-    if (removable.length > 0) {
-      this.createComponentBrowser();
-    }
-    return removable.length;
+    return this._cloudMocs?.removeCloudTracks() ?? 0;
   }
 
   /**
@@ -3137,26 +2968,19 @@ export class LayoutController {
 
     const name = this._mocDisplayName(track);
 
+    // A MOC with no cloud id only exists in this browser -- it came from a
+    // downloaded layout file -- so a signed-out user deletes it without any of
+    // the cloud machinery being loaded or consulted.
     if (track.mocId) {
-      const cloudStorage = await this._getCloudStorage();
-      if (!cloudStorage) {
+      const cloudMocs = await this.enableCloudMocs();
+      if (!cloudMocs) {
         // Removing it locally would orphan the cloud record with no way back to it.
         showSnackbar('Sign in to delete a MOC from your account.', 'error');
         return;
       }
-      try {
-        await cloudStorage.deleteMoc(track.mocId);
-      } catch (error) {
-        if (error.code === 'MOC_IN_USE') {
-          await this._showMocBlockedDialog(track, error);
-          return;
-        }
-        if (error.code !== 'NOT_FOUND') {
-          console.error(`Failed to delete MOC "${alias}" from the cloud:`, error);
-          showSnackbar(error.message || 'Failed to delete MOC.', 'error');
-          return;
-        }
-        // Already gone in the cloud: fall through and clean up locally.
+      // 'blocked' and 'failed' have both already been explained to the user.
+      if ((await cloudMocs.deleteRemote(track)) !== 'deleted') {
+        return;
       }
     }
 
@@ -3201,8 +3025,8 @@ export class LayoutController {
   }
 
   /**
-   * Ask the user to confirm deleting a MOC. Built dynamically, like
-   * {@link _confirmUploadMocs}, so index.html and 404.html stay untouched.
+   * Ask the user to confirm deleting a MOC. Built dynamically, like the cloud
+   * MOC dialogs, so index.html and 404.html stay untouched.
    * @param {TrackData} track
    * @returns {Promise<Boolean>} True if the user confirmed
    * @private
@@ -3335,58 +3159,6 @@ export class LayoutController {
       message.textContent = `The layout you have open is using "${this._mocDisplayName(track)}". `
         + 'Close the layout before deleting the MOC.';
       body.appendChild(message);
-    });
-  }
-
-  /**
-   * Explain a cloud refusal to delete a MOC, naming the caller's own layouts
-   * that still reference it. Everything here is server-supplied, so it is
-   * rendered with textContent and must tolerate a missing or malformed
-   * `details` payload.
-   * @param {TrackData} track
-   * @param {CloudStorageError} error The MOC_IN_USE error
-   * @returns {Promise<void>}
-   * @private
-   */
-  _showMocBlockedDialog(track, error) {
-    return this._showMocNoticeDialog('mocBlockedDialog', 'Cannot Delete MOC', (body) => {
-      const lead = document.createElement('p');
-      lead.textContent = error?.message
-        || `"${this._mocDisplayName(track)}" is still used by one or more layouts.`;
-      body.appendChild(lead);
-
-      const details = error?.details;
-      if (!details || typeof details !== 'object') {
-        return;
-      }
-
-      if (Array.isArray(details.layouts) && details.layouts.length > 0) {
-        const scroll = document.createElement('div');
-        scroll.className = 'scroll';
-        scroll.style.maxBlockSize = '40vh';
-        const list = document.createElement('ul');
-        list.className = 'list border';
-        details.layouts.forEach((layout) => {
-          const item = document.createElement('li');
-          item.textContent = layout?.layoutName || layout?.layoutId || '';
-          list.appendChild(item);
-        });
-        scroll.appendChild(list);
-        body.appendChild(scroll);
-      }
-
-      if (details.otherOwnerCount > 0) {
-        const shared = document.createElement('p');
-        shared.textContent = `Also used by ${details.otherOwnerCount} layout(s) belonging to `
-          + 'other users you have shared this MOC with.';
-        body.appendChild(shared);
-      }
-
-      if (details.truncated) {
-        const truncated = document.createElement('p');
-        truncated.textContent = 'This MOC is used by more layouts than could be listed.';
-        body.appendChild(truncated);
-      }
     });
   }
 
@@ -3806,6 +3578,8 @@ export class LayoutController {
   async onCloudSaveClick() {
     this.hideFileMenu();
 
+    // These two checks stay here so a signed-out or cloud-less user gets the
+    // right message without any of the cloud code being fetched.
     const authManager = await this._getAuthManager();
     if (!authManager || !authManager.isAuthenticated) {
       showSnackbar('Please sign in to save layouts to the cloud.', 'error');
@@ -3817,40 +3591,15 @@ export class LayoutController {
       return;
     }
 
-    /** @type {Array<string>} */
-    const groups = await authManager.getUserGroups();
-    if (groups.includes('post-sub')) {
-      const cloudFeatures = authManager.getCloudFeatures();
-      if (cloudFeatures && cloudFeatures.fileDialog) {
-        this.hideFileMenu();
-        await cloudFeatures.fileDialog.showPostSubSelectionIfNeeded();
-        return;
-      }
-    }
-
-    if (!this.#layoutMetadata.cloudId) {
-      if (!groups.includes('subscription') && !groups.includes('admin')) {
-        const cloudFeatures = authManager.getCloudFeatures();
-        if (!cloudFeatures || !cloudFeatures.cloudStorage) {
-          showSnackbar('Cloud storage not available.', 'error');
-          return;
-        }
-        /** @type {number} */
-        const layoutCount = await cloudFeatures.cloudStorage.getLayoutCount();
-        if (layoutCount >= 1) {
-          SubscriptionDialogController.getInstance()
-            .show('You\'ve reached the free layout limit. To save more layouts, please upgrade your subscription.', 'Upgrade Required');
-          return;
-        }
-      }
-    }
-
-    if (!this.#layoutMetadata.name) {
-      this._showLayoutNameDialog();
+    // Loaded at sign-in by updateCloudMenuVisibility, so this resolves without
+    // a fetch. Everything past this point is account policy.
+    const cloudLayout = await this.enableCloudLayout();
+    if (!cloudLayout) {
+      showSnackbar('Cloud storage not available.', 'error');
       return;
     }
 
-    await this._saveToCloud(this.#layoutMetadata.name);
+    await cloudLayout.onCloudSaveClick();
   }
 
   /**
@@ -4073,64 +3822,23 @@ export class LayoutController {
     }
 
     const shareContainer = document.getElementById('shareButton-container');
-    if (shareContainer) {
-      if (this.readOnly || !authManager || !authManager.isAuthenticated) {
-        shareContainer.classList.add('hidden');
-      } else {
-        let groups = [];
-        try {
-          groups = await authManager.getUserGroups();
-        } catch (e) {
-          // Token parsing can fail — treat as non-subscriber
-        }
-        const isSubscriber = groups.includes('subscription') || groups.includes('admin');
-        if (isSubscriber) {
-          shareContainer.classList.remove('hidden');
-          const shareBtn = document.getElementById('shareButton');
-          if (shareBtn) {
-            if (this.isCloudLayout()) {
-              shareBtn.disabled = false;
-              shareBtn.title = 'Share your layout';
-            } else {
-              shareBtn.disabled = true;
-              shareBtn.title = 'Save your layout to share it';
-            }
-
-            if (!shareBtn.dataset.iconSet) {
-              const icon = document.getElementById('shareButtonIcon');
-              if (icon) {
-                if (isIOSBrowser()) {
-                  icon.textContent = 'ios_share';
-                } else if (isAndroidBrowser()) {
-                  icon.textContent = 'share';
-                } else {
-                  icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l7 7-7 7v-4.5c-5 0-8.5 1.5-11 5 1-5 4-10 11-10.5V5z"/></svg>';
-                }
-                shareBtn.dataset.iconSet = 'true';
-              }
-            }
-
-            if (!shareBtn.dataset.listenerAttached) {
-              shareBtn.addEventListener('click', async () => {
-                try {
-                  const { ShareDialogController } = await import('../cloud/shareDialogController.js');
-                  const shareDialog = ShareDialogController.getInstance(
-                    authManager.getCloudFeatures().cloudStorage,
-                    this
-                  );
-                  shareDialog.show();
-                } catch (e) {
-                  showSnackbar('Unable to open share dialog.', 'error');
-                }
-              });
-              shareBtn.dataset.listenerAttached = 'true';
-            }
-          }
-        } else {
-          shareContainer.classList.add('hidden');
-        }
-      }
+    if (!shareContainer) {
+      return;
     }
+    // Hidden is the default in the markup, and the only outcome a signed-out or
+    // read-only visitor can reach, so it is decided here without loading
+    // anything. Who among the signed-in may actually see the button is account
+    // policy, and lives with the rest of it.
+    if (this.readOnly || !authManager || !authManager.isAuthenticated) {
+      shareContainer.classList.add('hidden');
+      return;
+    }
+    const cloudLayout = await this.enableCloudLayout();
+    if (!cloudLayout) {
+      shareContainer.classList.add('hidden');
+      return;
+    }
+    await cloudLayout.applyShareVisibility(shareContainer);
   }
 
   /**

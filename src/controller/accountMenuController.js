@@ -350,6 +350,9 @@ class AccountMenuController {
       }
       // After the reset, so MOCs freed by it are no longer counted as in use.
       layoutController.removeCloudMocs();
+      // Only once the tracks are gone: removeCloudMocs works through the very
+      // module this releases.
+      layoutController.disableCloudMocs();
     }
     this.updateMenuState();
     await this._updateCloudMenuVisibility();

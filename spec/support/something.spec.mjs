@@ -11384,14 +11384,31 @@ describe("LayoutController", function() {
         });
     });
 
+    // Who among the signed-in may see the share button is account policy and
+    // lives in CloudLayoutSave, which is only fetched for signed-in users. What
+    // is asserted here is the half that must work with that module absent:
+    // hiding, and handing off when it is present. The button's own enabled and
+    // titled states are covered by spec/cloud/cloudLayoutSave.spec.mjs.
     describe('share button visibility', () => {
         let shareContainer;
-        let shareBtn;
+
+        /** A signed-in, cloud-enabled account. */
+        function signedIn() {
+            return Promise.resolve({
+                isAuthenticated: true,
+                hasCloudAccess: true,
+                getUserGroups: () => Promise.resolve(['subscription']),
+            });
+        }
 
         beforeEach(() => {
             shareContainer = document.getElementById('shareButton-container');
-            shareBtn = document.getElementById('shareButton');
             layoutController.clearCloudMetadata();
+        });
+
+        afterEach(() => {
+            // The controller is a singleton shared by every suite in this file.
+            layoutController.disableCloudMocs();
         });
 
         it('hides share button when not authenticated', async () => {
@@ -11404,55 +11421,29 @@ describe("LayoutController", function() {
 
         it('hides share button when readOnly is true', async () => {
             layoutController.readOnly = true;
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
             await layoutController.updateCloudMenuVisibility();
             expect(shareContainer.classList.contains('hidden')).toBeTrue();
             layoutController.readOnly = false;
         });
 
-        it('disables share button for non-cloud layouts', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+        it('hides share button when cloud layout support cannot be loaded', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout').and.returnValue(Promise.resolve(null));
             await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeTrue();
-            expect(shareBtn.title).toBe('Save your layout to share it');
+            expect(shareContainer.classList.contains('hidden')).toBeTrue();
         });
 
-        it('enables share button for cloud layouts', async () => {
-            layoutController.updateCloudMetadata({ cloudId: 'test-id' });
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
-            await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeFalse();
-            expect(shareBtn.title).toBe('Share your layout');
-        });
+        it('hands the container to cloud layout support when signed in', async () => {
+            const applyShareVisibility = jasmine.createSpy('applyShareVisibility')
+                .and.returnValue(Promise.resolve());
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout')
+                .and.returnValue(Promise.resolve({ applyShareVisibility }));
 
-        it('shows share button when authenticated subscriber', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
             await layoutController.updateCloudMenuVisibility();
-            expect(shareContainer.classList.contains('hidden')).toBeFalse();
+
+            expect(applyShareVisibility).toHaveBeenCalledWith(shareContainer);
         });
     });
 
@@ -11618,6 +11609,7 @@ describe("LayoutController", function() {
         let lc;
         let saveLayout;
         let track;
+        let cloudMocs;
 
         beforeEach(function () {
             lc = window.layoutController;
@@ -11651,6 +11643,20 @@ describe("LayoutController", function() {
                 getCloudFeatures: () => ({ cloudStorage: { saveLayout } }),
             }));
             spyOn(lc, 'updateCloudMenuVisibility').and.stub();
+            // Cloud MOC support is loaded at sign-in and reached through this
+            // handle. Faking it here keeps the gate's own behaviour, which is
+            // covered in spec/cloud/cloudMocSync.spec.mjs, out of the way.
+            cloudMocs = {
+                ensureMocsInCloud: jasmine.createSpy('ensureMocsInCloud')
+                    .and.returnValue(Promise.resolve({ ok: true, reason: null, limit: null })),
+                mocIdsForAliases: (aliases) => {
+                    const assets = lc.trackData.bundles[0].assets;
+                    return aliases
+                        .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
+                        .filter((mocId) => typeof mocId === 'string');
+                },
+            };
+            lc._cloudMocs = cloudMocs;
         });
 
         afterEach(function () {
@@ -11659,29 +11665,34 @@ describe("LayoutController", function() {
             if (idx >= 0) {
                 assets.splice(idx, 1);
             }
+            lc._cloudMocs = null;
             lc.reset();
         });
 
+        /** Mimics a successful upload, which re-keys the track in place. */
+        function rekeyOnUpload() {
+            cloudMocs.ensureMocsInCloud.and.callFake(() => {
+                // The shared track (and thus the placed component's baseData) is
+                // re-keyed to its cloud alias, exactly as _rekeyMocAlias leaves it.
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === 'local1');
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve({ ok: true, reason: null, limit: null });
+            });
+        }
+
         it("abandons the layout save when the user declines to upload local MOCs", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
-            const saveSpy = spyOn(lc, 'saveMocToCloud');
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await lc._saveToCloud('MyLayout');
 
             expect(saveLayout).not.toHaveBeenCalled();
-            expect(saveSpy).not.toHaveBeenCalled();
         });
 
         it("uploads local MOCs then saves the layout referencing the new alias and id", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                // Mimic _rekeyMocAlias: the shared track (and thus the placed
-                // component's baseData) is re-keyed to its cloud alias.
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await lc._saveToCloud('MyLayout');
 
@@ -11694,17 +11705,13 @@ describe("LayoutController", function() {
         });
 
         it("reports success and failure through its return value", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
 
-            lc._confirmUploadMocs.and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(true);
         });
