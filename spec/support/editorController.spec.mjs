@@ -454,6 +454,22 @@ describe("EditorController", function () {
       expect(connectionsList.innerHTML).toBe('');
     });
 
+    it("clears a stale blank-name error so the next session starts clean", function () {
+      // The user cleared the name, saw the error, then abandoned the edit. The
+      // name reset above puts a valid one back, so the error must go with it.
+      const nameField = document.createElement('div');
+      nameField.appendChild(nameInput);
+      nameField.classList.add('invalid');
+      const nameError = document.createElement('output');
+      nameError.textContent = 'Name is required';
+      geiSpy.withArgs('componentNameError').and.returnValue(nameError);
+
+      controller.reset();
+
+      expect(nameField.classList.contains('invalid')).toBeFalse();
+      expect(nameError.textContent).toBe('');
+    });
+
     it("removes transient dialogs and hides the connection editor", function () {
       controller.reset();
       expect(document.getElementById.calls.any()).toBeTrue();

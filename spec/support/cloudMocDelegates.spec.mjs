@@ -143,4 +143,53 @@ describe("LayoutController cloud MOC delegates", function () {
       expect(controller._getCloudStorage).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("a logout arriving while the module is still loading", function () {
+    // The load is started fire-and-forget from handlePostLoginUpdates, so this
+    // is reachable by signing in and straight back out. Before the supersede
+    // check, the assignment inside enableCloudMocs resumed after
+    // disableCloudFeatures had run and put the signed-out account's module
+    // back: the MOCs it had just removed were re-registered, deleteMoc stopped
+    // offering to sign in, and the next account inherited the handle.
+    it("does not put the signed-out account's MOC module back", async function () {
+      let release;
+      spyOn(controller, '_getCloudStorage')
+        .and.returnValue(new Promise((resolve) => { release = resolve; }));
+      spyOn(controller, '_getAuthManager')
+        .and.returnValue(Promise.resolve({ isAuthenticated: true, hasCloudAccess: true }));
+
+      const pending = controller.enableCloudMocs();
+      controller.disableCloudFeatures();
+      release({ listMocs: () => Promise.resolve([]) });
+
+      await expectAsync(pending).toBeResolvedTo(null);
+      expect(controller._cloudMocs).toBeNull();
+      expect(controller._cloudMocsReady).toBeNull();
+    });
+
+    it("does not put the signed-out account's layout module back", async function () {
+      let release;
+      spyOn(controller, '_getAuthManager')
+        .and.returnValue(new Promise((resolve) => { release = resolve; }));
+
+      const pending = controller.enableCloudLayout();
+      controller.disableCloudFeatures();
+      release({ isAuthenticated: true, hasCloudAccess: true });
+
+      await expectAsync(pending).toBeResolvedTo(null);
+      expect(controller._cloudLayout).toBeNull();
+      expect(controller._cloudLayoutReady).toBeNull();
+    });
+
+    it("lets the next sign-in start a fresh load", async function () {
+      spyOn(controller, '_getCloudStorage').and.returnValue(Promise.resolve(null));
+
+      await controller.enableCloudMocs();
+      controller.disableCloudFeatures();
+      await controller.enableCloudMocs();
+
+      // Not served from a handle the previous session left behind.
+      expect(controller._getCloudStorage).toHaveBeenCalledTimes(2);
+    });
+  });
 });

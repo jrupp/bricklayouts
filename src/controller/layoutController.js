@@ -2763,7 +2763,7 @@ export class LayoutController {
     if (this._cloudMocsReady) {
       return this._cloudMocsReady;
     }
-    this._cloudMocsReady = (async () => {
+    const ready = (async () => {
       try {
         const cloudStorage = await this._getCloudStorage();
         if (!cloudStorage) {
@@ -2780,13 +2780,24 @@ export class LayoutController {
         return null;
       }
     })();
-    this._cloudMocs = await this._cloudMocsReady;
+    this._cloudMocsReady = ready;
+    const loaded = await ready;
+    // The load is started fire-and-forget from the post-login update, so a
+    // logout can land while it is still in flight. Holding the promise in a
+    // local means the assignment below would otherwise resume and put the
+    // signed-out account's module back, defeating disableCloudFeatures(): the
+    // MOCs it just removed would be re-registered, deleteMoc would stop
+    // offering to sign in, and the next account would inherit this handle.
+    if (this._cloudMocsReady !== ready) {
+      return null;
+    }
+    this._cloudMocs = loaded;
     // Never leave a failed or signed-out attempt cached as the in-flight
     // promise: a later sign-in would keep resolving to that same null.
-    if (!this._cloudMocs) {
+    if (!loaded) {
       this._cloudMocsReady = null;
     }
-    return this._cloudMocs;
+    return loaded;
   }
 
   /**
@@ -2830,7 +2841,7 @@ export class LayoutController {
     if (this._cloudLayoutReady) {
       return this._cloudLayoutReady;
     }
-    this._cloudLayoutReady = (async () => {
+    const ready = (async () => {
       try {
         const authManager = await this._getAuthManager();
         if (!authManager || !authManager.isAuthenticated || !authManager.hasCloudAccess) {
@@ -2843,11 +2854,18 @@ export class LayoutController {
         return null;
       }
     })();
-    this._cloudLayout = await this._cloudLayoutReady;
-    if (!this._cloudLayout) {
+    this._cloudLayoutReady = ready;
+    const loaded = await ready;
+    // Same supersede check as enableCloudMocs: a logout during the load must
+    // not be undone by this assignment resuming afterwards.
+    if (this._cloudLayoutReady !== ready) {
+      return null;
+    }
+    this._cloudLayout = loaded;
+    if (!loaded) {
       this._cloudLayoutReady = null;
     }
-    return this._cloudLayout;
+    return loaded;
   }
 
   /**
