@@ -5,6 +5,18 @@
  * Uses singleton pattern - access via AuthenticationManager.getInstance()
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import('../cloud/cloudStorageController.js').CloudStorageManager} CloudStorageManager */
+/** @typedef {import('../cloud/fileDialogController.js').FileDialog} FileDialog */
+/** @typedef {import('../cloud/profileModal.js').ProfileModal} ProfileModal */
+
+/**
+ * @typedef {Object} CloudFeatures
+ * @property {CloudStorageManager} cloudStorage
+ * @property {FileDialog} fileDialog
+ * @property {ProfileModal} profileModal
+ */
+
 // Lazy load AWS Cognito SDK via script tag (UMD bundle)
 let CognitoUserPool, CognitoUser, AuthenticationDetails, CognitoUserAttribute;
 
@@ -57,9 +69,13 @@ class AuthenticationManager {
     this.hasCloudAccess = false;
     this.cookieDomain = '.bricklayouts.com'; // Shared across subdomains
     this.cognitoUserPool = null;
+    /** @type {?Object.<string, string>} */
     this.config = null;
     this.sdkLoaded = false;
+    // eslint-disable-next-line max-len
+    /** @type {?CloudFeatures} */
     this.cloudFeatures = null; // Stores loaded private cloud features
+    /** @type {?CloudStorageManager} */
     this.cloudStorage = null; // Shared CloudStorageManager, available without a subscription
   }
 
@@ -1102,7 +1118,7 @@ class AuthenticationManager {
    * PUBLIC authentication UI (AccountMenu, AuthenticationModal) is imported directly
    * in the main application without auth checks, as they are needed for login/signup.
    *
-   * @returns {Promise<Object|null>} Object with cloud features or null if not authorized
+   * @returns {Promise<CloudFeatures|null>} Object with cloud features or null if not authorized
    */
   async loadPrivateCloudFeatures() {
     // Verify authentication first
@@ -1240,7 +1256,7 @@ class AuthenticationManager {
 
   /**
    * Gets the loaded private cloud features
-   * @returns {Object|null} Cloud features or null if not loaded
+   * @returns {CloudFeatures|null} Cloud features or null if not loaded
    */
   getCloudFeatures() {
     return this.cloudFeatures;
@@ -1252,7 +1268,7 @@ class AuthenticationManager {
    * because the MOC endpoints are open to all authenticated users regardless of
    * subscription. Callers that need the layout endpoints must still check
    * hasCloudAccess.
-   * @returns {Promise<Object|null>} The CloudStorageManager, or null when signed out
+   * @returns {Promise<CloudStorageManager|null>} The CloudStorageManager, or null when signed out
    */
   async getCloudStorage() {
     if (!this.isAuthenticated) {

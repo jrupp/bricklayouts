@@ -1,13 +1,10 @@
 import * as fc from '../support/lib/fast-check.mjs';
 import {
   LayoutPreservation,
-  EDITOR_LAYOUT_KEY,
-  CHECKOUT_LAYOUT_KEY,
   DEFAULT_MAX_AGE_MS,
   STORAGE_BUDGET_BYTES,
   estimateStorageBytes,
   isQuotaError,
-  clearOrphanedPreservation,
 } from '../../src/utils/layoutPreservation.js';
 // eslint-disable-next-line no-unused-vars
 import { LayoutController } from '../../src/controller/layoutController.js';
@@ -571,70 +568,6 @@ describe('Feature: layout-preservation', () => {
 
       expect(mockLayoutController._ensureMocsInCloud).toHaveBeenCalled();
       expect(storedLayout().layers[0].components.length).toBe(0);
-    });
-  });
-
-  describe('clearOrphanedPreservation', () => {
-    let session;
-    let local;
-
-    beforeEach(() => {
-      session = { removeItem: jasmine.createSpy('removeItem') };
-      local = { removeItem: jasmine.createSpy('removeItem') };
-    });
-
-    it('clears both keys on an ordinary page load', () => {
-      clearOrphanedPreservation('', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).toHaveBeenCalledWith(CHECKOUT_LAYOUT_KEY);
-    });
-
-    it('keeps the checkout payload when returning from a completed checkout', () => {
-      clearOrphanedPreservation('?session_id=cs_test_1', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).not.toHaveBeenCalled();
-    });
-
-    it('keeps the checkout payload when returning from a cancelled checkout', () => {
-      clearOrphanedPreservation('?checkout=cancelled', { session, local });
-
-      expect(local.removeItem).not.toHaveBeenCalled();
-    });
-
-    it('keeps the checkout payload when returning from the billing portal', () => {
-      clearOrphanedPreservation('?portal_return=true', { session, local });
-
-      expect(local.removeItem).not.toHaveBeenCalled();
-    });
-
-    it('clears both keys for an unrelated query string', () => {
-      clearOrphanedPreservation('?subscribe=true', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).toHaveBeenCalledWith(CHECKOUT_LAYOUT_KEY);
-    });
-
-    it('always clears the editor key, which a page load can never be using', () => {
-      clearOrphanedPreservation('?session_id=cs_test_1&checkout=cancelled', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-    });
-
-    it('does not propagate a storage area that refuses access', () => {
-      const throwing = { removeItem: () => { throw new Error('unavailable'); } };
-
-      expect(() => clearOrphanedPreservation('', { session: throwing, local: throwing }))
-        .not.toThrow();
-    });
-  });
-
-  describe('exported constants', () => {
-    it('exposes distinct keys for checkout and editor preservation', () => {
-      expect(CHECKOUT_LAYOUT_KEY).toBe('bricklayouts_checkout_layout');
-      expect(EDITOR_LAYOUT_KEY).toBe('bricklayouts_editor_layout');
-      expect(CHECKOUT_LAYOUT_KEY).not.toBe(EDITOR_LAYOUT_KEY);
     });
   });
 });

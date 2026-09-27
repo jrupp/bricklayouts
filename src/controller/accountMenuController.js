@@ -349,7 +349,7 @@ class AccountMenuController {
         layoutController.reset();
       }
       // After the reset, so MOCs freed by it are no longer counted as in use.
-      layoutController.removeCloudMocs();
+      layoutController.disableCloudFeatures();
     }
     this.updateMenuState();
     await this._updateCloudMenuVisibility();

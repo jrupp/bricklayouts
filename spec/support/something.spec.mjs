@@ -6,7 +6,7 @@ import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
-import { EDITOR_LAYOUT_KEY } from "../../src/utils/layoutPreservation.js";
+import { EDITOR_LAYOUT_KEY } from "../../src/utils/preservationKeys.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
@@ -2226,6 +2226,33 @@ describe("LayoutController", function() {
 
         it("properly validates minimal import data", function() {
             expect(LayoutController._validateImportData(this.perfectMinimalImportData)).toBe(true);
+        });
+
+        describe("embedded MOC names", function() {
+            beforeEach(function() {
+                this.withMoc = (name) => ({
+                    ...this.perfectMinimalImportData,
+                    mocs: [{ alias: 'myMoc', name, textureData: 'data:image/png;base64,AAAA' }],
+                });
+            });
+
+            it("accepts a MOC with a name", function() {
+                expect(LayoutController._validateImportData(this.withMoc('Corner Bakery'))).toBeTrue();
+            });
+
+            it("rejects a blank or whitespace-only MOC name", function() {
+                // A layout file is untrusted, and every consumer assumes a usable
+                // name: createComponentBrowser reads it for the label, the title
+                // and the search filter.
+                expect(LayoutController._validateImportData(this.withMoc(''))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc('   '))).toBeFalse();
+            });
+
+            it("rejects a missing or non-string MOC name", function() {
+                expect(LayoutController._validateImportData(this.withMoc(undefined))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc(null))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc(42))).toBeFalse();
+            });
         });
 
         it("validates layout 1", function() {
@@ -10794,30 +10821,30 @@ describe("LayoutController", function() {
             layoutController.reset();
         });
 
-        describe("_processTrackMetadata", function() {
+        describe("_processAssetMetadata", function() {
             it("should set default type to TRACK when type is undefined", function() {
                 let track = { alias: "test", name: "Test" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.type).toBeDefined();
             });
 
             it("should parse color string to integer", function() {
                 let track = { alias: "test", name: "Test", color: "#6c6e68" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(typeof track.color).toBe("number");
                 expect(track.color).toBe(0x6c6e68);
             });
 
             it("should parse onbp string to integer", function() {
                 let track = { alias: "test", name: "Test", onbp: "#A0A5A9" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(typeof track.onbp).toBe("number");
                 expect(track.onbp).toBe(0xA0A5A9);
             });
 
             it("should not modify color that is already a number", function() {
                 let track = { alias: "test", name: "Test", color: 0x6c6e68 };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.color).toBe(0x6c6e68);
             });
 
@@ -10826,7 +10853,7 @@ describe("LayoutController", function() {
                     alias: "test", name: "Test",
                     connections: [{ vector: [10, 20, 0.5], type: 0 }]
                 };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.connections[0].vector).toBeDefined();
                 expect(track.connections[0].vector.constructor.name).toBe("PolarVector");
             });
@@ -10861,7 +10888,7 @@ describe("LayoutController", function() {
 
             it("should round-trip onbp back to a number when loaded", function() {
                 let track = { alias: "roundtrip", name: "Roundtrip", onbp: "#237841" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.onbp).toBe(2324545);
             });
         });
@@ -11384,14 +11411,31 @@ describe("LayoutController", function() {
         });
     });
 
+    // Who among the signed-in may see the share button is account policy and
+    // lives in CloudLayoutSave, which is only fetched for signed-in users. What
+    // is asserted here is the half that must work with that module absent:
+    // hiding, and handing off when it is present. The button's own enabled and
+    // titled states are covered by spec/cloud/cloudLayoutSave.spec.mjs.
     describe('share button visibility', () => {
         let shareContainer;
-        let shareBtn;
+
+        /** A signed-in, cloud-enabled account. */
+        function signedIn() {
+            return Promise.resolve({
+                isAuthenticated: true,
+                hasCloudAccess: true,
+                getUserGroups: () => Promise.resolve(['subscription']),
+            });
+        }
 
         beforeEach(() => {
             shareContainer = document.getElementById('shareButton-container');
-            shareBtn = document.getElementById('shareButton');
             layoutController.clearCloudMetadata();
+        });
+
+        afterEach(() => {
+            // The controller is a singleton shared by every suite in this file.
+            layoutController.disableCloudFeatures();
         });
 
         it('hides share button when not authenticated', async () => {
@@ -11404,55 +11448,29 @@ describe("LayoutController", function() {
 
         it('hides share button when readOnly is true', async () => {
             layoutController.readOnly = true;
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
             await layoutController.updateCloudMenuVisibility();
             expect(shareContainer.classList.contains('hidden')).toBeTrue();
             layoutController.readOnly = false;
         });
 
-        it('disables share button for non-cloud layouts', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
+        it('hides share button when cloud layout support cannot be loaded', async () => {
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout').and.returnValue(Promise.resolve(null));
             await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeTrue();
-            expect(shareBtn.title).toBe('Save your layout to share it');
+            expect(shareContainer.classList.contains('hidden')).toBeTrue();
         });
 
-        it('enables share button for cloud layouts', async () => {
-            layoutController.updateCloudMetadata({ cloudId: 'test-id' });
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
-            await layoutController.updateCloudMenuVisibility();
-            expect(shareBtn.disabled).toBeFalse();
-            expect(shareBtn.title).toBe('Share your layout');
-        });
+        it('hands the container to cloud layout support when signed in', async () => {
+            const applyShareVisibility = jasmine.createSpy('applyShareVisibility')
+                .and.returnValue(Promise.resolve());
+            spyOn(layoutController, '_getAuthManager').and.returnValue(signedIn());
+            spyOn(layoutController, 'enableCloudLayout')
+                .and.returnValue(Promise.resolve({ applyShareVisibility }));
 
-        it('shows share button when authenticated subscriber', async () => {
-            spyOn(layoutController, '_getAuthManager').and.returnValue(
-                Promise.resolve({
-                    isAuthenticated: true,
-                    hasCloudAccess: true,
-                    getUserGroups: () => Promise.resolve(['subscription']),
-                })
-            );
             await layoutController.updateCloudMenuVisibility();
-            expect(shareContainer.classList.contains('hidden')).toBeFalse();
+
+            expect(applyShareVisibility).toHaveBeenCalledWith(shareContainer);
         });
     });
 
@@ -11618,6 +11636,7 @@ describe("LayoutController", function() {
         let lc;
         let saveLayout;
         let track;
+        let cloudMocs;
 
         beforeEach(function () {
             lc = window.layoutController;
@@ -11651,6 +11670,20 @@ describe("LayoutController", function() {
                 getCloudFeatures: () => ({ cloudStorage: { saveLayout } }),
             }));
             spyOn(lc, 'updateCloudMenuVisibility').and.stub();
+            // Cloud MOC support is loaded at sign-in and reached through this
+            // handle. Faking it here keeps the gate's own behaviour, which is
+            // covered in spec/cloud/cloudMocSync.spec.mjs, out of the way.
+            cloudMocs = {
+                ensureMocsInCloud: jasmine.createSpy('ensureMocsInCloud')
+                    .and.returnValue(Promise.resolve({ ok: true, reason: null, limit: null })),
+                mocIdsForAliases: (aliases) => {
+                    const assets = lc.trackData.bundles[0].assets;
+                    return aliases
+                        .map((alias) => assets.find((t) => t.alias === alias)?.mocId)
+                        .filter((mocId) => typeof mocId === 'string');
+                },
+            };
+            lc._cloudMocs = cloudMocs;
         });
 
         afterEach(function () {
@@ -11659,29 +11692,34 @@ describe("LayoutController", function() {
             if (idx >= 0) {
                 assets.splice(idx, 1);
             }
+            lc._cloudMocs = null;
             lc.reset();
         });
 
+        /** Mimics a successful upload, which re-keys the track in place. */
+        function rekeyOnUpload() {
+            cloudMocs.ensureMocsInCloud.and.callFake(() => {
+                // The shared track (and thus the placed component's baseData) is
+                // re-keyed to its cloud alias, exactly as _rekeyMocAlias leaves it.
+                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === 'local1');
+                t.alias = 'mocnew1';
+                t.mocId = 'new1';
+                return Promise.resolve({ ok: true, reason: null, limit: null });
+            });
+        }
+
         it("abandons the layout save when the user declines to upload local MOCs", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
-            const saveSpy = spyOn(lc, 'saveMocToCloud');
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await lc._saveToCloud('MyLayout');
 
             expect(saveLayout).not.toHaveBeenCalled();
-            expect(saveSpy).not.toHaveBeenCalled();
         });
 
         it("uploads local MOCs then saves the layout referencing the new alias and id", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                // Mimic _rekeyMocAlias: the shared track (and thus the placed
-                // component's baseData) is re-keyed to its cloud alias.
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await lc._saveToCloud('MyLayout');
 
@@ -11694,17 +11732,13 @@ describe("LayoutController", function() {
         });
 
         it("reports success and failure through its return value", async function () {
-            spyOn(lc, '_confirmUploadMocs').and.returnValue(Promise.resolve(false));
+            cloudMocs.ensureMocsInCloud.and.returnValue(Promise.resolve({
+                ok: false, reason: 'declined', limit: null,
+            }));
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(false);
 
-            lc._confirmUploadMocs.and.returnValue(Promise.resolve(true));
-            spyOn(lc, 'saveMocToCloud').and.callFake((alias) => {
-                const t = lc.trackData.bundles[0].assets.find((a) => a.alias === alias);
-                t.alias = 'mocnew1';
-                t.mocId = 'new1';
-                return Promise.resolve('mocnew1');
-            });
+            rekeyOnUpload();
 
             await expectAsync(lc._saveToCloud('MyLayout')).toBeResolvedTo(true);
         });

@@ -23,5 +23,16 @@
     "import/no-cycle": "off",
     "import/prefer-default-export": "off",
     "jsdoc/no-undefined-types": 1
-  }
+  },
+  "overrides": [
+    {
+      "files": [
+        "spec/**/*.mjs",
+        "spec/**/*.js"
+      ],
+      "env": {
+        "jasmine": true
+      }
+    }
+  ]
 }
