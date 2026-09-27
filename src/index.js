@@ -2,9 +2,33 @@ import { ConfigurationController } from './controller/configurationController.js
 import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
-import { SubscriptionDialogController } from './controller/subscriptionDialogController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
+import { clearOrphanedPreservation } from './utils/preservationKeys.js';
 import { Application, Assets, Color, path } from './pixi.mjs';
+
+// The subscription dialog is only opened at startup by the ?subscribe=true deep
+// link or by a pendingSubscribe intent left behind by an earlier visit, and both
+// are readable synchronously. Start the fetch here rather than importing the
+// module statically: a visitor who is not entering the subscribe flow never
+// downloads it at all, while one who is gets the whole startup sequence -- Pixi
+// init, the manifest fetch, layoutController.init(), the Cognito round-trip --
+// to cover the request. That matters because the signed-out branch at the bottom
+// of this file shows the dialog with no await in front of it, so a cold fetch
+// there would stall someone who arrived ready to pay.
+const loadParams = new URLSearchParams(window.location.search);
+const hasSubscribeParam = loadParams.get('subscribe') === 'true';
+let wantsSubscribeDialog = hasSubscribeParam;
+if (!wantsSubscribeDialog) {
+  try {
+    wantsSubscribeDialog = sessionStorage.getItem('pendingSubscribe') === 'true';
+  } catch (error) {
+    // Web Storage access itself throws in some privacy modes, and this runs
+    // before anything else. The URL alone decides when it does.
+  }
+}
+const subscriptionDialogReady = wantsSubscribeDialog
+  ? import('./controller/subscriptionDialogController.js')
+  : null;
 
 const canvasContainer = document.getElementById('canvasContainer');
 document.body.style.setProperty('--canvas-bg', '#93bee2');
@@ -15,7 +39,7 @@ await Assets.init({ basePath: '/img/', manifest: path.toAbsolute('../data/manife
 window.app = app;
 window.assets = Assets;
 Color.prototype.toYiq = function () {
-  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) /  1000) * 255;
+  return ((this._components[0] * 299 + this._components[1] * 587 + this._components[2] * 114) / 1000) * 255;
 };
 // Fallback UI function if CDN libraries are blocked
 if (typeof window.ui !== 'function') {
@@ -32,13 +56,13 @@ function listenOnDevicePixelRatio() {
   }
   matchMedia(
     `(resolution: ${window.devicePixelRatio}dppx)`
-  ).addEventListener("change", onChange, { once: true });
+  ).addEventListener('change', onChange, { once: true });
 }
 listenOnDevicePixelRatio();
 const layoutController = LayoutController.getInstance(app);
 await layoutController.init();
 layoutController.initWindowEvents();
-new ConfigurationController();
+new ConfigurationController(); // eslint-disable-line no-new
 InventoryController.getInstance();
 
 // Initialize authentication using singleton pattern
@@ -54,6 +78,13 @@ if (authManager.isAuthenticated && authManager.hasCloudAccess) {
   await authManager.loadPrivateCloudFeatures();
 }
 
+// Custom MOCs are available to every signed-in user, subscription or not.
+// Startup is not blocked on it, but the promise is held: a preserved layout can
+// place cloud MOCs, and restoring it before their tracks are registered would
+// leave those components unable to resolve their alias.
+const cloudMocsReady = authManager.isAuthenticated
+  ? layoutController.loadCloudMocs() : Promise.resolve();
+
 // Update cloud menu visibility based on authentication state
 await layoutController.updateCloudMenuVisibility();
 
@@ -63,9 +94,18 @@ const checkoutSessionId = checkoutParams.get('session_id');
 const checkoutCancelled = checkoutParams.get('checkout');
 const portalReturn = checkoutParams.get('portal_return');
 
+// Anything left in storage that the branch below is not about to consume is
+// orphaned, and a MOC deleted since it was written would make it throw on restore.
+clearOrphanedPreservation(window.location.search, {
+  session: sessionStorage,
+  local: localStorage,
+});
+
 if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === 'true') {
   // Dynamically import SubscriptionService only for checkout/portal return flows
   import('./cloud/subscriptionService.js').then(async ({ SubscriptionService }) => {
+    // The restore below can place cloud MOCs, so their tracks must exist first.
+    await cloudMocsReady;
     const subscriptionService = new SubscriptionService(authManager);
     try {
       if (checkoutSessionId) {
@@ -85,16 +125,17 @@ if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === '
   authManager.refreshSession();
 }
 
-// Handle subscribe deep link: ?subscribe=true or pending intent from sessionStorage
-const subscribeParam = checkoutParams.get('subscribe');
-const pendingSubscribe = sessionStorage.getItem('pendingSubscribe');
-
-if (subscribeParam === 'true' || pendingSubscribe === 'true') {
-  if (subscribeParam === 'true') {
+// Handle subscribe deep link: ?subscribe=true or pending intent from sessionStorage.
+// Both were read at the top of this file, which is also what decided whether to
+// prefetch the dialog, so the decision and the fetch cannot disagree.
+if (wantsSubscribeDialog) {
+  if (hasSubscribeParam) {
     const cleanUrl = new URL(window.location);
     cleanUrl.searchParams.delete('subscribe');
     window.history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search);
   }
+  // Non-null exactly when wantsSubscribeDialog is true: the two are set together.
+  const { SubscriptionDialogController } = await subscriptionDialogReady;
   if (authManager.isAuthenticated) {
     const hasAccess = await authManager.hasFeatureAccess('subscription');
     if (!hasAccess) {
@@ -104,7 +145,8 @@ if (subscribeParam === 'true' || pendingSubscribe === 'true') {
     }
   } else {
     sessionStorage.setItem('pendingSubscribe', 'true');
-    SubscriptionDialogController.getInstance().show('Sign in or create an account to subscribe.', 'Get Started');
+    SubscriptionDialogController.getInstance()
+      .show('Sign in or create an account to subscribe.', 'Get Started');
   }
 }
 

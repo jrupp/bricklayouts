@@ -86,6 +86,79 @@ describe('UndoManager', () => {
     });
   });
 
+  describe('clearIfReferencesAlias', () => {
+    it('clears the stack when a delete entry names the alias', () => {
+      undoManager.record({ type: 'delete', data: { baseDataAlias: 'mocGone', layerUuid: 'l1' } });
+      undoManager.record({ type: 'add', data: { componentUuid: '123', layerUuid: 'l1' } });
+
+      expect(undoManager.clearIfReferencesAlias('mocGone')).toBeTrue();
+      expect(undoManager.length).toBe(0);
+    });
+
+    it('clears the stack when one component of a delete_group names the alias', () => {
+      undoManager.record({
+        type: 'delete_group',
+        data: {
+          layerUuid: 'l1',
+          components: [
+            { baseDataAlias: 'r104', serialized: {} },
+            { baseDataAlias: 'mocGone', serialized: {} },
+          ],
+        },
+      });
+
+      expect(undoManager.clearIfReferencesAlias('mocGone')).toBeTrue();
+      expect(undoManager.length).toBe(0);
+    });
+
+    it('clears the stack when a layer_delete carries the alias as a component type', () => {
+      // Component.serialize() writes the alias as `type`.
+      undoManager.record({
+        type: 'layer_delete',
+        data: {
+          layerIndex: 0,
+          serializedLayer: {
+            name: 'L', visible: true,
+            components: [{ type: 'r104' }, { type: 'mocGone' }],
+          },
+        },
+      });
+
+      expect(undoManager.clearIfReferencesAlias('mocGone')).toBeTrue();
+      expect(undoManager.length).toBe(0);
+    });
+
+    it('leaves the stack alone when no entry names the alias', () => {
+      undoManager.record({ type: 'delete', data: { baseDataAlias: 'r104', layerUuid: 'l1' } });
+      undoManager.record({
+        type: 'layer_delete',
+        data: { layerIndex: 0, serializedLayer: { components: [{ type: 'r104' }] } },
+      });
+
+      expect(undoManager.clearIfReferencesAlias('mocGone')).toBeFalse();
+      expect(undoManager.length).toBe(2);
+    });
+
+    it('ignores entry types that reach their component through the live object', () => {
+      // move/edit resolve a live component by uuid, which cannot exist once the
+      // MOC has been verified as unused in the open layout.
+      undoManager.record({ type: 'move', data: { componentUuid: 'mocGone', pose: {} } });
+      undoManager.record({ type: 'edit', data: { componentUuid: 'mocGone', before: {} } });
+
+      expect(undoManager.clearIfReferencesAlias('mocGone')).toBeFalse();
+      expect(undoManager.length).toBe(2);
+    });
+
+    it('tolerates entries with missing data', () => {
+      undoManager.record({ type: 'delete', data: {} });
+      undoManager.record({ type: 'delete_group', data: {} });
+      undoManager.record({ type: 'layer_delete', data: {} });
+
+      expect(() => undoManager.clearIfReferencesAlias('mocGone')).not.toThrow();
+      expect(undoManager.length).toBe(3);
+    });
+  });
+
   describe('undo', () => {
     it('is a no-op when stack is empty', () => {
       expect(() => undoManager.undo()).not.toThrow();

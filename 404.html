@@ -283,11 +283,11 @@
         </div>
         <div class="componentBrowser" id="componentBrowser"></div>
     </div>
-    <div id="componentEditor" class="hidden surface-container-high">
+    <div id="componentEditor" class="hidden border no-padding small-round surface-container-high">
         <header class="fill top-round small-round small-padding right-padding" style="min-block-size: 3.2rem;">
             <nav>
                 <h6 class="max">Editor</h6>
-                <button class="circle medium transparent" data-ui="#componentEditor">
+                <button id="componentEditorClose" class="circle medium transparent">
                     <i class="medium bold">close</i>
                 </button>
             </nav>
@@ -300,7 +300,7 @@
                     <output class="invalid" id="componentAliasError">Error goes here</output>
                 </div>
                 <div class="field label middle-align large-space border medium vertical-margin" id="componentNameField">
-                    <input id="componentName" type="text" placeholder=" " value="New Component" autofocus>
+                    <input id="componentName" type="text" placeholder=" " value="New Component" maxlength="64" autofocus>
                     <label>Name</label>
                     <output class="invalid" id="componentNameError">Error goes here</output>
                 </div>
@@ -345,11 +345,14 @@
         </div>
         <hr>
         <nav class="no-padding no-space no-margin">
-            <button id="componentEditorTest" class="no-round max extra-text left-button primary-text">
+            <button id="componentEditorExport" class="no-round max extra-text left-button primary-text">
+                <span>Save</span>
+            </button>
+            <button id="componentEditorTest" class="no-round max extra-text right-button primary-text">
                 <span>Test</span>
             </button>
-            <button id="componentEditorExport" class="no-round max extra-text right-button primary-text">
-                <span>Save</span>
+            <button id="componentEditorExit" class="no-round max extra-text right-button primary-text">
+                <span>Exit</span>
             </button>
         </nav>
     </div>
