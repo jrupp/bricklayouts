@@ -622,7 +622,26 @@ export class EditorController {
       }
       this.baseData.alias = tempAlias;
     }
-    this.baseData.name = document.getElementById('componentName').value;
+    const nameInput = document.getElementById('componentName');
+    const nameError = document.getElementById('componentNameError');
+    const trimmedName = nameInput.value.trim();
+    if (trimmedName.length === 0) {
+      // Corrected in place rather than rejected, like the alias above: this
+      // runs on every field change, so there is no confirm step at which to
+      // refuse. A blank name would reach createComponentBrowser, whose label,
+      // title and search all assume there is one.
+      nameInput.value = this.baseData.name;
+      nameInput.parentElement.classList.add('invalid');
+      if (nameError) {
+        nameError.innerText = 'Name is required';
+      }
+    } else {
+      this.baseData.name = trimmedName;
+      nameInput.parentElement.classList.remove('invalid');
+      if (nameError) {
+        nameError.innerText = '';
+      }
+    }
     let categories = document.getElementById('componentCategories');
     if (this.baseData.category === 'structures' && categories.options[categories.selectedIndex].value !== 'structures') {
         document.getElementById('componentBaseplateToggle').checked = false;

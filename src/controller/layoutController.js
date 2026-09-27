@@ -12,6 +12,14 @@ import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
 import '../FileSaver.min.js';
 
+/**
+ * @typedef {import('../cloud/cloudMocSync.js').CloudMocSync} CloudMocSync
+ * @typedef {import('../cloud/cloudLayoutSave.js').CloudLayoutSave} CloudLayoutSave
+ * @typedef {import('../cloud/cloudStorageController.js').CloudStorageError} CloudStorageError
+ * @typedef {import('../cloud/cloudStorageController.js').CloudStorageManager} CloudStorageManager
+ * @typedef {import('./authenticationController.js').AuthenticationManager} AuthenticationManager
+ * @typedef {import('./editorController.js').EditorController} EditorController
+ */
 
 /**
  * @typedef {Object} ConnectionData
@@ -234,7 +242,7 @@ export class LayoutController {
    */
   static previousPinchDistance = -1;
 
-  /** @type {?editorController.EditorController} */
+  /** @type {?EditorController} */
   static editorController = null;
 
   /**
@@ -341,8 +349,8 @@ export class LayoutController {
   _cloudLayout = null;
 
   /**
-   * The in-flight enableCloudLayout() import. Same purpose as
-   * {@link _cloudMocsReady}.
+   * The in-flight enableCloudLayout() import, serving the same purpose for the
+   * layout module that _cloudMocsReady does for the MOC one.
    * @type {?Promise<?CloudLayoutSave>}
    */
   _cloudLayoutReady = null;
@@ -637,21 +645,21 @@ export class LayoutController {
   }
 
   /**
-   * Process metadata for a track asset. Does not require the texture to be loaded.
-   * @param {TrackData} track
+   * Process metadata for a base data asset. Does not require the texture to be loaded.
+   * @param {TrackData} asset
    */
-  _processTrackMetadata(track) {
-    if (track.type === void 0) {
-      track.type = DataTypes.TRACK;
+  _processAssetMetadata(asset) {
+    if (asset.type === void 0) {
+      asset.type = DataTypes.TRACK;
     }
-    if (track.color !== void 0 && typeof track.color === 'string') {
-      track.color = parseInt(track.color.slice(1), 16);
+    if (asset.color !== void 0 && typeof asset.color === 'string') {
+      asset.color = parseInt(asset.color.slice(1), 16);
     }
-    if (track.onbp !== void 0 && typeof track.onbp === 'string') {
-      track.onbp = parseInt(track.onbp.slice(1), 16);
+    if (asset.onbp !== void 0 && typeof asset.onbp === 'string') {
+      asset.onbp = parseInt(asset.onbp.slice(1), 16);
     }
-    if (track.connections && track.connections.length > 0) {
-      track.connections = track.connections.map((connection) => {
+    if (asset.connections && asset.connections.length > 0) {
+      asset.connections = asset.connections.map((connection) => {
         return {...connection, vector: PolarVector.fromFloats(...(connection.vector))};
       });
     }
@@ -801,8 +809,8 @@ export class LayoutController {
     }
 
     // Process metadata for all assets (no textures needed)
-    this.trackData.bundles[0].assets.forEach(track => {
-      this._processTrackMetadata(track);
+    this.trackData.bundles[0].assets.forEach(asset => {
+      this._processAssetMetadata(asset);
     });
 
     if (this.readOnly) {
@@ -2654,13 +2662,14 @@ export class LayoutController {
 
   /**
    * Register custom MOCs embedded in a layout file so their components can be
-   * deserialized. Aliases that already exist in the track data are left
+   * deserialized. Aliases that already exist in the base data are left
    * untouched.
    * @param {Array<SerializedMoc>} mocs
    * @returns {Promise<void>}
    * @private
    */
   async _loadLayoutMocs(mocs) {
+    /** @type {Array<TrackData>} */
     const assets = this.trackData.bundles[0].assets;
     let added = false;
     const needToLoad = new Array();
@@ -2669,7 +2678,7 @@ export class LayoutController {
         continue;
       }
       /** @type {TrackData} */
-      const track = { src: '' };
+      const newAsset = { src: '' };
       if (moc.textureData !== void 0 && moc.textureData !== null) {
         try {
           // Only cache on success: caching an undefined texture would leave the
@@ -2683,7 +2692,7 @@ export class LayoutController {
         // Only server-supplied MOCs reach this branch (cloud/public layouts and
         // listMocs); the URL is loaded as-is, so _validateImportData keeps `src`
         // out of untrusted local layout files.
-        track.src = moc.src;
+        newAsset.src = moc.src;
         Assets.add({alias: moc.alias, src: moc.src});
       } else {
         console.warn(`Custom MOC "${moc.alias}" has no texture data or source; it will be omitted from the layout`);
@@ -2691,7 +2700,7 @@ export class LayoutController {
       }
       MOC_TRACK_KEYS.forEach((key) => {
         if (moc[key] !== void 0) {
-          track[key] = moc[key];
+          newAsset[key] = moc[key];
         }
       });
       // Only MOCs coming from the cloud carry an id; it is deliberately absent
@@ -2699,15 +2708,19 @@ export class LayoutController {
       // Restricted to strings so a non-string id from any path cannot be stamped
       // onto a track (local files have `mocId` stripped at the input boundary).
       if (typeof moc.mocId === 'string') {
-        track.mocId = moc.mocId;
+        newAsset.mocId = moc.mocId;
       }
-      track.mine = 1;
-      this._processTrackMetadata(track);
-      assets.push(track);
+      if (typeof newAsset.name !== 'string' || newAsset.name.trim().length === 0) {
+        console.warn(`Custom MOC "${moc.alias}" has no usable name; using its alias instead`);
+        newAsset.name = moc.alias;
+      }
+      newAsset.mine = 1;
+      this._processAssetMetadata(newAsset);
+      assets.push(newAsset);
       if (Assets.cache.has(moc.alias)) {
-        track.image = await this.extractTrackImage(track);
+        newAsset.image = await this.extractTrackImage(newAsset);
       } else {
-        track.image = this._createPlaceholderImage(track);
+        newAsset.image = this._createPlaceholderImage(newAsset);
         needToLoad.push(moc.alias);
       }
       added = true;
@@ -2721,10 +2734,9 @@ export class LayoutController {
   }
 
   /**
-   * Gets the CloudStorageManager for the signed-in user. The MOC endpoints are
-   * open to any authenticated user, so this deliberately does not require cloud
-   * access (a subscription) the way the layout endpoints do.
-   * @returns {Promise<?Object>} The cloud storage manager, or null if unavailable
+   * Gets the CloudStorageManager for the signed-in user.
+   * @returns {Promise<?CloudStorageManager>} The cloud storage manager, or null
+   *   if unavailable
    * @private
    */
   async _getCloudStorage() {
@@ -2778,14 +2790,26 @@ export class LayoutController {
   }
 
   /**
-   * Drop cloud MOC support on logout so nothing keeps talking to the account
-   * that just signed out.
+   * Tear down everything tied to the account that just signed out: the cloud
+   * MOCs registered in the component browser, then the cloud modules themselves.
+   *
+   * The two halves are one method because their order is load-bearing. Removing
+   * the tracks runs through the very module the release step drops, so releasing
+   * first would silently turn the removal into a no-op and leave the next person
+   * to sign in looking at the previous user's MOCs.
+   *
+   * Synchronous, and deliberately reads the already-loaded module rather than
+   * awaiting enableCloudMocs(): by the time anyone can log out, signing in has
+   * long since loaded it.
+   * @returns {Number} The number of MOC tracks removed from the browser
    */
-  disableCloudMocs() {
+  disableCloudFeatures() {
+    const removed = this._cloudMocs?.removeCloudMocs() ?? 0;
     this._cloudMocs = null;
     this._cloudMocsReady = null;
     this._cloudLayout = null;
     this._cloudLayoutReady = null;
+    return removed;
   }
 
   /**
@@ -2833,7 +2857,7 @@ export class LayoutController {
    * The enableCloudMocs() call is normally already resolved -- sign-in loaded
    * it -- and is here so that a MOC committed in a session where that wiring
    * did not run still saves, rather than silently doing nothing.
-   * @param {String} alias The alias of the MOC track to save
+   * @param {String} alias The alias of the MOC base data to save
    * @returns {Promise<?String>} The new alias if it was re-keyed, otherwise null
    * @throws {CloudStorageError} Only with code `MOC_LIMIT_REACHED`, after the
    *   failure has already been reported to the user
@@ -2878,36 +2902,12 @@ export class LayoutController {
   }
 
   /**
-   * Drop the signed-in user's cloud MOCs from the component browser on logout so
-   * the next person to sign in does not inherit them.
-   *
-   * Synchronous, and deliberately reads the already-loaded module rather than
-   * awaiting enableCloudMocs(): by the time anyone can log out, signing in has
-   * long since loaded it.
-   * @returns {Number} The number of MOC tracks removed from the browser
-   */
-  removeCloudMocs() {
-    return this._cloudMocs?.removeCloudTracks() ?? 0;
-  }
-
-  /**
-   * The name to show a user for a MOC track, falling back to its alias.
-   * @param {TrackData} track
-   * @returns {String}
-   * @private
-   */
-  _mocDisplayName(track) {
-    return typeof track.name === 'string' && track.name.trim().length > 0
-      ? track.name : track.alias;
-  }
-
-  /**
-   * Find every component in the open layout built from the given MOC.
+   * Find every component in the open layout built from the given base data alias.
    * @param {String} alias
    * @returns {Array<Component>}
    * @private
    */
-  _findMocUsage(alias) {
+  _findComponentUsage(alias) {
     const found = [];
     this.layers.forEach((layer) => {
       layer.children.forEach((child) => {
@@ -2923,7 +2923,7 @@ export class LayoutController {
    * Delete a MOC from the component browser and, when it is a cloud MOC, from
    * the user's account. Every failure is reported to the user here, so callers
    * do not need to handle the returned promise.
-   * @param {String} alias The alias of the MOC track to delete
+   * @param {String} alias The alias of the MOC base data to delete
    * @returns {Promise<void>}
    */
   async deleteMoc(alias) {
@@ -2931,7 +2931,7 @@ export class LayoutController {
       return;
     }
 
-    // Before anything else, including the track lookup. Entering the editor
+    // Before anything else, including the base data lookup. Entering the editor
     // preserves the real layout to sessionStorage and resets the workspace, so
     // `this.layers` is empty and the usage check below would wrongly report the
     // MOC as unused. The preserved payload names its MOCs by alias and carries
@@ -2942,36 +2942,36 @@ export class LayoutController {
     }
 
     const assets = this.trackData.bundles[0].assets;
-    let track = assets.find((t) => t.alias === alias);
-    if (!track) {
+    let baseData = /** @type {TrackData} */ (assets.find((t) => t.alias === alias));
+    if (!baseData || !baseData.mine) {
       return;
     }
 
-    if (this._findMocUsage(alias).length > 0) {
-      await this._showMocInUseDialog(track);
+    if (this._findComponentUsage(alias).length > 0) {
+      await this._showMocInUseDialog(baseData);
       return;
     }
 
-    if (!(await this._confirmDeleteMoc(track))) {
+    if (!(await this._confirmDeleteMoc(baseData))) {
       return;
     }
 
     // The confirm dialog awaits, so the layout may have changed under it.
-    track = assets.find((t) => t.alias === alias);
-    if (!track) {
+    baseData = assets.find((t) => t.alias === alias);
+    if (!baseData || !baseData.mine) {
       return;
     }
-    if (this._findMocUsage(alias).length > 0) {
-      await this._showMocInUseDialog(track);
+    if (this._findComponentUsage(alias).length > 0) {
+      await this._showMocInUseDialog(baseData);
       return;
     }
 
-    const name = this._mocDisplayName(track);
+    const name = baseData.name;
 
     // A MOC with no cloud id only exists in this browser -- it came from a
     // downloaded layout file -- so a signed-out user deletes it without any of
     // the cloud machinery being loaded or consulted.
-    if (track.mocId) {
+    if (baseData.mocId) {
       const cloudMocs = await this.enableCloudMocs();
       if (!cloudMocs) {
         // Removing it locally would orphan the cloud record with no way back to it.
@@ -2979,7 +2979,7 @@ export class LayoutController {
         return;
       }
       // 'blocked' and 'failed' have both already been explained to the user.
-      if ((await cloudMocs.deleteRemote(track)) !== 'deleted') {
+      if ((await cloudMocs.deleteRemote(baseData)) !== 'deleted') {
         return;
       }
     }
@@ -2989,7 +2989,7 @@ export class LayoutController {
   }
 
   /**
-   * Remove a MOC's track, texture and any lingering references to it from the
+   * Remove a MOC's base data, texture and any lingering references to it from the
    * running app. The cloud side, if any, has already been dealt with.
    * @param {String} alias
    * @private
@@ -3025,13 +3025,12 @@ export class LayoutController {
   }
 
   /**
-   * Ask the user to confirm deleting a MOC. Built dynamically, like the cloud
-   * MOC dialogs, so index.html and 404.html stay untouched.
-   * @param {TrackData} track
+   * Ask the user to confirm deleting a MOC.
+   * @param {TrackData} baseData
    * @returns {Promise<Boolean>} True if the user confirmed
    * @private
    */
-  _confirmDeleteMoc(track) {
+  _confirmDeleteMoc(baseData) {
     return new Promise((resolve) => {
       document.getElementById('deleteMocDialog')?.remove();
       const dialog = document.createElement('dialog');
@@ -3061,10 +3060,10 @@ export class LayoutController {
         </div>
       `;
       // MOC names come from the server or a local layout file, so textContent.
-      dialog.querySelector('#deleteMocMessage').textContent = track.mocId
-        ? `Delete "${this._mocDisplayName(track)}"? It will be removed from your account `
+      dialog.querySelector('#deleteMocMessage').textContent = baseData.mocId
+        ? `Delete "${baseData.name}"? It will be removed from your account `
           + 'and from this browser.'
-        : `Delete "${this._mocDisplayName(track)}"? It only exists in this browser and `
+        : `Delete "${baseData.name}"? It only exists in this browser and `
           + 'cannot be recovered.';
       document.body.appendChild(dialog);
 
@@ -3149,14 +3148,14 @@ export class LayoutController {
 
   /**
    * Tell the user the MOC is still placed in the layout they have open.
-   * @param {TrackData} track
+   * @param {TrackData} baseData
    * @returns {Promise<void>}
    * @private
    */
-  _showMocInUseDialog(track) {
+  _showMocInUseDialog(baseData) {
     return this._showMocNoticeDialog('mocInUseDialog', 'MOC In Use', (body) => {
       const message = document.createElement('p');
-      message.textContent = `The layout you have open is using "${this._mocDisplayName(track)}". `
+      message.textContent = `The layout you have open is using "${baseData.name}". `
         + 'Close the layout before deleting the MOC.';
       body.appendChild(message);
     });
@@ -3734,6 +3733,7 @@ export class LayoutController {
 
     try {
       showSnackbar('Saving to cloud...', 'info');
+      /** @type {SerializedLayout} */
       const layoutData = {
         version: CurrentFormatVersion,
         date: Date.now(),
@@ -3782,7 +3782,8 @@ export class LayoutController {
 
   /**
    * Gets the AuthenticationManager instance.
-   * @returns {Promise<Object|null>} The AuthenticationManager or null
+   * @returns {Promise<?AuthenticationManager>} The AuthenticationManager, or
+   *   null if the module could not be loaded
    * @private
    */
   async _getAuthManager() {
@@ -3933,7 +3934,9 @@ export class LayoutController {
       // are imported without passing through here.
       data?.mocs === undefined || (Array.isArray(data.mocs) && data.mocs.every(moc => moc
         && typeof moc.alias === 'string' && moc.alias.length > 0
-        && typeof moc.name === 'string'
+        // Non-blank, not merely a string: createComponentBrowser reads `name`
+        // for the label, the title and the search filter.
+        && typeof moc.name === 'string' && moc.name.trim().length > 0
         && typeof moc.textureData === 'string'))
     ]
     if (validations.every(v => v) === false) {

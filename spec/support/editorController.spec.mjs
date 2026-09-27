@@ -794,6 +794,9 @@ describe("EditorController", function () {
       aliasInput.value = 'originalAlias';
       nameInput = document.createElement('input');
       nameInput.value = 'Original';
+      // index.html wraps this in #componentNameField, and onComponentSave marks
+      // that wrapper invalid, so the input needs a real parent here.
+      document.createElement('div').appendChild(nameInput);
       categories = document.createElement('select');
       ['9V', 'structures', 'trees'].forEach((v) => {
         const opt = document.createElement('option');
@@ -824,6 +827,39 @@ describe("EditorController", function () {
       expect(controller.baseData.alias).toBe('originalAlias');
       expect(controller.baseData.name).toBe('Renamed');
       expect(controller.committed).toBeTrue();
+    });
+
+    it("refuses a blank name and puts the previous one back", function () {
+      // Every consumer assumes a MOC has a name -- createComponentBrowser reads
+      // it for the label, the title and the search filter.
+      nameInput.value = '   ';
+
+      controller.onComponentSave();
+
+      expect(controller.baseData.name).toBe('Original');
+      expect(nameInput.value).toBe('Original');
+      expect(nameInput.parentElement.classList.contains('invalid')).toBeTrue();
+    });
+
+    it("trims surrounding whitespace from an accepted name", function () {
+      nameInput.value = '  Renamed  ';
+
+      controller.onComponentSave();
+
+      expect(controller.baseData.name).toBe('Renamed');
+      expect(nameInput.parentElement.classList.contains('invalid')).toBeFalse();
+    });
+
+    it("clears the invalid state once a name is supplied again", function () {
+      nameInput.value = '';
+      controller.onComponentSave();
+      expect(nameInput.parentElement.classList.contains('invalid')).toBeTrue();
+
+      nameInput.value = 'Renamed';
+      controller.onComponentSave();
+
+      expect(controller.baseData.name).toBe('Renamed');
+      expect(nameInput.parentElement.classList.contains('invalid')).toBeFalse();
     });
 
     it("clears the committed flag when an admin changes the alias", function () {

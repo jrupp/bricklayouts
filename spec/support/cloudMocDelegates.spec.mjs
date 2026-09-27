@@ -49,7 +49,7 @@ describe("LayoutController cloud MOC delegates", function () {
     });
 
     it("removes no cloud MOCs", function () {
-      expect(controller.removeCloudMocs()).toBe(0);
+      expect(controller.disableCloudFeatures()).toBe(0);
     });
 
     it("reports the MOC gate as failed so a cloud layout save stops", async function () {
@@ -78,7 +78,7 @@ describe("LayoutController cloud MOC delegates", function () {
         saveMoc: jasmine.createSpy('saveMoc').and.returnValue(Promise.resolve('mocuuid-1')),
         listAndRegister: jasmine.createSpy('listAndRegister')
           .and.returnValue(Promise.resolve()),
-        removeCloudTracks: jasmine.createSpy('removeCloudTracks').and.returnValue(3),
+        removeCloudMocs: jasmine.createSpy('removeCloudMocs').and.returnValue(3),
         mocIdsForAliases: jasmine.createSpy('mocIdsForAliases').and.returnValue(['uuid-1']),
         ensureMocsInCloud: jasmine.createSpy('ensureMocsInCloud')
           .and.returnValue(Promise.resolve({ ok: true, reason: null, limit: null })),
@@ -94,10 +94,6 @@ describe("LayoutController cloud MOC delegates", function () {
     it("passes loadCloudMocs straight through", async function () {
       await controller.loadCloudMocs();
       expect(cloudMocs.listAndRegister).toHaveBeenCalled();
-    });
-
-    it("passes removeCloudMocs straight through, synchronously", function () {
-      expect(controller.removeCloudMocs()).toBe(3);
     });
 
     it("passes _mocIdsForAliases straight through", function () {
@@ -117,12 +113,19 @@ describe("LayoutController cloud MOC delegates", function () {
       expect(controller._getCloudStorage).not.toHaveBeenCalled();
     });
 
-    it("releases the module on logout", function () {
-      controller.disableCloudMocs();
+    it("removes the cloud MOCs and then releases every handle on logout", function () {
+      // The order is load-bearing: the removal runs through the very module the
+      // release drops, so releasing first would silently remove nothing and
+      // leave the next person to sign in looking at these MOCs.
+      expect(controller.disableCloudFeatures()).toBe(3);
 
+      expect(cloudMocs.removeCloudMocs).toHaveBeenCalled();
       expect(controller._cloudMocs).toBeNull();
       expect(controller._cloudMocsReady).toBeNull();
-      expect(controller.removeCloudMocs()).toBe(0);
+      expect(controller._cloudLayout).toBeNull();
+      expect(controller._cloudLayoutReady).toBeNull();
+      // Nothing left to remove the second time around.
+      expect(controller.disableCloudFeatures()).toBe(0);
     });
   });
 

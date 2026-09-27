@@ -226,6 +226,41 @@ describe("LayoutController MOC deletion", function () {
       expect(controller._confirmDeleteMoc).not.toHaveBeenCalled();
       expect(controller.trackData.bundles[0].assets).toContain(track);
     });
+
+    it("refuses to delete a component that is not a MOC", async function () {
+      // Only MOCs carry `mine`. The component browser puts a delete affordance
+      // on nothing else, so reaching this needs a caller that went around the
+      // UI -- it is a guard, not a path the user can take.
+      const stock = { alias: 'r104', name: 'Straight Track', category: 'track' };
+      controller.trackData.bundles[0].assets.push(stock);
+      stubDialogs();
+
+      await controller.deleteMoc('r104');
+
+      expect(controller.trackData.bundles[0].assets).toContain(stock);
+      expect(controller._confirmDeleteMoc).not.toHaveBeenCalled();
+      // Silently, like an unknown alias: there is nothing to explain to a user
+      // who cannot have asked for this.
+      expect(controller._showMocInUseDialog).not.toHaveBeenCalled();
+      expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
+      expect(controller.createComponentBrowser).not.toHaveBeenCalled();
+    });
+
+    it("re-checks that it is a MOC after the confirm dialog, which awaits",
+      async function () {
+        // The counterpart to the usage re-check: the confirm dialog awaits, so
+        // nothing about the base data can be trusted to have stayed put.
+        stubDialogs();
+        controller._confirmDeleteMoc.and.callFake(() => {
+          delete track.mine;
+          return Promise.resolve(true);
+        });
+
+        await controller.deleteMoc('myMoc');
+
+        expect(controller.trackData.bundles[0].assets).toContain(track);
+        expect(cloudMocs.deleteRemote).not.toHaveBeenCalled();
+      });
   });
 
   describe("_removeMocLocally", function () {
@@ -313,14 +348,6 @@ describe("LayoutController MOC deletion", function () {
       // Esc and the backdrop both surface as a `close` event.
       document.getElementById('deleteMocDialog').dispatchEvent(new Event('close'));
       await expectAsync(dismissed).toBeResolvedTo(false);
-    });
-
-    it("falls back to the alias when a MOC has no name", function () {
-      delete track.name;
-      controller._confirmDeleteMoc(track);
-
-      expect(document.getElementById('deleteMocDialog').textContent)
-        .toContain('Delete "myMoc"?');
     });
 
     it("explains the editor-mode refusal and resolves when acknowledged", async function () {

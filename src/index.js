@@ -16,12 +16,14 @@ import { Application, Assets, Color, path } from './pixi.mjs';
 // of this file shows the dialog with no await in front of it, so a cold fetch
 // there would stall someone who arrived ready to pay.
 const loadParams = new URLSearchParams(window.location.search);
-let wantsSubscribeDialog = loadParams.get('subscribe') === 'true';
+const hasSubscribeParam = loadParams.get('subscribe') === 'true';
+let wantsSubscribeDialog = hasSubscribeParam;
 if (!wantsSubscribeDialog) {
   try {
     wantsSubscribeDialog = sessionStorage.getItem('pendingSubscribe') === 'true';
   } catch (error) {
-    // Web Storage is switched off in this privacy mode; the URL alone decides.
+    // Web Storage access itself throws in some privacy modes, and this runs
+    // before anything else. The URL alone decides when it does.
   }
 }
 const subscriptionDialogReady = wantsSubscribeDialog
@@ -123,20 +125,17 @@ if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === '
   authManager.refreshSession();
 }
 
-// Handle subscribe deep link: ?subscribe=true or pending intent from sessionStorage
-const subscribeParam = checkoutParams.get('subscribe');
-const pendingSubscribe = sessionStorage.getItem('pendingSubscribe');
-
-if (subscribeParam === 'true' || pendingSubscribe === 'true') {
-  if (subscribeParam === 'true') {
+// Handle subscribe deep link: ?subscribe=true or pending intent from sessionStorage.
+// Both were read at the top of this file, which is also what decided whether to
+// prefetch the dialog, so the decision and the fetch cannot disagree.
+if (wantsSubscribeDialog) {
+  if (hasSubscribeParam) {
     const cleanUrl = new URL(window.location);
     cleanUrl.searchParams.delete('subscribe');
     window.history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search);
   }
-  // Prefetched at the top of this file. The ?? covers the case where the intent
-  // appeared after that check, so the dialog still opens rather than throwing.
-  const { SubscriptionDialogController } = await (subscriptionDialogReady
-    ?? import('./controller/subscriptionDialogController.js'));
+  // Non-null exactly when wantsSubscribeDialog is true: the two are set together.
+  const { SubscriptionDialogController } = await subscriptionDialogReady;
   if (authManager.isAuthenticated) {
     const hasAccess = await authManager.hasFeatureAccess('subscription');
     if (!hasAccess) {

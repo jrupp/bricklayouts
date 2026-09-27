@@ -17,6 +17,8 @@
  * Follows AirBNB JavaScript style guide.
  */
 
+/** @typedef {import('../cloud/cloudStorageController.js').CloudStorageError} CloudStorageError */
+
 /**
  * Prompt the user to upload local-only MOCs before saving the layout to the
  * cloud.

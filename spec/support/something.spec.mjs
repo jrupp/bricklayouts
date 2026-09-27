@@ -6,7 +6,7 @@ import { Connection } from "../../src/model/connection.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { Pose } from "../../src/model/pose.js";
 import { upgradeLayout } from "../../src/utils/layoutUpgrade.js";
-import { EDITOR_LAYOUT_KEY } from "../../src/utils/layoutPreservation.js";
+import { EDITOR_LAYOUT_KEY } from "../../src/utils/preservationKeys.js";
 import { Application, Assets, Color, Graphics, path, RenderLayer, Sprite, TilingSprite } from '../../src/pixi.mjs';
 import { ComponentGroup } from "../../src/model/componentGroup.js";
 import * as fc from './lib/fast-check.mjs';
@@ -2226,6 +2226,33 @@ describe("LayoutController", function() {
 
         it("properly validates minimal import data", function() {
             expect(LayoutController._validateImportData(this.perfectMinimalImportData)).toBe(true);
+        });
+
+        describe("embedded MOC names", function() {
+            beforeEach(function() {
+                this.withMoc = (name) => ({
+                    ...this.perfectMinimalImportData,
+                    mocs: [{ alias: 'myMoc', name, textureData: 'data:image/png;base64,AAAA' }],
+                });
+            });
+
+            it("accepts a MOC with a name", function() {
+                expect(LayoutController._validateImportData(this.withMoc('Corner Bakery'))).toBeTrue();
+            });
+
+            it("rejects a blank or whitespace-only MOC name", function() {
+                // A layout file is untrusted, and every consumer assumes a usable
+                // name: createComponentBrowser reads it for the label, the title
+                // and the search filter.
+                expect(LayoutController._validateImportData(this.withMoc(''))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc('   '))).toBeFalse();
+            });
+
+            it("rejects a missing or non-string MOC name", function() {
+                expect(LayoutController._validateImportData(this.withMoc(undefined))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc(null))).toBeFalse();
+                expect(LayoutController._validateImportData(this.withMoc(42))).toBeFalse();
+            });
         });
 
         it("validates layout 1", function() {
@@ -10794,30 +10821,30 @@ describe("LayoutController", function() {
             layoutController.reset();
         });
 
-        describe("_processTrackMetadata", function() {
+        describe("_processAssetMetadata", function() {
             it("should set default type to TRACK when type is undefined", function() {
                 let track = { alias: "test", name: "Test" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.type).toBeDefined();
             });
 
             it("should parse color string to integer", function() {
                 let track = { alias: "test", name: "Test", color: "#6c6e68" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(typeof track.color).toBe("number");
                 expect(track.color).toBe(0x6c6e68);
             });
 
             it("should parse onbp string to integer", function() {
                 let track = { alias: "test", name: "Test", onbp: "#A0A5A9" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(typeof track.onbp).toBe("number");
                 expect(track.onbp).toBe(0xA0A5A9);
             });
 
             it("should not modify color that is already a number", function() {
                 let track = { alias: "test", name: "Test", color: 0x6c6e68 };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.color).toBe(0x6c6e68);
             });
 
@@ -10826,7 +10853,7 @@ describe("LayoutController", function() {
                     alias: "test", name: "Test",
                     connections: [{ vector: [10, 20, 0.5], type: 0 }]
                 };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.connections[0].vector).toBeDefined();
                 expect(track.connections[0].vector.constructor.name).toBe("PolarVector");
             });
@@ -10861,7 +10888,7 @@ describe("LayoutController", function() {
 
             it("should round-trip onbp back to a number when loaded", function() {
                 let track = { alias: "roundtrip", name: "Roundtrip", onbp: "#237841" };
-                layoutController._processTrackMetadata(track);
+                layoutController._processAssetMetadata(track);
                 expect(track.onbp).toBe(2324545);
             });
         });
@@ -11408,7 +11435,7 @@ describe("LayoutController", function() {
 
         afterEach(() => {
             // The controller is a singleton shared by every suite in this file.
-            layoutController.disableCloudMocs();
+            layoutController.disableCloudFeatures();
         });
 
         it('hides share button when not authenticated', async () => {

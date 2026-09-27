@@ -46,6 +46,54 @@ describe("LayoutController MOC registration", function () {
     });
   });
 
+  describe("_loadLayoutMocs names", function () {
+    let controller;
+    let assets;
+
+    beforeEach(function () {
+      controller = Object.create(LayoutController.prototype);
+      assets = [];
+      controller.trackData = { bundles: [{ assets }] };
+      spyOn(controller, 'createComponentBrowser').and.stub();
+      spyOn(controller, '_backgroundLoadRemaining').and.stub();
+      spyOn(console, 'warn');
+    });
+
+    it("keeps the supplied name", async function () {
+      await controller._loadLayoutMocs([
+        { alias: 'mocuuid-1', src: 'https://img.example/a.png', name: 'Corner Bakery' },
+      ]);
+
+      expect(assets.find((t) => t.alias === 'mocuuid-1').name).toBe('Corner Bakery');
+    });
+
+    it("falls back to the alias rather than registering an unusable MOC", async function () {
+      // The API guarantees a name and local files are rejected without one, so
+      // this is a last resort -- but createComponentBrowser reads `name` for the
+      // label, the title and the search filter, and throws on a missing one.
+      await controller._loadLayoutMocs([
+        { alias: 'noName', src: 'https://img.example/a.png' },
+        { alias: 'nullName', src: 'https://img.example/b.png', name: null },
+        { alias: 'blankName', src: 'https://img.example/c.png', name: '   ' },
+        { alias: 'numberName', src: 'https://img.example/d.png', name: 42 },
+      ]);
+
+      ['noName', 'nullName', 'blankName', 'numberName'].forEach((alias) => {
+        expect(assets.find((t) => t.alias === alias).name).toBe(alias);
+      });
+    });
+
+    it("leaves every registered MOC searchable", async function () {
+      // The observable reason the fallback exists: this is what
+      // createComponentBrowser does to every entry when the user types.
+      await controller._loadLayoutMocs([
+        { alias: 'nullName', src: 'https://img.example/b.png', name: null },
+      ]);
+
+      expect(() => assets.forEach((t) => t.name.toLowerCase())).not.toThrow();
+    });
+  });
+
   describe("_loadLayoutMocs texture failures", function () {
     let controller;
     let assets;
