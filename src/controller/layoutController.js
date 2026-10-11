@@ -1028,11 +1028,10 @@ export class LayoutController {
           trash.textContent = 'delete';
           trash.style.cssText = 'pointer-events: all; position: absolute; top: 5px; right: 5px; text-shadow: -1px -1px 0 white,1px -1px 0 white,-1px  1px 0 white,1px  1px 0 white';
           trash.addEventListener('pointerdown', (e) => {
-            e.stopPropagation(); // Prevent the pointerdown from triggering the button's pointerdown event
+            e.stopPropagation();
           });
           trash.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent the click from triggering the button's click event
-            // deleteMoc reports all of its own failures, so nothing to catch here.
+            e.stopPropagation();
             this.deleteMoc(track.alias);
           });
           button.appendChild(trash);
