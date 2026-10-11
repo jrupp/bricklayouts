@@ -263,6 +263,7 @@ body {
 #connectionEditor,
 #photoDetailsBalloon,
 #photoComponentDialog,
+dialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -338,6 +339,7 @@ body {
 [data-dark-mode=true] #connectionEditor,
 [data-dark-mode=true] #photoDetailsBalloon,
 [data-dark-mode=true] #photoComponentDialog,
+[data-dark-mode=true] dialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -530,7 +532,7 @@ body {
 }
 
 .overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog, + #makePublicConfirmDialog) {
-	z-index: 1101;
+	z-index: 1101 !important;
 }
 
 #mobileLayersButton {
@@ -567,7 +569,8 @@ body {
 #editorSizeDialog,
 #editorCropDialog,
 #editorExitDialog,
-#partInventoryDialog {
+#partInventoryDialog,
+dialog {
 	z-index: 1100;
 }
 
