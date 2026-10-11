@@ -58,6 +58,7 @@ export class ImageCropController {
 
       const app = new Application();
       let disposed = false;
+      let opened = false;
       let cleanup = () => {};
 
       const finish = (result) => {
@@ -65,9 +66,20 @@ export class ImageCropController {
         disposed = true;
         cleanup();
         try { app.destroy({ removeView: true }, { children: true }); } catch (_e) { /* ignore */ }
+        if (!opened) {
+          dialog.remove();
+          resolve(result);
+          return;
+        }
+        // Resolved only once the dialog has closed. BeerCSS closes it on the next
+        // animation frame and finds its overlay as the dialog's previous sibling;
+        // a caller that cancels out of the editor removes this dialog (see
+        // EditorController.reset()), and doing that first strands the overlay.
+        dialog.addEventListener('close', () => {
+          dialog.remove();
+          resolve(result);
+        }, { once: true });
         closeDialog();
-        dialog.addEventListener('close', () => dialog.remove(), { once: true });
-        resolve(result);
       };
 
       app.init({ width: viewportW, height: viewportH, backgroundAlpha: 0, antialias: true })
@@ -243,6 +255,7 @@ export class ImageCropController {
           });
           dialog.querySelector('#editorCropDialogCancel').addEventListener('click', () => finish(null));
 
+          opened = true;
           // eslint-disable-next-line no-undef
           ui('#editorCropDialog');
         })

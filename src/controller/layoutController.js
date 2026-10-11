@@ -14,6 +14,7 @@ import '../FileSaver.min.js';
 
 /**
  * @typedef {import('../cloud/cloudMocSync.js').CloudMocSync} CloudMocSync
+ * @typedef {import('../cloud/cloudMocSync.js').MocUploadResult} MocUploadResult
  * @typedef {import('../cloud/cloudLayoutSave.js').CloudLayoutSave} CloudLayoutSave
  * @typedef {import('../cloud/cloudStorageController.js').CloudStorageError} CloudStorageError
  * @typedef {import('../cloud/cloudStorageController.js').CloudStorageManager} CloudStorageManager
@@ -157,6 +158,22 @@ const DRAG_THRESHOLD_CONNECTION = 16.0;
  * @default 0
  */
 const ALL_CATEGORY_INDEX = 0;
+
+/**
+ * How long a touch must be held on a button, in ms, before its menu opens.
+ * @type {Number}
+ * @constant
+ * @default 500
+ */
+const LONG_PRESS_MS = 500;
+
+/**
+ * How far a touch may wander, in px, before it stops counting as a press-and-hold.
+ * @type {Number}
+ * @constant
+ * @default 10
+ */
+const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 /**
  * TrackData properties persisted for a custom MOC embedded in a layout file.
@@ -389,7 +406,7 @@ export class LayoutController {
     /**
      * True while the component Editor is active. When set, destructive
      * layout operations (delete of the editor's component, cloud save,
-     * download, image export) are blocked. Toggled by `_openImageForEditor`
+     * download, image export) are blocked. Toggled by `_enterEditorMode`
      * on entry and `exitEditorMode` on exit.
      * @type {Boolean}
      */
@@ -402,6 +419,7 @@ export class LayoutController {
      * @type {HTMLDivElement}
      */
     this.componentBrowser = document.getElementById('componentBrowser');
+    this.componentBrowser?.addEventListener('scroll', () => this._hideMocMenu());
     /**
      * @type {?Component | ComponentGroup}
      */
@@ -954,6 +972,7 @@ export class LayoutController {
   }
 
   createComponentBrowser() {
+    this._hideMocMenu();
     this.componentBrowser.innerHTML = '';
     if (this.readOnly) {
       document.getElementById('componentMenu').classList.add('hidden');
@@ -1006,6 +1025,9 @@ export class LayoutController {
         button.dataset.trackAlias = track.alias;
         if (track.type === DataTypes.TILEABLE) {
           button.addEventListener('click', (e) => {
+            if (this._consumeSuppressedBrowserClick()) {
+              return;
+            }
             this.#selectedTileType = track.alias;
             this.showCreateCustomComponentDialog(track.type, false, track.name)
           });
@@ -1016,6 +1038,9 @@ export class LayoutController {
         } else {
           button.addEventListener('pointerdown', this._onBrowserButtonPointerDown.bind(this, track));
           button.addEventListener('click', (e) => {
+            if (this._consumeSuppressedBrowserClick()) {
+              return;
+            }
             if (e.pointerType !== 'mouse' || LayoutController.browserMobileClick) {
               LayoutController.browserMobileClick = false;
               this.addComponent(track, true);
@@ -1023,18 +1048,22 @@ export class LayoutController {
           });
         }
         if (track.mine !== void 0) {
-          let trash = document.createElement('i');
-          trash.classList.add('large', 'black-text');
-          trash.textContent = 'delete';
-          trash.style.cssText = 'pointer-events: all; position: absolute; top: 5px; right: 5px; text-shadow: -1px -1px 0 white,1px -1px 0 white,-1px  1px 0 white,1px  1px 0 white';
-          trash.addEventListener('pointerdown', (e) => {
+          let more = document.createElement('i');
+          more.classList.add('large', 'black-text', 'square');
+          more.textContent = 'more_vert';
+          more.style.cssText = 'pointer-events: all; position: absolute; top: 5px; right: 5px; '
+            + 'text-shadow: -1px -1px 0 white,1px -1px 0 white,-1px  1px 0 white,1px  1px 0 white';
+          more.addEventListener('pointerdown', (e) => {
             e.stopPropagation();
           });
-          trash.addEventListener('click', (e) => {
+          more.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.deleteMoc(track.alias);
+            this._toggleMocMenu(more, track.alias);
           });
-          button.appendChild(trash);
+          button.appendChild(more);
+          button.addEventListener('pointerdown', this._onMocLongPressStart.bind(this, track));
+          // Android raises its own long-press menu (and offers to save the image).
+          button.addEventListener('contextmenu', (e) => e.preventDefault());
           button.classList.add('mine');
         }
         this.componentBrowser.appendChild(button);
@@ -1045,6 +1074,178 @@ export class LayoutController {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.SHAPE, "Custom Shape", 'img/icon-addshape-black.png'));
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
     }
+  }
+
+  /**
+   * The shared Edit/Delete menu for MOC browser buttons, built on first use.
+   * @returns {HTMLMenuElement}
+   * @private
+   */
+  _getMocMenu() {
+    if (this._mocMenu) {
+      return this._mocMenu;
+    }
+    document.getElementById('mocMenu')?.parentElement.remove();
+    const nav = document.createElement('nav');
+    nav.className = 'no-margin';
+    const menu = document.createElement('menu');
+    menu.id = 'mocMenu';
+    menu.className = 'no-wrap extra-text';
+    menu.innerHTML = `
+      <li id="mocMenuEdit">
+        <i class="large">edit</i>
+        <div class="max"><div>Edit</div></div>
+      </li>
+      <li id="mocMenuDelete">
+        <i class="large">delete</i>
+        <div class="max"><div>Delete</div></div>
+      </li>
+    `;
+    nav.appendChild(menu);
+    document.body.appendChild(nav);
+    menu.querySelector('#mocMenuEdit').addEventListener('click', () => {
+      const alias = menu.dataset.alias;
+      this._hideMocMenu();
+      this.editMoc(alias);
+    });
+    menu.querySelector('#mocMenuDelete').addEventListener('click', () => {
+      const alias = menu.dataset.alias;
+      this._hideMocMenu();
+      this.deleteMoc(alias);
+    });
+    this._mocMenu = menu;
+    return menu;
+  }
+
+  /**
+   * Open the MOC menu next to the given element. It opens below the element,
+   * or above it when there is not enough room: the browser sits at the bottom
+   * of the screen.
+   * @param {HTMLElement} anchor The element the menu belongs to
+   * @param {String} alias The alias of the MOC base data the menu acts on
+   * @private
+   */
+  _showMocMenu(anchor, alias) {
+    this._hideMocMenu();
+    const menu = this._getMocMenu();
+    menu.dataset.alias = alias;
+
+    const margin = 8;
+    let rect = anchor.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0 && anchor.parentElement) {
+      // A hidden 3-dot icon has no box of its own; use the button it sits on.
+      rect = anchor.parentElement.getBoundingClientRect();
+    }
+    const width = menu.offsetWidth;
+    const height = menu.offsetHeight;
+    let left = rect.left;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    let top = rect.bottom;
+    if (top + height > window.innerHeight - margin) {
+      top = Math.max(margin, rect.top - height);
+    }
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.classList.add('active');
+
+    this._mocMenuAnchor = anchor;
+    this._mocMenuOutsideHandler = (event) => {
+      // Not the anchor either: the 3-dot icon's own click toggles the menu shut.
+      if (!menu.contains(event.target) && !anchor.contains(event.target)) {
+        this._hideMocMenu();
+      }
+    };
+    document.addEventListener('pointerdown', this._mocMenuOutsideHandler, true);
+  }
+
+  /**
+   * Close the MOC menu if it is open.
+   * @private
+   */
+  _hideMocMenu() {
+    if (this._mocMenuOutsideHandler) {
+      document.removeEventListener('pointerdown', this._mocMenuOutsideHandler, true);
+      this._mocMenuOutsideHandler = null;
+    }
+    this._mocMenuAnchor = null;
+    if (this._mocMenu) {
+      this._mocMenu.classList.remove('active');
+      this._mocMenu.dataset.alias = '';
+    }
+  }
+
+  /**
+   * Open the MOC menu for the given anchor, or close it if it is already open there.
+   * @param {HTMLElement} anchor
+   * @param {String} alias
+   * @private
+   */
+  _toggleMocMenu(anchor, alias) {
+    if (this._mocMenuAnchor === anchor) {
+      this._hideMocMenu();
+    } else {
+      this._showMocMenu(anchor, alias);
+    }
+  }
+
+  /**
+   * Handler for pointerdown on a MOC browser button. On touch screens, where
+   * the 3-dot icon is never revealed by hovering, holding a finger on the
+   * button opens the MOC menu instead. Any movement or a scroll (which the
+   * browser reports as pointercancel) means the user is not holding still, and
+   * the press is abandoned.
+   * @param {TrackData} track
+   * @param {PointerEvent} event
+   * @private
+   */
+  _onMocLongPressStart(track, event) {
+    this._suppressBrowserClick = false;
+    if (event.pointerType === 'mouse') {
+      return;
+    }
+    this._hideMocMenu();
+    const button = /** @type {HTMLElement} */ (event.currentTarget);
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let timer = null;
+    const cancel = () => {
+      clearTimeout(timer);
+      button.removeEventListener('pointermove', onMove);
+      button.removeEventListener('pointerup', cancel);
+      button.removeEventListener('pointercancel', cancel);
+      button.removeEventListener('pointerleave', cancel);
+    };
+    const onMove = (moveEvent) => {
+      if (Math.hypot(moveEvent.clientX - startX, moveEvent.clientY - startY)
+        > LONG_PRESS_MOVE_TOLERANCE) {
+        cancel();
+      }
+    };
+    timer = setTimeout(() => {
+      cancel();
+      LayoutController.browserMobileClick = false;
+      // The click that follows lifting the finger must not add the component.
+      this._suppressBrowserClick = true;
+      this._showMocMenu(button, track.alias);
+    }, LONG_PRESS_MS);
+    button.addEventListener('pointermove', onMove);
+    button.addEventListener('pointerup', cancel);
+    button.addEventListener('pointercancel', cancel);
+    button.addEventListener('pointerleave', cancel);
+  }
+
+  /**
+   * Whether the browser button click about to be handled is the tail end of a
+   * press-and-hold, which has already been answered by opening the MOC menu.
+   * @returns {Boolean} True if the click should be ignored
+   * @private
+   */
+  _consumeSuppressedBrowserClick() {
+    if (this._suppressBrowserClick) {
+      this._suppressBrowserClick = false;
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -2895,11 +3096,12 @@ export class LayoutController {
 
   /**
    * Ensure every custom MOC placed in the layout exists in the cloud before the
-   * layout itself is saved. See the MocUploadResult typedef in cloudMocSync.js.
-   * @returns {Promise<Object>} `ok` is true when every referenced MOC is in the
+   * layout itself is saved.
+   * @returns {Promise<MocUploadResult>} `ok` is true when every referenced MOC is in the
    *   cloud; `reason` and `limit` say why not. Signed out, this reports
    *   'uploadFailed': the caller is about to save a cloud layout, which it
    *   cannot do either.
+   * @see MocUploadResult
    * @private
    */
   async _ensureMocsInCloud() {
@@ -3003,6 +3205,56 @@ export class LayoutController {
 
     this._removeMocLocally(alias);
     showSnackbar(`Deleted "${name}".`, 'success');
+  }
+
+  /**
+   * Open the Editor on an existing MOC so its name, category and other settings
+   * can be changed. The image and size are fixed, so unlike creating a MOC there
+   * is no file picker and no size prompt. Every failure is reported to the user
+   * here, so callers do not need to handle the returned promise.
+   * @param {String} alias The alias of the MOC base data to edit
+   * @returns {Promise<void>}
+   */
+  async editMoc(alias) {
+    if (this.readOnly) {
+      return;
+    }
+
+    // Entering the editor again would preserve the editor's own workspace over
+    // the user's real layout.
+    if (this.editorMode) {
+      await this._showMocEditorModeDialog('edit');
+      return;
+    }
+
+    const assets = this.trackData.bundles[0].assets;
+    if (!assets.find((t) => t.alias === alias)?.mine) {
+      return;
+    }
+
+    let texture;
+    try {
+      // Cloud MOCs may still be loading in the background. MOCs that came from a
+      // layout file are only in the cache, with nothing for Assets.load to resolve.
+      texture = Assets.cache.has(alias) ? Assets.get(alias) : await Assets.load(alias);
+    } catch (error) {
+      console.error(`Failed to load texture for MOC "${alias}":`, error);
+    }
+    if (!texture) {
+      showSnackbar('Could not load MOC image', 'error');
+      return;
+    }
+
+    const isAdmin = await this._isAdminUser();
+
+    // The awaits above may have let the MOC be deleted, or another editor open.
+    const baseData = assets.find((t) => t.alias === alias);
+    if (!baseData?.mine || this.editorMode) {
+      return;
+    }
+
+    const editor = await this._enterEditorMode(isAdmin);
+    editor.showExisting(baseData, texture);
   }
 
   /**
@@ -3151,14 +3403,15 @@ export class LayoutController {
   }
 
   /**
-   * Tell the user that MOCs cannot be deleted while the editor is open.
+   * Tell the user that MOCs cannot be deleted or edited while the editor is open.
+   * @param {String} [action='delete'] The verb for what the user tried to do
    * @returns {Promise<void>}
    * @private
    */
-  _showMocEditorModeDialog() {
+  _showMocEditorModeDialog(action = 'delete') {
     return this._showMocNoticeDialog('mocEditorModeDialog', 'Exit the Editor', (body) => {
       const message = document.createElement('p');
-      message.textContent = 'You must exit the Editor to delete MOCs.';
+      message.textContent = `You must exit the Editor to ${action} MOCs.`;
       body.appendChild(message);
     });
   }
@@ -3252,6 +3505,7 @@ export class LayoutController {
    */
   onKeyDown(event) {
     this.hideFileMenu();
+    this._hideMocMenu();
     if (!this.readOnly) {
       if (LayoutController.dragTarget || LayoutController.selectedComponent) {
         if (event.key.toLowerCase() === 'r' && !event.ctrlKey && !event.metaKey) {
@@ -3413,16 +3667,7 @@ export class LayoutController {
    * @private
    */
   async _openImageForEditor() {
-    const authManager = await this._getAuthManager();
-    let isAdmin = false;
-    if (authManager) {
-      try {
-        const groups = await authManager.getUserGroups();
-        isAdmin = Array.isArray(groups) && groups.includes('admin');
-      } catch (err) {
-        console.error('Failed to determine admin status:', err);
-      }
-    }
+    const isAdmin = await this._isAdminUser();
 
     const input = document.createElement('input');
     input.type = 'file';
@@ -3485,24 +3730,57 @@ export class LayoutController {
       const texture = Texture.from(bitmap);
       Assets.cache.set(alias, texture);
 
-      const module = await import('./editorController.js');
-      if (LayoutController.editorController) {
-        LayoutController.editorController.reset();
-        LayoutController.editorController.isAdmin = isAdmin;
-      } else {
-        LayoutController.editorController = new module.EditorController(this, isAdmin);
-      }
-      LayoutController.editorController.currentAlias = alias;
-      LayoutController.editorController.baseData.alias = alias;
-      // Preserve the user's current layout so it can be restored on editor exit.
-      const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import('../utils/layoutPreservation.js');
-      await new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY }).save();
-      this.reset();
-      this.editorMode = true;
-      document.body.classList.add('editor-mode');
-      LayoutController.editorController.show(texture);
+      const editor = await this._enterEditorMode(isAdmin);
+      editor.currentAlias = alias;
+      editor.baseData.alias = alias;
+      editor.show(texture);
     };
     input.click();
+  }
+
+  /**
+   * Whether the signed-in user is an admin.
+   * @returns {Promise<Boolean>} False when signed out or when it cannot be determined
+   * @private
+   */
+  async _isAdminUser() {
+    const authManager = await this._getAuthManager();
+    if (!authManager) {
+      return false;
+    }
+    try {
+      return await authManager.hasFeatureAccess('admin');
+    } catch (err) {
+      console.error('Failed to determine admin status:', err);
+      return false;
+    }
+  }
+
+  /**
+   * Switch the workspace over to the Editor: get a freshly reset EditorController,
+   * preserve the user's current layout so exitEditorMode can restore it, then
+   * clear the workspace and set the `editor-mode` body class that controls which
+   * toolbar buttons are hidden. The caller then shows the editor.
+   * @param {Boolean} isAdmin
+   * @returns {Promise<EditorController>}
+   * @private
+   */
+  async _enterEditorMode(isAdmin) {
+    const module = await import('./editorController.js');
+    if (LayoutController.editorController) {
+      LayoutController.editorController.reset();
+      LayoutController.editorController.isAdmin = isAdmin;
+    } else {
+      LayoutController.editorController = new module.EditorController(this, isAdmin);
+    }
+    const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import(
+      '../utils/layoutPreservation.js'
+    );
+    await new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY }).save();
+    this.reset();
+    this.editorMode = true;
+    document.body.classList.add('editor-mode');
+    return LayoutController.editorController;
   }
 
   /**
@@ -3860,12 +4138,9 @@ export class LayoutController {
   }
 
   /**
-   * 
-   * @param {SerializedLayout} data 
-   * @param {Object} [cloudInfo] Optional cloud storage information for layouts loaded from cloud
-   * @param {String} [cloudInfo.cloudId] The cloud layout ID
-   * @param {String} [cloudInfo.s3Key] The S3 object key
-   * @param {String} [cloudInfo.lastSaved] ISO 8601 timestamp of last save
+   * Imports a layout into the controller, including its MOCs, assets, and metadata.
+   * @param {SerializedLayout} data Layout data to import
+   * @param {LayoutMetadata} [cloudInfo] Optional cloud storage information for layouts from cloud
    */
   async _importLayout(data, cloudInfo = null) {
     if (Array.isArray(data.mocs) && data.mocs.length > 0) {

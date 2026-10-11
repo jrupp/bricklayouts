@@ -86,6 +86,20 @@ export class EditorController {
      */
     this.committed = false;
 
+    /**
+     * True when the editor was opened on an existing MOC (see showExisting)
+     * rather than on a newly uploaded image.
+     * @type {boolean}
+     */
+    this.editingExisting = false;
+
+    /**
+     * True when the component has been changed since it was opened or last
+     * committed. Decides whether leaving the editor asks to save first.
+     * @type {boolean}
+     */
+    this.dirty = false;
+
     this.#bindEditorEvents();
   }
 
@@ -182,11 +196,8 @@ export class EditorController {
       this.baseData.connections.push(connection);
       let newConnection = new Connection(this.newComp, connection.vector, connection.type, this.newComp.connections.length, connection.next);
       this.newComp.connections.push(newConnection);
-      newConnection.circle.eventMode = 'static';
-      newConnection.circle.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {
-        event.stopPropagation();
-        this.onDragStart(event, newConnection);
-      }).on('pointerup', this.onDragEnd, this);
+      this.#wireConnection(newConnection);
+      this.dirty = true;
       this.updateConnections();
       document.getElementById('componentEditorTest').removeAttribute('disabled');
     });
@@ -222,6 +233,34 @@ export class EditorController {
   }
 
   /**
+   * Makes a connection's circle draggable so its position can be edited.
+   * @param {Connection} connection
+   */
+  #wireConnection(connection) {
+    connection.circle.eventMode = 'static';
+    connection.circle.on('pointerdown', /** @param {FederatedPointerEvent} event */(event) => {
+      event.stopPropagation();
+      this.onDragStart(event, connection);
+    }).on('pointerup', this.onDragEnd, this);
+  }
+
+  /**
+   * Copies base data deeply enough that editing one copy cannot change the
+   * other: the connection vectors are the only nested values that get mutated.
+   * @param {TrackData} baseData
+   * @returns {TrackData}
+   */
+  static #copyBaseData(baseData) {
+    return {
+      ...baseData,
+      connections: (baseData.connections ?? []).map((c) => ({
+        ...c,
+        vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
+      }))
+    };
+  }
+
+  /**
    * Displays the editor with the given texture. Always prompts the user
    * for component size and units first, then creates the component at that
    * scale.
@@ -233,11 +272,60 @@ export class EditorController {
   }
 
   /**
+   * Displays the editor on an existing MOC. Its image and size cannot change,
+   * so there is no size prompt; the editor works on a copy of the base data,
+   * which only reaches the MOC itself when the user commits.
+   *
+   * The MOC starts out committed: its texture already belongs to the MOC, so
+   * reset() must not destroy it, and committing updates the MOC in place
+   * rather than adding a new one.
+   * @param {TrackData} baseData The MOC's base data, as registered in the browser
+   * @param {Texture} texture The MOC's texture
+   */
+  showExisting(baseData, texture) {
+    this.texture = texture;
+    this.currentAlias = baseData.alias;
+    this.committed = true;
+    this.editingExisting = true;
+    this.dirty = false;
+    this.baseData = { ...EditorController.#copyBaseData(baseData), image: texture };
+
+    this._createEditorComponent();
+    this.newComp.connections.forEach((connection) => this.#wireConnection(connection));
+
+    document.getElementById('componentScale').value = this.baseData.scale;
+    document.getElementById('componentAlias').value = this.baseData.alias;
+    document.getElementById('componentName').value = this.baseData.name;
+    clearComponentNameError();
+    const categories = document.getElementById('componentCategories');
+    const categoryIdx = Array.from(categories.options)
+      .findIndex((o) => o.value === this.baseData.category);
+    categories.selectedIndex = categoryIdx >= 0 ? categoryIdx : 0;
+    const isStructure = this.baseData.category === 'structures';
+    const onBaseplate = isStructure && this.baseData.onbp !== undefined;
+    document.getElementById('componentBaseplateField').classList.toggle('hidden', !isStructure);
+    document.getElementById('componentBaseplateToggle').checked = onBaseplate;
+    document.getElementById('componentBaseplateColorField')
+      .classList.toggle('hidden', !onBaseplate);
+    const bpColor = document.getElementById('componentBaseplateColor');
+    if (bpColor.options.length > 0) {
+      const colorIdx = onBaseplate
+        ? Array.from(bpColor.options)
+          .findIndex((o) => parseInt(o.value.slice(1), 16) === this.baseData.onbp)
+        : -1;
+      bpColor.selectedIndex = colorIdx >= 0 ? colorIdx : 0;
+    }
+
+    this.#showPanel();
+  }
+
+  /**
    * Leaves editor mode, first offering to save when the current component has
-   * not been committed yet. Dismissing the dialog keeps the editor open.
+   * not been committed yet, or has been changed since it was. Dismissing the
+   * dialog keeps the editor open.
    */
   checkExit() {
-    if (this.committed) {
+    if (this.committed && !this.dirty) {
       this.layoutController.exitEditorMode();
       return;
     }
@@ -267,17 +355,26 @@ export class EditorController {
       </div>
     `;
     document.body.appendChild(dialog);
-    dialog.addEventListener('close', () => dialog.remove());
+
+    let choice = null;
+    dialog.addEventListener('close', () => {
+      dialog.remove();
+      if (choice === 'save') {
+        this.exportComponent().then(() => this.layoutController.exitEditorMode());
+      } else if (choice === 'discard') {
+        this.layoutController.exitEditorMode();
+      }
+    });
 
     const closeDialog = () => ui('#editorExitDialog');
 
     dialog.querySelector('#editorExitDialogSave').addEventListener('click', () => {
+      choice = 'save';
       closeDialog();
-      this.exportComponent().then(() => this.layoutController.exitEditorMode());
     });
     dialog.querySelector('#editorExitDialogDiscard').addEventListener('click', () => {
+      choice = 'discard';
       closeDialog();
-      this.layoutController.exitEditorMode();
     });
 
     ui('#editorExitDialog');
@@ -326,6 +423,8 @@ export class EditorController {
 
     this.texture = null;
     this.committed = false;
+    this.editingExisting = false;
+    this.dirty = false;
     this.baseData = EditorController.#defaultBaseData();
 
     // Reset form inputs so a subsequent editor session starts fresh instead
@@ -543,15 +642,7 @@ export class EditorController {
     this.baseData.height = height;
     this.baseData.connections = [];
 
-    if (this.newComp) {
-      this.newComp.destroy();
-      this.newComp = null;
-    }
-    this.testComps.forEach((comp) => comp.destroy());
-    this.testComps.length = 0;
-
-    this.newComp = new Component(this.baseData, { x: this.layoutController.app.screen.width, y: this.layoutController.app.screen.height, angle: 0 }, this.layoutController.currentLayer);
-    this.layoutController.currentLayer.addChild(this.newComp);
+    this._createEditorComponent();
     this.newComp.sprite.setSize(width, height);
     this.baseData.scale = this.newComp.sprite.scale.x;
 
@@ -559,15 +650,54 @@ export class EditorController {
     document.getElementById('componentAlias').value = this.baseData.alias;
     document.getElementById('componentName').value = this.baseData.name;
     clearComponentNameError();
+    this.#showPanel();
+  }
+
+  /**
+   * Replaces the component being edited with a fresh one built from baseData,
+   * and clears away any test copies of the old one.
+   *
+   * A seam as much as a helper: a Component needs a live renderer and layout
+   * layer, so specs replace this rather than building one.
+   */
+  _createEditorComponent() {
+    if (this.newComp) {
+      this.newComp.destroy();
+      this.newComp = null;
+    }
+    this.testComps.forEach((comp) => comp.destroy());
+    this.testComps.length = 0;
+
+    const { app, currentLayer } = this.layoutController;
+    this.newComp = new Component(
+      this.baseData,
+      { x: app.screen.width, y: app.screen.height, angle: 0 },
+      currentLayer
+    );
+    currentLayer.addChild(this.newComp);
+  }
+
+  /**
+   * Reveals the editor panel with the tools this user and session allow.
+   * An existing MOC keeps its alias and size, so even admins do not get those
+   * fields for one.
+   */
+  #showPanel() {
     document.getElementById('componentEditor').classList.remove('hidden');
     document.getElementById('componentEditorConnectionsList').innerHTML = '';
     document.getElementById('componentEditorTest').setAttribute('disabled', 'disabled');
     if (this.isAdmin) {
       document.getElementById('componentEditorConnections').classList.remove('hidden');
-      document.getElementById('componentAliasField').classList.remove('hidden');
-      document.getElementById('componentScaleField').classList.remove('hidden');
+      document.getElementById('componentAliasField')
+        .classList.toggle('hidden', this.editingExisting);
+      document.getElementById('componentScaleField')
+        .classList.toggle('hidden', this.editingExisting);
       document.getElementById('componentEditorTest').classList.remove('hidden');
       document.getElementById('componentEditorExit').classList.add('hidden');
+      if (this.baseData.connections.length > 0) {
+        this.updateConnections();
+        document.getElementById('componentEditorTest').removeAttribute('disabled');
+      }
     } else {
       document.getElementById('componentEditorConnections').classList.add('hidden');
       document.getElementById('componentAliasField').classList.add('hidden');
@@ -621,22 +751,19 @@ export class EditorController {
 
   onComponentSave() {
     console.log('Save Component');
+    this.dirty = true;
     this.baseData.scale = parseFloat(document.getElementById('componentScale').value);
     this.newComp.sprite.scale.set(this.baseData.scale);
-    // Only admins get the alias input, so for everyone else the generated alias stands.
     if (this.isAdmin) {
       let tempAlias = document.getElementById('componentAlias').value;
 
-      // Validate alias - only allow letters, numbers, and underscores
-      const validAlias = tempAlias.replace(/[^a-zA-Z0-9_]/g, '');
+      const validAlias = tempAlias.replace(/[^a-zA-Z0-9_-]/g, '');
 
-      // Update input field if invalid characters were removed
       if (validAlias !== tempAlias) {
         document.getElementById('componentAlias').value = validAlias;
         tempAlias = validAlias;
       }
       if (tempAlias !== this.baseData.alias) {
-        // A different alias is a different component, so the previous commit no longer applies.
         this.committed = false;
       }
       this.baseData.alias = tempAlias;
@@ -733,6 +860,7 @@ export class EditorController {
     if (index < 0) {
       return;
     }
+    this.dirty = true;
     // TODO: Validate the input
     this.baseData.connections[index].type = parseInt(document.getElementById('connectionType').value);
     this.baseData.connections[index].next = parseInt(document.getElementById('connectionNext').value);
@@ -777,6 +905,7 @@ export class EditorController {
       return;
     }
     if (this.newComp.connections[index]) {
+      this.dirty = true;
       this.calculateConnectionVector(this.newComp.connections[index]);
       document.getElementById('connectionAngle').value = this.baseData.connections[index].vector.angle / Math.PI;
       document.getElementById('connectionMagnitude').value = this.baseData.connections[index].vector.magnitude;
@@ -824,8 +953,7 @@ export class EditorController {
 
   /**
    * Generates the component JSON. Admins get a downloadable file; non-admins
-   * get the same JSON logged to the console (temporary — persistence is a
-   * separate follow-up).
+   * get the same JSON logged to the console.
    *
    * Also hands the current baseData off to LayoutController by deep-copying
    * it into `trackData.bundles[0].assets` and generating a browser thumbnail.
@@ -838,20 +966,16 @@ export class EditorController {
       exportData.onbp = new Color(this.baseData.onbp).toHex();
     }
     const data = JSON.stringify(exportData, ['alias', 'name', 'category', 'src', 'scale', 'connections', 'type', 'vector', 'next', 'make', 'onbp', 'mine']);
-    console.log('[component export]', data);
     if (this.isAdmin) {
       const blob = new Blob([data], { type: 'application/json' });
       saveAs(blob, `${this.baseData.alias}.json`);
     }
 
     const bundle = this.layoutController.trackData.bundles[0];
-    const trackCopy = {
-      ...this.baseData,
-      connections: this.baseData.connections.map((c) => ({
-        ...c,
-        vector: new PolarVector(c.vector.magnitude, c.vector.angle, c.vector.exitAngle)
-      }))
-    };
+    const trackCopy = EditorController.#copyBaseData(this.baseData);
+    // Everything from here on works from trackCopy, so a change made while the
+    // commit below is still awaiting belongs to the next commit.
+    this.dirty = false;
     if (this.committed) {
       // Already committed: the image is set, but other properties may need updating
       /** @type {TrackData} */
@@ -867,6 +991,13 @@ export class EditorController {
     }
     this.layoutController.createComponentBrowser();
 
+    // An existing MOC that only lives in this browser stays that way. Saving
+    // would create it in the cloud and re-key its alias, and the layout preserved
+    // while the editor is open still names it by the old one.
+    if (this.editingExisting && !trackCopy.mocId) {
+      return;
+    }
+
     // Persist to cloud when signed in; saveMocToCloud self-guards for
     // unauthenticated users. The local commit has already succeeded, so a cloud
     // failure must never reject: callers chain exitEditorMode() off this promise.
@@ -878,6 +1009,7 @@ export class EditorController {
     if (newAlias) {
       this.baseData.alias = newAlias;
       this.currentAlias = newAlias;
+      document.getElementById('componentAlias').value = this.baseData.alias;
     }
   }
 
@@ -931,6 +1063,7 @@ export class EditorController {
       this.dragTarget.circle.alpha = 1.0;
       this.calculateConnectionVector(this.dragTarget);
       this.dragTarget = null;
+      this.dirty = true;
     }
     window.app.stage.off('pointermove', this.onDragMove);
     //window.app.stage.off('pointerupoutside', EditorController.onDragEnd);

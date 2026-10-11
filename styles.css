@@ -253,6 +253,7 @@ body {
 #authenticationModal,
 #buttonLayoutName,
 #fileOpenMenu,
+#mocMenu,
 #portalRedirectConfirmDialog,
 #shareDialog,
 #shareButton-container,
@@ -329,6 +330,7 @@ dialog,
 [data-dark-mode=true] #authenticationModal,
 [data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] #fileOpenMenu,
+[data-dark-mode=true] #mocMenu,
 [data-dark-mode=true] #portalRedirectConfirmDialog,
 [data-dark-mode=true] #shareDialog,
 [data-dark-mode=true] #shareButton-container,
@@ -582,6 +584,19 @@ dialog {
 
 #fileOpenMenu.active {
 	transition: all var(--speed2), background-color 0s;
+}
+
+#mocMenu,
+#mocMenu.active {
+	position: fixed;
+	inset: auto;
+	transform: none;
+}
+
+#mocMenu {
+	z-index: 1101;
+	transition: opacity var(--speed2), visibility var(--speed2);
+	user-select: none;
 }
 
 #makeLayoutPublic,
@@ -1362,7 +1377,16 @@ i + span.label {
 }
 
 .componentBrowser>button.mine>i {
+	background-color: var(--bg);
+	transition: background var(--speed) var(--easing);
 	display: none;
+}
+
+/* Press-and-hold opens the MOC menu, so keep iOS from raising its own */
+.componentBrowser>button.mine {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
 }
 
 @media (hover:hover) {

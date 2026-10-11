@@ -18,6 +18,12 @@ const EDITOR_ELEMENT_IDS = [
   'connectionMagnitude', 'connectionMagnitudeLock', 'connectionNext', 'connectionType'
 ];
 
+/** Element ids the editor shows and hides, but never binds listeners to. */
+const EDITOR_PANEL_IDS = [
+  'componentEditor', 'componentEditorConnections', 'componentAliasField',
+  'componentScaleField', 'componentNameError'
+];
+
 /**
  * Injects the editor's DOM and the `Slip` global so `new EditorController(...)`
  * can bind its events. Slip normally arrives via a script tag in index.html;
@@ -31,9 +37,16 @@ function createEditorDom() {
   const container = document.createElement('div');
   container.id = 'editorSpecFixture';
   EDITOR_ELEMENT_IDS.forEach((id) => {
-    // componentCategories has <option> children appended to it during binding.
-    const element = document.createElement(id === 'componentCategories' ? 'select' : 'input');
+    // These two have <option> children appended to them during binding.
+    const isSelect = id === 'componentCategories' || id === 'componentBaseplateColor';
+    const element = document.createElement(isSelect ? 'select' : 'input');
     element.id = id;
+    container.appendChild(element);
+  });
+  EDITOR_PANEL_IDS.forEach((id) => {
+    const element = document.createElement('div');
+    element.id = id;
+    element.className = 'hidden';
     container.appendChild(element);
   });
   document.body.appendChild(container);
@@ -172,15 +185,6 @@ describe("EditorController", function () {
 
     afterEach(function () {
       fixture.remove();
-    });
-
-    it("always logs the JSON to console", async function () {
-      await controller.exportComponent();
-      const logged = logSpy.calls.allArgs().find((args) => args[0] === '[component export]');
-      expect(logged).toBeDefined();
-      const parsed = JSON.parse(logged[1]);
-      expect(parsed.alias).toBe('testAlias');
-      expect(parsed.name).toBe('Test');
     });
 
     it("does not trigger a file download for non-admins", async function () {
@@ -885,8 +889,15 @@ describe("EditorController", function () {
       expect(controller.committed).toBeFalse();
     });
 
+    it("clears the committed flag when an admin changes the alias with hyphens", function () {
+      aliasInput.value = 'brand-New-Alias';
+      controller.onComponentSave();
+      expect(controller.baseData.alias).toBe('brand-New-Alias');
+      expect(controller.committed).toBeFalse();
+    });
+
     it("compares the sanitized alias, so illegal characters alone do not clear the flag", function () {
-      aliasInput.value = 'original-Alias!';
+      aliasInput.value = 'original+Alias!';
       controller.onComponentSave();
       expect(aliasInput.value).toBe('originalAlias');
       expect(controller.baseData.alias).toBe('originalAlias');
@@ -894,7 +905,7 @@ describe("EditorController", function () {
     });
 
     it("sanitizes a renamed alias and clears the committed flag", function () {
-      aliasInput.value = 'brand new-alias!';
+      aliasInput.value = 'brand new+alias!';
       controller.onComponentSave();
       expect(aliasInput.value).toBe('brandnewalias');
       expect(controller.baseData.alias).toBe('brandnewalias');
@@ -927,12 +938,45 @@ describe("EditorController", function () {
     let controller;
     let exitSpy;
     let exportSpy;
+    /** Whether each dialog was still in the page at the moment it closed. */
+    let closedWhileAttached;
+
+    /**
+     * Stands in for BeerCSS's `ui()` on a dialog. Like BeerCSS, it toggles the
+     * dialog on the next animation frame rather than straight away, and at that
+     * point needs the dialog still in the page to find its overlay, which is
+     * the dialog's previous sibling.
+     */
+    function beerUi(selector) {
+      const dialog = document.querySelector(selector);
+      if (!dialog) {
+        return;
+      }
+      requestAnimationFrame(() => {
+        if (dialog.dataset.open === 'true') {
+          delete dialog.dataset.open;
+          closedWhileAttached.push(dialog.isConnected);
+          dialog.dispatchEvent(new Event('close'));
+        } else {
+          dialog.dataset.open = 'true';
+        }
+      });
+    }
+
+    const nextFrame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+
+    /** Shows the prompt and waits for it to finish opening. */
+    async function openPrompt() {
+      controller.checkExit();
+      await nextFrame();
+    }
 
     beforeEach(function () {
       if (!window.ui) {
         window.ui = () => {};
       }
-      spyOn(window, 'ui').and.stub();
+      closedWhileAttached = [];
+      spyOn(window, 'ui').and.callFake(beerUi);
       exitSpy = jasmine.createSpy('exitEditorMode');
       exportSpy = spyOn(EditorController.prototype, 'exportComponent').and.resolveTo(undefined);
       controller = Object.create(EditorController.prototype);
@@ -961,9 +1005,10 @@ describe("EditorController", function () {
       expect(exportSpy).not.toHaveBeenCalled();
     });
 
-    it("exits without saving when the user answers No", function () {
-      controller.checkExit();
+    it("exits without saving when the user answers No", async function () {
+      await openPrompt();
       document.getElementById('editorExitDialogDiscard').click();
+      await nextFrame();
       expect(exportSpy).not.toHaveBeenCalled();
       expect(exitSpy).toHaveBeenCalledTimes(1);
     });
@@ -971,8 +1016,9 @@ describe("EditorController", function () {
     it("saves first and exits after the export resolves when the user answers Yes", async function () {
       let resolveExport;
       exportSpy.and.returnValue(new Promise((resolve) => { resolveExport = resolve; }));
-      controller.checkExit();
+      await openPrompt();
       document.getElementById('editorExitDialogSave').click();
+      await nextFrame();
       expect(exportSpy).toHaveBeenCalledTimes(1);
       expect(exitSpy).not.toHaveBeenCalled();
       resolveExport();
@@ -981,10 +1027,337 @@ describe("EditorController", function () {
       expect(exitSpy).toHaveBeenCalledTimes(1);
     });
 
+    it("stays in the editor when the prompt is dismissed", async function () {
+      await openPrompt();
+      window.ui('#editorExitDialog');
+      await nextFrame();
+      expect(exportSpy).not.toHaveBeenCalled();
+      expect(exitSpy).not.toHaveBeenCalled();
+      expect(document.getElementById('editorExitDialog')).toBeNull();
+    });
+
+    ['editorExitDialogDiscard', 'editorExitDialogSave'].forEach((buttonId) => {
+      it(`lets the prompt close before leaving the editor (${buttonId})`, async function () {
+        // Leaving the editor removes this dialog (EditorController.reset). If
+        // that happened before BeerCSS closed it, its overlay would be left
+        // covering the page.
+        exitSpy.and.callFake(() => document.getElementById('editorExitDialog')?.remove());
+        await openPrompt();
+
+        document.getElementById(buttonId).click();
+        await nextFrame();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(exitSpy).toHaveBeenCalledTimes(1);
+        expect(closedWhileAttached).toEqual([true]);
+      });
+    });
+
     it("replaces a previously opened prompt instead of stacking dialogs", function () {
       controller.checkExit();
       controller.checkExit();
       expect(document.querySelectorAll('#editorExitDialog').length).toBe(1);
+    });
+
+    it("prompts when a committed component has been changed since", function () {
+      controller.committed = true;
+      controller.dirty = true;
+      controller.checkExit();
+      expect(document.getElementById('editorExitDialog')).not.toBeNull();
+      expect(exitSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("dirty tracking", function () {
+    let controller;
+    let layoutController;
+    let fixture;
+
+    beforeEach(function () {
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
+      fixture = createEditorDom();
+      layoutController = createFakeLayoutController();
+      controller = new EditorController(layoutController, false);
+      controller.baseData = {
+        alias: 'dirtyAlias', name: 'Dirty', category: 'structures', src: '', scale: 1,
+        type: 0, make: 0, connections: []
+      };
+      controller.currentAlias = 'dirtyAlias';
+      controller.newComp = { sprite: { scale: { set: () => {} } }, destroy: () => {} };
+      document.getElementById('componentScale').value = '1';
+      document.getElementById('componentName').value = 'Dirty';
+    });
+
+    afterEach(function () {
+      fixture.remove();
+    });
+
+    it("starts out clean", function () {
+      expect(controller.dirty).toBeFalse();
+    });
+
+    it("is set by a field change", function () {
+      controller.onComponentSave();
+      expect(controller.dirty).toBeTrue();
+    });
+
+    it("is cleared by a commit", async function () {
+      controller.onComponentSave();
+      await controller.exportComponent();
+      expect(controller.dirty).toBeFalse();
+    });
+
+    it("stays set for a change made while a commit is still saving", async function () {
+      let releaseSave;
+      layoutController.saveMocToCloud.and.returnValue(
+        new Promise((resolve) => { releaseSave = resolve; })
+      );
+      const pending = controller.exportComponent();
+      controller.onComponentSave();
+      releaseSave(null);
+      await pending;
+      expect(controller.dirty).toBeTrue();
+    });
+
+    it("is cleared by reset", function () {
+      controller.onComponentSave();
+      controller.reset();
+      expect(controller.dirty).toBeFalse();
+    });
+
+    it("makes leaving a new MOC that was edited after its commit ask first", async function () {
+      if (!window.ui) {
+        window.ui = () => {};
+      }
+      spyOn(window, 'ui').and.stub();
+      layoutController.exitEditorMode = jasmine.createSpy('exitEditorMode');
+      await controller.exportComponent();
+      controller.onComponentSave();
+
+      controller.checkExit();
+
+      expect(document.getElementById('editorExitDialog')).not.toBeNull();
+      expect(layoutController.exitEditorMode).not.toHaveBeenCalled();
+      document.getElementById('editorExitDialog').remove();
+    });
+  });
+
+  describe("showExisting", function () {
+    const alias = 'mocExisting';
+    let controller;
+    let layoutController;
+    let fixture;
+    let texture;
+    let asset;
+    let createComponentSpy;
+
+    beforeEach(function () {
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
+      fixture = createEditorDom();
+      texture = { width: 32, height: 32, destroy: jasmine.createSpy('destroy') };
+      Assets.cache.set(alias, texture);
+      // A real Component needs a live renderer and layout layer.
+      createComponentSpy = spyOn(EditorController.prototype, '_createEditorComponent')
+        .and.callFake(function () {
+          this.newComp = {
+            baseData: this.baseData,
+            connections: [],
+            sprite: { scale: { set: () => {} } },
+            destroy: jasmine.createSpy('destroy'),
+          };
+        });
+      asset = {
+        alias,
+        name: 'My Castle',
+        category: 'structures',
+        src: '',
+        scale: 2,
+        type: 'track',
+        make: 0,
+        connections: [],
+        mine: 1,
+        mocId: 'abc123',
+        onbp: 0xC91A09,
+        image: document.createElement('img'),
+      };
+      layoutController = createFakeLayoutController();
+      layoutController.categories = new Map([
+        ['9V', '9V'], ['structures', 'Structures'], ['mine', 'My MOCs'],
+      ]);
+      layoutController.trackData = { bundles: [{ assets: [asset] }] };
+      layoutController.exitEditorMode = jasmine.createSpy('exitEditorMode');
+      controller = new EditorController(layoutController, false);
+    });
+
+    afterEach(function () {
+      controller.reset();
+      Assets.cache.remove(alias);
+      fixture.remove();
+      document.getElementById('editorExitDialog')?.remove();
+    });
+
+    it("fills the form from the MOC", function () {
+      controller.showExisting(asset, texture);
+
+      expect(document.getElementById('componentName').value).toBe('My Castle');
+      expect(document.getElementById('componentCategories').value).toBe('structures');
+      expect(document.getElementById('componentScale').value).toBe('2');
+      expect(document.getElementById('componentBaseplateField').classList.contains('hidden'))
+        .toBeFalse();
+      expect(document.getElementById('componentBaseplateToggle').checked).toBeTrue();
+      expect(document.getElementById('componentBaseplateColorField').classList.contains('hidden'))
+        .toBeFalse();
+      expect(document.getElementById('componentBaseplateColor').value.toUpperCase())
+        .toBe('#C91A09');
+      expect(document.getElementById('componentEditor').classList.contains('hidden')).toBeFalse();
+    });
+
+    it("hides the baseplate fields for a MOC that is not a structure", function () {
+      asset.category = '9V';
+      delete asset.onbp;
+
+      controller.showExisting(asset, texture);
+
+      expect(document.getElementById('componentCategories').value).toBe('9V');
+      expect(document.getElementById('componentBaseplateField').classList.contains('hidden'))
+        .toBeTrue();
+      expect(document.getElementById('componentBaseplateToggle').checked).toBeFalse();
+    });
+
+    it("skips the size prompt and builds the component from a copy of the MOC", function () {
+      controller.showExisting(asset, texture);
+
+      expect(document.getElementById('editorSizeDialog')).toBeNull();
+      expect(createComponentSpy).toHaveBeenCalledTimes(1);
+      expect(controller.newComp.baseData).not.toBe(asset);
+      expect(controller.newComp.baseData.alias).toBe(alias);
+      expect(controller.newComp.baseData.image).toBe(texture);
+    });
+
+    it("starts committed to the MOC's own alias, and clean", function () {
+      controller.showExisting(asset, texture);
+
+      expect(controller.committed).toBeTrue();
+      expect(controller.currentAlias).toBe(alias);
+      expect(controller.editingExisting).toBeTrue();
+      expect(controller.dirty).toBeFalse();
+    });
+
+    it("hides the alias and scale fields even for admins", function () {
+      controller.isAdmin = true;
+
+      controller.showExisting(asset, texture);
+
+      expect(document.getElementById('componentAliasField').classList.contains('hidden'))
+        .toBeTrue();
+      expect(document.getElementById('componentScaleField').classList.contains('hidden'))
+        .toBeTrue();
+      expect(document.getElementById('componentEditorConnections').classList.contains('hidden'))
+        .toBeFalse();
+    });
+
+    it("leaves the MOC itself untouched until the change is committed", function () {
+      controller.showExisting(asset, texture);
+      document.getElementById('componentName').value = 'Renamed';
+
+      controller.onComponentSave();
+
+      expect(controller.baseData.name).toBe('Renamed');
+      expect(asset.name).toBe('My Castle');
+    });
+
+    it("commits a change onto the same MOC rather than adding another", async function () {
+      controller.showExisting(asset, texture);
+      document.getElementById('componentName').value = 'Renamed';
+      controller.onComponentSave();
+
+      await controller.exportComponent();
+
+      const assets = layoutController.trackData.bundles[0].assets;
+      expect(assets.length).toBe(1);
+      expect(assets[0]).toBe(asset);
+      expect(asset.name).toBe('Renamed');
+      expect(asset.mocId).toBe('abc123');
+      expect(layoutController.createComponentBrowser).toHaveBeenCalled();
+    });
+
+    it("clears the baseplate when the category stops being structures", async function () {
+      controller.showExisting(asset, texture);
+      document.getElementById('componentCategories').value = '9V';
+      controller.onComponentSave();
+
+      await controller.exportComponent();
+
+      expect(asset.category).toBe('9V');
+      expect(asset.onbp).toBeUndefined();
+    });
+
+    it("saves the change to the cloud for a cloud MOC", async function () {
+      controller.showExisting(asset, texture);
+      controller.onComponentSave();
+
+      await controller.exportComponent();
+
+      expect(layoutController.saveMocToCloud).toHaveBeenCalledWith(alias);
+    });
+
+    it("keeps a local-only MOC out of the cloud", async function () {
+      delete asset.mocId;
+      controller.showExisting(asset, texture);
+      document.getElementById('componentName').value = 'Renamed';
+      controller.onComponentSave();
+
+      await controller.exportComponent();
+
+      expect(layoutController.saveMocToCloud).not.toHaveBeenCalled();
+      expect(asset.name).toBe('Renamed');
+      expect(asset.alias).toBe(alias);
+    });
+
+    it("does not destroy the MOC's texture when the editor is reset", function () {
+      controller.showExisting(asset, texture);
+
+      controller.reset();
+
+      expect(texture.destroy).not.toHaveBeenCalled();
+      expect(Assets.cache.get(alias)).toBe(texture);
+      expect(controller.editingExisting).toBeFalse();
+    });
+
+    it("exits without asking when nothing was changed", function () {
+      controller.showExisting(asset, texture);
+
+      controller.checkExit();
+
+      expect(layoutController.exitEditorMode).toHaveBeenCalledTimes(1);
+      expect(document.getElementById('editorExitDialog')).toBeNull();
+    });
+
+    it("asks before exiting with an uncommitted change", function () {
+      if (!window.ui) {
+        window.ui = () => {};
+      }
+      spyOn(window, 'ui').and.stub();
+      controller.showExisting(asset, texture);
+      controller.onComponentSave();
+
+      controller.checkExit();
+
+      expect(document.getElementById('editorExitDialog')).not.toBeNull();
+      expect(layoutController.exitEditorMode).not.toHaveBeenCalled();
+    });
+
+    it("exits without asking once the change is committed", async function () {
+      controller.showExisting(asset, texture);
+      controller.onComponentSave();
+      await controller.exportComponent();
+
+      controller.checkExit();
+
+      expect(layoutController.exitEditorMode).toHaveBeenCalledTimes(1);
     });
   });
 });
