@@ -13,12 +13,13 @@ export class PublicLayoutLoader {
    * Validates share code format
    * @param {string} shareCode - The share code to validate
    * @returns {boolean} True if valid format (8 characters, letters and numbers only)
+   * @static
    */
-  isValidShareCode(shareCode) {
+  static isValidShareCode(shareCode) {
     if (!shareCode || typeof shareCode !== 'string') {
       return false;
     }
-    
+
     // Share code must be exactly 8 characters, uppercase/lowercase letters and numbers only
     const shareCodePattern = /^[A-Za-z0-9]{8}$/;
     return shareCodePattern.test(shareCode);
@@ -28,10 +29,11 @@ export class PublicLayoutLoader {
    * Loads a public layout by share code
    * @param {string} shareCode - The 8-character share code
    * @returns {Promise<Object>} Promise resolving to layout data or rejecting with error
+   * @async
    */
   async loadPublicLayout(shareCode) {
     // Validate share code format first
-    if (!this.isValidShareCode(shareCode)) {
+    if (!PublicLayoutLoader.isValidShareCode(shareCode)) {
       throw new Error('Invalid share code format. Share code must be 8 characters containing only letters and numbers.');
     }
 
@@ -52,7 +54,7 @@ export class PublicLayoutLoader {
       }
 
       const layoutData = await response.json();
-      
+
       // Validate that we received valid layout data
       if (!layoutData || !layoutData.layoutData) {
         throw new Error('Invalid layout data received from server');
@@ -61,8 +63,8 @@ export class PublicLayoutLoader {
       return {
         layoutId: layoutData.layoutId,
         layoutName: layoutData.layoutName,
-        layoutData: layoutData.layoutData,
-        shareCode: shareCode,
+        layoutData: { ...layoutData.layoutData, mocs: layoutData.mocs || [] },
+        shareCode,
         isPublic: true,
         readOnly: true, // Public layouts are always read-only
         ownerId: layoutData.ownerId,
@@ -75,7 +77,6 @@ export class PublicLayoutLoader {
       if (error.message.includes('Failed to fetch') || error.name === 'TypeError') {
         throw new Error('Network error: Unable to connect to layout service. Please check your internet connection.');
       }
-      
       throw error;
     }
   }
@@ -84,8 +85,9 @@ export class PublicLayoutLoader {
    * Extracts share code from URL path
    * @param {string} urlPath - The URL path to check
    * @returns {string|null} Share code if found and valid, null otherwise
+   * @static
    */
-  extractShareCodeFromPath(urlPath) {
+  static extractShareCodeFromPath(urlPath) {
     if (!urlPath || typeof urlPath !== 'string') {
       return null;
     }
@@ -93,11 +95,11 @@ export class PublicLayoutLoader {
     // Remove leading slash and extract potential share code
     const cleanPath = urlPath.replace(/^\/+/, '');
     const pathSegments = cleanPath.split('/');
-    
+
     // Share code should be the first segment in the path
     const potentialShareCode = pathSegments[0];
-    
-    return this.isValidShareCode(potentialShareCode) ? potentialShareCode : null;
+
+    return PublicLayoutLoader.isValidShareCode(potentialShareCode) ? potentialShareCode : null;
   }
 
   /**

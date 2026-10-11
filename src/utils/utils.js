@@ -13,7 +13,6 @@ export function isApproxMultiple(value, step, eps = 1e-6) {
   return Math.abs(q - Math.round(q)) < eps;
 }
 
-
 /**
  * Gets the index of an option in a select element by its value.
  *
@@ -31,7 +30,7 @@ export function getOptionIndexByValue(selectElementId, optionValue, defaultValue
   }
 
   // Iterate through the options collection of the select element
-  for (let i = 0; i < selectElement.options.length; i++) {
+  for (let i = 0; i < selectElement.options.length; i += 1) {
     if (selectElement.options[i].value === optionValue) {
       return i; // Return the index if the value matches
     }
@@ -53,9 +52,9 @@ export function isIOSBrowser() {
   // Check for iPhone, iPod in user agent
   // Temporarily removed 'iPad' until I have time to actually test it on iPadOS
   const isIOSDevice = /iPhone|iPod/.test(userAgent);
-  
+
   // Additional check for iOS 13+ on iPad which may show desktop user agent
-  const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  // const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
   // Temporarily removed ' || isIPadOS' until I have time to actually test it on iPadOS
   return isIOSDevice;

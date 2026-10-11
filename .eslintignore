@@ -1,0 +1,24 @@
+# ESLint 8 bundles espree 9, which cannot parse the import attribute syntax this
+# file uses on line 13:
+#
+#   import layoutFileOne from './layout1.json' with { "type": "json" };
+#
+# Parsing happens before directive comments are read, so a parse failure cannot
+# be suppressed with eslint-disable -- it is file-level or nothing. The syntax is
+# correct and modern browsers run it; only the linter is behind. Espree 10
+# (ESLint 9+) parses import attributes, so this entry can be removed then.
+spec/support/something.spec.mjs
+
+# Third-party code that happens to live in src/. Linting it reported ~106,800
+# errors we can do nothing about -- 97% of everything eslint said about src/ --
+# and was what made a full run take minutes rather than seconds.
+#
+# The first four are copied in from node_modules by the postinstall script, so
+# they are not even in version control as source; the last two are vendored
+# copies committed directly.
+src/pixi.mjs
+src/tabulator_esm.min.mjs
+src/amazon-cognito-identity.min.js
+src/rbush.min.js
+src/slip.js
+src/FileSaver.min.js
