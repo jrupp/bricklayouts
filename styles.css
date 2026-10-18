@@ -83,7 +83,8 @@ body {
 #selToolFlip,
 #selToolMenuFlip,
 #selToolMenuGroup,
-#selToolMenuUngroup {
+#selToolMenuUngroup,
+#selToolMenuCreateMoc {
 	display: none;
 }
 
@@ -104,7 +105,8 @@ body {
 }
 
 #selectionToolbar.ungrouped li#selToolMenuGroup,
-#selectionToolbar.grouped li#selToolMenuUngroup {
+#selectionToolbar.grouped li#selToolMenuUngroup,
+#selectionToolbar:is(.grouped, .ungrouped) li#selToolMenuCreateMoc {
 	display: flex;
 }
 
@@ -253,14 +255,18 @@ body {
 #authenticationModal,
 #buttonLayoutName,
 #fileOpenMenu,
+#mocMenu,
 #portalRedirectConfirmDialog,
 #shareDialog,
 #shareButton-container,
 #componentEditor,
 #editorSizeDialog,
+#editorCropDialog,
+#editorExitDialog,
 #connectionEditor,
 #photoDetailsBalloon,
 #photoComponentDialog,
+dialog,
 #apploading {
 	--primary:#006494;
 	--on-primary:#ffffff;
@@ -326,14 +332,18 @@ body {
 [data-dark-mode=true] #authenticationModal,
 [data-dark-mode=true] #buttonLayoutName,
 [data-dark-mode=true] #fileOpenMenu,
+[data-dark-mode=true] #mocMenu,
 [data-dark-mode=true] #portalRedirectConfirmDialog,
 [data-dark-mode=true] #shareDialog,
 [data-dark-mode=true] #shareButton-container,
 [data-dark-mode=true] #componentEditor,
 [data-dark-mode=true] #editorSizeDialog,
+[data-dark-mode=true] #editorCropDialog,
+[data-dark-mode=true] #editorExitDialog,
 [data-dark-mode=true] #connectionEditor,
 [data-dark-mode=true] #photoDetailsBalloon,
 [data-dark-mode=true] #photoComponentDialog,
+[data-dark-mode=true] dialog,
 [data-dark-mode=true] #apploading {
 	--primary:#8ecdff;
 	--on-primary:#00344f;
@@ -377,10 +387,8 @@ body {
 	position: fixed;
 	top: 100px;
 	right: 10px;
-	background-color: var(--bg);
 	transition: background var(--speed) var(--easing);
 	border: 1px solid black;
-	border-radius: 8px;
 	z-index: 1000;
 	min-width: 20rem;
 }
@@ -528,7 +536,7 @@ body {
 }
 
 .overlay:has(+ #deleteLayoutConfirmDialog, + #renameLayoutDialog, + #portalRedirectConfirmDialog, + #makePublicConfirmDialog) {
-	z-index: 1101;
+	z-index: 1101 !important;
 }
 
 #mobileLayersButton {
@@ -563,7 +571,10 @@ body {
 #authenticationModal,
 #photoComponentDialog,
 #editorSizeDialog,
-#partInventoryDialog {
+#editorCropDialog,
+#editorExitDialog,
+#partInventoryDialog,
+dialog {
 	z-index: 1100;
 }
 
@@ -575,6 +586,19 @@ body {
 
 #fileOpenMenu.active {
 	transition: all var(--speed2), background-color 0s;
+}
+
+#mocMenu,
+#mocMenu.active {
+	position: fixed;
+	inset: auto;
+	transform: none;
+}
+
+#mocMenu {
+	z-index: 1101;
+	transition: opacity var(--speed2), visibility var(--speed2);
+	user-select: none;
 }
 
 #makeLayoutPublic,
@@ -638,6 +662,10 @@ body {
 a.buylink {
 	color: blue;
 	text-decoration: underline;
+}
+
+body.editor-mode > :is(#layerEditor, #mobileLayersButton) {
+	display: none;
 }
 
 #layerEditor {
@@ -1350,10 +1378,26 @@ i + span.label {
 	text-overflow: ellipsis;
 }
 
+.componentBrowser>button.mine>i {
+	background-color: var(--bg);
+	transition: background var(--speed) var(--easing);
+	display: none;
+}
+
+/* Press-and-hold opens the MOC menu, so keep iOS from raising its own */
+.componentBrowser>button.mine {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
 @media (hover:hover) {
 	.componentBrowser>button:hover {
 		background: var(--component-hover);
 		opacity: 1;
+	}
+	.componentBrowser>button.mine:hover>i {
+		display: inline-flex;
 	}
 }
 
@@ -1547,7 +1591,7 @@ i + span.label {
 
 /* Account Menu Styles */
 #topRightControls {
-	z-index: 1000;
+	z-index: 1001;
 	display: flex;
 	flex-direction: row;
 	align-items: center;
@@ -1851,4 +1895,18 @@ i + span.label {
 
 #profileModal .profileModal-view-invoices article .row {
   align-items: center;
+}
+
+/* Editor mode: hide destructive layout actions (Save to Cloud,
+   Download, Export Image) that make no sense while creating a new
+   component. Toggled by LayoutController._openImageForEditor /
+   exitEditorMode via `body.editor-mode`. */
+body.editor-mode #buttonCloudSave,
+body.editor-mode #buttonDownload,
+body.editor-mode #buttonExport,
+body.editor-mode #mobileButtonCloudSave,
+body.editor-mode #mobileButtonDownload,
+body.editor-mode #mobileButtonExport,
+body.editor-mode #selectionToolbar li#selToolMenuCreateMoc {
+  display: none;
 }

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Integration tests for complete partial circles workflow
  * Tests end-to-end partial circle creation, layout loading, error handling,

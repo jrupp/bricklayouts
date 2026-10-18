@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import base from './jasmine-browser.mjs';
 
 process.env.CI = 'true';

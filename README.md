@@ -57,7 +57,7 @@ LEGO® is a trademark of The LEGO Group of companies which does not sponsor, aut
 
 ## Credits
 
-* This project is using the [MIT license](LICENSE.txt) and is © Copyright 2025 Justin Rupp, unless otherwise noted here
+* This project is using the [MIT license](LICENSE.txt) and is © Copyright 2026 BrickLayouts, unless otherwise noted here
 * Some icons are from Flaticon.com
 * Some component images originally derived from rendered LDraw parts from The LDraw Parts Library
 * The dark mode toggle is Copyright (c) 2025 by Jhey (<https://codepen.io/jh3y/pen/LYgjpYZ>)

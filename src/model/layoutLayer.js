@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Container, RenderLayer } from "../pixi.mjs";
 import { Component, SerializedComponent } from "./component.js";
 import { ComponentGroup } from "./componentGroup.js";
@@ -164,14 +168,23 @@ export class LayoutLayer extends Container {
         opacity: Math.round(this.alpha * 100)
       };
       const permanentGroups = new Map();
+      const mocs = new Array();
 
       this.children.forEach(child => {
         if (child instanceof Component && child.group && !child.group.isTemporary) {
           permanentGroups.set(child.group.uuid, child.group);
         }
+        if (child instanceof Component && child.baseData.mine) {
+          mocs.push(child.baseData.alias);
+        }
       });
+
       if (permanentGroups.size > 0) {
         serialized.groups = Array.from(permanentGroups.values()).map(group => group.serialize());
+      }
+
+      if (mocs.length > 0) {
+        serialized.mocs = mocs;
       }
 
       return serialized;
@@ -321,9 +334,10 @@ export class LayoutLayer extends Container {
     /**
      * 
      * @param {SerializedLayoutLayer} data
+     * @param {Set<String>} [extraAliases] Component type aliases that are valid even though they aren't in the track data yet
      * @returns {Boolean} True if data is valid, false otherwise
      */
-    static _validateImportData(data) {
+    static _validateImportData(data, extraAliases) {
         let validations = [
             data,
             data?.name === undefined || typeof data?.name === 'string',
@@ -351,6 +365,6 @@ export class LayoutLayer extends Container {
             }
         }
 
-        return data.components.every(component => Component._validateImportData(component));
+        return data.components.every(component => Component._validateImportData(component, extraAliases));
     }
 }

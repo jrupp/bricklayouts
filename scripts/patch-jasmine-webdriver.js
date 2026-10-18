@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Patches jasmine-browser-runner to enable GPU in headless Chrome for WebGL support.
  * 

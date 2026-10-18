@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Assets, BitmapText, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
 import { LayoutController, TrackData, DataTypes } from '../controller/layoutController.js';
 import { ComponentGroup } from "./componentGroup.js";
@@ -1284,15 +1288,16 @@ export class Component extends Container {
   /**
    * 
    * @param {SerializedComponent} data 
+   * @param {Set<String>} [extraAliases] Component type aliases that are valid even though they aren't in the track data yet
    * @returns {Boolean} True if data is valid, false otherwise
    */
-  static _validateImportData(data) {
+  static _validateImportData(data, extraAliases) {
     let validations = [
       data,
       data?.type,
       typeof data?.type === 'string',
       data?.type?.length > 0,
-      data?.type ? (LayoutController._instance?.trackData?.bundles[0].assets.some(a => a.alias === data.type) ?? Assets.get(data.type)) : false,
+      data?.type ? (extraAliases?.has(data.type) || (LayoutController._instance?.trackData?.bundles[0].assets.some(a => a.alias === data.type) ?? Assets.get(data.type))) : false,
       data?.pose,
       Pose._validateImportData(data?.pose),
       data?.connections,
