@@ -4,14 +4,15 @@
 
 /**
  * Dialogs belonging to the cloud MOC sync flow: the prompt shown before local-only
- * MOCs are uploaded, and the explanation shown when the server refuses a delete.
+ * MOCs are uploaded, the explanation shown when the server refuses a delete, and
+ * the upsell shown when a free account runs out of cloud MOC storage.
  *
  * These render cloud data but never call the API, so they stay in the public repo
  * alongside their DOM specs. Nothing reaches them except cloudMocSync.js, which is
  * itself only loaded once the user is known to be signed in, so a signed-out
  * visitor never downloads them.
  *
- * Both dialogs are built at runtime rather than declared in index.html, so the
+ * All of them are built at runtime rather than declared in index.html, so the
  * "404.html must match index.html" rule is not dragged in. Everything rendered
  * here is attacker-controlled -- MOC names come straight out of a local layout
  * file and the refusal details come from the server -- so every value is inserted
@@ -77,6 +78,62 @@ export function confirmUploadMocs(names) {
     });
 
     ui('#uploadMocsDialog');
+  });
+}
+
+/**
+ * Tell the user their account has no room for another cloud MOC, and offer the
+ * upgrade. The MOC itself is already committed locally by the time this shows.
+ * The text is static, so nothing here needs escaping.
+ * @returns {Promise<Boolean>} True if the user chose to subscribe. Resolved on the
+ *   dialog's `close` event, so it is gone before the caller opens another one.
+ */
+export function showMocLimitDialog() {
+  return new Promise((resolve) => {
+    document.getElementById('mocLimitDialog')?.remove();
+    const dialog = document.createElement('dialog');
+    dialog.className = 'no-padding border large-width surface-container-high small-round';
+    dialog.id = 'mocLimitDialog';
+    dialog.innerHTML = `
+        <div>
+          <header class="fill top-round small-round small-padding right-padding"
+            style="min-block-size: 3.2rem;">
+            <nav>
+              <h6 class="max">Cloud Storage Full</h6>
+              <button class="circle medium transparent" data-ui="#mocLimitDialog">
+                <i class="medium bold">close</i>
+              </button>
+            </nav>
+          </header>
+          <div class="small-padding horizontal-padding extra-text">
+            <p>Don't worry, your MOC has been saved locally.</p>
+            <p>Free accounts may only store 10 MOCs in the cloud. To store more MOCs in the
+              cloud, please upgrade your subscription.</p>
+          </div>
+          <hr>
+          <nav class="no-padding no-space no-margin">
+            <button class="no-round max extra-text left-button primary-text"
+              id="mocLimitSubscribe"><span>Subscribe</span></button>
+            <button class="no-round max extra-text right-button primary-text"
+              id="mocLimitOk"><span>OK</span></button>
+          </nav>
+        </div>
+      `;
+    document.body.appendChild(dialog);
+
+    let subscribe = false;
+    dialog.addEventListener('close', () => {
+      dialog.remove();
+      resolve(subscribe);
+    });
+    const closeDialog = () => ui('#mocLimitDialog');
+    dialog.querySelector('#mocLimitSubscribe').addEventListener('click', () => {
+      subscribe = true;
+      closeDialog();
+    });
+    dialog.querySelector('#mocLimitOk').addEventListener('click', closeDialog);
+
+    ui('#mocLimitDialog');
   });
 }
 

@@ -2,6 +2,11 @@
  * Copyright (c) 2026 BrickLayouts. All rights reserved.
  */
 
+import {
+  confirmUploadMocs,
+  showMocBlockedDialog,
+  showMocLimitDialog,
+} from "../../src/controller/cloudMocDialogs.js";
 import { LayoutController } from "../../src/controller/layoutController.js";
 
 /**
@@ -43,7 +48,7 @@ describe("cloud MOC dialogs", function () {
   });
 
   afterEach(function () {
-    ['uploadMocsDialog', 'mocBlockedDialog'].forEach((id) => {
+    ['uploadMocsDialog', 'mocBlockedDialog', 'mocLimitDialog'].forEach((id) => {
       document.getElementById(id)?.remove();
     });
   });
@@ -88,6 +93,47 @@ describe("cloud MOC dialogs", function () {
       confirmUploadMocs(['A']);
 
       expect(document.querySelectorAll('#uploadMocsDialog').length).toBe(1);
+    });
+  });
+
+  describe("showMocLimitDialog", function () {
+    it("explains that the MOC was kept locally and how to store more", function () {
+      showMocLimitDialog();
+
+      const dialog = document.getElementById('mocLimitDialog');
+      expect(dialog.querySelector('h6').textContent).toBe('Cloud Storage Full');
+      const paragraphs = Array.from(dialog.querySelectorAll('p'))
+        .map((p) => p.textContent.replace(/\s+/g, ' ').trim());
+      expect(paragraphs).toEqual([
+        "Don't worry, your MOC has been saved locally.",
+        'Free accounts may only store 10 MOCs in the cloud. To store more MOCs in the cloud, '
+          + 'please upgrade your subscription.',
+      ]);
+      expect(window.ui).toHaveBeenCalledWith('#mocLimitDialog');
+    });
+
+    it("resolves true only when the user chooses to subscribe", async function () {
+      const subscribed = showMocLimitDialog();
+      document.getElementById('mocLimitSubscribe').click();
+      await expectAsync(subscribed).toBeResolvedTo(true);
+
+      const acknowledged = showMocLimitDialog();
+      document.getElementById('mocLimitOk').click();
+      await expectAsync(acknowledged).toBeResolvedTo(false);
+    });
+
+    it("treats dismissing the dialog as not subscribing", async function () {
+      const dismissed = showMocLimitDialog();
+      document.getElementById('mocLimitDialog').dispatchEvent(new Event('close'));
+      await expectAsync(dismissed).toBeResolvedTo(false);
+    });
+
+    it("removes itself once closed", async function () {
+      const shown = showMocLimitDialog();
+      document.getElementById('mocLimitOk').click();
+      await shown;
+
+      expect(document.getElementById('mocLimitDialog')).toBeNull();
     });
   });
 
