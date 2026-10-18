@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * @typedef {Object} GridSettings
  * @property {boolean} enabled Whether the grid is enabled or not

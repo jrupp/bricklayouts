@@ -1,4 +1,7 @@
-import { confirmUploadMocs, showMocBlockedDialog } from "../../src/controller/cloudMocDialogs.js";
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { LayoutController } from "../../src/controller/layoutController.js";
 
 /**

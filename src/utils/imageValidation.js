@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * @module imageValidation
  * Pure helpers for validating user-uploaded image files before handing them to

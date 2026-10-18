@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { ComponentGroup } from '../../src/model/componentGroup.js';
 import { LayoutController } from '../../src/controller/layoutController.js';
 import { Pose } from '../../src/model/pose.js';

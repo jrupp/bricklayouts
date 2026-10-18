@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import {
     CurrentFormatVersion, DataTypes, LayoutController, SerializedLayout, TrackData
 } from "../../src/controller/layoutController.js";

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { UndoManager, UNDO_BUFFER_SIZE } from '../../src/controller/undoManager.js';
 import { Component } from '../../src/model/component.js';
 import { ComponentGroup } from '../../src/model/componentGroup.js';

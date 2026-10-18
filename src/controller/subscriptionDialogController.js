@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * SubscriptionDialogController - Controller for the subscription dialog.
  * Displays subscription plan options and initiates the Stripe Checkout flow.

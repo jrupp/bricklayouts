@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { DataTypes } from '../controller/layoutController.js';
 import { MAX_DECODED_PIXELS } from './imageValidation.js';
 import { PolarVector } from '../model/polarVector.js';

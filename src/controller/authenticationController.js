@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * AuthenticationManager - Handles all authentication operations with cross-subdomain support
  * This class is accessible to all users for checking authentication state and managing sessions.

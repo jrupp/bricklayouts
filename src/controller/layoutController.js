@@ -1,4 +1,7 @@
-import { Assets, Application, Bounds, Color, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Sprite, Texture, TilingSprite } from '../pixi.mjs';
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';

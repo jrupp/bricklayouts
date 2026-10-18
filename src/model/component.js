@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Assets, BitmapText, Color, ColorMatrixFilter, Container, FederatedPointerEvent, Graphics, Sprite, TilingSprite } from "../pixi.mjs";
 import { LayoutController, TrackData, DataTypes } from '../controller/layoutController.js';
 import { ComponentGroup } from "./componentGroup.js";

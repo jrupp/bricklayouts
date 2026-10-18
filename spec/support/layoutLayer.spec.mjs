@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Component } from "../../src/model/component.js";
 import { LayoutLayer } from "../../src/model/layoutLayer.js";
 import { LayoutController } from "../../src/controller/layoutController.js";

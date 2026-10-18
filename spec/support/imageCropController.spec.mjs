@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { ImageCropController } from "../../src/controller/imageCropController.js";
 import { Application, Texture } from "../../src/pixi.mjs";
 

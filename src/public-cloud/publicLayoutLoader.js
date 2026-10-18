@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * PublicLayoutLoader - Handles loading of public layouts by share code
  * This module is accessible to all users without authentication requirements

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { DataTypes, CurrentFormatVersion, SerializedLayout } from '../controller/layoutController.js';
 import { SerializedComponent } from '../model/component.js';
 import { isApproxMultiple } from './utils.js';

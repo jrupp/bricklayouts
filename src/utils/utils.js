@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Returns true if `value` is (approximately) a multiple of `step` within a small tolerance.
  * This avoids floating-point issues like (614.4 % 51.2) !== 0.

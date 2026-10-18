@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { AccountMenuController } from '../../src/controller/accountMenuController.js';
 
 function flushPromises() {

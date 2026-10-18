@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * AuthenticationModal - Modal interface for login and signup forms
  * This module is PUBLIC and accessible to all users for authentication.

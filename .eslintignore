@@ -22,3 +22,5 @@ src/amazon-cognito-identity.min.js
 src/rbush.min.js
 src/slip.js
 src/FileSaver.min.js
+spec/support/lib/fast-check.mjs
+spec/support/lib/pure-rand.mjs

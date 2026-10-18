@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import * as fc from '../support/lib/fast-check.mjs';
 import {
   LayoutPreservation,

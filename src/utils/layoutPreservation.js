@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * LayoutPreservation - Temporarily saves and restores the current layout.
  * Used to preserve a user's work while they are redirected away (Stripe

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * AccountMenuController - Handles the account menu UI component
  * This class is PUBLIC and accessible to all users for showing Login/Sign up options

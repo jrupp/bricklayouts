@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Configuration } from '../model/configuration.js';
 import { LayoutController } from './layoutController.js';
 import { getOptionIndexByValue } from '../utils/utils.js';

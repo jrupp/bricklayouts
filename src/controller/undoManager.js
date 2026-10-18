@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Component } from '../model/component.js';
 import { DataTypes } from './layoutController.js';
 import { ComponentGroup } from '../model/componentGroup.js';

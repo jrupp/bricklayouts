@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import {
   ALLOWED_MIME,
   MAX_FILE_BYTES,

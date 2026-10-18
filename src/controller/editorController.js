@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Assets, Color, FederatedPointerEvent, Texture } from '../pixi.mjs';
 import { LayoutController, DataTypes, TrackData } from "./layoutController.js";
 import { Component, ColorNameToHex } from "../model/component.js";

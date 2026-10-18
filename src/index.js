@@ -1,9 +1,14 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { ConfigurationController } from './controller/configurationController.js';
 import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
 import { clearOrphanedPreservation } from './utils/preservationKeys.js';
+// eslint-disable-next-line object-curly-newline
 import { Application, Assets, Color, path } from './pixi.mjs';
 
 // The subscription dialog is only opened at startup by the ?subscribe=true deep

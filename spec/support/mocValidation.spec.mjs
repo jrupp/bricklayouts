@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import {
   validateMocForCloud,
   MAX_MOC_NAME_LENGTH,

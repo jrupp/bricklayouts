@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Configuration } from "../../src/model/configuration.js";
 
 describe("Configuration", () => {

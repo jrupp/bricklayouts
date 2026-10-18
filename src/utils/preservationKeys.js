@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Storage keys for preserved layouts, and the startup sweep that discards
  * payloads nothing is going to read back.

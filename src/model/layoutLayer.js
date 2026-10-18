@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Container, RenderLayer } from "../pixi.mjs";
 import { Component, SerializedComponent } from "./component.js";
 import { ComponentGroup } from "./componentGroup.js";

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Dialogs belonging to the cloud MOC sync flow: the prompt shown before local-only
  * MOCs are uploaded, and the explanation shown when the server refuses a delete.
