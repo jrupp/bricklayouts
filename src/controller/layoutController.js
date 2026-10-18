@@ -2,6 +2,7 @@
  * Copyright (c) 2026 BrickLayouts. All rights reserved.
  */
 
+import { Assets, Application, Bounds, Color, Container, FederatedPointerEvent, FederatedWheelEvent, Graphics, path, Point, Rectangle, Sprite, Texture, TilingSprite } from '../pixi.mjs';
 import { Component, ComponentOptions, DEFAULT_CIRCLE_PERCENTAGE, ColorNameToHex, HexToColorName } from '../model/component.js';
 import { ComponentGroup } from '../model/componentGroup.js';
 import { Configuration, SerializedConfiguration } from '../model/configuration.js';
@@ -626,6 +627,8 @@ export class LayoutController {
     this.selectionToolbar?.querySelector('#selToolSendBack')?.addEventListener('click', () => this.sendSelectedComponentToBack());
     this.selectionToolbar?.querySelector('#selToolMenuGroup')?.addEventListener('click', () => this.makeGroupPermanent());
     this.selectionToolbar?.querySelector('#selToolMenuUngroup')?.addEventListener('click', () => this.ungroupComponents());
+    this.selectionToolbar?.querySelector('#selToolMenuCreateMoc')
+      ?.addEventListener('click', () => this.createMocFromSelection());
     this.selectionToolbar?.querySelector('#selToolMenuSelectAll')?.addEventListener('click', () => this.selectAll());
     this.selectionToolbar?.querySelector('#selToolMenuSelectConnected')?.addEventListener('click', () => this.selectConnected());
 
@@ -3100,6 +3103,9 @@ export class LayoutController {
   /**
    * Ensure every custom MOC placed in the layout exists in the cloud before the
    * layout itself is saved.
+   * @param {Object} [options]
+   * @param {Boolean} [options.upsell=true] False reports the account's MOC limit
+   *   with a snackbar instead of the dialog that offers to subscribe
    * @returns {Promise<MocUploadResult>} `ok` is true when every referenced MOC is in the
    *   cloud; `reason` and `limit` say why not. Signed out, this reports
    *   'uploadFailed': the caller is about to save a cloud layout, which it
@@ -3107,10 +3113,10 @@ export class LayoutController {
    * @see MocUploadResult
    * @private
    */
-  async _ensureMocsInCloud() {
+  async _ensureMocsInCloud(options) {
     const cloudMocs = await this.enableCloudMocs();
     return cloudMocs
-      ? cloudMocs.ensureMocsInCloud()
+      ? cloudMocs.ensureMocsInCloud(options)
       : { ok: false, reason: 'uploadFailed', limit: null };
   }
 
@@ -3258,6 +3264,139 @@ export class LayoutController {
 
     const editor = await this._enterEditorMode(isAdmin);
     editor.showExisting(baseData, texture);
+  }
+
+  /**
+   * Create a MOC from the selected ComponentGroup: render just its components to
+   * an image and open the Editor on it. The size is that of the group, so unlike
+   * creating a MOC from an uploaded image there is no size prompt.
+   * @returns {Promise<void>}
+   */
+  async createMocFromSelection() {
+    if (this.readOnly) {
+      return;
+    }
+    if (this.editorMode) {
+      await this._showMocEditorModeDialog('create');
+      return;
+    }
+    const group = LayoutController.selectedComponent;
+    if (!(group instanceof ComponentGroup)) {
+      return;
+    }
+    // Read the components first: deselecting destroys a temporary group.
+    const components = group.getAllComponents();
+    LayoutController.selectComponent(null);
+
+    const isAdmin = await this._isAdminUser();
+
+    // The awaits may have let the components be deleted, or another editor open.
+    if (this.editorMode || components.length === 0 || components.some((c) => c.destroyed)) {
+      return;
+    }
+
+    // Render before entering the editor, which clears the workspace.
+    const rendered = await this._renderComponentsToTexture(components);
+    if (!rendered) {
+      showSnackbar('Could not create MOC image', 'error');
+      return;
+    }
+    if (this.editorMode) {
+      rendered.texture.destroy(true);
+      return;
+    }
+
+    const editor = await this._openNewMocEditor(rendered.texture, isAdmin);
+    editor.showRendered(rendered.texture, rendered.width, rendered.height);
+  }
+
+  /**
+   * Render the given components, and nothing else on their layer, to a texture
+   * at 1 pixel per world unit (16 per stud), scaled down only if needed to fit
+   * the GPU's maximum texture size. Open connection markers, the layer's opacity
+   * and the workspace's zoom and pan are left out.
+   * @param {Array<Component>} components Components that all share one layer
+   * @returns {Promise<?{texture: Texture, width: Number, height: Number}>} The
+   *   texture, and its size in world units; null if it could not be rendered
+   * @private
+   */
+  async _renderComponentsToTexture(components) {
+    const { MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+    const layer = components[0]?.parent;
+    if (!layer || components.some((c) => c.destroyed || c.parent !== layer)) {
+      return null;
+    }
+
+    const members = new Set(components);
+    /** @type {Array<[Container, Boolean]>} */
+    const hidden = [];
+    const hide = (target) => {
+      if (target) {
+        hidden.push([target, target.visible]);
+        target.visible = false;
+      }
+    };
+    const layerState = { alpha: layer.alpha, visible: layer.visible };
+    let canvas;
+    let width;
+    let height;
+    try {
+      // This includes the layer's overlay, which draws the connection markers.
+      layer.children.forEach((child) => {
+        if (!members.has(child)) {
+          hide(child);
+        }
+      });
+      components.forEach((component) => {
+        component.connections?.forEach((connection) => hide(connection.circle));
+      });
+      layer.alpha = 1;
+      layer.visible = true;
+
+      const bounds = layer.getLocalBounds();
+      const x = Math.floor(bounds.minX);
+      const y = Math.floor(bounds.minY);
+      width = Math.ceil(bounds.maxX) - x;
+      height = Math.ceil(bounds.maxY) - y;
+      if (!(width >= 1 && height >= 1)) {
+        return null;
+      }
+
+      const maxTextureSize = this.app.renderer.gl?.MAX_TEXTURE_SIZE ?? 4096;
+      const resolution = Math.min(
+        1,
+        maxTextureSize / Math.max(width, height),
+        Math.sqrt(MAX_DECODED_PIXELS / (width * height))
+      );
+      canvas = this.app.renderer.extract.canvas({
+        target: layer,
+        frame: new Rectangle(x, y, width, height),
+        resolution,
+        antialias: true
+      });
+    } catch (error) {
+      console.error('Failed to render components for MOC:', error);
+      return null;
+    } finally {
+      hidden.reverse().forEach(([target, visible]) => {
+        target.visible = visible;
+      });
+      layer.alpha = layerState.alpha;
+      layer.visible = layerState.visible;
+    }
+
+    // The texture is built the same way as one from an uploaded image. PixiJS
+    // cannot extract a canvas-backed texture again, which saving the MOC does,
+    // and a scaled-down RenderTexture is not as wide as its real pixels, which
+    // the MOC's scale is worked out from.
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(canvas);
+    } catch (error) {
+      console.error('Failed to render components for MOC:', error);
+      return null;
+    }
+    return { texture: Texture.from(bitmap), width, height };
   }
 
   /**
@@ -3706,11 +3845,6 @@ export class LayoutController {
       }
 
       const blob = new Blob([buffer], { type: magic.mime });
-      // Strip hyphens: PixiJS's asset cache normalizes aliases in a way that
-      // treats hyphens as separators, so `cache.set('foo-bar', tex)` ends up
-      // keyed as `foobar`. Handing the hyphenated form back to Assets.get()
-      // later returns undefined.
-      const alias = 'newComponent' + crypto.randomUUID().replaceAll('-', '');
 
       // Decode the blob ourselves rather than handing a blob: URL to
       // Assets.load — PixiJS's asset loader can't infer the format from a
@@ -3731,14 +3865,32 @@ export class LayoutController {
       }
 
       const texture = Texture.from(bitmap);
-      Assets.cache.set(alias, texture);
-
-      const editor = await this._enterEditorMode(isAdmin);
-      editor.currentAlias = alias;
-      editor.baseData.alias = alias;
+      const editor = await this._openNewMocEditor(texture, isAdmin);
       editor.show(texture);
     };
     input.click();
+  }
+
+  /**
+   * Enter the Editor for a new MOC, caching its texture under a fresh alias. The
+   * caller then shows the editor.
+   * @param {Texture} texture The new MOC's image
+   * @param {Boolean} isAdmin
+   * @returns {Promise<EditorController>}
+   * @private
+   */
+  async _openNewMocEditor(texture, isAdmin) {
+    // Strip hyphens: PixiJS's asset cache normalizes aliases in a way that
+    // treats hyphens as separators, so `cache.set('foo-bar', tex)` ends up
+    // keyed as `foobar`. Handing the hyphenated form back to Assets.get()
+    // later returns undefined.
+    const alias = 'newComponent' + crypto.randomUUID().replaceAll('-', '');
+    Assets.cache.set(alias, texture);
+
+    const editor = await this._enterEditorMode(isAdmin);
+    editor.currentAlias = alias;
+    editor.baseData.alias = alias;
+    return editor;
   }
 
   /**
@@ -3747,6 +3899,7 @@ export class LayoutController {
    * @private
    */
   async _isAdminUser() {
+    return false; // Until admin functions are fixed
     const authManager = await this._getAuthManager();
     if (!authManager) {
       return false;

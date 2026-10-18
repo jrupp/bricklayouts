@@ -83,7 +83,8 @@ body {
 #selToolFlip,
 #selToolMenuFlip,
 #selToolMenuGroup,
-#selToolMenuUngroup {
+#selToolMenuUngroup,
+#selToolMenuCreateMoc {
 	display: none;
 }
 
@@ -104,7 +105,8 @@ body {
 }
 
 #selectionToolbar.ungrouped li#selToolMenuGroup,
-#selectionToolbar.grouped li#selToolMenuUngroup {
+#selectionToolbar.grouped li#selToolMenuUngroup,
+#selectionToolbar:is(.grouped, .ungrouped) li#selToolMenuCreateMoc {
 	display: flex;
 }
 
@@ -1904,6 +1906,7 @@ body.editor-mode #buttonDownload,
 body.editor-mode #buttonExport,
 body.editor-mode #mobileButtonCloudSave,
 body.editor-mode #mobileButtonDownload,
-body.editor-mode #mobileButtonExport {
+body.editor-mode #mobileButtonExport,
+body.editor-mode #selectionToolbar li#selToolMenuCreateMoc {
   display: none;
 }

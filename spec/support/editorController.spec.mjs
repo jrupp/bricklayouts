@@ -1364,4 +1364,82 @@ describe("EditorController", function () {
       expect(layoutController.exitEditorMode).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe("showRendered", function () {
+    const alias = 'newComponentRendered';
+    let controller;
+    let layoutController;
+    let fixture;
+    let texture;
+    let setSizeSpy;
+
+    beforeEach(function () {
+      spyOn(console, 'log');
+      spyOn(window, 'saveAs').and.stub();
+      fixture = createEditorDom();
+      texture = { width: 64, height: 32, destroy: jasmine.createSpy('destroy') };
+      setSizeSpy = jasmine.createSpy('setSize');
+      // A real Component needs a live renderer and layout layer.
+      spyOn(EditorController.prototype, '_createEditorComponent')
+        .and.callFake(function () {
+          const sprite = { scale: { x: 1 } };
+          setSizeSpy.and.callFake((width) => {
+            sprite.scale.x = width / texture.width;
+          });
+          sprite.setSize = setSizeSpy;
+          this.newComp = {
+            baseData: this.baseData,
+            connections: [],
+            sprite,
+            destroy: jasmine.createSpy('destroy'),
+          };
+        });
+      layoutController = createFakeLayoutController();
+      layoutController.exitEditorMode = jasmine.createSpy('exitEditorMode');
+      controller = new EditorController(layoutController, false);
+      controller.currentAlias = alias;
+      controller.baseData.alias = alias;
+    });
+
+    afterEach(function () {
+      controller.reset();
+      Assets.cache.remove(alias);
+      fixture.remove();
+      document.getElementById('editorSizeDialog')?.remove();
+    });
+
+    it("opens the editor at the given size without a size prompt", function () {
+      controller.showRendered(texture, 64, 32);
+
+      expect(document.getElementById('editorSizeDialog')).toBeNull();
+      expect(setSizeSpy).toHaveBeenCalledOnceWith(64, 32);
+      expect(controller.baseData.width).toBe(64);
+      expect(controller.baseData.height).toBe(32);
+      expect(controller.baseData.image).toBe(texture);
+      expect(document.getElementById('componentEditor').classList.contains('hidden')).toBeFalse();
+    });
+
+    it("caches the texture under the new MOC's alias", function () {
+      controller.showRendered(texture, 64, 32);
+
+      expect(controller.texture).toBe(texture);
+      expect(Assets.cache.get(alias)).toBe(texture);
+    });
+
+    it("works out the scale from the texture's pixel size", function () {
+      controller.showRendered(texture, 128, 64);
+
+      expect(controller.baseData.scale).toBe(2);
+      expect(document.getElementById('componentScale').value).toBe('2');
+    });
+
+    it("leaves the texture uncommitted, so cancelling destroys it", function () {
+      controller.showRendered(texture, 64, 32);
+
+      controller.reset();
+
+      expect(texture.destroy).toHaveBeenCalled();
+      expect(Assets.cache.has(alias)).toBeFalse();
+    });
+  });
 });

@@ -276,6 +276,18 @@ export class EditorController {
   }
 
   /**
+   * Displays the editor with a texture whose size is already known, such as one
+   * rendered from components on the layout, so there is no size prompt or crop.
+   * @param {Texture} texture
+   * @param {number} width Width in world units (16 per stud)
+   * @param {number} height Height in world units (16 per stud)
+   */
+  showRendered(texture, width, height) {
+    this.setTexture(texture);
+    this.#showEditor(width, height);
+  }
+
+  /**
    * Displays the editor on an existing MOC. Its image and size cannot change,
    * so there is no size prompt; the editor works on a copy of the base data,
    * which only reaches the MOC itself when the user commits.

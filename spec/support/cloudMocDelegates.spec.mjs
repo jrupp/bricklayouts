@@ -106,8 +106,9 @@ describe("LayoutController cloud MOC delegates", function () {
     });
 
     it("passes _ensureMocsInCloud straight through", async function () {
-      await expectAsync(controller._ensureMocsInCloud())
+      await expectAsync(controller._ensureMocsInCloud({ upsell: false }))
         .toBeResolvedTo({ ok: true, reason: null, limit: null });
+      expect(cloudMocs.ensureMocsInCloud).toHaveBeenCalledWith({ upsell: false });
     });
 
     it("reuses the loaded module instead of importing again", async function () {

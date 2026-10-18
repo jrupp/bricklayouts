@@ -494,6 +494,18 @@ describe('Feature: layout-preservation', () => {
       expect(storedLayout().mocs).toBeUndefined();
     });
 
+    it('does not offer a subscription to a user already on the way to checkout', async () => {
+      storage.failures = ['quota'];
+      mockLayoutController._ensureMocsInCloud.and.returnValue(
+        Promise.resolve({ ok: false, reason: 'mocLimitReached', limit: 10 })
+      );
+      seedSnackbar();
+
+      await newService().save();
+
+      expect(mockLayoutController._ensureMocsInCloud).toHaveBeenCalledWith({ upsell: false });
+    });
+
     it('drops the local components when the upload does not happen', async () => {
       // Tier 1 is the only write attempted before tier 3: a declined upload
       // never reaches a write of its own.

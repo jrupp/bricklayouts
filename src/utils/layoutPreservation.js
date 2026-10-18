@@ -178,7 +178,9 @@ export class LayoutPreservation {
     }
 
     // Tier 2: put the MOCs in the cloud instead of in the payload.
-    const outcome = await layoutController._ensureMocsInCloud();
+    // No upsell: preserveMocs is only set for checkout, so the user is already
+    // on their way to subscribing. Tier 3 below still reports the limit.
+    const outcome = await layoutController._ensureMocsInCloud({ upsell: false });
     // A successful upload re-keys each track's alias in place, so the layers
     // serialized above now name aliases that no longer resolve. This re-read is
     // mandatory, and it is just as mandatory on the failure path below: the
