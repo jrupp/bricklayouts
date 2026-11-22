@@ -155,7 +155,10 @@ export class EditorController {
       let option = document.createElement('option');
       option.value = key;
       option.title = category;
-      option.innerHTML = '<span class="label">' + category + '</span>';
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = category;
+      option.appendChild(label);
       if (category == this.baseData.category) {
         option.selected = true;
       }
