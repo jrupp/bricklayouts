@@ -2,9 +2,13 @@
  * Copyright (c) 2026 BrickLayouts. All rights reserved.
  */
 
-import { DataTypes, CurrentFormatVersion, SerializedLayout } from '../controller/layoutController.js';
-import { SerializedComponent } from '../model/component.js';
+import { DataTypes, CurrentFormatVersion } from '../controller/layoutController.js';
 import { isApproxMultiple } from './utils.js';
+
+/**
+ * @typedef {import('../controller/layoutController.js').SerializedLayout} SerializedLayout
+ * @typedef {import('../model/component.js').SerializedComponent} SerializedComponent
+ */
 
 /**
  * Upgrades the layout data to the current format version.
