@@ -5913,6 +5913,46 @@ describe("LayoutController", function() {
         });
     });
 
+    describe("updateLayerList layer name rendering", function() {
+        const maliciousName = '<img src="x" onerror="window.__layerXss = true">Evil';
+        let layoutController;
+        let originalLabel;
+        let originalReadOnly;
+
+        beforeEach(function() {
+            layoutController = window.layoutController;
+            originalLabel = layoutController.layers[0].label;
+            originalReadOnly = layoutController.readOnly;
+            layoutController.layers[0].label = maliciousName;
+        });
+
+        afterEach(function() {
+            layoutController.layers[0].label = originalLabel;
+            layoutController.readOnly = originalReadOnly;
+        });
+
+        const expectNameRenderedAsText = function() {
+            ['layerList', 'mobileLayerList'].forEach((id) => {
+                const list = document.getElementById(id);
+                expect(list.querySelector('img')).toBeNull();
+                const nameDiv = list.querySelector('div.max.truncate[data-layer="0"]');
+                expect(nameDiv.textContent).toBe(maliciousName);
+            });
+        };
+
+        it("should render layer names as text, not HTML, in editable mode", function() {
+            layoutController.readOnly = false;
+            layoutController.updateLayerList();
+            expectNameRenderedAsText();
+        });
+
+        it("should render layer names as text, not HTML, in read-only mode", function() {
+            layoutController.readOnly = true;
+            layoutController.updateLayerList();
+            expectNameRenderedAsText();
+        });
+    });
+
     describe("makeGroupPermanent", function() {
         // Test for makeGroupPermanent method (Task 5.1)
         it('should convert temporary ComponentGroup to permanent when makeGroupPermanent is called', () => {

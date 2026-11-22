@@ -5721,11 +5721,12 @@ export class LayoutController {
       if (this.readOnly === false) {
         itemHtml += "<i class=\"instant\">drag_indicator</i>";
       }
-      itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate" data-layer="${index}">${layer.label}</div>`;
+      itemHtml += `<i class="visible" data-layer="${index}">visibility${layerVisible}</i><div class="max truncate" data-layer="${index}"></div>`;
       if (this.readOnly === false) {
         itemHtml += `<i class="edit" data-layer="${index}">edit</i><i class="delete" data-layer="${index}">delete</i>`;
       }
       layerItem.innerHTML = itemHtml;
+      layerItem.querySelector('div.max.truncate').textContent = layer.label;
       if (layer === this.#currentLayer && this.readOnly === false) {
         layerItem.classList.add('primary');
       }
