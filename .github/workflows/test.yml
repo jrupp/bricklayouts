@@ -20,7 +20,7 @@ jobs:
           cache: npm
 
       - name: Set up Chrome
-        uses: browser-actions/setup-chrome@v2
+        uses: browser-actions/setup-chrome@v2.2.0
         with:
           chrome-version: stable
           install-chromedriver: false
