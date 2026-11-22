@@ -302,7 +302,17 @@ describe("LayoutController MOC editing", function () {
       spyOn(controller, '_getAuthManager').and.resolveTo(authManager);
     });
 
+    // Admin functions are temporarily disabled: _isAdminUser short-circuits to false.
+    // Remove this spec and re-enable the pending ones below once that is lifted.
+    it("is false even for a member of the admin group while admin is disabled", async function () {
+      authManager.hasFeatureAccess.and.resolveTo(true);
+
+      expect(await controller._isAdminUser()).toBeFalse();
+      expect(authManager.hasFeatureAccess).not.toHaveBeenCalled();
+    });
+
     it("is true for a member of the admin group", async function () {
+      pending('Admin functions are temporarily disabled in _isAdminUser');
       authManager.hasFeatureAccess.and.resolveTo(true);
 
       expect(await controller._isAdminUser()).toBeTrue();
@@ -320,6 +330,7 @@ describe("LayoutController MOC editing", function () {
     });
 
     it("is false, rather than throwing, when the check fails", async function () {
+      pending('Admin functions are temporarily disabled in _isAdminUser');
       authManager.hasFeatureAccess.and.rejectWith(new Error('token refresh failed'));
       spyOn(console, 'error');
 
