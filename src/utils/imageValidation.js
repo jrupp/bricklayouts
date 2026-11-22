@@ -68,6 +68,8 @@ export function checkMagicBytes(buffer) {
 /**
  * Returns true when two width/height pairs have the same aspect ratio within
  * an epsilon tolerance. Guards against zero/negative/non-finite inputs.
+ * The tolerance is relative to the larger ratio, so it means the same thing for
+ * a tall, narrow image (a ratio near 0) as for a square one.
  * @param {number} w1
  * @param {number} h1
  * @param {number} w2
@@ -78,5 +80,7 @@ export function checkMagicBytes(buffer) {
 export function aspectMatches(w1, h1, w2, h2, eps = 0.005) {
   if (![w1, h1, w2, h2].every(Number.isFinite)) return false;
   if (w1 <= 0 || h1 <= 0 || w2 <= 0 || h2 <= 0) return false;
-  return Math.abs(w1 / h1 - w2 / h2) < eps;
+  const r1 = w1 / h1;
+  const r2 = w2 / h2;
+  return Math.abs(r1 - r2) / Math.max(r1, r2) < eps;
 }

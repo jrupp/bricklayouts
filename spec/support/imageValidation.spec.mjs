@@ -131,6 +131,14 @@ describe('imageValidation', function () {
       expect(aspectMatches(100, 100, 100, 110, 0.05)).toBe(false);
     });
 
+    it('applies the tolerance relative to the ratio', function () {
+      // Both ratios are within 0.005 of each other in absolute terms, but the
+      // width doubles.
+      expect(aspectMatches(8, 2000, 16, 2000)).toBe(false);
+      expect(aspectMatches(2000, 8, 2000, 16)).toBe(false);
+      expect(aspectMatches(8, 2000, 16, 4000)).toBe(true);
+    });
+
     it('rejects zero, negative, and non-finite inputs', function () {
       expect(aspectMatches(0, 100, 100, 100)).toBe(false);
       expect(aspectMatches(100, 0, 100, 100)).toBe(false);

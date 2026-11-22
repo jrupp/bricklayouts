@@ -81,6 +81,8 @@ class AuthenticationManager {
     this.cloudFeatures = null; // Stores loaded private cloud features
     /** @type {?CloudStorageManager} */
     this.cloudStorage = null; // Shared CloudStorageManager, available without a subscription
+    /** @type {?Promise<Object>} In-flight import of the cloud storage module */
+    this._cloudStorageLoading = null;
   }
 
   /**
@@ -1278,16 +1280,44 @@ class AuthenticationManager {
     if (!this.isAuthenticated) {
       return null;
     }
+    if (this.cloudStorage) {
+      return this.cloudStorage;
+    }
+    // Concurrent callers share the one import rather than each building their
+    // own instance of what is meant to be a shared manager.
+    if (!this._cloudStorageLoading) {
+      this._cloudStorageLoading = this._importCloudStorageModule()
+        .finally(() => {
+          this._cloudStorageLoading = null;
+        });
+    }
+    let CloudStorageManager;
+    try {
+      ({ CloudStorageManager } = await this._cloudStorageLoading);
+    } catch (error) {
+      console.error('Failed to load cloud storage:', error);
+      return null;
+    }
+    // A logout can land while the import is in flight; it clears the handle,
+    // and recreating it here would leave one behind for a signed-out user.
+    if (!this.isAuthenticated) {
+      return null;
+    }
     if (!this.cloudStorage) {
-      try {
-        const { CloudStorageManager } = await import('../cloud/cloudStorageController.js');
-        this.cloudStorage = new CloudStorageManager(this);
-      } catch (error) {
-        console.error('Failed to load cloud storage:', error);
-        return null;
-      }
+      this.cloudStorage = new CloudStorageManager(this);
     }
     return this.cloudStorage;
+  }
+
+  /**
+   * Imports the private cloud storage module. A seam: the module is not part of
+   * the public repository, so specs stand in for it here.
+   * @returns {Promise<{CloudStorageManager: Function}>}
+   * @private
+   */
+  // eslint-disable-next-line class-methods-use-this
+  _importCloudStorageModule() {
+    return import('../cloud/cloudStorageController.js');
   }
 
 }

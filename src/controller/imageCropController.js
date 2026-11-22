@@ -44,7 +44,8 @@ export class ImageCropController {
             </nav>
           </header>
           <div style="padding: 0.5rem;">
-            <p class="small-text no-margin">Drag to pan the image. Scroll or pinch to zoom. The highlighted region will be used.</p>
+            <p class="small-text no-margin">Drag or use the arrow keys to move the image.
+              Scroll, pinch or press + and - to zoom. The highlighted region will be used.</p>
             <div id="editorCropCanvasHost" style="margin-top: 0.5rem; width: ${viewportW}px; height: ${viewportH}px; touch-action: none; overflow: hidden;"></div>
           </div>
           <hr>
@@ -63,26 +64,39 @@ export class ImageCropController {
       const app = new Application();
       let disposed = false;
       let opened = false;
+      let closing = false;
       let cleanup = () => {};
+      // Anything that closes the dialog without choosing (Escape, a click on the
+      // overlay) is a cancel.
+      let outcome = null;
 
-      const finish = (result) => {
+      const settle = () => {
         if (disposed) return;
         disposed = true;
         cleanup();
         try { app.destroy({ removeView: true }, { children: true }); } catch (_e) { /* ignore */ }
+        dialog.remove();
+        resolve(outcome);
+      };
+
+      // Resolved only once the dialog has closed. BeerCSS closes it on the next
+      // animation frame and finds its overlay as the dialog's previous sibling;
+      // a caller that cancels out of the editor removes this dialog (see
+      // EditorController.reset()), and doing that first strands the overlay.
+      // Registered before the dialog opens so that BeerCSS closing it on its own
+      // also settles, rather than leaving the caller waiting on a closed dialog.
+      dialog.addEventListener('close', settle, { once: true });
+
+      const finish = (result) => {
+        if (disposed || closing) return;
+        outcome = result;
         if (!opened) {
-          dialog.remove();
-          resolve(result);
+          settle();
           return;
         }
-        // Resolved only once the dialog has closed. BeerCSS closes it on the next
-        // animation frame and finds its overlay as the dialog's previous sibling;
-        // a caller that cancels out of the editor removes this dialog (see
-        // EditorController.reset()), and doing that first strands the overlay.
-        dialog.addEventListener('close', () => {
-          dialog.remove();
-          resolve(result);
-        }, { once: true });
+        // ui() toggles, so a second call while the first close is pending would
+        // reopen the dialog.
+        closing = true;
         closeDialog();
       };
 
@@ -177,22 +191,64 @@ export class ImageCropController {
           app.canvas.addEventListener('pointercancel', onUp);
           app.canvas.addEventListener('pointerleave', onUp);
 
-          // Interaction: zoom (wheel)
-          const onWheel = (e) => {
-            e.preventDefault();
-            const rect = app.canvas.getBoundingClientRect();
-            const cx = e.clientX - rect.left;
-            const cy = e.clientY - rect.top;
+          // Zooms by the given factor, keeping the image point under (cx, cy) in
+          // the viewport where it is.
+          const zoomAt = (cx, cy, factor) => {
             const imgX = (cx - sprite.x) / sprite.scale.x;
             const imgY = (cy - sprite.y) / sprite.scale.y;
-            const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
             scale = Math.min(maxScale, Math.max(minScale, sprite.scale.x * factor));
             sprite.scale.set(scale);
             sprite.x = cx - imgX * scale;
             sprite.y = cy - imgY * scale;
             clampSprite();
           };
+
+          // Interaction: zoom (wheel)
+          const onWheel = (e) => {
+            e.preventDefault();
+            const rect = app.canvas.getBoundingClientRect();
+            zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY < 0 ? 1.1 : 1 / 1.1);
+          };
           app.canvas.addEventListener('wheel', onWheel, { passive: false });
+
+          // Interaction: keyboard. Arrow keys move the image the way a drag
+          // does, and + and - zoom about the selection's centre. Handled keys go
+          // no further, so the layout's own arrow-key and shortcut handling on
+          // window never sees them; anything else, Escape included, passes on.
+          app.canvas.tabIndex = 0;
+          app.canvas.setAttribute('aria-label', 'Image to crop. Use the arrow keys to move '
+            + 'it, and plus and minus to zoom.');
+          const onKeyDown = (e) => {
+            const step = e.shiftKey ? 40 : 10;
+            switch (e.key) {
+              case 'ArrowLeft':
+                sprite.x -= step;
+                break;
+              case 'ArrowRight':
+                sprite.x += step;
+                break;
+              case 'ArrowUp':
+                sprite.y -= step;
+                break;
+              case 'ArrowDown':
+                sprite.y += step;
+                break;
+              case '+':
+              case '=':
+                zoomAt(selX + selW / 2, selY + selH / 2, 1.1);
+                break;
+              case '-':
+              case '_':
+                zoomAt(selX + selW / 2, selY + selH / 2, 1 / 1.1);
+                break;
+              default:
+                return;
+            }
+            clampSprite();
+            e.preventDefault();
+            e.stopPropagation();
+          };
+          app.canvas.addEventListener('keydown', onKeyDown);
 
           // Pinch-to-zoom (two-pointer)
           const activePointers = new Map();
@@ -234,6 +290,7 @@ export class ImageCropController {
             app.canvas.removeEventListener('pointercancel', onUp);
             app.canvas.removeEventListener('pointerleave', onUp);
             app.canvas.removeEventListener('wheel', onWheel);
+            app.canvas.removeEventListener('keydown', onKeyDown);
             app.canvas.removeEventListener('pointerdown', pinchDown);
             app.canvas.removeEventListener('pointermove', pinchMove);
             app.canvas.removeEventListener('pointerup', pinchUp);

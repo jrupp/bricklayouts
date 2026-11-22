@@ -15,22 +15,15 @@ import { showSnackbar } from './snackbar.js';
 import {
   CHECKOUT_LAYOUT_KEY,
   EDITOR_LAYOUT_KEY,
-  clearOrphanedPreservation,
+  DEFAULT_MAX_AGE_MS,
 } from './preservationKeys.js';
 
 // Re-exported so importers that already treat this module as the entry point for
-// preservation keep working. index.js deliberately imports
-// clearOrphanedPreservation from preservationKeys.js instead, so that a startup
-// sweep does not drag this module, LayoutController and the cloud restore path
-// onto a signed-out visitor's critical path.
-export { CHECKOUT_LAYOUT_KEY, EDITOR_LAYOUT_KEY, clearOrphanedPreservation };
-
-/**
- * Default maximum age (in ms) for preserved layout data before it's stale.
- * Set to 24 hours.
- * @type {number}
- */
-export const DEFAULT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+// preservation keep working. index.js deliberately imports takePendingPreservation
+// from preservationKeys.js instead, so that the startup check does not drag this
+// module, LayoutController and the cloud restore path onto the critical path of
+// a visitor with nothing to restore.
+export { CHECKOUT_LAYOUT_KEY, EDITOR_LAYOUT_KEY, DEFAULT_MAX_AGE_MS };
 
 /**
  * Budget for a single preserved payload, in bytes. Web Storage gives an origin
@@ -92,6 +85,11 @@ export class LayoutPreservation {
     this.key = key;
     this.maxAgeMs = maxAgeMs;
     this.preserveMocs = preserveMocs;
+    /**
+     * How many distinct MOCs the last restore had to leave out.
+     * @type {number}
+     */
+    this.droppedMocCount = 0;
   }
 
   /**
@@ -99,7 +97,9 @@ export class LayoutPreservation {
    * Cloud layouts are saved to the cloud and stored by reference (cloudId).
    * Local layouts are serialized and stored in full.
    * Handles storage unavailability gracefully by skipping preservation.
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} True when the layout as it stands, unsaved edits
+   *   included, can be brought back by restore(). A caller about to clear the
+   *   workspace must not do so on false.
    */
   async save() {
     const layoutController = LayoutController.getInstance();
@@ -118,22 +118,25 @@ export class LayoutPreservation {
           'error'
         );
       }
-      this._reportSaveResult(this._trySetItem({
+      const stored = this._reportSaveResult(this._trySetItem({
         type: 'cloud',
         cloudId: layoutController.layoutMetadata.cloudId,
         timestamp: Date.now(),
       }));
-      return;
+      // The reference brings back the last saved copy, which only includes the
+      // current edits if the save above went through.
+      return stored && Boolean(saved);
     }
 
-    await this._saveLocalLayout(layoutController);
+    return this._saveLocalLayout(layoutController);
   }
 
   /**
    * Serializes and stores a local layout, falling back through the MOC tiers
    * when the payload will not fit.
    * @param {LayoutController} layoutController
-   * @returns {Promise<void>}
+   * @returns {Promise<boolean>} True if a payload was stored. Tier 3 counts: what
+   *   it dropped has been reported, and the rest of the layout is safe.
    * @private
    */
   async _saveLocalLayout(layoutController) {
@@ -154,8 +157,7 @@ export class LayoutPreservation {
     const wrap = () => ({ type: 'local', layoutData, timestamp: Date.now() });
 
     if (!this.preserveMocs) {
-      this._reportSaveResult(this._trySetItem(wrap()));
-      return;
+      return this._reportSaveResult(this._trySetItem(wrap()));
     }
 
     // Only the MOCs this layout actually places, not everything in the browser.
@@ -164,17 +166,22 @@ export class LayoutPreservation {
     // find expired anyway.
     let localAliases = this._takeLocalMocAliases(layoutController, layoutData);
     if (localAliases.length === 0) {
-      this._reportSaveResult(this._trySetItem(wrap()));
-      return;
+      return this._reportSaveResult(this._trySetItem(wrap()));
     }
 
     // Tier 1: embed the textures. No network, and the payload becomes fully
     // self-contained, which also makes it immune to a later MOC deletion.
     layoutData.mocs = await layoutController._serializeMocs(localAliases);
-    let result = this._trySetItem(wrap());
+    // A MOC whose texture is missing or cannot be extracted is left out of the
+    // list. Storing the payload anyway would leave its components naming an
+    // alias nothing can resolve, so that is handled like a payload too big to
+    // store: the tiers below either move it to the cloud or drop it, and say so.
+    const serialized = new Set(layoutData.mocs.map((moc) => moc.alias));
+    let result = localAliases.every((alias) => serialized.has(alias))
+      ? this._trySetItem(wrap())
+      : { status: 'quota' };
     if (result.status !== 'quota') {
-      this._reportSaveResult(result);
-      return;
+      return this._reportSaveResult(result);
     }
 
     // Tier 2: put the MOCs in the cloud instead of in the payload.
@@ -192,8 +199,7 @@ export class LayoutPreservation {
     if (outcome.ok) {
       result = this._trySetItem(wrap());
       if (result.status !== 'quota') {
-        this._reportSaveResult(result);
-        return;
+        return this._reportSaveResult(result);
       }
     }
 
@@ -212,12 +218,13 @@ export class LayoutPreservation {
             + 'checkout.',
         'error'
       );
-      return;
+      return true;
     }
 
     // Nothing fits. An empty restore is at least honest; a half-written one is not.
     this.clear();
     showSnackbar('Your layout could not be saved and will not be restored.', 'error');
+    return false;
   }
 
   /**
@@ -322,19 +329,25 @@ export class LayoutPreservation {
 
   /**
    * Tells the user when preservation failed outright. Silent on success.
+   * A failed write leaves whatever was already at the key in place, and that
+   * could be an earlier, still-fresh save; it is cleared so the restore cannot
+   * bring back an older layout than the one the message is about.
    * @param {{status: ('ok'|'quota'|'unavailable')}} result
+   * @returns {boolean} True if the payload was stored
    * @private
    */
   _reportSaveResult(result) {
     if (result.status === 'ok') {
-      return;
+      return true;
     }
+    this.clear();
     showSnackbar(
       result.status === 'quota'
         ? 'Your layout is too large to save and will not be restored.'
         : 'Your layout could not be saved and will not be restored.',
       'error'
     );
+    return false;
   }
 
   /**
@@ -342,9 +355,17 @@ export class LayoutPreservation {
    * data older than maxAgeMs. Cloud references are reloaded from cloud storage
    * (only if the user is still authenticated with cloud access). The storage
    * entry is always removed after a restore attempt with valid, fresh data.
+   *
+   * A component naming a MOC that nothing has registered is dropped, with a
+   * message, rather than failing the whole import. When the caller can say when
+   * the user's cloud MOCs will have been registered, the restore waits for that
+   * first, but only if the layout actually names a MOC it cannot yet resolve.
+   * @param {Object} [options]
+   * @param {?Promise<void>} [options.cloudMocsReady] Settles once the signed-in
+   *   user's cloud MOCs are registered
    * @returns {Promise<boolean>} True if a layout was restored, false otherwise.
    */
-  async restore() {
+  async restore({ cloudMocsReady = null } = {}) {
     let raw;
     try {
       raw = this.storage.getItem(this.key);
@@ -374,7 +395,7 @@ export class LayoutPreservation {
     const layoutController = LayoutController.getInstance();
 
     if (payload.type === 'cloud') {
-      return this._restoreCloudLayout(layoutController, payload);
+      return this._restoreCloudLayout(layoutController, payload, cloudMocsReady);
     }
 
     if (!payload.layoutData) {
@@ -382,19 +403,61 @@ export class LayoutPreservation {
       return false;
     }
 
-    await layoutController._importLayout(payload.layoutData);
-    this.clear();
-    return true;
+    return this._importPreserved(layoutController, payload.layoutData, null, cloudMocsReady);
+  }
+
+  /**
+   * Imports a preserved layout. Whatever happens, the entry is cleared: a payload
+   * that failed once will fail the same way next time.
+   * @param {LayoutController} layoutController
+   * @param {SerializedLayout} layoutData
+   * @param {?LayoutMetadata} cloudInfo
+   * @param {?Promise<void>} cloudMocsReady
+   * @returns {Promise<boolean>} True if the layout was imported
+   * @private
+   */
+  async _importPreserved(layoutController, layoutData, cloudInfo, cloudMocsReady) {
+    this.droppedMocCount = 0;
+    try {
+      // Optional so that a stand-in controller without it still restores.
+      const unresolved = () => layoutController._unresolvedAliases?.(layoutData) ?? [];
+      let missing = unresolved();
+      if (missing.length > 0 && cloudMocsReady) {
+        await cloudMocsReady;
+        missing = unresolved();
+      }
+      if (missing.length > 0) {
+        // Most likely a MOC that only ever existed in the page that was left.
+        this.droppedMocCount = this._stripLocalMocComponents(layoutData, new Set(missing));
+        showSnackbar(`${this.droppedMocCount} custom MOC(s) could not be restored.`, 'error');
+      }
+      if (cloudInfo) {
+        await layoutController._importLayout(layoutData, cloudInfo);
+      } else {
+        await layoutController._importLayout(layoutData);
+      }
+      return true;
+    } catch (error) {
+      console.error('Unable to restore the preserved layout:', error);
+      // An import that threw part way through can leave some of the layout
+      // behind; a clean workspace is easier to trust than a partial one.
+      layoutController.reset();
+      showSnackbar('Your previous layout could not be restored.', 'error');
+      return false;
+    } finally {
+      this.clear();
+    }
   }
 
   /**
    * Reloads a cloud layout referenced by its cloudId.
    * @param {LayoutController} layoutController
    * @param {{ cloudId: string }} payload
+   * @param {?Promise<void>} cloudMocsReady
    * @returns {Promise<boolean>}
    * @private
    */
-  async _restoreCloudLayout(layoutController, payload) {
+  async _restoreCloudLayout(layoutController, payload, cloudMocsReady) {
     if (!payload.cloudId) {
       this.clear();
       return false;
@@ -424,20 +487,18 @@ export class LayoutPreservation {
       return false;
     }
 
-    await layoutController._importLayout(loaded.layoutData, {
+    const imported = await this._importPreserved(layoutController, loaded.layoutData, {
       cloudId: loaded.layoutId,
       s3Key: loaded.s3Key,
       lastSaved: loaded.updatedAt || loaded.createdAt,
       version: loaded.layoutData.version,
       isPublic: loaded.isPublic || false,
       shareCode: loaded.shareCode || null,
-    });
-    if (loaded.layoutName) {
+    }, cloudMocsReady);
+    if (imported && loaded.layoutName) {
       layoutController.setLayoutName(loaded.layoutName);
     }
-
-    this.clear();
-    return true;
+    return imported;
   }
 
   /**
@@ -451,4 +512,30 @@ export class LayoutPreservation {
       // Storage unavailable — nothing to clean up.
     }
   }
+}
+
+/**
+ * Restores the layout a previous page load left behind, as found by
+ * takePendingPreservation(). Called during startup, before the loading overlay
+ * comes off, so the user never sees an empty workspace that then fills in.
+ * @param {import('./preservationKeys.js').PendingPreservation} pending
+ * @param {Object} [options]
+ * @param {?Promise<void>} [options.cloudMocsReady] See {@link LayoutPreservation#restore}
+ * @returns {Promise<boolean>} True if a layout was restored
+ */
+export async function restorePendingLayout({ storage, key, kind }, { cloudMocsReady = null } = {}) {
+  const preservation = new LayoutPreservation({ storage, key });
+  const restored = await preservation.restore({ cloudMocsReady });
+  // The checkout return flow reports on its own; a reload out of the editor
+  // would otherwise leave the user wondering where the editor went. This
+  // replaces the restore's own note about dropped MOCs, so it carries it.
+  if (restored && kind === 'editor') {
+    const dropped = preservation.droppedMocCount;
+    showSnackbar(
+      'The page reloaded while the component editor was open. Your layout has been restored'
+        + (dropped > 0 ? `, except for ${dropped} custom MOC(s) that no longer exist.` : '.'),
+      dropped > 0 ? 'error' : 'info'
+    );
+  }
+  return restored;
 }

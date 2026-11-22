@@ -7,7 +7,7 @@ import { InventoryController } from './controller/inventoryController.js';
 import { LayoutController } from './controller/layoutController.js';
 import { AccountMenuController } from './controller/accountMenuController.js';
 import { AuthenticationManager } from './controller/authenticationController.js';
-import { clearOrphanedPreservation } from './utils/preservationKeys.js';
+import { takePendingPreservation } from './utils/preservationKeys.js';
 // eslint-disable-next-line object-curly-newline
 import { Application, Assets, Color, path } from './pixi.mjs';
 
@@ -31,8 +31,14 @@ if (!wantsSubscribeDialog) {
     // before anything else. The URL alone decides when it does.
   }
 }
+// Settles to null rather than rejecting: left unhandled until the await far
+// below, a failed fetch would be reported as an unhandled rejection and then
+// abort startup with the loading overlay still up.
 const subscriptionDialogReady = wantsSubscribeDialog
-  ? import('./controller/subscriptionDialogController.js')
+  ? import('./controller/subscriptionDialogController.js').catch((error) => {
+    console.error('Failed to load the subscription dialog:', error);
+    return null;
+  })
   : null;
 
 const canvasContainer = document.getElementById('canvasContainer');
@@ -86,12 +92,38 @@ if (authManager.isAuthenticated && authManager.hasCloudAccess) {
 // Custom MOCs are available to every signed-in user, subscription or not.
 // Startup is not blocked on it, but the promise is held: a preserved layout can
 // place cloud MOCs, and restoring it before their tracks are registered would
-// leave those components unable to resolve their alias.
+// leave those components unable to resolve their alias. The restore below only
+// waits on it when the layout names a MOC that is not registered yet.
 const cloudMocsReady = authManager.isAuthenticated
   ? layoutController.loadCloudMocs() : Promise.resolve();
 
 // Update cloud menu visibility based on authentication state
 await layoutController.updateCloudMenuVisibility();
+
+// A layout left behind by a reload out of the editor or by a trip to Stripe
+// Checkout is restored here, while the loading overlay is still up, so the user
+// never sees an empty workspace that then fills in. Only that layout's own
+// assets are waited for, and the cloud MOC list only if it names a MOC that is
+// not registered yet.
+if (!layoutController.readOnly) {
+  let pendingRestore = null;
+  try {
+    pendingRestore = takePendingPreservation(window.location.search, {
+      session: sessionStorage,
+      local: localStorage,
+    });
+  } catch (error) {
+    // Web Storage access itself throws in some privacy modes; nothing to restore.
+  }
+  if (pendingRestore) {
+    try {
+      const { restorePendingLayout } = await import('./utils/layoutPreservation.js');
+      await restorePendingLayout(pendingRestore, { cloudMocsReady });
+    } catch (error) {
+      console.error('Failed to restore the preserved layout:', error);
+    }
+  }
+}
 
 // Detect Stripe Checkout or Portal return flow via URL query parameters
 const checkoutParams = new URLSearchParams(window.location.search);
@@ -99,18 +131,11 @@ const checkoutSessionId = checkoutParams.get('session_id');
 const checkoutCancelled = checkoutParams.get('checkout');
 const portalReturn = checkoutParams.get('portal_return');
 
-// Anything left in storage that the branch below is not about to consume is
-// orphaned, and a MOC deleted since it was written would make it throw on restore.
-clearOrphanedPreservation(window.location.search, {
-  session: sessionStorage,
-  local: localStorage,
-});
-
 if (checkoutSessionId || checkoutCancelled === 'cancelled' || portalReturn === 'true') {
   // Dynamically import SubscriptionService only for checkout/portal return flows
   import('./cloud/subscriptionService.js').then(async ({ SubscriptionService }) => {
-    // The restore below can place cloud MOCs, so their tracks must exist first.
-    await cloudMocsReady;
+    // Not waiting on cloudMocsReady: the preserved layout was restored above,
+    // so the restore these handlers attempt finds nothing left to do.
     const subscriptionService = new SubscriptionService(authManager);
     try {
       if (checkoutSessionId) {
@@ -140,15 +165,17 @@ if (wantsSubscribeDialog) {
     window.history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search);
   }
   // Non-null exactly when wantsSubscribeDialog is true: the two are set together.
-  const { SubscriptionDialogController } = await subscriptionDialogReady;
-  if (authManager.isAuthenticated) {
+  // The module itself is null when it failed to load, which was already logged.
+  const SubscriptionDialogController = (await subscriptionDialogReady)
+    ?.SubscriptionDialogController;
+  if (SubscriptionDialogController && authManager.isAuthenticated) {
     const hasAccess = await authManager.hasFeatureAccess('subscription');
     if (!hasAccess) {
       SubscriptionDialogController.getInstance().show('Choose a plan to get started.');
     } else {
       sessionStorage.removeItem('pendingSubscribe');
     }
-  } else {
+  } else if (SubscriptionDialogController) {
     sessionStorage.setItem('pendingSubscribe', 'true');
     SubscriptionDialogController.getInstance()
       .show('Sign in or create an account to subscribe.', 'Get Started');

@@ -5,70 +5,134 @@
 import {
   EDITOR_LAYOUT_KEY,
   CHECKOUT_LAYOUT_KEY,
-  clearOrphanedPreservation,
+  DEFAULT_MAX_AGE_MS,
+  takePendingPreservation,
 } from '../../src/utils/preservationKeys.js';
 
 /**
  * These live apart from layoutPreservation.spec.mjs for the same reason the code
- * does: the startup sweep and the storage keys must be reachable without the
+ * does: the startup check and the storage keys must be reachable without the
  * LayoutPreservation class, which pulls in LayoutController and the cloud restore
  * path. Importing them here from preservationKeys.js keeps that guarantee under
  * test rather than only asserted in a comment.
  */
 describe('Feature: preservation-keys', () => {
-  describe('clearOrphanedPreservation', () => {
+  describe('takePendingPreservation', () => {
+    const NOW = 1_800_000_000_000;
     let session;
     let local;
 
+    /** A minimal in-memory Storage. */
+    const makeStorage = () => {
+      const data = new Map();
+      return {
+        getItem: (key) => (data.has(key) ? data.get(key) : null),
+        setItem: (key, value) => { data.set(key, String(value)); },
+        removeItem: (key) => { data.delete(key); },
+      };
+    };
+
+    const localPayload = (age = 0) => JSON.stringify({
+      type: 'local', layoutData: { layers: [] }, timestamp: NOW - age,
+    });
+    const cloudPayload = (age = 0) => JSON.stringify({
+      type: 'cloud', cloudId: 'cloud-1', timestamp: NOW - age,
+    });
+    const take = (search) => takePendingPreservation(search, { session, local }, NOW);
+
     beforeEach(() => {
-      session = { removeItem: jasmine.createSpy('removeItem') };
-      local = { removeItem: jasmine.createSpy('removeItem') };
+      session = makeStorage();
+      local = makeStorage();
     });
 
-    it('clears both keys on an ordinary page load', () => {
-      clearOrphanedPreservation('', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).toHaveBeenCalledWith(CHECKOUT_LAYOUT_KEY);
+    it('finds nothing on an ordinary page load with nothing stored', () => {
+      expect(take('')).toBeNull();
     });
 
-    it('keeps the checkout payload when returning from a completed checkout', () => {
-      clearOrphanedPreservation('?session_id=cs_test_1', { session, local });
+    describe('the editor payload', () => {
+      it('restores a local layout left by a reload while the editor was open', () => {
+        session.setItem(EDITOR_LAYOUT_KEY, localPayload());
 
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).not.toHaveBeenCalled();
+        expect(take('')).toEqual({ storage: session, key: EDITOR_LAYOUT_KEY, kind: 'editor' });
+      });
+
+      it('drops a cloud layout reference, which can simply be reopened', () => {
+        session.setItem(EDITOR_LAYOUT_KEY, cloudPayload());
+
+        expect(take('')).toBeNull();
+        expect(session.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+      });
+
+      it('drops a stale or corrupt payload', () => {
+        session.setItem(EDITOR_LAYOUT_KEY, localPayload(DEFAULT_MAX_AGE_MS + 1));
+        expect(take('')).toBeNull();
+        expect(session.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+
+        session.setItem(EDITOR_LAYOUT_KEY, '{not json');
+        expect(take('')).toBeNull();
+        expect(session.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+      });
     });
 
-    it('keeps the checkout payload when returning from a cancelled checkout', () => {
-      clearOrphanedPreservation('?checkout=cancelled', { session, local });
+    describe('the checkout payload', () => {
+      it('restores it on the return from a completed checkout', () => {
+        local.setItem(CHECKOUT_LAYOUT_KEY, localPayload());
 
-      expect(local.removeItem).not.toHaveBeenCalled();
+        expect(take('?session_id=cs_test_1'))
+          .toEqual({ storage: local, key: CHECKOUT_LAYOUT_KEY, kind: 'checkout' });
+      });
+
+      it('restores it on the return from a cancelled checkout, cloud layouts included', () => {
+        local.setItem(CHECKOUT_LAYOUT_KEY, cloudPayload());
+
+        expect(take('?checkout=cancelled'))
+          .toEqual({ storage: local, key: CHECKOUT_LAYOUT_KEY, kind: 'checkout' });
+      });
+
+      it('leaves a fresh one alone on any other load, since another tab may be at Stripe', () => {
+        local.setItem(CHECKOUT_LAYOUT_KEY, localPayload());
+
+        expect(take('')).toBeNull();
+        expect(take('?subscribe=true')).toBeNull();
+        expect(local.getItem(CHECKOUT_LAYOUT_KEY)).not.toBeNull();
+      });
+
+      it('does not restore it on a portal return, which never preserves a layout', () => {
+        local.setItem(CHECKOUT_LAYOUT_KEY, localPayload());
+
+        expect(take('?portal_return=true')).toBeNull();
+        expect(local.getItem(CHECKOUT_LAYOUT_KEY)).not.toBeNull();
+      });
+
+      it('sweeps a stale one on any load', () => {
+        local.setItem(CHECKOUT_LAYOUT_KEY, localPayload(DEFAULT_MAX_AGE_MS + 1));
+
+        expect(take('')).toBeNull();
+        expect(local.getItem(CHECKOUT_LAYOUT_KEY)).toBeNull();
+      });
     });
 
-    it('keeps the checkout payload when returning from the billing portal', () => {
-      clearOrphanedPreservation('?portal_return=true', { session, local });
+    it('prefers the editor payload when a checkout was started from inside the editor', () => {
+      // The checkout payload is the editor's scratch workspace; the user's real
+      // layout is the one the editor set aside.
+      session.setItem(EDITOR_LAYOUT_KEY, localPayload());
+      local.setItem(CHECKOUT_LAYOUT_KEY, localPayload());
 
-      expect(local.removeItem).not.toHaveBeenCalled();
+      expect(take('?session_id=cs_test_1'))
+        .toEqual({ storage: session, key: EDITOR_LAYOUT_KEY, kind: 'editor' });
+      // Otherwise the return flow would restore the scratch over the top.
+      expect(local.getItem(CHECKOUT_LAYOUT_KEY)).toBeNull();
     });
 
-    it('clears both keys for an unrelated query string', () => {
-      clearOrphanedPreservation('?subscribe=true', { session, local });
+    it('treats a storage area that refuses access as nothing to restore', () => {
+      const throwing = {
+        getItem: () => { throw new Error('unavailable'); },
+        removeItem: () => { throw new Error('unavailable'); },
+      };
 
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-      expect(local.removeItem).toHaveBeenCalledWith(CHECKOUT_LAYOUT_KEY);
-    });
-
-    it('always clears the editor key, which a page load can never be using', () => {
-      clearOrphanedPreservation('?session_id=cs_test_1&checkout=cancelled', { session, local });
-
-      expect(session.removeItem).toHaveBeenCalledWith(EDITOR_LAYOUT_KEY);
-    });
-
-    it('does not propagate a storage area that refuses access', () => {
-      const throwing = { removeItem: () => { throw new Error('unavailable'); } };
-
-      expect(() => clearOrphanedPreservation('', { session: throwing, local: throwing }))
-        .not.toThrow();
+      expect(takePendingPreservation('?session_id=cs_test_1', {
+        session: throwing, local: throwing,
+      }, NOW)).toBeNull();
     });
   });
 

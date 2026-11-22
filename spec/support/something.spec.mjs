@@ -11653,6 +11653,23 @@ describe("LayoutController", function() {
             expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
         });
 
+        it("exitEditorMode clears a preserved layout that fails to import", async function () {
+            const payload = {
+                type: 'local',
+                layoutData: { version: 2, x: 1, y: 2, zoom: 1, layers: [], config: {} },
+                timestamp: Date.now(),
+            };
+            sessionStorage.setItem(EDITOR_LAYOUT_KEY, JSON.stringify(payload));
+            layoutController.editorMode = true;
+            const resetSpy = spyOn(layoutController, 'reset').and.stub();
+            spyOn(layoutController, '_importLayout').and.rejectWith(new Error('bad alias'));
+            spyOn(console, 'error');
+            await expectAsync(layoutController.exitEditorMode()).toBeResolved();
+            // Once on the way out of the editor, and again for the failed import.
+            expect(resetSpy).toHaveBeenCalledTimes(2);
+            expect(sessionStorage.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+        });
+
         it("onNewLayoutClick exits editor mode first when active", async function () {
             layoutController.editorMode = true;
             const exitSpy = spyOn(layoutController, 'exitEditorMode').and.callFake(() => {

@@ -9,6 +9,7 @@ import {
   STORAGE_BUDGET_BYTES,
   estimateStorageBytes,
   isQuotaError,
+  restorePendingLayout,
 } from '../../src/utils/layoutPreservation.js';
 // eslint-disable-next-line no-unused-vars
 import { LayoutController } from '../../src/controller/layoutController.js';
@@ -43,6 +44,8 @@ describe('Feature: layout-preservation', () => {
           importedData = data;
           importedCloudInfo = cloudInfo;
         }),
+      _unresolvedAliases: jasmine.createSpy('_unresolvedAliases').and.returnValue([]),
+      reset: jasmine.createSpy('reset'),
     };
 
     layoutControllerSpy = spyOn(LayoutController, 'getInstance')
@@ -431,7 +434,7 @@ describe('Feature: layout-preservation', () => {
       mockLayoutController.layers = [layerOver([trackA])];
       mockLayoutController._serializeMocs = jasmine.createSpy('_serializeMocs')
         .and.callFake((aliases) => Promise.resolve(aliases.map((alias) => ({
-          name: alias, textureData: 'data:image/png;base64,AAAA',
+          alias, name: alias, textureData: 'data:image/png;base64,AAAA',
         }))));
       mockLayoutController._ensureMocsInCloud = jasmine.createSpy('_ensureMocsInCloud')
         .and.returnValue(Promise.resolve({ ok: true, reason: null, limit: null }));
@@ -573,7 +576,7 @@ describe('Feature: layout-preservation', () => {
     it('refuses a payload that is over the storage budget before writing it', async () => {
       // The pre-check keeps an obviously hopeless write from being attempted.
       mockLayoutController._serializeMocs.and.returnValue(Promise.resolve([{
-        name: 'A', textureData: 'x'.repeat(STORAGE_BUDGET_BYTES / 2),
+        alias: 'localA', name: 'A', textureData: 'x'.repeat(STORAGE_BUDGET_BYTES / 2),
       }]));
       mockLayoutController._ensureMocsInCloud.and.returnValue(
         Promise.resolve({ ok: false, reason: 'declined', limit: null })
@@ -584,6 +587,176 @@ describe('Feature: layout-preservation', () => {
 
       expect(mockLayoutController._ensureMocsInCloud).toHaveBeenCalled();
       expect(storedLayout().layers[0].components.length).toBe(0);
+    });
+
+    it('falls back to the cloud when a MOC could not be embedded', async () => {
+      // _serializeMocs leaves out a MOC whose texture it cannot extract.
+      mockLayoutController._serializeMocs.and.returnValue(Promise.resolve([]));
+
+      const preserved = await newService().save();
+
+      expect(preserved).toBeTrue();
+      expect(mockLayoutController._ensureMocsInCloud).toHaveBeenCalled();
+      expect(storedLayout().mocs).toBeUndefined();
+    });
+
+    it('drops, and reports, a MOC that could be neither embedded nor uploaded', async () => {
+      mockLayoutController._serializeMocs.and.returnValue(Promise.resolve([]));
+      mockLayoutController._ensureMocsInCloud.and.returnValue(
+        Promise.resolve({ ok: false, reason: 'uploadFailed', limit: null })
+      );
+      const snackbar = seedSnackbar();
+
+      await newService().save();
+
+      expect(storedLayout().layers[0].components.length).toBe(0);
+      expect(snackbar.textContent).toContain('1 custom MOC(s) could not be saved');
+    });
+
+    it('reports a stored payload as preserved', async () => {
+      await expectAsync(newService().save()).toBeResolvedTo(true);
+    });
+
+    it('reports nothing preserved when no tier fits', async () => {
+      storage.failures = ['quota', 'quota', 'quota'];
+      seedSnackbar();
+
+      await expectAsync(newService().save()).toBeResolvedTo(false);
+    });
+
+    it('clears an older payload when a later save fails', async () => {
+      // A stale but still-fresh payload must not come back after the user has
+      // been told nothing will be restored.
+      storage.setItem(MOC_KEY, JSON.stringify({ type: 'local', layoutData: {}, timestamp: 1 }));
+      storage.failures = ['security'];
+      seedSnackbar();
+
+      await expectAsync(newService({ preserveMocs: false }).save()).toBeResolvedTo(false);
+
+      expect(storage.getItem(MOC_KEY)).toBeNull();
+    });
+  });
+
+  describe('reporting whether a cloud layout was preserved', () => {
+    beforeEach(() => {
+      mockLayoutController.isCloudLayout.and.returnValue(true);
+      mockLayoutController.layoutMetadata = { cloudId: 'cloud-1' };
+    });
+
+    it('is preserved when the cloud save went through', async () => {
+      await expectAsync(newService().save()).toBeResolvedTo(true);
+    });
+
+    it('is not preserved when the cloud save failed, since the edits are not in it', async () => {
+      mockLayoutController._saveToCloud.and.returnValue(Promise.resolve(false));
+
+      await expectAsync(newService().save()).toBeResolvedTo(false);
+    });
+  });
+
+  describe('restoring a layout that cannot be imported as it stands', () => {
+    const layoutWith = (...types) => ({
+      version: 2,
+      x: 0,
+      y: 0,
+      zoom: 1,
+      layers: [{ name: 'L', components: types.map((type) => ({ type, pose: {} })) }],
+      config: {},
+    });
+
+    const preserve = (layoutData) => sessionStorage.setItem(TEST_KEY, JSON.stringify({
+      type: 'local', layoutData, timestamp: Date.now(),
+    }));
+
+    const snackbarText = () => document.querySelector('#cloudSnackbar span')?.textContent;
+
+    beforeEach(() => {
+      if (!window.ui) {
+        window.ui = () => {};
+      }
+      spyOn(window, 'ui');
+      document.getElementById('cloudSnackbar')?.remove();
+    });
+
+    afterEach(() => {
+      document.getElementById('cloudSnackbar')?.remove();
+    });
+
+    it('reports a failed import, resets the workspace and clears the entry', async () => {
+      preserve(layoutWith('railStraight9V'));
+      mockLayoutController._importLayout.and.rejectWith(new Error('unknown alias'));
+      spyOn(console, 'error');
+
+      await expectAsync(newService().restore()).toBeResolvedTo(false);
+
+      expect(mockLayoutController.reset).toHaveBeenCalled();
+      expect(snackbarText()).toBe('Your previous layout could not be restored.');
+      expect(sessionStorage.getItem(TEST_KEY)).toBeNull();
+    });
+
+    it('does not wait for cloud MOCs when every alias already resolves', async () => {
+      preserve(layoutWith('railStraight9V'));
+      // Never settles: waiting on it would hang the restore.
+      const cloudMocsReady = new Promise(() => {});
+
+      await expectAsync(newService().restore({ cloudMocsReady })).toBeResolvedTo(true);
+
+      expect(importedData.layers[0].components.length).toBe(1);
+    });
+
+    it('waits for cloud MOCs when the layout names one not yet registered', async () => {
+      preserve(layoutWith('railStraight9V', 'mocCloud1'));
+      let registered = false;
+      mockLayoutController._unresolvedAliases.and.callFake(() => (registered ? [] : ['mocCloud1']));
+      const cloudMocsReady = Promise.resolve().then(() => { registered = true; });
+
+      await expectAsync(newService().restore({ cloudMocsReady })).toBeResolvedTo(true);
+
+      expect(importedData.layers[0].components.map((c) => c.type))
+        .toEqual(['railStraight9V', 'mocCloud1']);
+      expect(snackbarText()).toBeUndefined();
+    });
+
+    it('tells the user why their layout came back after a reload out of the editor', async () => {
+      preserve(layoutWith('railStraight9V'));
+
+      const pending = { storage: sessionStorage, key: TEST_KEY, kind: 'editor' };
+      await expectAsync(restorePendingLayout(pending)).toBeResolvedTo(true);
+
+      expect(snackbarText()).toContain('Your layout has been restored.');
+      expect(sessionStorage.getItem(TEST_KEY)).toBeNull();
+    });
+
+    it('keeps the note about dropped MOCs in the message after an editor reload', async () => {
+      preserve(layoutWith('railStraight9V', 'localGone'));
+      mockLayoutController._unresolvedAliases.and.returnValue(['localGone']);
+
+      const pending = { storage: sessionStorage, key: TEST_KEY, kind: 'editor' };
+      await expectAsync(restorePendingLayout(pending)).toBeResolvedTo(true);
+
+      expect(snackbarText()).toContain('except for 1 custom MOC(s) that no longer exist');
+    });
+
+    it('leaves the reporting to the checkout return flow', async () => {
+      preserve(layoutWith('railStraight9V'));
+
+      const pending = { storage: sessionStorage, key: TEST_KEY, kind: 'checkout' };
+      await expectAsync(restorePendingLayout(pending)).toBeResolvedTo(true);
+
+      expect(importedData).not.toBeNull();
+      expect(snackbarText()).toBeUndefined();
+    });
+
+    it('drops, and reports, components whose MOC no longer exists', async () => {
+      preserve(layoutWith('railStraight9V', 'localGone', 'localGone'));
+      mockLayoutController._unresolvedAliases.and.returnValue(['localGone']);
+
+      await expectAsync(newService().restore({ cloudMocsReady: Promise.resolve() }))
+        .toBeResolvedTo(true);
+
+      expect(importedData.layers[0].components.map((c) => c.type)).toEqual(['railStraight9V']);
+      expect(snackbarText()).toBe('1 custom MOC(s) could not be restored.');
+      expect(sessionStorage.getItem(TEST_KEY)).toBeNull();
     });
   });
 });

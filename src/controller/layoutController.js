@@ -786,6 +786,26 @@ export class LayoutController {
   }
 
   /**
+   * The aliases a layout's components name that nothing can resolve yet: not in
+   * the base data, and not among the MOCs the layout itself carries. In practice
+   * these are MOCs, either cloud ones not registered yet or local ones that no
+   * longer exist.
+   * @param {SerializedLayout} data
+   * @returns {string[]}
+   */
+  _unresolvedAliases(data) {
+    const known = new Set(this.trackData.bundles[0].assets.map((track) => track.alias));
+    if (Array.isArray(data.mocs)) {
+      data.mocs.forEach((moc) => {
+        if (typeof moc?.alias === 'string') {
+          known.add(moc.alias);
+        }
+      });
+    }
+    return this._extractLayoutAliases(data).filter((alias) => !known.has(alias));
+  }
+
+  /**
    * Returns true if any component in the layout is a photo, which means we
    * need to also load the photoOutlineSvg asset before constructing components.
    * @param {SerializedLayout} data
@@ -820,6 +840,54 @@ export class LayoutController {
     return { layoutData: layout, layoutName: null, source: 'file' };
   }
 
+  /**
+   * Fetch and display the layout a read-only page is for, loading the assets it
+   * places and nothing else. Those are loaded before this resolves, and so
+   * before the loading overlay comes off: a visitor scanning a QR code on a
+   * weak connection sees the layout as soon as its own assets arrive.
+   *
+   * MOCs the layout carries are registered first. Their aliases are not in the
+   * manifest, so until then Assets would take them for URLs and fail the load.
+   * MOCs it carries but does not place are left out entirely.
+   * @returns {Promise<Boolean>} False if there is no such layout or it could
+   *   not be loaded
+   * @private
+   */
+  async _loadReadOnlyLayout() {
+    try {
+      const result = await this._fetchReadOnlyLayoutData();
+      if (!result) {
+        return false;
+      }
+      const { layoutData } = result;
+
+      const neededAliases = this._extractLayoutAliases(layoutData);
+      if (Array.isArray(layoutData.mocs)) {
+        const placed = new Set(neededAliases);
+        layoutData.mocs = layoutData.mocs.filter((moc) => placed.has(moc?.alias));
+        if (layoutData.mocs.length > 0) {
+          await this._loadLayoutMocs(layoutData.mocs);
+        }
+      }
+
+      // An embedded MOC is already in the cache, and its alias is not one Assets
+      // can resolve, so only what is not there yet is loaded.
+      const unloaded = neededAliases.filter((alias) => !Assets.cache.has(alias));
+      if (unloaded.length > 0) {
+        await Assets.load(unloaded);
+      }
+
+      await this._importLayout(layoutData);
+      if (result.layoutName) {
+        this.setLayoutName(result.layoutName);
+      }
+      return true;
+    } catch (error) {
+      console.error('Failed to load the read-only layout:', error);
+      return false;
+    }
+  }
+
   async init() {
     if (window.location.pathname !== '/') {
       this.readOnly = true;
@@ -840,23 +908,7 @@ export class LayoutController {
     if (this.readOnly) {
       await Assets.load(['baseplate', 'shape', 'text']);
       this.createComponentBrowser();
-      try {
-        const result = await this._fetchReadOnlyLayoutData();
-        if (!result) {
-          document.getElementById('notfound').classList.remove('hidden');
-          return;
-        }
-
-        const neededAliases = this._extractLayoutAliases(result.layoutData);
-        if (neededAliases.length > 0) {
-          await Assets.load(neededAliases);
-        }
-
-        await this._importLayout(result.layoutData);
-        if (result.layoutName) {
-          this.setLayoutName(result.layoutName);
-        }
-      } catch (error) {
+      if (!(await this._loadReadOnlyLayout())) {
         document.getElementById('notfound').classList.remove('hidden');
       }
     } else {
@@ -3263,7 +3315,7 @@ export class LayoutController {
     }
 
     const editor = await this._enterEditorMode(isAdmin);
-    editor.showExisting(baseData, texture);
+    editor?.showExisting(baseData, texture);
   }
 
   /**
@@ -3307,6 +3359,10 @@ export class LayoutController {
     }
 
     const editor = await this._openNewMocEditor(rendered.texture, isAdmin);
+    if (!editor) {
+      rendered.texture.destroy(true);
+      return;
+    }
     editor.showRendered(rendered.texture, rendered.width, rendered.height);
   }
 
@@ -3866,6 +3922,10 @@ export class LayoutController {
 
       const texture = Texture.from(bitmap);
       const editor = await this._openNewMocEditor(texture, isAdmin);
+      if (!editor) {
+        texture.destroy(true);
+        return;
+      }
       editor.show(texture);
     };
     input.click();
@@ -3876,7 +3936,8 @@ export class LayoutController {
    * caller then shows the editor.
    * @param {Texture} texture The new MOC's image
    * @param {Boolean} isAdmin
-   * @returns {Promise<EditorController>}
+   * @returns {Promise<?EditorController>} Null if the editor did not open, in
+   *   which case the texture is the caller's to dispose of
    * @private
    */
   async _openNewMocEditor(texture, isAdmin) {
@@ -3888,6 +3949,10 @@ export class LayoutController {
     Assets.cache.set(alias, texture);
 
     const editor = await this._enterEditorMode(isAdmin);
+    if (!editor) {
+      Assets.cache.remove(alias);
+      return null;
+    }
     editor.currentAlias = alias;
     editor.baseData.alias = alias;
     return editor;
@@ -3917,11 +3982,38 @@ export class LayoutController {
    * preserve the user's current layout so exitEditorMode can restore it, then
    * clear the workspace and set the `editor-mode` body class that controls which
    * toolbar buttons are hidden. The caller then shows the editor.
+   *
+   * Nothing is cleared unless the layout was preserved first: a failed cloud
+   * save, a declined MOC upload or unavailable storage leaves the workspace as
+   * it was, and the editor does not open.
    * @param {Boolean} isAdmin
-   * @returns {Promise<EditorController>}
+   * @returns {Promise<?EditorController>} Null if the layout could not be
+   *   preserved, in which case the user has been told
    * @private
    */
   async _enterEditorMode(isAdmin) {
+    const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import(
+      '../utils/layoutPreservation.js'
+    );
+    let preserved = false;
+    try {
+      preserved = await new LayoutPreservation({
+        storage: sessionStorage,
+        key: EDITOR_LAYOUT_KEY,
+      }).save();
+    } catch (error) {
+      // Reading sessionStorage itself throws when storage is switched off.
+      console.error('Unable to preserve the layout before opening the editor:', error);
+    }
+    if (!preserved) {
+      showSnackbar(
+        'Your layout could not be set aside, so the editor did not open. '
+          + 'Save or download your layout, then try again.',
+        'error'
+      );
+      return null;
+    }
+
     const module = await import('./editorController.js');
     if (LayoutController.editorController) {
       LayoutController.editorController.reset();
@@ -3929,10 +4021,6 @@ export class LayoutController {
     } else {
       LayoutController.editorController = new module.EditorController(this, isAdmin);
     }
-    const { LayoutPreservation, EDITOR_LAYOUT_KEY } = await import(
-      '../utils/layoutPreservation.js'
-    );
-    await new LayoutPreservation({ storage: sessionStorage, key: EDITOR_LAYOUT_KEY }).save();
     this.reset();
     this.editorMode = true;
     document.body.classList.add('editor-mode');

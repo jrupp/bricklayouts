@@ -97,7 +97,7 @@ describe("cloud MOC dialogs", function () {
   });
 
   describe("showMocLimitDialog", function () {
-    it("explains that the MOC was kept locally and how to store more", function () {
+    it("explains how long the MOC lasts and how to store more", function () {
       showMocLimitDialog();
 
       const dialog = document.getElementById('mocLimitDialog');
@@ -105,7 +105,9 @@ describe("cloud MOC dialogs", function () {
       const paragraphs = Array.from(dialog.querySelectorAll('p'))
         .map((p) => p.textContent.replace(/\s+/g, ' ').trim());
       expect(paragraphs).toEqual([
-        "Don't worry, your MOC has been saved locally.",
+        'Your MOC is available until you close BrickLayouts. It will be lost if you refresh or '
+          + 'close the page, unless you place it in a layout and download that layout. Upgrade '
+          + 'to store it in the cloud.',
         'Free accounts may only store 10 MOCs in the cloud. To store more MOCs in the cloud, '
           + 'please upgrade your subscription.',
       ]);

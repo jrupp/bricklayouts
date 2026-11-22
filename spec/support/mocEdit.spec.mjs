@@ -351,7 +351,7 @@ describe("LayoutController MOC editing", function () {
         showExisting: jasmine.createSpy('showExisting'),
       };
       LayoutController.editorController = editor;
-      spyOn(LayoutPreservation.prototype, 'save').and.resolveTo();
+      spyOn(LayoutPreservation.prototype, 'save').and.resolveTo(true);
       spyOn(controller, 'reset');
       spyOn(controller, '_isAdminUser').and.resolveTo(false);
     });
@@ -370,6 +370,20 @@ describe("LayoutController MOC editing", function () {
       await controller.editMoc('myMoc');
 
       expect(LayoutPreservation.prototype.save).toHaveBeenCalledBefore(controller.reset);
+    });
+
+    it("leaves the layout alone, and says so, when it cannot be set aside", async function () {
+      LayoutPreservation.prototype.save.and.resolveTo(false);
+
+      await controller.editMoc('myMoc');
+
+      expect(controller.reset).not.toHaveBeenCalled();
+      expect(controller.editorMode).toBeFalse();
+      expect(document.body.classList.contains('editor-mode')).toBeFalse();
+      expect(editor.reset).not.toHaveBeenCalled();
+      expect(editor.showExisting).not.toHaveBeenCalled();
+      expect(document.getElementById('cloudSnackbar').textContent)
+        .toContain('the editor did not open');
     });
 
     it("passes on whether the user is an admin", async function () {

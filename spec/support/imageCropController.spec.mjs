@@ -100,6 +100,83 @@ describe("ImageCropController", function () {
     expect(closedWhileAttached).toEqual([true]);
   });
 
+  it("treats the dialog being closed from outside as a cancel", async function () {
+    const destroy = spyOn(Application.prototype, 'destroy').and.callThrough();
+    const pending = new ImageCropController().show(texture, 32, 32);
+    const dialog = await waitForOpenDialog();
+
+    // What BeerCSS does on Escape or a click on the overlay: neither button is
+    // involved, the dialog just closes.
+    window.ui.calls.reset();
+    dialog.dispatchEvent(new Event('close'));
+
+    expect(await pending).toBeNull();
+    expect(destroy).toHaveBeenCalled();
+    expect(document.getElementById('editorCropDialog')).toBeNull();
+    // Already closed, so toggling it again would reopen it.
+    expect(window.ui).not.toHaveBeenCalled();
+  });
+
+  describe("keyboard", function () {
+    /** Opens the dialog, sends the keys to its canvas, and confirms the crop. */
+    async function cropWithKeys(...keys) {
+      const pending = new ImageCropController().show(texture, 32, 32);
+      const dialog = await waitForOpenDialog();
+      const canvas = dialog.querySelector('canvas');
+      const events = keys.map((key) => {
+        const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+        canvas.dispatchEvent(event);
+        return event;
+      });
+      dialog.querySelector('#editorCropDialogConfirm').click();
+      return { frame: (await pending).frame, canvas, events };
+    }
+
+    it("makes the image focusable and describes the keys", async function () {
+      const { canvas } = await cropWithKeys();
+
+      expect(canvas.tabIndex).toBe(0);
+      expect(canvas.getAttribute('aria-label')).toContain('arrow keys');
+    });
+
+    it("zooms in with + and back out with -", async function () {
+      const { frame: start } = await cropWithKeys();
+      const { frame: zoomed } = await cropWithKeys('+');
+      const { frame: back } = await cropWithKeys('+', '-');
+
+      // Zooming in selects a smaller region of the image, about its centre.
+      expect(zoomed.width).toBeLessThan(start.width);
+      expect(zoomed.x + zoomed.width / 2).toBeCloseTo(start.x + start.width / 2, 5);
+      expect(back.width).toBeCloseTo(start.width, 5);
+    });
+
+    it("moves the image with the arrow keys", async function () {
+      // The 64x32 image is twice as wide as the square selection, so it has room
+      // to move sideways but not up and down.
+      const { frame: start } = await cropWithKeys();
+      const { frame: moved } = await cropWithKeys('ArrowLeft');
+      const { frame: pinned } = await cropWithKeys('ArrowUp');
+
+      // Moving the image left brings more of its right-hand side under the selection.
+      expect(moved.x).toBeGreaterThan(start.x);
+      expect(pinned.y).toBe(start.y);
+    });
+
+    it("keeps the keys it uses away from the layout's own shortcuts", async function () {
+      const reachedWindow = [];
+      const onWindowKey = (event) => reachedWindow.push(event.key);
+      window.addEventListener('keydown', onWindowKey);
+      try {
+        const { events } = await cropWithKeys('ArrowRight', '-', 'Escape');
+
+        expect(reachedWindow).toEqual(['Escape']);
+        expect(events.map((event) => event.defaultPrevented)).toEqual([true, true, false]);
+      } finally {
+        window.removeEventListener('keydown', onWindowKey);
+      }
+    });
+  });
+
   it("gives up without opening the dialog when the crop view cannot start", async function () {
     spyOn(Application.prototype, 'init').and.rejectWith(new Error('no WebGL'));
     spyOn(console, 'error');

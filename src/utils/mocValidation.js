@@ -15,22 +15,6 @@ import { PolarVector } from '../model/polarVector.js';
 export const MAX_MOC_NAME_LENGTH = 64;
 
 /**
- * Smallest scale accepted for a custom MOC. Matches the `min` on the editor's
- * `#componentScale` input.
- * @type {Number}
- * @constant
- */
-export const MOC_SCALE_MIN = 0.001;
-
-/**
- * Largest scale accepted for a custom MOC. Matches the `max` on the editor's
- * `#componentScale` input.
- * @type {Number}
- * @constant
- */
-export const MOC_SCALE_MAX = 2.0;
-
-/**
  * Validate a custom MOC's track data before it is sent to the cloud MOC
  * endpoints. These checks mirror the constraints the editor's DOM controls
  * enforce implicitly, so a hand-edited layout file cannot smuggle unbounded or
@@ -57,9 +41,11 @@ export function validateMocForCloud(track, { categories, texture }) {
     return { ok: false, reason: 'MOC category is not recognized.' };
   }
 
-  if (typeof track.scale !== 'number' || !Number.isFinite(track.scale)
-    || track.scale < MOC_SCALE_MIN || track.scale > MOC_SCALE_MAX) {
-    return { ok: false, reason: 'MOC scale is out of range.' };
+  // No upper bound: the scale is whatever fits the image to the size the user
+  // asked for, so a small image at a large size legitimately needs a big one.
+  // Zero is refused because it would make the component invisible.
+  if (typeof track.scale !== 'number' || !Number.isFinite(track.scale) || track.scale <= 0) {
+    return { ok: false, reason: 'MOC scale must be a positive number.' };
   }
 
   if (!Object.values(DataTypes).includes(track.type)) {
@@ -77,11 +63,18 @@ export function validateMocForCloud(track, { categories, texture }) {
     if (!Array.isArray(track.connections)) {
       return { ok: false, reason: 'MOC connections are invalid.' };
     }
+    const count = track.connections.length;
+    const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
     for (const connection of track.connections) {
+      // `next` indexes this same array when another copy is attached, and the
+      // vector fields become coordinates, so both have to be usable as such.
       if (!connection || typeof connection !== 'object'
-        || typeof connection.type !== 'number' || !Number.isFinite(connection.type)
-        || typeof connection.next !== 'number' || !Number.isFinite(connection.next)
-        || !(connection.vector instanceof PolarVector)) {
+        || !isFiniteNumber(connection.type)
+        || !Number.isInteger(connection.next) || connection.next < 0 || connection.next >= count
+        || !(connection.vector instanceof PolarVector)
+        || !isFiniteNumber(connection.vector.magnitude)
+        || !isFiniteNumber(connection.vector.angle)
+        || !isFiniteNumber(connection.vector.exitAngle)) {
         return { ok: false, reason: 'MOC connections are invalid.' };
       }
     }

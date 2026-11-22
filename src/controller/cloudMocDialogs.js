@@ -83,7 +83,8 @@ export function confirmUploadMocs(names) {
 
 /**
  * Tell the user their account has no room for another cloud MOC, and offer the
- * upgrade. The MOC itself is already committed locally by the time this shows.
+ * upgrade. The MOC itself is already committed by the time this shows, but only
+ * to this page's memory, so the text says how long that lasts.
  * The text is static, so nothing here needs escaping.
  * @returns {Promise<Boolean>} True if the user chose to subscribe. Resolved on the
  *   dialog's `close` event, so it is gone before the caller opens another one.
@@ -106,7 +107,9 @@ export function showMocLimitDialog() {
             </nav>
           </header>
           <div class="small-padding horizontal-padding extra-text">
-            <p>Don't worry, your MOC has been saved locally.</p>
+            <p>Your MOC is available until you close BrickLayouts. It will be lost if you
+              refresh or close the page, unless you place it in a layout and download that
+              layout. Upgrade to store it in the cloud.</p>
             <p>Free accounts may only store 10 MOCs in the cloud. To store more MOCs in the
               cloud, please upgrade your subscription.</p>
           </div>
