@@ -1659,6 +1659,8 @@ describe('ComponentGroup', () => {
 
     afterEach(() => {
       delete window.app;
+      LayoutController.dragTarget = null;
+      LayoutController.dragDistance = 0;
     });
 
     /**
@@ -3481,6 +3483,8 @@ describe('ComponentGroup', () => {
 
       afterEach(() => {
         delete window.app;
+        LayoutController.dragTarget = null;
+        LayoutController.dragDistance = 0;
       });
 
       it('should block onStartDrag operation when ComponentGroup is locked', () => {
