@@ -717,6 +717,19 @@ describe('Feature: layout-preservation', () => {
       expect(snackbarText()).toBeUndefined();
     });
 
+    it('drops only the unresolved MOCs when loading the cloud MOCs fails', async () => {
+      spyOn(console, 'warn');
+      preserve(layoutWith('railStraight9V', 'mocCloud1'));
+      mockLayoutController._unresolvedAliases.and.returnValue(['mocCloud1']);
+      const cloudMocsReady = Promise.reject(new Error('listing failed'));
+
+      await expectAsync(newService().restore({ cloudMocsReady })).toBeResolvedTo(true);
+
+      expect(importedData.layers[0].components.map((c) => c.type)).toEqual(['railStraight9V']);
+      expect(mockLayoutController.reset).not.toHaveBeenCalled();
+      expect(sessionStorage.getItem(TEST_KEY)).toBeNull();
+    });
+
     it('tells the user why their layout came back after a reload out of the editor', async () => {
       preserve(layoutWith('railStraight9V'));
 

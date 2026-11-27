@@ -124,6 +124,15 @@ describe('Feature: preservation-keys', () => {
       expect(local.getItem(CHECKOUT_LAYOUT_KEY)).toBeNull();
     });
 
+    it('never restores the editor scratch when the editor had a cloud layout open', () => {
+      session.setItem(EDITOR_LAYOUT_KEY, cloudPayload());
+      local.setItem(CHECKOUT_LAYOUT_KEY, localPayload());
+
+      expect(take('?session_id=cs_test_1')).toBeNull();
+      expect(session.getItem(EDITOR_LAYOUT_KEY)).toBeNull();
+      expect(local.getItem(CHECKOUT_LAYOUT_KEY)).toBeNull();
+    });
+
     it('treats a storage area that refuses access as nothing to restore', () => {
       const throwing = {
         getItem: () => { throw new Error('unavailable'); },

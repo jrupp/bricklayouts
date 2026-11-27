@@ -177,6 +177,71 @@ describe("ImageCropController", function () {
     });
   });
 
+  describe("zoom", function () {
+    /** Opens the dialog for the given target size and returns it with its canvas. */
+    async function open(source, targetW, targetH) {
+      const pending = new ImageCropController().show(source, targetW, targetH);
+      const dialog = await waitForOpenDialog();
+      // The stand-in ui() does not show it, and a hidden canvas has no position
+      // for the pinch to be measured against.
+      dialog.show();
+      const canvas = dialog.querySelector('canvas');
+      // Synthetic pointers have nothing to capture.
+      canvas.setPointerCapture = () => {};
+      canvas.releasePointerCapture = () => {};
+      const confirm = async () => {
+        dialog.querySelector('#editorCropDialogConfirm').click();
+        return (await pending).frame;
+      };
+      return { canvas, confirm };
+    }
+
+    const pointer = (canvas, type, pointerId, clientX, clientY) => {
+      canvas.dispatchEvent(new PointerEvent(type, {
+        pointerId, clientX, clientY, bubbles: true, cancelable: true,
+      }));
+    };
+
+    it("pinches about the point between the fingers", async function () {
+      const start = await (await open(texture, 32, 32)).confirm();
+
+      const { canvas, confirm } = await open(texture, 32, 32);
+      const rect = canvas.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      pointer(canvas, 'pointerdown', 1, cx - 20, cy);
+      pointer(canvas, 'pointerdown', 2, cx + 20, cy);
+      pointer(canvas, 'pointermove', 1, cx - 40, cy);
+      pointer(canvas, 'pointermove', 2, cx + 40, cy);
+      pointer(canvas, 'pointerup', 1, cx - 40, cy);
+      pointer(canvas, 'pointerup', 2, cx + 40, cy);
+      const pinched = await confirm();
+
+      // Spreading the fingers to twice the distance doubles the zoom, about the
+      // selection's centre, which is where the fingers are.
+      expect(pinched.width).toBeCloseTo(start.width / 2, 5);
+      expect(pinched.x + pinched.width / 2).toBeCloseTo(start.x + start.width / 2, 5);
+      expect(pinched.y + pinched.height / 2).toBeCloseTo(start.y + start.height / 2, 5);
+    });
+
+    it("keeps the selection's shape however far it is zoomed in", async function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+      const square = Texture.from(canvas);
+      const { canvas: view, confirm } = await open(square, 20, 1);
+      for (let i = 0; i < 100; i += 1) {
+        view.dispatchEvent(new KeyboardEvent('keydown', { key: '+', bubbles: true }));
+      }
+      const frame = await confirm();
+
+      expect(frame.width / frame.height).toBeCloseTo(20, 5);
+      expect(frame.height).toBeGreaterThanOrEqual(1 - 1e-9);
+      expect(frame.x + frame.width).toBeLessThanOrEqual(200 + 1e-9);
+      expect(frame.y + frame.height).toBeLessThanOrEqual(200 + 1e-9);
+    });
+  });
+
   it("gives up without opening the dialog when the crop view cannot start", async function () {
     spyOn(Application.prototype, 'init').and.rejectWith(new Error('no WebGL'));
     spyOn(console, 'error');

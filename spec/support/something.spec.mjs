@@ -2259,6 +2259,23 @@ describe("LayoutController", function() {
             });
         });
 
+        describe("embedded MOC metadata", function() {
+            // The rules themselves are covered by mocValidation.spec.mjs; this
+            // only pins down that the import applies them.
+            it("rejects a layout whose embedded MOC has a malformed connection", function() {
+                const withConnection = (vector) => LayoutController._validateImportData({
+                    ...this.perfectMinimalImportData,
+                    mocs: [{
+                        alias: 'myMoc', name: 'Corner Bakery',
+                        textureData: 'data:image/png;base64,AAAA',
+                        connections: [{ type: 1, vector, next: 0 }],
+                    }],
+                });
+                expect(withConnection([128, 0, 0])).toBeTrue();
+                expect(withConnection({})).toBeFalse();
+            });
+        });
+
         it("validates layout 1", function() {
             expect(LayoutController._validateImportData(layoutFileOne)).toBeTrue();
         });

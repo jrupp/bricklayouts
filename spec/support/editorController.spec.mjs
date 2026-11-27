@@ -1263,6 +1263,16 @@ describe("EditorController", function () {
         .toBeFalse();
     });
 
+    // Connection editing is not part of the first MOC release.
+    it("never shows the connections or the Test button to anyone else", function () {
+      controller.showExisting(asset, texture);
+
+      expect(document.getElementById('componentEditorConnections').classList.contains('hidden'))
+        .toBeTrue();
+      expect(document.getElementById('componentEditorTest').classList.contains('hidden'))
+        .toBeTrue();
+    });
+
     it("leaves the MOC itself untouched until the change is committed", function () {
       controller.showExisting(asset, texture);
       document.getElementById('componentName').value = 'Renamed';

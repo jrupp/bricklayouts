@@ -11,6 +11,7 @@ import { LayoutLayer, SerializedLayoutLayer } from '../model/layoutLayer.js';
 import { PolarVector } from '../model/polarVector.js';
 import { Pose } from '../model/pose.js';
 import { getOptionIndexByValue, isValidLayoutName, isMac } from '../utils/utils.js';
+import { validateSerializedMoc } from '../utils/mocValidation.js';
 import { showSnackbar } from '../utils/snackbar.js';
 import { PublicLayoutLoader } from '../public-cloud/publicLayoutLoader.js';
 import { UndoManager } from './undoManager.js';
@@ -2973,7 +2974,17 @@ export class LayoutController {
         newAsset.name = moc.alias;
       }
       newAsset.mine = 1;
-      this._processAssetMetadata(newAsset);
+      try {
+        this._processAssetMetadata(newAsset);
+      } catch (error) {
+        // Local files are validated before they get here, but the cloud's MOC
+        // list is not; one malformed MOC must not stop the rest registering.
+        console.error(`Custom MOC "${moc.alias}" has invalid metadata; it will be omitted:`, error);
+        if (Assets.cache.has(moc.alias)) {
+          Assets.cache.remove(moc.alias);
+        }
+        continue;
+      }
       assets.push(newAsset);
       if (Assets.cache.has(moc.alias)) {
         newAsset.image = await this.extractTrackImage(newAsset);
@@ -3418,7 +3429,7 @@ export class LayoutController {
         return null;
       }
 
-      const maxTextureSize = this.app.renderer.gl?.MAX_TEXTURE_SIZE ?? 4096;
+      const maxTextureSize = this._maxTextureSize();
       const resolution = Math.min(
         1,
         maxTextureSize / Math.max(width, height),
@@ -3630,6 +3641,18 @@ export class LayoutController {
   }
 
   /**
+   * The largest texture width or height the GPU supports. `gl.MAX_TEXTURE_SIZE`
+   * on its own is only the enum used to ask for it.
+   * @returns {Number} The limit in pixels, or 4096 when it cannot be queried
+   * @private
+   */
+  _maxTextureSize() {
+    const gl = this.app.renderer.gl;
+    const size = gl?.getParameter?.(gl.MAX_TEXTURE_SIZE);
+    return Number.isFinite(size) && size > 0 ? size : 4096;
+  }
+
+  /**
    * Decode an embedded MOC texture data URL into a Texture.
    * @param {String} dataUrl
    * @returns {Promise<Texture>}
@@ -3642,10 +3665,22 @@ export class LayoutController {
     }
     const blob = await (await fetch(dataUrl)).blob();
     const buffer = await blob.arrayBuffer();
-    const { checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+    const {
+      checkMagicBytes, readImageDimensions, MAX_DECODED_PIXELS,
+    } = await import('../utils/imageValidation.js');
     const magic = checkMagicBytes(buffer);
     if (!magic.ok || magic.mime !== blob.type) {
       throw new Error('Texture data is not a valid image');
+    }
+    // Refused from the header, before decoding: a small file can claim a size
+    // that would exhaust memory once decoded. The check after decoding stays
+    // as a backstop.
+    const dims = readImageDimensions(buffer, magic.mime);
+    if (!dims) {
+      throw new Error('Texture data is not a valid image');
+    }
+    if (dims.width * dims.height > MAX_DECODED_PIXELS) {
+      throw new Error('Texture is too large');
     }
     const bitmap = await createImageBitmap(blob);
     if (bitmap.width * bitmap.height > MAX_DECODED_PIXELS) {
@@ -3673,8 +3708,8 @@ export class LayoutController {
     this.workspace.scale.set(1.0);
     this.workspace.position.set(0, 0);
     this.drawGrid(true);
-    // Adjust scale so we don't exceed gl.MAX_TEXTURE_SIZE
-    const maxTextureSize = this.app.renderer.gl?.MAX_TEXTURE_SIZE ?? 4096;
+    // Adjust scale so we don't exceed the GPU's maximum texture size
+    const maxTextureSize = this._maxTextureSize();
     const stageWidth = this.app.stage.width;
     const stageHeight = this.app.stage.height;
     
@@ -3877,7 +3912,9 @@ export class LayoutController {
       }
       const file = input.files[0];
 
-      const { validateImageFile, checkMagicBytes, MAX_DECODED_PIXELS } = await import('../utils/imageValidation.js');
+      const {
+        validateImageFile, checkMagicBytes, readImageDimensions, MAX_DECODED_PIXELS,
+      } = await import('../utils/imageValidation.js');
 
       const validation = validateImageFile(file);
       if (!validation.ok) {
@@ -3897,6 +3934,19 @@ export class LayoutController {
       const magic = checkMagicBytes(buffer);
       if (!magic.ok || magic.mime !== file.type) {
         showSnackbar('File does not appear to be a valid image', 'error');
+        return;
+      }
+
+      // Refused from the header, before decoding: a small file can claim a size
+      // that would exhaust memory once decoded. The check after decoding stays
+      // as a backstop.
+      const dims = readImageDimensions(buffer, magic.mime);
+      if (!dims) {
+        showSnackbar('File does not appear to be a valid image', 'error');
+        return;
+      }
+      if (dims.width * dims.height > MAX_DECODED_PIXELS) {
+        showSnackbar('Image is too large', 'error');
         return;
       }
 
@@ -4473,7 +4523,10 @@ export class LayoutController {
         // Non-blank, not merely a string: createComponentBrowser reads `name`
         // for the label, the title and the search filter.
         && typeof moc.name === 'string' && moc.name.trim().length > 0
-        && typeof moc.textureData === 'string'))
+        && typeof moc.textureData === 'string'
+        // Checked before the alias is trusted below: a malformed connection
+        // would otherwise only throw once registration was under way.
+        && validateSerializedMoc(moc)))
     ]
     if (validations.every(v => v) === false) {
       return false;

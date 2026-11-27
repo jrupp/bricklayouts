@@ -25,14 +25,60 @@
 /** @typedef {import('../cloud/cloudStorageController.js').CloudStorageError} CloudStorageError */
 
 /**
+ * A prompt on screen, kept so that a second call can retire it first.
+ * @typedef {Object} ActivePrompt
+ * @property {HTMLDialogElement} dialog
+ * @property {function(): void} settle Removes the dialog and resolves its
+ *   caller with the answer given so far, which defaults to the negative one.
+ *   Safe to call more than once.
+ */
+
+/** @type {?ActivePrompt} */
+let activeUploadPrompt = null;
+/** @type {?ActivePrompt} */
+let activeLimitPrompt = null;
+
+/**
+ * Closes a prompt that a newer call is about to replace, through BeerCSS just as
+ * its own buttons do, so that its overlay is released and its caller is settled
+ * with the default answer rather than left waiting. Removing it outright would
+ * strand both.
+ * @param {ActivePrompt} prompt
+ * @returns {Promise<void>} Settles once the old prompt is gone
+ */
+async function retirePrompt(prompt) {
+  const { dialog } = prompt;
+  if (!dialog.open) {
+    // Still opening: BeerCSS decides between opening and closing before its
+    // opening delay, so toggling it now would open it a second time.
+    await new Promise((resolve) => { setTimeout(resolve, 100); });
+  }
+  if (dialog.isConnected && dialog.open) {
+    await new Promise((resolve) => {
+      dialog.addEventListener('close', resolve, { once: true });
+      ui(dialog);
+    });
+  }
+  // A fallback for a dialog that never opened; a no-op once it has closed.
+  prompt.settle();
+}
+
+/**
  * Prompt the user to upload local-only MOCs before saving the layout to the
  * cloud.
  * @param {Array<String>} names Display names of the MOCs that are not in the cloud
  * @returns {Promise<Boolean>} True if the user chose to continue
  */
 export function confirmUploadMocs(names) {
+  if (activeUploadPrompt && !activeUploadPrompt.dialog.isConnected) {
+    // Taken out of the page by something else; nothing left to close.
+    activeUploadPrompt.settle();
+  }
+  if (activeUploadPrompt) {
+    // The earlier caller is told "No", so only one of them uploads.
+    return retirePrompt(activeUploadPrompt).then(() => confirmUploadMocs(names));
+  }
   return new Promise((resolve) => {
-    document.getElementById('uploadMocsDialog')?.remove();
     const dialog = document.createElement('dialog');
     dialog.className = 'no-padding border large-width surface-container-high small-round';
     dialog.id = 'uploadMocsDialog';
@@ -63,10 +109,21 @@ export function confirmUploadMocs(names) {
     document.body.appendChild(dialog);
 
     let outcome = false;
-    dialog.addEventListener('close', () => {
-      dialog.remove();
-      resolve(outcome);
-    });
+    let settled = false;
+    const prompt = {
+      dialog,
+      settle: () => {
+        if (settled) return;
+        settled = true;
+        dialog.remove();
+        if (activeUploadPrompt === prompt) {
+          activeUploadPrompt = null;
+        }
+        resolve(outcome);
+      },
+    };
+    activeUploadPrompt = prompt;
+    dialog.addEventListener('close', prompt.settle);
     const closeDialog = () => ui('#uploadMocsDialog');
     dialog.querySelector('#uploadMocsConfirm').addEventListener('click', () => {
       outcome = true;
@@ -90,8 +147,13 @@ export function confirmUploadMocs(names) {
  *   dialog's `close` event, so it is gone before the caller opens another one.
  */
 export function showMocLimitDialog() {
+  if (activeLimitPrompt && !activeLimitPrompt.dialog.isConnected) {
+    activeLimitPrompt.settle();
+  }
+  if (activeLimitPrompt) {
+    return retirePrompt(activeLimitPrompt).then(() => showMocLimitDialog());
+  }
   return new Promise((resolve) => {
-    document.getElementById('mocLimitDialog')?.remove();
     const dialog = document.createElement('dialog');
     dialog.className = 'no-padding border large-width surface-container-high small-round';
     dialog.id = 'mocLimitDialog';
@@ -125,10 +187,21 @@ export function showMocLimitDialog() {
     document.body.appendChild(dialog);
 
     let subscribe = false;
-    dialog.addEventListener('close', () => {
-      dialog.remove();
-      resolve(subscribe);
-    });
+    let settled = false;
+    const prompt = {
+      dialog,
+      settle: () => {
+        if (settled) return;
+        settled = true;
+        dialog.remove();
+        if (activeLimitPrompt === prompt) {
+          activeLimitPrompt = null;
+        }
+        resolve(subscribe);
+      },
+    };
+    activeLimitPrompt = prompt;
+    dialog.addEventListener('close', prompt.settle);
     const closeDialog = () => ui('#mocLimitDialog');
     dialog.querySelector('#mocLimitSubscribe').addEventListener('click', () => {
       subscribe = true;

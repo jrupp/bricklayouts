@@ -14,7 +14,7 @@ import { LayoutController } from "../../src/controller/layoutController.js";
  * second closes it and fires the `close` event the dialog builders resolve on.
  */
 function uiToggle(selector) {
-  const element = document.querySelector(selector);
+  const element = typeof selector === 'string' ? document.querySelector(selector) : selector;
   if (!element || element.tagName !== 'DIALOG') {
     return;
   }
@@ -88,12 +88,45 @@ describe("cloud MOC dialogs", function () {
       expect(message.textContent).toContain('<img src=x onerror="window.x=1">');
     });
 
-    it("replaces a previously opened dialog instead of stacking them", function () {
-      confirmUploadMocs(['A']);
-      confirmUploadMocs(['A']);
+    it("declines an earlier prompt before showing its replacement", async function () {
+      const first = confirmUploadMocs(['A']);
+      const second = confirmUploadMocs(['B']);
 
+      // Told "No" rather than left waiting, so only the newer caller uploads.
+      await expectAsync(first).toBeResolvedTo(false);
+      await new Promise((resolve) => { setTimeout(resolve); });
       expect(document.querySelectorAll('#uploadMocsDialog').length).toBe(1);
+      expect(document.getElementById('uploadMocsMessage').textContent).toContain(': B.');
+
+      document.getElementById('uploadMocsConfirm').click();
+      await expectAsync(second).toBeResolvedTo(true);
     });
+
+    it("closes an open prompt it replaces through BeerCSS, releasing its overlay",
+      async function () {
+        // Closer to BeerCSS: the dialog really opens, and closing it fires
+        // `close` asynchronously, as the native dialog does.
+        window.ui.and.callFake((selector) => {
+          const element = typeof selector === 'string'
+            ? document.querySelector(selector) : selector;
+          if (element.open) {
+            element.close();
+          } else {
+            element.show();
+          }
+        });
+        const first = confirmUploadMocs(['A']);
+        const firstDialog = document.getElementById('uploadMocsDialog');
+        const second = confirmUploadMocs(['B']);
+
+        await expectAsync(first).toBeResolvedTo(false);
+        expect(window.ui).toHaveBeenCalledWith(firstDialog);
+        expect(firstDialog.isConnected).toBeFalse();
+
+        await new Promise((resolve) => { setTimeout(resolve); });
+        document.getElementById('uploadMocsCancel').click();
+        await expectAsync(second).toBeResolvedTo(false);
+      });
   });
 
   describe("showMocLimitDialog", function () {
@@ -136,6 +169,18 @@ describe("cloud MOC dialogs", function () {
       await shown;
 
       expect(document.getElementById('mocLimitDialog')).toBeNull();
+    });
+
+    it("settles an earlier dialog before showing its replacement", async function () {
+      const first = showMocLimitDialog();
+      const second = showMocLimitDialog();
+
+      await expectAsync(first).toBeResolvedTo(false);
+      await new Promise((resolve) => { setTimeout(resolve); });
+      expect(document.querySelectorAll('#mocLimitDialog').length).toBe(1);
+
+      document.getElementById('mocLimitSubscribe').click();
+      await expectAsync(second).toBeResolvedTo(true);
     });
   });
 

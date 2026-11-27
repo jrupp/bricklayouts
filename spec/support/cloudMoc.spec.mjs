@@ -141,5 +141,57 @@ describe("LayoutController MOC registration", function () {
       expect(controller.extractTrackImage).not.toHaveBeenCalled();
       expect(controller._backgroundLoadRemaining).toHaveBeenCalledWith(['dupeMoc']);
     });
+
+    it("omits a MOC with malformed connections and still registers the rest", async function () {
+      await controller._loadLayoutMocs([
+        {
+          alias: 'mocbad', src: 'https://img.example/x.png', name: 'Bad',
+          connections: [{ type: 1, vector: {}, next: 0 }],
+        },
+        { alias: 'mocgood', src: 'https://img.example/y.png', name: 'Good' },
+      ]);
+
+      expect(assets.map((t) => t.alias)).toEqual(['mocgood']);
+      expect(console.error).toHaveBeenCalled();
+    });
+  });
+
+  describe("_textureFromDataUrl", function () {
+    let controller;
+
+    /** A PNG data URL whose header claims the given size. */
+    const pngClaiming = (width, height) => {
+      const bytes = new Uint8Array(64);
+      bytes.set([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+      new DataView(bytes.buffer).setUint32(16, width);
+      new DataView(bytes.buffer).setUint32(20, height);
+      return `data:image/png;base64,${btoa(String.fromCharCode(...bytes))}`;
+    };
+
+    beforeEach(function () {
+      controller = Object.create(LayoutController.prototype);
+      spyOn(window, 'createImageBitmap').and.callThrough();
+    });
+
+    it("refuses an image too large to decode without decoding it", async function () {
+      await expectAsync(controller._textureFromDataUrl(pngClaiming(30000, 30000)))
+        .toBeRejectedWithError('Texture is too large');
+
+      expect(window.createImageBitmap).not.toHaveBeenCalled();
+    });
+
+    it("decodes an image within the limit", async function () {
+      const canvas = document.createElement('canvas');
+      canvas.width = 12;
+      canvas.height = 5;
+
+      const texture = await controller._textureFromDataUrl(canvas.toDataURL('image/png'));
+
+      expect(window.createImageBitmap).toHaveBeenCalledTimes(1);
+      expect(texture.width).toBe(12);
+      expect(texture.height).toBe(5);
+      texture.destroy(true);
+    });
   });
 });

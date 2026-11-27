@@ -2,93 +2,53 @@
  * Copyright (c) 2026 BrickLayouts. All rights reserved.
  */
 
+/**
+ * @module mocValidation
+ * Validation for custom MOCs embedded in local layout files. This runs on the
+ * local import path, which must work with no cloud code loaded, so it stays
+ * public and dependency-light. MOCs bound for the cloud API are checked by the
+ * private cloud module instead.
+ * Follows AirBNB JavaScript style guide.
+ */
+
 import { DataTypes } from '../controller/layoutController.js';
-import { MAX_DECODED_PIXELS } from './imageValidation.js';
-import { PolarVector } from '../model/polarVector.js';
 
 /**
- * Maximum length of a custom MOC's name. Mirrors the `maxlength` on the
- * editor's `#componentName` input.
- * @type {Number}
- * @constant
+ * Checks the metadata of a MOC embedded in a layout file, in its serialized
+ * form, before its alias is accepted. Registering it turns `connections` into
+ * PolarVectors and indexes them by `next`, so anything malformed there would
+ * otherwise throw part way through the import or produce unusable geometry.
+ * Only the fields the import reads are checked; `textureData` is checked when
+ * it is decoded.
+ * @param {import('../controller/layoutController.js').SerializedMoc} moc
+ * @returns {Boolean} True if the metadata can be registered
  */
-export const MAX_MOC_NAME_LENGTH = 64;
-
-/**
- * Validate a custom MOC's track data before it is sent to the cloud MOC
- * endpoints. These checks mirror the constraints the editor's DOM controls
- * enforce implicitly, so a hand-edited layout file cannot smuggle unbounded or
- * malformed metadata to the API through the local-file upload path.
- * @param {TrackData} track The MOC track to validate
- * @param {Object} options
- * @param {Map<String, String>} options.categories Known category keys
- * @param {*} [options.texture] The loaded texture for the MOC
- * @returns {{ok: Boolean, reason?: String}}
- */
-export function validateMocForCloud(track, { categories, texture }) {
-  if (!track || typeof track !== 'object') {
-    return { ok: false, reason: 'MOC data is missing.' };
+export function validateSerializedMoc(moc) {
+  if (!moc || typeof moc !== 'object') {
+    return false;
   }
-
-  if (typeof track.name !== 'string' || track.name.trim().length === 0) {
-    return { ok: false, reason: 'MOC name is required.' };
+  const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
+  if (moc.scale !== undefined && !(isFiniteNumber(moc.scale) && moc.scale > 0)) {
+    return false;
   }
-  if (track.name.length > MAX_MOC_NAME_LENGTH) {
-    return { ok: false, reason: `MOC name must be ${MAX_MOC_NAME_LENGTH} characters or fewer.` };
+  if (moc.type !== undefined && !Object.values(DataTypes).includes(moc.type)) {
+    return false;
   }
-
-  if (!categories || typeof categories.has !== 'function' || !categories.has(track.category)) {
-    return { ok: false, reason: 'MOC category is not recognized.' };
+  if (moc.onbp !== undefined
+    && !(typeof moc.onbp === 'string' && /^#[0-9A-F]{6}$/i.test(moc.onbp))) {
+    return false;
   }
-
-  // No upper bound: the scale is whatever fits the image to the size the user
-  // asked for, so a small image at a large size legitimately needs a big one.
-  // Zero is refused because it would make the component invisible.
-  if (typeof track.scale !== 'number' || !Number.isFinite(track.scale) || track.scale <= 0) {
-    return { ok: false, reason: 'MOC scale must be a positive number.' };
+  if (moc.connections === undefined) {
+    return true;
   }
-
-  if (!Object.values(DataTypes).includes(track.type)) {
-    return { ok: false, reason: 'MOC type is not recognized.' };
+  if (!Array.isArray(moc.connections)) {
+    return false;
   }
-
-  if (track.onbp !== void 0 && track.onbp !== null) {
-    if (typeof track.onbp !== 'number' || !Number.isInteger(track.onbp)
-      || track.onbp < 0 || track.onbp > 0xFFFFFF) {
-      return { ok: false, reason: 'MOC baseplate color is invalid.' };
-    }
-  }
-
-  if (track.connections !== void 0 && track.connections !== null) {
-    if (!Array.isArray(track.connections)) {
-      return { ok: false, reason: 'MOC connections are invalid.' };
-    }
-    const count = track.connections.length;
-    const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
-    for (const connection of track.connections) {
-      // `next` indexes this same array when another copy is attached, and the
-      // vector fields become coordinates, so both have to be usable as such.
-      if (!connection || typeof connection !== 'object'
-        || !isFiniteNumber(connection.type)
-        || !Number.isInteger(connection.next) || connection.next < 0 || connection.next >= count
-        || !(connection.vector instanceof PolarVector)
-        || !isFiniteNumber(connection.vector.magnitude)
-        || !isFiniteNumber(connection.vector.angle)
-        || !isFiniteNumber(connection.vector.exitAngle)) {
-        return { ok: false, reason: 'MOC connections are invalid.' };
-      }
-    }
-  }
-
-  if (!texture) {
-    return { ok: false, reason: 'MOC texture is not loaded.' };
-  }
-  const { width, height } = texture;
-  if (typeof width !== 'number' || typeof height !== 'number'
-    || !Number.isFinite(width) || !Number.isFinite(height)
-    || width <= 0 || height <= 0 || width * height > MAX_DECODED_PIXELS) {
-    return { ok: false, reason: 'MOC texture is invalid or too large.' };
-  }
-
-  return { ok: true };
+  const count = moc.connections.length;
+  return moc.connections.every((connection) => Boolean(connection)
+    && typeof connection === 'object'
+    && isFiniteNumber(connection.type)
+    && Number.isInteger(connection.next) && connection.next >= 0 && connection.next < count
+    && Array.isArray(connection.vector) && connection.vector.length === 3
+    && connection.vector.every(isFiniteNumber));
 }

@@ -76,10 +76,10 @@ function readFresh(storage, key, now) {
  * - Checkout (localStorage, shared by every tab): restored when this load is a
  *   return from Stripe Checkout. Otherwise it may belong to another tab that is
  *   still at Stripe, so it is left alone unless it has gone stale.
- * - Both: a checkout started from inside the editor preserved the editor's
- *   scratch workspace, while the user's real layout is the editor payload. The
- *   editor payload wins, and the checkout one is dropped so that the return
- *   flow does not restore it over the top.
+ * - Both: the editor's scratch workspace is never what the user expects back,
+ *   so a fresh editor payload always means any checkout one is dropped, even
+ *   when the editor payload is a cloud reference that is itself not restored.
+ *   The return flow then finds nothing to restore over the top.
  *
  * Storage access itself throws in some privacy modes, which counts as nothing to
  * restore. Reading the `sessionStorage` and `localStorage` globals to pass them
@@ -127,7 +127,7 @@ function findPending(search, { session, local }, now) {
   if (!checkout || !returningFromCheckout) {
     return pending;
   }
-  if (pending) {
+  if (editor) {
     local.removeItem(CHECKOUT_LAYOUT_KEY);
     return pending;
   }

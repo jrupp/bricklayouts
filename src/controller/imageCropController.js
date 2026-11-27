@@ -134,7 +134,10 @@ export class ImageCropController {
 
           // Minimum sprite scale keeps the selection covered by the image.
           const minScale = Math.max(selW / sourceTexture.width, selH / sourceTexture.height);
-          const maxScale = Math.max(minScale * 20, 1);
+          // At scale s the selection covers selW/s x selH/s source pixels, so
+          // capping s at the selection's shorter side keeps both at least one
+          // pixel; any further and the crop could not keep the selection's shape.
+          const maxScale = Math.max(minScale, Math.min(Math.max(minScale * 20, 1), selW, selH));
           let scale = minScale;
           sprite.scale.set(scale);
           // Center the image over the selection initially.
@@ -251,15 +254,31 @@ export class ImageCropController {
           app.canvas.addEventListener('keydown', onKeyDown);
 
           // Pinch-to-zoom (two-pointer)
+          // The image point under the fingers when the pinch starts stays under
+          // the point between them, so a pinch zooms about the fingers and pans
+          // with them, as the wheel zooms about the cursor.
           const activePointers = new Map();
           let pinchStartDist = 0;
           let pinchStartScale = 1;
+          let pinchAnchor = null;
+          const pinchMidpoint = (pts) => {
+            const rect = app.canvas.getBoundingClientRect();
+            return {
+              x: (pts[0].x + pts[1].x) / 2 - rect.left,
+              y: (pts[0].y + pts[1].y) / 2 - rect.top,
+            };
+          };
           const pinchDown = (e) => {
             activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
             if (activePointers.size === 2) {
               const pts = [...activePointers.values()];
               pinchStartDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
               pinchStartScale = sprite.scale.x;
+              const mid = pinchMidpoint(pts);
+              pinchAnchor = {
+                x: (mid.x - sprite.x) / sprite.scale.x,
+                y: (mid.y - sprite.y) / sprite.scale.y,
+              };
               dragging = false;
             }
           };
@@ -269,8 +288,11 @@ export class ImageCropController {
             if (activePointers.size === 2 && pinchStartDist > 0) {
               const pts = [...activePointers.values()];
               const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+              const mid = pinchMidpoint(pts);
               scale = Math.min(maxScale, Math.max(minScale, pinchStartScale * (dist / pinchStartDist)));
               sprite.scale.set(scale);
+              sprite.x = mid.x - pinchAnchor.x * scale;
+              sprite.y = mid.y - pinchAnchor.y * scale;
               clampSprite();
             }
           };
@@ -303,10 +325,21 @@ export class ImageCropController {
             const cropW = selW / sprite.scale.x;
             const cropH = selH / sprite.scale.y;
 
-            const x = Math.max(0, Math.min(sourceTexture.width, cropX));
-            const y = Math.max(0, Math.min(sourceTexture.height, cropY));
-            const w = Math.max(1, Math.min(sourceTexture.width - x, cropW));
-            const h = Math.max(1, Math.min(sourceTexture.height - y, cropH));
+            // Width and height only ever change together, so the frame keeps
+            // the selection's aspect ratio. A side under one source pixel (only
+            // possible for an image far narrower than the selection) grows
+            // both; a frame larger than the image (rounding) shrinks both.
+            const grow = Math.max(1, 1 / cropW, 1 / cropH);
+            const shrink = Math.min(
+              1,
+              sourceTexture.width / (cropW * grow),
+              sourceTexture.height / (cropH * grow),
+            );
+            const w = cropW * grow * shrink;
+            const h = cropH * grow * shrink;
+            // Moved, never resized, to stay inside the image.
+            const x = Math.max(0, Math.min(sourceTexture.width - w, cropX));
+            const y = Math.max(0, Math.min(sourceTexture.height - h, cropY));
 
             const cropped = new Texture({
               source: sourceTexture.source,

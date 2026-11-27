@@ -57,7 +57,14 @@ describe("LayoutController MOC from group", function () {
     controller.readOnly = false;
     controller.editorMode = false;
     controller.app = {
-      renderer: { gl: { MAX_TEXTURE_SIZE: 4096 }, extract: { canvas: extractSpy } },
+      renderer: {
+        // The real enum value; the limit itself comes from getParameter().
+        gl: {
+          MAX_TEXTURE_SIZE: 0x0D33,
+          getParameter: jasmine.createSpy('getParameter').and.returnValue(4096),
+        },
+        extract: { canvas: extractSpy },
+      },
     };
     spyOn(controller, '_isAdminUser').and.resolveTo(false);
     spyOn(controller, '_hideSelectionToolbar');
@@ -311,7 +318,8 @@ describe("LayoutController MOC from group", function () {
 
     it("scales down to fit the maximum texture size, keeping the size in world units",
       async function () {
-        controller.app.renderer.gl.MAX_TEXTURE_SIZE = 1024;
+        controller.app.renderer.gl.getParameter.and
+          .callFake((pname) => (pname === 0x0D33 ? 1024 : null));
         const member = addMember(layer, 0, 0, 2048, 512);
 
         const result = await controller._renderComponentsToTexture([member]);
@@ -321,6 +329,16 @@ describe("LayoutController MOC from group", function () {
         expect(result.height).toBe(512);
         expect(result.texture.width).toBe(1024);
         expect(result.texture.height).toBe(256);
+      });
+
+    it("assumes 4096 for the maximum texture size when the GPU cannot be asked",
+      async function () {
+        controller.app.renderer.gl = null;
+        const member = addMember(layer, 0, 0, 8192, 512);
+
+        await controller._renderComponentsToTexture([member]);
+
+        expect(extractSpy.calls.argsFor(0)[0].resolution).toBe(0.5);
       });
 
     it("returns null for components that are no longer on a layer", async function () {

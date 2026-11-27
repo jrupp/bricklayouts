@@ -77,8 +77,11 @@ export class LayoutPreservation {
    * @param {string} options.key The storage key to read/write.
    * @param {number} [options.maxAgeMs] Maximum age of preserved data before it's stale.
    * @param {boolean} [options.preserveMocs] Carry the layout's local-only MOCs
-   *   through as well. Only the checkout instance needs this: the editor is
-   *   blocked from deleting MOCs, so its payload's aliases cannot go stale.
+   *   through as well. Only the checkout instance needs this. The editor stores
+   *   aliases alone: on a normal exit its MOCs are still registered, and MOCs
+   *   that only ever existed in this page's memory are deliberately not carried
+   *   through a reload. Session storage is too small to hold their textures, and
+   *   the cloud is the supported way to keep a MOC.
    */
   constructor({ storage, key, maxAgeMs = DEFAULT_MAX_AGE_MS, preserveMocs = false }) {
     this.storage = storage;
@@ -423,7 +426,11 @@ export class LayoutPreservation {
       const unresolved = () => layoutController._unresolvedAliases?.(layoutData) ?? [];
       let missing = unresolved();
       if (missing.length > 0 && cloudMocsReady) {
-        await cloudMocsReady;
+        // A failed listing only leaves those aliases unresolved, so the strip
+        // below handles them; it must not discard the whole layout.
+        await Promise.resolve(cloudMocsReady).catch((error) => {
+          console.warn('Cloud MOCs could not be loaded before the restore:', error);
+        });
         missing = unresolved();
       }
       if (missing.length > 0) {
