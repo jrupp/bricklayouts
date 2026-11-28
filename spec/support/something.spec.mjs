@@ -256,6 +256,13 @@ describe("LayoutController", function() {
         return layoutController.init();
     });
 
+    afterEach(() => {
+        // getElementById('cloudSnackbar') is stubbed to null above, so every
+        // showSnackbar call appends a new #cloudSnackbar. Remove them all so they
+        // don't leak into other spec files.
+        document.querySelectorAll('#cloudSnackbar').forEach((el) => el.remove());
+    });
+
     describe("initWindowEvents", function() {
         let layoutController;
         let drawGridSpy;
