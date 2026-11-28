@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Component, HexToColorName } from '../model/component.js';
 import { DataTypes, LayoutController } from './layoutController.js';
 import { isIOSBrowser } from '../utils/utils.js';

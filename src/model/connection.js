@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Graphics } from "../pixi.mjs";
 import { Component } from "./component.js";
 import { PolarVector } from "./polarVector.js";

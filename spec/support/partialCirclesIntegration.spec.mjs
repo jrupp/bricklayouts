@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Integration tests for the partial circles feature
  * Tests the complete workflow from shape selection to component creation,

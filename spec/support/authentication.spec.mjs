@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Authentication System Tests
  * Tests for AWS Cognito integration with cross-subdomain support

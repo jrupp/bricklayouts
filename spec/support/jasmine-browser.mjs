@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 export default {
   srcDir: "src",
   // srcFiles should usually be left empty when using ES modules, because you'll

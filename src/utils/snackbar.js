@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 /**
  * Shows a snackbar notification using BeerCSS.
  * @param {string} message - The message to display

@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { getOptionIndexByValue, isApproxMultiple, isAndroidBrowser } from '../../src/utils/utils.js';
 
 describe('isApproxMultiple', () => {

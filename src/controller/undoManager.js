@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Component } from '../model/component.js';
 import { DataTypes } from './layoutController.js';
 import { ComponentGroup } from '../model/componentGroup.js';
@@ -69,6 +73,48 @@ export class UndoManager {
    */
   clear() {
     this.#stack = [];
+  }
+
+  /**
+   * Clear the whole undo stack if any entry would try to restore a component
+   * built from the given MOC alias. Called when a MOC is deleted.
+   *
+   * Only `delete`, `delete_group` and `layer_delete` carry an alias: every other
+   * entry type reaches its component through the live object, which cannot
+   * exist once the MOC has been verified as unused in the open layout.
+   *
+   * The entire stack is dropped rather than just the matching entries because
+   * the entries are not independent - each describes an inverse operation
+   * against the state its predecessors left behind, so removing one from the
+   * middle would make the remaining ones restore against a state that never
+   * existed. The handlers do skip a component whose track is gone, but that
+   * would silently restore a partial layout, which is worse than not offering
+   * the undo at all.
+   * @param {String} alias The alias of the MOC being deleted
+   * @returns {Boolean} True if the stack was cleared
+   */
+  clearIfReferencesAlias(alias) {
+    const referenced = this.#stack.some((entry) => {
+      switch (entry.type) {
+        case 'delete':
+          return entry.data?.baseDataAlias === alias;
+        case 'delete_group':
+          return (entry.data?.components || []).some(
+            (component) => component.baseDataAlias === alias
+          );
+        case 'layer_delete':
+          // Component.serialize() writes the alias as `type`.
+          return (entry.data?.serializedLayer?.components || []).some(
+            (component) => component.type === alias
+          );
+        default:
+          return false;
+      }
+    });
+    if (referenced) {
+      this.clear();
+    }
+    return referenced;
   }
 
   /**

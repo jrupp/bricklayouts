@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { LayoutController } from "../controller/layoutController.js";
 import { Bounds, Point } from "../pixi.mjs";
 import { Component } from "./component.js";

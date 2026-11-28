@@ -1,3 +1,7 @@
+/*!
+ * Copyright (c) 2026 BrickLayouts. All rights reserved.
+ */
+
 import { Pose } from "../../src/model/pose.js";
 
 describe("Pose", function() {

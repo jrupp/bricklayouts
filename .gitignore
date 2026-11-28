@@ -5,3 +5,5 @@ src/cloud
 spec/cloud
 .cloud-private
 .kiro/specs
+.claude/plans
+openapi.json
