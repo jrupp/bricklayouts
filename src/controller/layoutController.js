@@ -1046,6 +1046,8 @@ export class LayoutController {
       this.componentBrowser.appendChild(this._createCustomComponentButton(DataTypes.TEXT, "Custom Text", 'img/icon-addtext-black.png'));
     } else if (selectedCategory === 'mine') {
       let mocButton = document.createElement('button');
+      // Hidden by styles.css while body.editor-mode is set.
+      mocButton.id = 'createMocButton';
       mocButton.title = 'Create MOC';
       let mocImage = new Image();
       mocImage.src = 'img/icon-add-black.png';
@@ -3900,6 +3902,13 @@ export class LayoutController {
    * @private
    */
   async _openImageForEditor() {
+    if (this.editorMode) {
+      // The Create MOC tile is hidden in editor mode, but the keyboard shortcut
+      // still lands here. Entering again would set the editor's workspace aside
+      // over the user's real layout.
+      await this._showMocEditorModeDialog('create');
+      return;
+    }
     const isAdmin = await this._isAdminUser();
 
     const input = document.createElement('input');

@@ -292,6 +292,33 @@ describe("LayoutController MOC editing", function () {
     });
   });
 
+  describe("creating a MOC while the editor is open", function () {
+    beforeEach(function () {
+      spyOn(controller, '_isAdminUser').and.resolveTo(false);
+      spyOn(controller, '_showMocEditorModeDialog').and.resolveTo();
+      // The file picker itself is not under test.
+      spyOn(HTMLInputElement.prototype, 'click');
+    });
+
+    it("refuses, so the editor's workspace is never set aside over the real layout",
+      async function () {
+        // The tile is hidden in editor mode; the keyboard shortcut still gets here.
+        controller.editorMode = true;
+
+        await controller._openImageForEditor();
+
+        expect(controller._showMocEditorModeDialog).toHaveBeenCalledOnceWith('create');
+        expect(HTMLInputElement.prototype.click).not.toHaveBeenCalled();
+      });
+
+    it("opens the file picker otherwise", async function () {
+      await controller._openImageForEditor();
+
+      expect(controller._showMocEditorModeDialog).not.toHaveBeenCalled();
+      expect(HTMLInputElement.prototype.click).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("_isAdminUser", function () {
     let authManager;
 
