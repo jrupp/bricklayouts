@@ -9,62 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Prepare production JavaScript
-        run: |
-          cp node_modules/pixi.js/dist/pixi.min.mjs src/pixi.mjs
-          cp node_modules/pixi.js/dist/pixi.min.mjs.map src/pixi.min.mjs.map
-          rm src/pixi.mjs.map
-          node scripts/strip-comments.mjs src
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
-        with:
-          role-to-assume: arn:aws:iam::326269142220:role/bricklayouts-GitHubFrontendDeploy
-          aws-region: us-east-1
-
-      - name: Deploy to S3
-        run: |
-          aws s3 sync . s3://bricklayouts-app/ \
-            --delete \
-            --exclude '.git/*' \
-            --exclude 'node_modules/*' \
-            --exclude 'spec/*' \
-            --exclude 'scripts/*' \
-            --exclude 'photos/*' \
-            --exclude '.devcontainer/*' \
-            --exclude '.kiro/*' \
-            --exclude '.vscode/*' \
-            --exclude '.github/*' \
-            --exclude '.cloud-private/*' \
-            --exclude 'src/cloud/*' \
-            --exclude 'package.json' \
-            --exclude 'package-lock.json' \
-            --exclude 'backup-lock.json' \
-            --exclude 'CLAUDE.md' \
-            --exclude '.gitignore' \
-            --exclude 'CNAME' \
-            --exclude 'LICENSE.txt'
-
-      - name: Invalidate CloudFront cache
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id E3UQ5CNV5TAIT0 \
-            --paths '/*'
+  production:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      s3-bucket: bricklayouts-app
+      cloudfront-distribution-id: E3UQ5CNV5TAIT0
