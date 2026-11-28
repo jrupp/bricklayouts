@@ -1,0 +1,74 @@
+name: Deploy site
+
+# The build and deploy steps shared by every environment. Called by deploy.yml
+# (production, on every push to main) and deploy-test.yml (the test site, run by
+# hand). Only the S3 bucket and the CloudFront distribution differ between them.
+#
+# The private cloud files under src/cloud/ are deployed separately, by the
+# private repo's own workflow, and are left alone by the sync below.
+on:
+  workflow_call:
+    inputs:
+      s3-bucket:
+        description: S3 bucket the site is synced to
+        required: true
+        type: string
+      cloudfront-distribution-id:
+        description: CloudFront distribution to invalidate after the sync
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # One deploy per site at a time. A second one waits rather than cancelling
+    # the first part way through its sync.
+    concurrency:
+      group: deploy-${{ inputs.s3-bucket }}
+      cancel-in-progress: false
+    env:
+      S3_BUCKET: ${{ inputs.s3-bucket }}
+      DISTRIBUTION_ID: ${{ inputs.cloudfront-distribution-id }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::326269142220:role/bricklayouts-GitHubFrontendDeploy
+          aws-region: us-east-1
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync . "s3://${S3_BUCKET}/" \
+            --delete \
+            --exclude '.git/*' \
+            --exclude 'node_modules/*' \
+            --exclude 'spec/*' \
+            --exclude 'scripts/*' \
+            --exclude 'photos/*' \
+            --exclude '.devcontainer/*' \
+            --exclude '.kiro/*' \
+            --exclude '.vscode/*' \
+            --exclude '.github/*' \
+            --exclude '.cloud-private/*' \
+            --exclude 'src/cloud/*' \
+            --exclude 'package.json' \
+            --exclude 'package-lock.json' \
+            --exclude 'backup-lock.json' \
+            --exclude 'CLAUDE.md' \
+            --exclude '.gitignore' \
+            --exclude 'CNAME' \
+            --exclude 'LICENSE.txt'
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${DISTRIBUTION_ID}" \
+            --paths '/*'
