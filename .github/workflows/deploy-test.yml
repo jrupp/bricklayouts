@@ -1,0 +1,22 @@
+name: Deploy to test site
+
+# Run by hand: pick the branch with "Use workflow from" in the Actions tab, or
+#   gh workflow run deploy-test.yml --ref <branch>
+# The selected branch's own copy of deploy-site.yml runs, so a branch that
+# changes the build is deployed the way it will ship. The branch must contain
+# this file and deploy-site.yml.
+#
+# Deploy the private repo's cloud files to the test site first.
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/deploy-site.yml
+    with:
+      s3-bucket: bricklayouts-test-app
+      cloudfront-distribution-id: E2K2PANNS2RAJX
